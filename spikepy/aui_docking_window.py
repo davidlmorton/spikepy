@@ -2,7 +2,9 @@ import os
 
 import wx
 import wx.aui
+
 from spikepy.gui import file_list_ctrl
+from wx.lib.wordwrap import wordwrap
 
 class MyFrame(wx.Frame):
 
@@ -59,15 +61,43 @@ class MyFrame(wx.Frame):
         menubar.Append(view_menu, "View")
         
         help_menu = wx.Menu()
-        about_id = wx.NewId() # Do we want to reference ID's with names as done
-                              # here or try to come up with a systematic ID 
-                              # numbering scheme as above?
+        about_id = wx.NewId() 
+        # TODO Do we want to reference ID's with names as done here or try to
+        # come up with a systematic ID numbering scheme as above?
         help_menu.Append(about_id, "About")
         menubar.Append(help_menu, "Help")
         
         self.SetMenuBar(menubar)
 
-    def OnClose(self, event):
+        # define what menu items actually do
+        self.Bind(wx.EVT_MENU, self.close_window, id=102)
+        self.Bind(wx.EVT_MENU, self.about_box, id=about_id)
+
+    def about_box(self, event):
+        # dialog box to open when "About" is clicked
+        info = wx.AboutDialogInfo()
+        # TODO I'm not sure if this is the best way to reference the icon file
+        info.Icon = wx.Icon('gui/icons/spikepy_logo.png', wx.BITMAP_TYPE_PNG)
+        info.Name = "Spikepy"
+        info.Version = "0.0"
+        info.Description = wordwrap("Spikepy is a python-based spike sorting "
+            "framework. It has been designed to be general enough to implement "
+            "many different spike sorting algorithms. Spikepy can be used by "
+            "electrophysiologists without any additional programming required. "
+            "Additionally, spikepy can be easily extended to include many more "
+            "algorithms, or to mix and match aspects of any existing "
+            "algorithms.",350,wx.ClientDC(self))
+        wx.AboutBox(info)
+        
+
+    def close_window(self, event):
+        # TODO This method may be unnecessary since OnClose is defined below 
+        # and does something similar.  
+        self.Close()
+
+    def OnClose(self, event):  # TODO Since you are defining the function here
+                               # can't you just change it to conform to pep 8
+                               # regardless of what wx suggests?
         # deinitialize the frame manager
         self._mgr.UnInit()
         # delete the frame
