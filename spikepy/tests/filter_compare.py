@@ -5,11 +5,11 @@ import os
 import sys
 
 import pylab
-pylab.interactive(True)
 import numpy
 
 from spikepy.common.open_data_file import open_data_file
 from spikepy.filtering.simple_iir import bessel, butterworth
+from spikepy.filtering.simple_fir import fir_filter
 
 def compare_filters(f1_settings, f2_settings, data_filename):
     """
@@ -34,6 +34,16 @@ def compare_filters(f1_settings, f2_settings, data_filename):
     pylab.legend()
     pylab.show()
 
+
+# Butterworth 4th order vs. 101 tap hamming
+f1_settings = {'filter_func':butterworth, 'args':[300, 3, 'high'], 
+               'label':'3th order Butterworth > 300 Hz'}
+f2_settings = {'filter_func':fir_filter, 'args':[300, 'hamming', 101, 'high'],
+               'label':'101 taps hamming > 300 Hz'}
+pylab.figure(1)
+compare_filters(f1_settings, f2_settings, '../sample_data/287-Turtle_NI_Cortex_II-data')
+
+"""
 # Butterworth 4th vs. 8th order
 f1_settings = {'filter_func':butterworth, 'args':[300, 4, 'high'], 
                'label':'4th order Butterworth > 300 Hz'}
@@ -66,3 +76,5 @@ f2_settings = {'filter_func':bessel, 'args':[100, 4, 'high'],
                'label':'4th order bessel > 100 Hz'}
 pylab.figure(4)
 compare_filters(f1_settings, f2_settings, '../sample_data/287-Turtle_NI_Cortex_II-data')
+"""
+
