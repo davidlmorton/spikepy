@@ -5,11 +5,11 @@ from wx.lib.wordwrap import wordwrap
 from .program_text import about_text
 from .utils import get_bitmap_icon
 
-OPEN           = wx.NewId()
-EXIT           = wx.NewId()
+OPEN           = wx.ID_OPEN
+EXIT           = wx.ID_EXIT
 PREFERENCES    = wx.NewId()
 DEFAULT        = wx.NewId()
-ABOUT          = wx.NewId()
+ABOUT          = wx.ID_ABOUT
 NO_WORKSPACES  = wx.NewId()
 WORKSPACES     = wx.NewId()
 
@@ -18,21 +18,26 @@ class SpikepyMenuBar(wx.MenuBar):
         wx.MenuBar.__init__(self, *args, **kwargs)
         
 
+        # --- FILE ---
         file_menu = wx.Menu()
         file_menu.Append(OPEN, text="Open")
         file_menu.Append(EXIT, text="Exit")
         
+        # --- EDIT ---
         edit_menu = wx.Menu()
         edit_menu.Append(PREFERENCES, text="Preferences")
         
+        # --- VIEW ---
         view_menu = wx.Menu()
         workspaces_submenu = wx.Menu()
         workspaces_submenu.Append(DEFAULT, text="Default")
         workspaces_submenu.AppendSeparator()
         workspaces_submenu.Append(NO_WORKSPACES, 
                                   text="No saved custom workspaces")
+        workspaces_submenu.Enable(NO_WORKSPACES, False)
         view_menu.AppendMenu(WORKSPACES, "Workspaces", workspaces_submenu)
         
+        # --- HELP ---
         help_menu = wx.Menu()
         help_menu.Append(ABOUT, text="About")
 
