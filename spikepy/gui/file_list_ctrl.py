@@ -56,6 +56,8 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         cm.Destroy()
 
     def _open_file(self, event):
+        pub.sendMessage(topic='OPEN FILE', data=None)
+        '''
         paths = []
         dlg = wx.FileDialog(self, message="Choose file(s) to open.",
                             defaultDir=os.getcwd(),
@@ -67,11 +69,14 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
             p, fn = os.path.split(path)
             # XXX just publish open file request
             self.add_file(fn,p)
+        '''
 
     def _close_file(self, event):
         item = self.GetFocusedItem()
+        pub.sendMessage(topic='CLOSE FILE', data=item.data)
+        '''
         # XXX just publish close file request
         self.DeleteItem(item)
         self.autosize_columns()
-
+        '''
 

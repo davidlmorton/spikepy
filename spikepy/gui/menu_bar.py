@@ -44,6 +44,10 @@ class SpikepyMenuBar(wx.MenuBar):
         # define what menu items actually do
         frame.Bind(wx.EVT_MENU, self._close_window, id=EXIT)
         frame.Bind(wx.EVT_MENU, self._about_box, id=ABOUT)
+        frame.Bind(wx.EVT_MENU, self._open_file, id=OPEN)
+
+    def _open_file(self, event):
+        pub.sendMessage(topic='OPEN FILE', data=None)
 
     def _close_window(self, event):
         pub.sendMessage(topic='CLOSE APPLICATION', data=None)
