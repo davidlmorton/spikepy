@@ -1,5 +1,7 @@
 import os
 
+from wx.lib.pubsub import Publisher as pub
+
 from .trial import Trial
 
 # import all read_* modules
@@ -14,7 +16,8 @@ for file in files:
             name = module_name[5:-5]
         else:
             name = module_name[5:]
-        print "registering '%s' type." % name
+        pub.sendMessage(topic=("registered '%s' type" % name).upper(), 
+                        data=name)
         file_readers[name] = eval('%s.read_file' % module_name)
 
 def open_data_file(filename, data_format='guess', **kwargs):

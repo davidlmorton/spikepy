@@ -1,6 +1,7 @@
 import os
 
 import wx
+from wx.lib.pubsub import Publisher as pub
 import wx.lib.mixins.listctrl as listmix
 
 from spikepy.gui import utils
@@ -18,8 +19,10 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         self.InsertColumn(1, 'Path')
 
         self.Bind(wx.EVT_CONTEXT_MENU, self._context_menu)
+        pub.subscribe(self._file_opened, topic='FILE OPENED')
+        pub.subscribe(self._file_closed, topic='FILE CLOSED')
 
-    def add_file(self, filename, path):
+    def _add_file(self, filename, path):
         num_items = self.GetItemCount()
         self.InsertStringItem(num_items, filename)
         self.SetStringItem(num_items, 1, path)
@@ -55,28 +58,26 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         self.PopupMenu(cm)
         cm.Destroy()
 
+    def _file_opened(self, message):
+        fullpath = message.data
+        p, fn = os.path.split(fullpath)
+        self._add_file(fn, p)
+
     def _open_file(self, event):
-        pub.sendMessage(topic='OPEN FILE', data=None)
-        '''
-        paths = []
-        dlg = wx.FileDialog(self, message="Choose file(s) to open.",
-                            defaultDir=os.getcwd(),
-                            style=wx.OPEN|wx.MULTIPLE) 
-        if dlg.ShowModal() == wx.ID_OK:
-            paths = dlg.GetPaths()
-        dlg.Destroy()
-        for path in paths:
-            p, fn = os.path.split(path)
-            # XXX just publish open file request
-            self.add_file(fn,p)
-        '''
+        pub.sendMessage(topic='OPEN FILE', data=self)
+
+    def _file_closed(self, message):
+        filename = message.data
+        for item_num in range(self.GetItemCount()):
+            text = self.GetItemText(item_num)
+            if text == filename:
+                delete_num = item_num
+                break
+        self.DeleteItem(delete_num)
+        self.autosize_columns()
 
     def _close_file(self, event):
-        item = self.GetFocusedItem()
-        pub.sendMessage(topic='CLOSE FILE', data=item.data)
-        '''
-        # XXX just publish close file request
-        self.DeleteItem(item)
-        self.autosize_columns()
-        '''
-
+        item_num = self.GetFocusedItem()
+        # this will always be the filename, not the path
+        filename =  self.GetItemText(item_num) 
+        pub.sendMessage(topic='CLOSE DATA FILE', data=filename)

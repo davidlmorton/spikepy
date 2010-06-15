@@ -4,9 +4,14 @@ import wx
 import wx.aui
 from wx.lib.pubsub import Publisher as pub
 
-from spikepy.gui.file_list_ctrl import FileListCtrl
-from spikepy.gui.menu_bar import SpikepyMenuBar
+from .file_list_ctrl import FileListCtrl
+from .menu_bar import SpikepyMenuBar
 
+class View(object):
+    def __init__(self, *args, **kwargs):
+        self.frame = MyFrame(None, *args, **kwargs)
+        self.frame.Show()
+        
 class MyFrame(wx.Frame):
 
     def __init__(self, parent, id=-1, 
@@ -67,8 +72,4 @@ class MyFrame(wx.Frame):
         self.Destroy()
 
 
-app = wx.App()
-frame = MyFrame(None)
-frame.Show()
-app.MainLoop()
 
