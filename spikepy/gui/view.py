@@ -6,6 +6,7 @@ from wx.lib.pubsub import Publisher as pub
 
 from .file_list_ctrl import FileListCtrl
 from .menu_bar import SpikepyMenuBar
+from .trace_plot_panel import TracePlotPanel
 
 class View(object):
     def __init__(self, *args, **kwargs):
@@ -41,15 +42,16 @@ class MyFrame(wx.Frame):
         file_list_pane_info.MaximizeButton(visible=False)
         file_list_pane_info.FloatingSize((450,200))
         file_list_pane_info.Caption("Opened Files List")
-
-        text3 = wx.TextCtrl(self, -1, 'Main content window',
-                            wx.DefaultPosition, wx.Size(200,150),
-                            wx.NO_BORDER | wx.TE_MULTILINE)
+        
+        # --- TRACE PLOT PANEL PANE ---
+        holding_panel = wx.Panel(self)
+        point_lists, color_list = create_flower()
+        trace_plot_panel = TracePlotPanel(holding_panel, point_lists, color_list)
 
         # add the panes to the manager
         self._mgr.AddPane(file_list, info=file_list_pane_info)
         self._mgr.AddPane(text1, info=strategy_pane_info)
-        self._mgr.AddPane(text3, wx.CENTER)
+        self._mgr.AddPane(holding_panel, wx.CENTER)
 
         # tell the manager to 'commit' all the changes just made
         self._mgr.Update()
@@ -70,6 +72,5 @@ class MyFrame(wx.Frame):
         # deinitialize the frame manager
         self._mgr.UnInit()
         self.Destroy()
-
 
 

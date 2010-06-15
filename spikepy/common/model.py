@@ -23,9 +23,8 @@ class Model(object):
 
     def _close_data_file(self, message):
         filename = message.data
-        print filename
-        print self.trials.keys()
         if filename in self.trials.keys():
             del self.trials[filename]
             pub.sendMessage(topic='FILE CLOSED', data=filename)
-    
+
+
