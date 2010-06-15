@@ -14,6 +14,16 @@ class Controller(object):
 
     def setup_subscriptions(self):
         pub.subscribe(self._open_file, topic="OPEN FILE")
+        pub.subscribe(self._update_plot, topic='FILE SELECTION CHANGED')
+
+    def _update_plot(self, message):
+        filename = message.data
+        trial = self.model.trials[filename]
+        traces = trial.traces
+        colors = [[0, 0, 0]]
+        sample_rate = trial.sampling_freq
+        pub.sendMessage(topic='UPDATE TRACE PLOT', 
+                        data=(sample_rate, traces, colors))
 
     def _open_file(self, message):
         frame = message.data

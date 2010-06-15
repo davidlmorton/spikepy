@@ -61,7 +61,7 @@ class PlotPanel (wx.Panel):
             self._SetSize()
 
     def _SetSize( self ):
-        pixels = tuple( self.parent.GetClientSize() )
+        pixels = tuple( self.GetParent().GetClientSize() )
         self.SetSize( pixels )
         self.canvas.SetSize( pixels )
         self.figure.set_size_inches( float( pixels[0] )/self.figure.get_dpi(),

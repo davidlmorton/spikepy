@@ -19,8 +19,14 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         self.InsertColumn(1, 'Path')
 
         self.Bind(wx.EVT_CONTEXT_MENU, self._context_menu)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self._item_selected)
         pub.subscribe(self._file_opened, topic='FILE OPENED')
         pub.subscribe(self._file_closed, topic='FILE CLOSED')
+
+    def _item_selected(self, event):
+        item_num = self.GetFocusedItem()
+        filename =  self.GetItemText(item_num) 
+        pub.sendMessage(topic="FILE SELECTION CHANGED", data=filename)
 
     def _add_file(self, filename, path):
         num_items = self.GetItemCount()

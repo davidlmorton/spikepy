@@ -45,8 +45,7 @@ class MyFrame(wx.Frame):
         
         # --- TRACE PLOT PANEL PANE ---
         holding_panel = wx.Panel(self)
-        point_lists, color_list = create_flower()
-        trace_plot_panel = TracePlotPanel(holding_panel, point_lists, color_list)
+        trace_plot_panel = TracePlotPanel(holding_panel)
 
         # add the panes to the manager
         self._mgr.AddPane(file_list, info=file_list_pane_info)
