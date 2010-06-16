@@ -36,5 +36,6 @@ class Controller(object):
             paths = dlg.GetPaths()
         dlg.Destroy()
         for path in paths:
-            pub.sendMessage(topic="OPEN DATA FILE", data=path)
+            pub.sendMessage(topic='OPEN DATA FILE', data=path)
+
 

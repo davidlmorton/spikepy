@@ -40,7 +40,6 @@ class PlotPanel (wx.Panel):
         self.draw()
         self._resizeflag = False
 
-        self.Bind(wx.EVT_IDLE, self._onIdle)
         self.Bind(wx.EVT_SIZE, self._onSize)
 
     def SetColor( self, rgbtuple=None ):
@@ -53,14 +52,12 @@ class PlotPanel (wx.Panel):
         self.canvas.SetBackgroundColour( wx.Colour( *rgbtuple ) )
 
     def _onSize( self, event ):
+        if not self._resizeflag:
+            wx.CallLater(300, self._SetSize)
         self._resizeflag = True
 
-    def _onIdle( self, evt ):
-        if self._resizeflag:
-            self._resizeflag = False
-            self._SetSize()
-
     def _SetSize( self ):
+        self._resizeflag = False
         pixels = tuple( self.GetParent().GetClientSize() )
         self.SetSize( pixels )
         self.canvas.SetSize( pixels )

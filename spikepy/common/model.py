@@ -1,5 +1,7 @@
 import os
+import thread
 
+import wx
 from wx.lib.pubsub import Publisher as pub
 
 from .open_data_file import open_data_file
@@ -18,8 +20,20 @@ class Model(object):
         fullpath = message.data
         filename = os.path.split(fullpath)[1]
         if filename not in self.trials.keys():
-            self.trials[filename] = open_data_file(fullpath)
-            pub.sendMessage(topic='FILE OPENED', data=fullpath)
+            thread.start_new_thread(self.open_file, (fullpath,))
+        else:
+            pub.sendMessage(topic='FILE ALREADY OPENED',data=fullpath)
+
+    def open_file(self, fullpath):
+        filename = os.path.split(fullpath)[1]
+        self.trials[filename] = open_data_file(fullpath)
+        # call sendMessage after thread exits. (Publisher is NOT threadsafe)
+        wx.CallAfter(pub.sendMessage, topic='FILE OPENED', data=fullpath)
+
+    """
+    def _file_opened(self, fullpath):
+        pub.sendMessage(topic='FILE OPENED', data=fullpath)
+    """
 
     def _close_data_file(self, message):
         filename = message.data
