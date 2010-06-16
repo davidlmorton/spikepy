@@ -3,14 +3,10 @@ import wx
 from .wxPlotPanel import PlotPanel
 from wx.lib.pubsub import Publisher as pub
 
-matplotlib.interactive(True)
-matplotlib.use('WXAgg')
-
 class TracePlotPanel(PlotPanel):
     def __init__(self, parent, **kwargs):
         # initiate plotter
         PlotPanel.__init__(self, parent, **kwargs)
-        self.SetColor((255,255,255))
         pub.subscribe(self._update_trace_plot, topic="UPDATE TRACE PLOT")
 
     def _update_trace_plot(self, message):
@@ -42,3 +38,4 @@ class TracePlotPanel(PlotPanel):
                                  self.sampling_rate)
         current_axes.set_ylabel("Y (data collection units, mV?)")
         current_axes.set_title("Voltage Trace")
+        self.canvas.draw()

@@ -44,13 +44,12 @@ class MyFrame(wx.Frame):
         file_list_pane_info.Caption("Opened Files List")
         
         # --- TRACE PLOT PANEL PANE ---
-        holding_panel = wx.Panel(self)
-        trace_plot_panel = TracePlotPanel(holding_panel)
+        trace_plot_panel = TracePlotPanel(self)
 
         # add the panes to the manager
         self._mgr.AddPane(file_list, info=file_list_pane_info)
         self._mgr.AddPane(text1, info=strategy_pane_info)
-        self._mgr.AddPane(holding_panel, wx.CENTER)
+        self._mgr.AddPane(trace_plot_panel, wx.CENTER)
 
         # tell the manager to 'commit' all the changes just made
         self._mgr.Update()
