@@ -1,5 +1,6 @@
 import wx
 
+from .utils import NamedChoiceCtrl
 
 class StrategyNotebook(wx.Notebook):
     def __init__(self, parent, **kwargs):
@@ -22,7 +23,8 @@ class FilterPanel(wx.Panel):
         wx.Panel.__init__(self, parent, **kwargs)
 
         title_panel = TitlePanel(self, stage_num, stage_name)
-        category_chooser = wx.Panel(self)
+        category_chooser = NamedChoiceCtrl(self, name="Filter category:",
+                                 choices=["Filter 1", "Filter 2", "Filter 3"])
         category_description = wx.Panel(self)
         category_controls = wx.Panel(self)
 

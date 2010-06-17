@@ -15,4 +15,17 @@ def get_bitmap_icon(name):
             image = wx.Image(os.path.join(icon_folder, file))
             return image.ConvertToBitmap()
     raise RuntimeError("Cannot find image named %s in icons folder." % name)
+
+class NamedChoiceCtrl(wx.Panel):
+    def __init__(self, parent, name="", choices=[], **kwargs):
+        wx.Panel.__init__(self, parent, **kwargs)
+
+        self.name = wx.StaticText(self, label=name)
+        self.choice = wx.Choice(self, choices=choices)
+        
+        sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        sizer.Add(self.name, proportion=1, flag=wx.EXPAND)
+        sizer.Add(self.choice, proportion=1, flag=wx.EXPAND)
+
+        self.SetSizer(sizer)
     
