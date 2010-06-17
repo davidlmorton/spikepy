@@ -31,7 +31,8 @@ class FilterPanel(wx.Panel):
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         ea_flag = wx.EXPAND|wx.ALL
         sizer.Add(title_panel, proportion=1, flag=ea_flag, border=5)
-        sizer.Add(category_chooser, proportion=1, flag=ea_flag, border=5)
+        sizer.Add(category_chooser, proportion=1, flag=ea_flag|wx.ALIGN_CENTER, 
+                  border=5)
         sizer.Add(category_description, proportion=1, flag=ea_flag, border=5)
         sizer.Add(category_controls, proportion=1, flag=ea_flag, border=5)
         
@@ -40,7 +41,7 @@ class FilterPanel(wx.Panel):
 class TitlePanel(wx.Panel):
     def __init__(self, parent, stage_num, stage_name, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
-        stage_num_text = wx.StaticText(self, label="Stage \n%d" % stage_num,
+        stage_num_text = wx.StaticText(self, label="Stage\n%d" % stage_num,
                                                          style=wx.ALIGN_CENTER)
         stage_num_font = stage_num_text.GetFont()
         stage_num_font.SetWeight(wx.FONTWEIGHT_BOLD)

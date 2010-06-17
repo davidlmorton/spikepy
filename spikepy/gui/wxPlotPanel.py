@@ -5,6 +5,7 @@ from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
 from matplotlib.figure import Figure
 import wx
 from wx.lib.pubsub import Publisher as pub
+import utils
 
 WHITE = (255,255,255)
 
@@ -23,9 +24,26 @@ class PlotPanel (wx.Panel):
         pub.subscribe(self._toggle_toolbar, topic="TOGGLE TOOLBAR")
         self._toolbar_visible = False
 
-    def _toggle_toolbar(self, message):
-        if message.data is not None and self is not message.data:
-            return
+        self.Bind(wx.EVT_CONTEXT_MENU, self._context_menu)
+
+    def _context_menu(self, event):
+        if not hasattr(self, '_cmid_show_or_hide_toolbar'):
+            self._cmid_show_or_hide_toolbar  = wx.NewId()
+
+            self.Bind(wx.EVT_MENU, self._show_or_hide_toolbar, 
+                      id=self._cmid_show_or_hide_toolbar)
+
+        cm = wx.Menu()
+        # toggle toolbar item
+        item = wx.MenuItem(cm, self._cmid_show_or_hide_toolbar, 
+                           'Show/Hide Toolbar')
+        bmp = utils.get_bitmap_icon('image_new')
+        item.SetBitmap(bmp)
+        cm.AppendItem(item)
+        self.PopupMenu(cm)
+        cm.Destroy()
+
+    def _do_toolbar_toggling(self):
         sizer = self.GetSizer()
         if self._toolbar_visible:
             sizer.Detach(self.toolbar)
@@ -43,12 +61,24 @@ class PlotPanel (wx.Panel):
             self._toolbar_visible = True
         sizer.Layout()
 
-    def _set_surround_color(self, rgbtuple):
-        """Set figure and canvas colours to be the same."""
-        if rgbtuple is None:
-            rgbtuple = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE).Get()
-        self.canvas.SetBackgroundColour( wx.Colour( *rgbtuple ) )
+    def _show_or_hide_toolbar(self, event):
+        self._do_toolbar_toggling()
+        
+    def _toggle_toolbar(self, message):
+        if message.data is not None and self is not message.data:
+            return
+        self._do_toolbar_toggling()
 
-    def draw(self): 
+    def _set_surround_color(self, rgb):
+        """Set figure and canvas colours to be the same."""
+        if rgb is None:
+            rgb = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE).Get()
+        self.canvas.SetBackgroundColour(rgb)
+        self.figure.set_facecolor(norm_rgb(rgb))
+
+    def plot(self): 
         pass
 
+def norm_rgb(rgb, num_shades=256):
+    return_rgb = [channel/float(num_shades-1) for channel in rgb]
+    return return_rgb

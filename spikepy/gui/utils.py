@@ -8,6 +8,11 @@ import wx
 gui_folder  = os.path.split(__file__)[0]
 icon_folder = os.path.join(gui_folder, 'icons')
 
+def named_color(name):
+    '''return a color given its name, in normalized rgb format.'''
+    color = [chanel/255. for chanel in wx.NamedColor(name).Get()]
+    return color
+
 def get_bitmap_icon(name):
     icon_files = os.listdir(icon_folder)
     for file in icon_files:
@@ -21,11 +26,13 @@ class NamedChoiceCtrl(wx.Panel):
         wx.Panel.__init__(self, parent, **kwargs)
 
         self.name = wx.StaticText(self, label=name)
-        self.choice = wx.Choice(self, choices=choices)
+        self.choice = wx.Choice(self, choices=choices, size=(75,-1))
         
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        sizer.Add(self.name, proportion=1, flag=wx.EXPAND)
-        sizer.Add(self.choice, proportion=1, flag=wx.EXPAND)
+        sizer.Add(self.name, proportion=1, 
+                  flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+        sizer.Add(self.choice, proportion=1, 
+                  flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
 
         self.SetSizer(sizer)
     

@@ -3,39 +3,39 @@ import wx
 from .wxPlotPanel import PlotPanel
 from wx.lib.pubsub import Publisher as pub
 
-class TracePlotPanel(PlotPanel):
+class TracePlotPanel(wx.Panel):
     def __init__(self, parent, **kwargs):
         # initiate plotter
-        PlotPanel.__init__(self, parent, **kwargs)
-        pub.subscribe(self._update_trace_plot, topic="UPDATE TRACE PLOT")
+        wx.Panel.__init__(self, parent, **kwargs)
+        pub.subscribe(self._show_trace_plot, topic='SHOW TRACE PLOT')
+        self._plot_panels = {}# keyed on fullpath
+        self._plot_panels['DEFAULT'] = PlotPanel(self)
+        self._currently_shown = 'DEFAULT'
 
-    def _update_trace_plot(self, message):
-        sampling_rate, traces, colors = message.data
-        self.set_data(sampling_rate, traces, colors)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(sizer)
 
-    def set_data(self, sampling_rate, traces, colors):
-        self.traces = traces
-        while len(colors) < len(traces):
-            colors.append(colors[-1])
-        self.colors = colors
-        self.sampling_rate = sampling_rate
-        self.draw()
+    def _show_trace_plot(self, message):
+        fullpath = message.data
+        if fullpath not in self._plot_panels.keys():
+            pub.sendMessage(topic='SETUP NEW TRACE PLOT', 
+                            data=(fullpath,PlotPanel(self), self))
+        shown_plot_panel = self._plot_panels[self._currently_shown]
+        self.GetSizer().Detach(shown_plot_panel)
+        shown_plot_panel.Show(False)
 
-    def draw(self):
-        """Draw data."""
-        if not hasattr(self, 'colors'):
-            return
+        self._currently_shown = fullpath
+        showing_plot_panel = self._plot_panels[self._currently_shown]
+        self.GetSizer().Add(showing_plot_panel, 1, wx.EXPAND)
+        self.Layout()
+        showing_plot_panel.Show(True)
 
-        if hasattr(self, 'subplot'):
-            self.figure.clear()
-        self.subplot = self.figure.add_subplot(111)
-
-        for color, trace in zip(self.colors, self.traces):
-            color = [float(channel)/255. for channel in color]
-            self.subplot.plot(trace, color=color)
-        current_axes = self.figure.gca()
-        current_axes.set_xlabel("Sample Number (sample rate = %d Hz)" %
-                                 self.sampling_rate)
-        current_axes.set_ylabel("Y (data collection units, mV?)")
-        current_axes.set_title("Voltage Trace")
-        self.canvas.draw()
+    def add_plot_panel(self, plot_panel, fullpath):
+        self._plot_panels[fullpath] = plot_panel
+        
+    def setup_dressings(self, axes, sampling_freq):
+        '''Sets up the xlabel/ylabel/title of this axis'''
+        axes.set_xlabel("Sample Number\n(sample rate = %d Hz)" %
+                        sampling_freq)
+        axes.set_ylabel("Y\n(data collection units, mV?)")
+        axes.set_title("Voltage Trace")
