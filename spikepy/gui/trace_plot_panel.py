@@ -1,6 +1,6 @@
 import matplotlib
 import wx
-from .wxPlotPanel import PlotPanel
+from .plot_panel import PlotPanel
 from wx.lib.pubsub import Publisher as pub
 
 class TracePlotPanel(wx.Panel):
@@ -14,6 +14,11 @@ class TracePlotPanel(wx.Panel):
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(sizer)
+        self.Bind(wx.EVT_CONTEXT_MENU, self._toggle_this_toolbar)
+
+    def _toggle_this_toolbar(self, event):
+        pub.sendMessage(topic='TOGGLE TOOLBAR', 
+                        data=self._plot_panels[self._currently_shown])
 
     def _show_trace_plot(self, message):
         fullpath = message.data
@@ -37,5 +42,5 @@ class TracePlotPanel(wx.Panel):
         '''Sets up the xlabel/ylabel/title of this axis'''
         axes.set_xlabel("Sample Number\n(sample rate = %d Hz)" %
                         sampling_freq)
-        axes.set_ylabel("Y\n(data collection units, mV?)")
+        axes.set_ylabel("(data collection units, mV?)")
         axes.set_title("Voltage Trace")
