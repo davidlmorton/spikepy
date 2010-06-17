@@ -4,8 +4,9 @@ import wx
 import wx.aui
 from wx.lib.pubsub import Publisher as pub
 
-from .file_list_ctrl import FileListCtrl
 from .menu_bar import SpikepyMenuBar
+from .strategy_notebook import StrategyNotebook
+from .file_list_ctrl import FileListCtrl
 from .trace_plot_panel import TracePlotPanel
 
 class View(object):
@@ -24,9 +25,7 @@ class MyFrame(wx.Frame):
         self._mgr = wx.aui.AuiManager(self)
 
         # --- STRATEGY PANE ---
-        text1 = wx.TextCtrl(self, -1, 'Pane 1 - sample text',
-                            wx.DefaultPosition, wx.Size(200,150),
-                            wx.NO_BORDER | wx.TE_MULTILINE)
+        strategy_notebook  = StrategyNotebook(self)        
         strategy_pane_info = wx.aui.AuiPaneInfo()
         strategy_pane_info.CloseButton(   visible=False)
         strategy_pane_info.MinimizeButton(visible=False)
@@ -48,7 +47,7 @@ class MyFrame(wx.Frame):
 
         # add the panes to the manager
         self._mgr.AddPane(file_list, info=file_list_pane_info)
-        self._mgr.AddPane(text1, info=strategy_pane_info)
+        self._mgr.AddPane(strategy_notebook, info=strategy_pane_info)
         self._mgr.AddPane(trace_plot_panel, wx.CENTER)
 
         # tell the manager to 'commit' all the changes just made
