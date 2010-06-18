@@ -7,8 +7,8 @@ class StrategyNotebook(wx.Notebook):
         wx.Notebook.__init__(self, parent, **kwargs)
         
         detection_filter_panel = FilterPanel(self, 1, "Detection Filter")
-        detection_panel = wx.Panel(self)
-        extraction_filter_panel = wx.Panel(self)
+        detection_panel = DetectionPanel(self, 2, "Spike Detection")
+        extraction_filter_panel = FilterPanel(self, 3, "Extraction Filter")
         extraction_panel = wx.Panel(self)
         clustering_panel = wx.Panel(self)
         
@@ -48,6 +48,19 @@ class FilterPanel(wx.Panel):
         method_chosen = event.GetString()
         self.method_description.SetLabel(
            "Description: Description for %s filtering method." % method_chosen)
+
+class DetectionPanel(wx.Panel):
+    def __init__(self, parent, stage_num, stage_name, **kwargs):
+        wx.Panel.__init__(self, parent, **kwargs)
+
+        title_panel = TitlePanel(self, stage_num, stage_name)
+
+        sizer = wx.BoxSizer(orient=wx.VERTICAL)
+        ea_flag = wx.EXPAND|wx.ALL
+        sizer.Add(title_panel, proportion=1, flag=ea_flag, border=5)
+
+        self.SetSizer(sizer)
+    
 
 class TitlePanel(wx.Panel):
     def __init__(self, parent, stage_num, stage_name, **kwargs):

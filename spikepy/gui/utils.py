@@ -37,3 +37,18 @@ class NamedChoiceCtrl(wx.Panel):
 
         self.SetSizer(sizer)
 
+class NamedTextCtrl(wx.Panel):
+    def __init__(self, parent, name="", **kwargs):
+        wx.Panel.__init__(self, parent, **kwargs)
+
+        self.name = wx.StaticText(self, label=name)
+        self.text_ctrl = wx.TextCtrl(self, size=(75,-1))
+        
+        sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        sizer.Add(self.name, proportion=1, 
+                  flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+        sizer.Add(self.text_ctrl, proportion=1, 
+                  flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+
+        self.SetSizer(sizer)
+
