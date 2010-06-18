@@ -39,10 +39,9 @@ class Controller(object):
         trace_plot_panel.setup_dressings(axes, sampling_freq)
 
     def _file_selection_changed(self, message):
+        # XXX will this do something more?
         fullpath = message.data
-        pub.sendMessage(topic='SHOW TRACE PLOT', data=fullpath)
-        """
-        """
+        pub.sendMessage(topic='SHOW PLOT', data=fullpath)
 
     def _open_file(self, message):
         frame = message.data

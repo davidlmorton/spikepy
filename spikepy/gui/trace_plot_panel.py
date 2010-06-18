@@ -1,49 +1,26 @@
-import matplotlib
-import wx
-from .plot_panel import PlotPanel
 from wx.lib.pubsub import Publisher as pub
 
-class TracePlotPanel(wx.Panel):
-    def __init__(self, parent, **kwargs):
-        # initiate plotter
-        wx.Panel.__init__(self, parent, **kwargs)
-        pub.subscribe(self._show_trace_plot, topic='SHOW TRACE PLOT')
-        self._plot_panels = {}# keyed on fullpath
-        self._plot_panels['DEFAULT'] = PlotPanel(self, min_size_inches=(6,2))
-        self._currently_shown = 'DEFAULT'
+from .multi_plot_panel import MultiPlotPanel
+from .plot_panel import PlotPanel
 
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self._plot_panels['DEFAULT'], 1, wx.EXPAND)
-        self.SetSizer(sizer)
-        self.Bind(wx.EVT_CONTEXT_MENU, self._toggle_this_toolbar)
+class TracePlotPanel(MultiPlotPanel):
+    kwargs = {}
+    kwargs['figsize']   = (7, 4.3)
+    kwargs['facecolor'] = 'white'
+    kwargs['dpi']       = 64
+    def __init__(self, parent):
+        MultiPlotPanel.__init__(self, parent, **TracePlotPanel.kwargs)
 
-    def _toggle_this_toolbar(self, event):
-        pub.sendMessage(topic='TOGGLE TOOLBAR', 
-                        data=self._plot_panels[self._currently_shown])
-
-    def _show_trace_plot(self, message):
-        fullpath = message.data
-        if fullpath not in self._plot_panels.keys():
-            pub.sendMessage(topic='SETUP NEW TRACE PLOT', 
-                            data=(fullpath,
-                                  PlotPanel(self, min_size_inches=(6,2)), 
-                                  self))
-        shown_plot_panel = self._plot_panels[self._currently_shown]
-        self.GetSizer().Detach(shown_plot_panel)
-        shown_plot_panel.Show(False)
-
-        self._currently_shown = fullpath
-        showing_plot_panel = self._plot_panels[self._currently_shown]
-        self.GetSizer().Add(showing_plot_panel, 1, wx.EXPAND)
-        showing_plot_panel.Show(True)
-        self.Layout()
-
-    def add_plot_panel(self, plot_panel, fullpath):
-        self._plot_panels[fullpath] = plot_panel
+    def _setup_new_plot(self, new_panel_key): 
+        # needs to be defined for MultiPlotPanel
+        pub.sendMessage(topic='SETUP NEW TRACE PLOT', 
+                        data=(new_panel_key, 
+                              PlotPanel(self, **TracePlotPanel.kwargs), 
+                              self))
         
     def setup_dressings(self, axes, sampling_freq):
         '''Sets up the xlabel/ylabel/title of this axis'''
-        axes.set_xlabel("Sample Number\n(sample rate = %d Hz)" %
+        axes.set_xlabel("Sample Number (sample rate = %d Hz)" %
                         sampling_freq)
         axes.set_ylabel("(data collection units, mV?)")
         axes.set_title("Voltage Trace")
