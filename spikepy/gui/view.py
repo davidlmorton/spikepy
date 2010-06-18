@@ -30,6 +30,7 @@ class MyFrame(wx.Frame):
         strategy_pane_info.CloseButton(   visible=False)
         strategy_pane_info.MinimizeButton(visible=False)
         strategy_pane_info.MaximizeButton(visible=False)
+        strategy_pane_info.MinSize((250, 250))
         strategy_pane_info.FloatingSize((300,500))
         strategy_pane_info.Caption("Strategy")
 
@@ -39,6 +40,7 @@ class MyFrame(wx.Frame):
         file_list_pane_info.CloseButton(   visible=False)
         file_list_pane_info.MinimizeButton(visible=False)
         file_list_pane_info.MaximizeButton(visible=False)
+        file_list_pane_info.MinSize((250,250))
         file_list_pane_info.FloatingSize((450,200))
         file_list_pane_info.Caption("Opened Files List")
         
