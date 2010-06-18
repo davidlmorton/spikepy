@@ -4,6 +4,7 @@ A collection of utility functions for the spikepy gui.
 import os
 
 import wx
+from wx.lib.pubsub import Publisher as pub
 
 gui_folder  = os.path.split(__file__)[0]
 icon_folder = os.path.join(gui_folder, 'icons')
@@ -35,4 +36,4 @@ class NamedChoiceCtrl(wx.Panel):
                   flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
 
         self.SetSizer(sizer)
-    
+

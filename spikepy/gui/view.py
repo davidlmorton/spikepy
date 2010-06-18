@@ -64,10 +64,11 @@ class MyFrame(wx.Frame):
         self.SetMenuBar(menubar)
 
         pub.subscribe(self._close_application, topic="CLOSE APPLICATION")
+        
 
     def _close_application(self, message):
         # deinitialize the frame manager
         self._mgr.UnInit()
         self.Destroy()
 
-
+       
