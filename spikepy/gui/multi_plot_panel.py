@@ -13,9 +13,10 @@ class MultiPlotPanel(ScrolledPanel):
                 add it to the set of plots available. (data=(new_panel_key, 
                                                              PlotPanel(),
                                                              self))
+            **NOTE** self._new_plot_message should be overridden in subclasses
         Subscribes to pubsub message: 
             'SHOW PLOT' to alter which PlotPanel
-                is visible.  (data= new_panel_key)
+                is visible.  (data=new_panel_key)
         """
         ScrolledPanel.__init__(self, parent)
 

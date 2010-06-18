@@ -7,11 +7,25 @@ import wx.lib.mixins.listctrl as listmix
 from spikepy.gui import utils
 
 class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
-    """
-    This list control displays what files are opened and allows users to 
-        open/close files by right-click popups.
-    """
     def __init__(self, parent, **kwargs):
+        """
+        This list control displays what files are opened and allows users to 
+            open/close files by right-click popups.
+        Inputs:
+            parent          : the parent panel/frame 
+        Subscribes to:
+            'FILE OPENED'           : data=fullpath  will remove 'Opening' 
+                                      status from Num column.
+            'FILE ALREADY OPENED'   : data=fullpath  will remove 'Opening' 
+                                      status from Num column.
+            'FILE CLOSED'           : data=fullpath  will remove file from
+                                      the list.
+            'OPENING DATA FILE'     : data=fullpath  will add file to the
+                                      list with Num column set to 'Opening'.
+        Publishes:
+            'OPEN FILE'             : data=self        
+            'CLOSE DATA FILE'       : data=fullpath      
+        """
         wx.ListCtrl.__init__(self, parent, **kwargs)
         listmix.ListCtrlAutoWidthMixin.__init__(self)
 
@@ -105,12 +119,6 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         fullpath = message.data
         self.opened_files.remove(fullpath)
         self._update()
-
-    def _file_info(self, event):
-        if self.GetItemCount():
-            item_num = self.GetFocusedItem()
-            fullpath = self.opened_files[item_num]
-            pub.sendMessage(topic='FILE INFO', data=(self,fullpath))
 
     def _open_file(self, event):
         pub.sendMessage(topic='OPEN FILE', data=self)
