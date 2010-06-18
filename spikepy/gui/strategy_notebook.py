@@ -25,14 +25,15 @@ class FilterPanel(wx.Panel):
         title_panel = TitlePanel(self, stage_num, stage_name)
         method_chooser = NamedChoiceCtrl(self, name="Filter method:",
                                  choices=["Infinite impulse response",
-                                          "Finite impulse response"])
+                                          "Finite impulse response"],
+                                          bar_width=80)
         self.method_description = wx.StaticText(self, 
                                   label="Description: Choose a filter method.") 
         method_controls = ControlsPanel(self)
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         ea_flag = wx.EXPAND|wx.ALL
-        sizer.Add(title_panel, proportion=1, flag=ea_flag, border=5)
+        sizer.Add(title_panel, proportion=0, flag=ea_flag, border=5)
         sizer.Add(method_chooser, proportion=1, flag=ea_flag|wx.ALIGN_CENTER, 
                   border=5)
         sizer.Add(self.method_description, proportion=1, flag=ea_flag, 
@@ -48,6 +49,7 @@ class FilterPanel(wx.Panel):
         method_chosen = event.GetString()
         self.method_description.SetLabel(
            "Description: Description for %s filtering method." % method_chosen)
+        self.Layout()
 
 class DetectionPanel(wx.Panel):
     def __init__(self, parent, stage_num, stage_name, **kwargs):
@@ -57,7 +59,7 @@ class DetectionPanel(wx.Panel):
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         ea_flag = wx.EXPAND|wx.ALL
-        sizer.Add(title_panel, proportion=1, flag=ea_flag, border=5)
+        sizer.Add(title_panel, proportion=0, flag=ea_flag, border=5)
 
         self.SetSizer(sizer)
     
