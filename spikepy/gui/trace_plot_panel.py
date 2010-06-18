@@ -9,10 +9,11 @@ class TracePlotPanel(wx.Panel):
         wx.Panel.__init__(self, parent, **kwargs)
         pub.subscribe(self._show_trace_plot, topic='SHOW TRACE PLOT')
         self._plot_panels = {}# keyed on fullpath
-        self._plot_panels['DEFAULT'] = PlotPanel(self)
+        self._plot_panels['DEFAULT'] = PlotPanel(self, min_size_inches=(6,2))
         self._currently_shown = 'DEFAULT'
 
         sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self._plot_panels['DEFAULT'], 1, wx.EXPAND)
         self.SetSizer(sizer)
         self.Bind(wx.EVT_CONTEXT_MENU, self._toggle_this_toolbar)
 
@@ -24,7 +25,9 @@ class TracePlotPanel(wx.Panel):
         fullpath = message.data
         if fullpath not in self._plot_panels.keys():
             pub.sendMessage(topic='SETUP NEW TRACE PLOT', 
-                            data=(fullpath,PlotPanel(self), self))
+                            data=(fullpath,
+                                  PlotPanel(self, min_size_inches=(6,2)), 
+                                  self))
         shown_plot_panel = self._plot_panels[self._currently_shown]
         self.GetSizer().Detach(shown_plot_panel)
         shown_plot_panel.Show(False)
@@ -32,8 +35,8 @@ class TracePlotPanel(wx.Panel):
         self._currently_shown = fullpath
         showing_plot_panel = self._plot_panels[self._currently_shown]
         self.GetSizer().Add(showing_plot_panel, 1, wx.EXPAND)
-        self.Layout()
         showing_plot_panel.Show(True)
+        self.Layout()
 
     def add_plot_panel(self, plot_panel, fullpath):
         self._plot_panels[fullpath] = plot_panel
