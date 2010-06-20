@@ -39,19 +39,19 @@ class Model(object):
 
     def _filter_butter(self, message):
         for trial in self.trials.values():
-            trial.predetection_traces = []
+            trial.detection_traces = []
             for trace in trial.traces:
-                trial.predetection_traces.append(
+                trial.detection_traces.append(
                     butterworth(trace, trial.sampling_freq, 300, 3, 'high')) 
-            pub.sendMessage(topic='TRIAL PREDETECTION FILTERED', data=trial)
+            pub.sendMessage(topic='TRIAL DETECTION FILTERED', data=trial)
 
     def _filter_hamming(self, message):
         for trial in self.trials.values():
-            trial.predetection_traces = []
+            trial.detection_traces = []
             for trace in trial.traces:
-                trial.predetection_traces.append(
+                trial.detection_traces.append(
                     fir_filter(trace, trial.sampling_freq, 300, 'hamming', 
                                101, 'high')) 
-            pub.sendMessage(topic='TRIAL PREDETECTION FILTERED', data=trial)
+            pub.sendMessage(topic='TRIAL DETECTION FILTERED', data=trial)
 
 

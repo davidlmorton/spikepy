@@ -7,7 +7,7 @@ from wx.lib.pubsub import Publisher as pub
 from .menu_bar import SpikepyMenuBar
 from .strategy_notebook import StrategyNotebook
 from .file_list_ctrl import FileListCtrl
-from .filter_trace_plot_panel import FilterTracePlotPanel
+from .results_notebook import ResultsNotebook
 
 class View(object):
     def __init__(self, *args, **kwargs):
@@ -44,14 +44,13 @@ class MyFrame(wx.Frame):
         file_list_pane_info.FloatingSize((450,200))
         file_list_pane_info.Caption("Opened Files List")
         
-        # --- TRACE PLOT PANEL PANE ---
-        filter_trace_plot_panel = FilterTracePlotPanel(self, 
-                                                       name='predetection')
+        # ---  RESULTS PANE ---
+        results_notebook = ResultsNotebook(self)
 
         # add the panes to the manager
         self._mgr.AddPane(file_list, info=file_list_pane_info)
         self._mgr.AddPane(strategy_notebook, info=strategy_pane_info)
-        self._mgr.AddPane(filter_trace_plot_panel, wx.CENTER)
+        self._mgr.AddPane(results_notebook, wx.CENTER)
 
         # tell the manager to 'commit' all the changes just made
         self._mgr.Update()
