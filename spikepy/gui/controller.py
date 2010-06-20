@@ -17,26 +17,6 @@ class Controller(object):
         pub.subscribe(self._open_file, topic="OPEN FILE")
         pub.subscribe(self._file_selection_changed, 
                       topic='FILE SELECTION CHANGED')
-        pub.subscribe(self._setup_new_trace_plot, 
-                      topic='SETUP NEW TRACE PLOT')
-
-    def _setup_new_trace_plot(self, message):
-        fullpath, plot_panel, trace_plot_panel = message.data
-        trial = self.model.trials[fullpath]
-        traces = trial.traces
-        colors = [named_color('blue'), 
-                  named_color('red'), 
-                  named_color('black')]
-        while len(traces) > len(colors):
-            colors.extend(colors)
-        canvas = plot_panel.canvas
-        figure = plot_panel.figure
-        axes = figure.add_subplot(111)
-        for trace, color in zip(traces,colors):
-            axes.plot(trace, color=color, linewidth=1.5)
-        trace_plot_panel.add_plot_panel(plot_panel, fullpath)
-        sampling_freq = trial.sampling_freq
-        trace_plot_panel.setup_dressings(axes, sampling_freq)
 
     def _file_selection_changed(self, message):
         # XXX will this do something more?

@@ -18,6 +18,7 @@ for file in files:
             name = module_name[5:]
         pub.sendMessage(topic=("registered '%s' type" % name).upper(), 
                         data=name)
+        print "registered '%s' type" % name
         file_readers[name] = eval('%s.read_file' % module_name)
 
 def open_data_file(filename, data_format='guess', **kwargs):
@@ -37,4 +38,5 @@ def open_data_file(filename, data_format='guess', **kwargs):
 
     
 def guess_data_format(filename):
-    return file_readers.keys()[0] #XXX obviously flesh this out.
+    if filename.endswith('tet'): return 'wessel_lab_tetrode'
+    return 'wessel_lab' #XXX obviously flesh this out.

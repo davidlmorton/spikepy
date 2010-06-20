@@ -25,6 +25,8 @@ class Model(object):
     def open_file(self, fullpath):
         self.trials[fullpath] = open_data_file(fullpath)
         # call sendMessage after thread exits. (Publisher is NOT threadsafe)
+        wx.CallAfter(pub.sendMessage, topic='TRIAL ADDED', 
+                     data=self.trials[fullpath])
         wx.CallAfter(pub.sendMessage, topic='FILE OPENED', data=fullpath)
 
     def _close_data_file(self, message):

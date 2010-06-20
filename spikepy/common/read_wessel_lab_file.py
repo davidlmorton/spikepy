@@ -4,7 +4,7 @@ read_file must return 1) a list of voltage traces and
 """
 import numpy
 
-def read_file(filename, time_column=3, data_columns=[0]):
+def read_file(filename, time_column=-1, data_columns=[0]):
     data = numpy.loadtxt(filename)
     voltage_traces = data.T[data_columns]
     times = data.T[time_column]

@@ -8,12 +8,6 @@ class MultiPlotPanel(ScrolledPanel):
         """
         A panel which holds multiple similar PlotPanels. Right-click will
             toggle showing a toolbar with PlotPanels.
-        Publishes pubsub message:
-            self._new_plot_message to have subscriber generate a new plot and
-                add it to the set of plots available. (data=(new_panel_key, 
-                                                             PlotPanel(),
-                                                             self))
-            **NOTE** self._new_plot_message should be overridden in subclasses
         Subscribes to pubsub message: 
             'SHOW PLOT' to alter which PlotPanel
                 is visible.  (data=new_panel_key)
@@ -26,8 +20,6 @@ class MultiPlotPanel(ScrolledPanel):
                                                 **kwargs)
         self._currently_shown = 'DEFAULT'
         self._toolbar_visible = toolbar_visible 
-        self._kwargs = kwargs
-        self._new_plot_message = 'SETUP NEW X-X PLOT' #override in subclass
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self._plot_panels['DEFAULT'], 1, wx.EXPAND)
@@ -59,13 +51,3 @@ class MultiPlotPanel(ScrolledPanel):
         showing_plot_panel.Show(True)
         self.Layout()
 
-    def add_plot_panel(self, plot_panel, key):
-        self._plot_panels[key] = plot_panel
-
-    def _setup_new_plot(self, new_panel_key): 
-        pub.sendMessage(topic=self._new_plot_message, 
-                        data=(new_panel_key, 
-                              PlotPanel(self, 
-                                        toolbar_visible=self._toolbar_visible,
-                                        **self._kwargs),
-                              self))

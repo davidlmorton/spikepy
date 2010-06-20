@@ -44,7 +44,11 @@ class PlotPanel (wx.Panel):
         figheight = self.figure.get_figheight()
         figwidth  = self.figure.get_figwidth()
         dpi       = self.figure.get_dpi()
-        min_size = (dpi*figwidth, dpi*figheight)
+        # compensate for toolbar height, even if not visible, to keep
+        #   it from riding up on the plot when it is visible and the
+        #   panel is shrunk down.
+        toolbar_height = self.toolbar.GetSize()[1]
+        min_size = (dpi*figwidth, dpi*figheight+toolbar_height)
         self.SetMinSize(min_size)
 
         pub.subscribe(self._toggle_toolbar, topic="TOGGLE TOOLBAR")
