@@ -30,15 +30,22 @@ class FilterTracePlotPanel(MultiPlotPanel):
 
         traces = trial.traces
         for i, trace in enumerate(traces):
-            axes = figure.add_subplot(len(traces), 1, i+1)
-            axes.plot(trace, color='black', linewidth=2.0, label='Raw')
             if i==0:
-                axes.set_title('Trace: %s' % str(filename))
-            if i+1 < len(traces):
-                axes.set_xticks([])
-                axes.set_yticks([])
+                axes = first_axes= figure.add_subplot(len(traces), 1, i+1)
+                axes.set_title('Trial:  %s' % str(filename))
+            else:
+                axes = figure.add_subplot(len(traces), 1, i+1,
+                                          sharex=first_axes,
+                                          sharey=first_axes)
+            axes.plot(trace, color='black', linewidth=2.0, label='Raw')
+            axes.set_ylabel('Trace #%d' % (i+1))
+            if i+1 < len(traces): #all but the last trace
+                # make the x/yticklabels dissapear
+                axes.set_xticklabels([''],visible=False)
+                axes.set_yticklabels([''],visible=False)
 
         axes.set_xlabel('Sample Number')
+        figure.subplots_adjust(hspace=0.02)
 
         if hasattr(trial, '%s_traces' % self.name.lower()):
             self._trial_filtered(trial=trial)
