@@ -31,7 +31,7 @@ class FilterTracePlotPanel(MultiPlotPanel):
         traces = trial.traces
         for i, trace in enumerate(traces):
             axes = figure.add_subplot(len(traces), 1, i+1)
-            axes.plot(trace, color='black', linewidth=2.0)
+            axes.plot(trace, color='black', linewidth=2.0, label='Raw')
             if i==0:
                 axes.set_title('Trace: %s' % str(filename))
             if i+1 < len(traces):
@@ -47,13 +47,14 @@ class FilterTracePlotPanel(MultiPlotPanel):
         if message is not None:
             trial = message.data
         fullpath = trial.filename
-        traces = trial.getattr('%s_traces' % self.name.lower())
+        traces = getattr(trial, '%s_traces' % self.name.lower())
         figure = self._plot_panels[fullpath].figure
         for trace, axes in zip(traces, figure.get_axes()):
             lines = axes.get_lines()
             if len(lines) == 2:
                 filtered_line = lines[1]
-                filtered_line.ydata = trace
+                filtered_line.set_ydata(trace)
             else:
-                axes.plot(trace, color='blue', linewidth=1.5, 
-                                 linestyle='dashed')
+                axes.plot(trace, color='blue', linewidth=1.5, label='Filtered')
+        axes.legend()
+        figure.canvas.draw()

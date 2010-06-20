@@ -14,6 +14,8 @@ class Model(object):
     def setup_subscriptions(self):
         pub.subscribe(self._open_data_file, "OPEN DATA FILE")
         pub.subscribe(self._close_data_file, "CLOSE DATA FILE")
+        pub.subscribe(self._filter_butter, "TEST FILTERING BUTTER")
+        pub.subscribe(self._filter_hamming, "TEST FILTERING HAMMING")
 
     def _open_data_file(self, message):
         fullpath = message.data
@@ -34,5 +36,22 @@ class Model(object):
         if fullpath in self.trials.keys():
             del self.trials[fullpath]
             pub.sendMessage(topic='FILE CLOSED', data=fullpath)
+
+    def _filter_butter(self, message):
+        for trial in self.trials.values():
+            trial.predetection_traces = []
+            for trace in trial.traces:
+                trial.predetection_traces.append(
+                    butterworth(trace, trial.sampling_freq, 300, 3, 'high')) 
+            pub.sendMessage(topic='TRIAL PREDETECTION FILTERED', data=trial)
+
+    def _filter_hamming(self, message):
+        for trial in self.trials.values():
+            trial.predetection_traces = []
+            for trace in trial.traces:
+                trial.predetection_traces.append(
+                    fir_filter(trace, trial.sampling_freq, 300, 'hamming', 
+                               101, 'high')) 
+            pub.sendMessage(topic='TRIAL PREDETECTION FILTERED', data=trial)
 
 

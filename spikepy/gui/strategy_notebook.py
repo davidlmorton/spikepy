@@ -1,4 +1,5 @@
 import wx
+from wx.lib.pubsub import Publisher as pub
 
 from .utils import NamedChoiceCtrl
 
@@ -30,6 +31,11 @@ class FilterPanel(wx.Panel):
         self.method_description = wx.StaticText(self, 
                                   label="Description: Choose a filter method.") 
         method_controls = ControlsPanel(self)
+        # XXX Just for testing...
+        butterworth_button = wx.Button(self, label='Butterworth')
+        hamming_button     = wx.Button(self, label='Hamming')
+        self.Bind(wx.EVT_BUTTON, self._butter,  butterworth_button)
+        self.Bind(wx.EVT_BUTTON, self._hamming, hamming_button)
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         ea_flag = wx.EXPAND|wx.ALL
@@ -39,11 +45,22 @@ class FilterPanel(wx.Panel):
         sizer.Add(self.method_description, proportion=1, flag=ea_flag, 
                   border=5)
         sizer.Add(method_controls, proportion=1, flag=ea_flag, border=5)
+        # XXX just for testing...
+        sizer.Add(butterworth_button, proportion=0)
+        sizer.Add(hamming_button, proportion=0)
         
         self.SetSizer(sizer)
         
         self.Bind(wx.EVT_CHOICE, self._method_choice_made,
                   method_chooser.choice)
+
+    # XXX just for testing...
+    def _butter(self, event):
+        pub.sendMessage(topic="TEST FILTERING BUTTER")
+
+    # XXX just for testing...
+    def _hamming(self, event):
+        pub.sendMessage(topic="TEST FILTERING HAMMING")
 
     def _method_choice_made(self, event):
         method_chosen = event.GetString()
