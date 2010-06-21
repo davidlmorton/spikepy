@@ -90,7 +90,10 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
             cm.AppendItem(item)
             cm.Enable(self._cmid_file_info, False)
         # open file item
-        item = wx.MenuItem(cm, self._cmid_open_file, 'Open Another File...')
+        if self.GetItemCount():  
+            item = wx.MenuItem(cm, self._cmid_open_file, 'Open Another File...')
+        else:
+            item = wx.MenuItem(cm, self._cmid_open_file, 'Open File')
         bmp = utils.get_bitmap_icon('folder')
         item.SetBitmap(bmp)
         cm.AppendItem(item)
