@@ -20,18 +20,18 @@ class FilterTracePlotPanel(MultiPlotPanel):
 
     def _trial_added(self, message):
         trial = message.data
-        fullpath = trial.filename
-        filename = os.path.split(fullpath)[1]
+        fullpath = trial.fullpath
         self._plot_panels[fullpath] = PlotPanel(self, figsize=self.figsize,
                                                       facecolor=self.facecolor,
                                                       dpi=self.dpi)
 
         figure = self._plot_panels[fullpath].figure
 
-        traces = trial.traces
+        filename = os.path.split(fullpath)[1]
+        traces = trial.traces['raw']
         for i, trace in enumerate(traces):
             if i==0:
-                axes = first_axes= figure.add_subplot(len(traces), 1, i+1)
+                axes = first_axes = figure.add_subplot(len(traces), 1, i+1)
                 axes.set_title('Trial:  %s' % str(filename))
             else:
                 axes = figure.add_subplot(len(traces), 1, i+1,
@@ -47,14 +47,14 @@ class FilterTracePlotPanel(MultiPlotPanel):
         axes.set_xlabel('Sample Number')
         figure.subplots_adjust(hspace=0.02)
 
-        if hasattr(trial, '%s_traces' % self.name.lower()):
+        if self.name.lower() in trial.traces.keys():
             self._trial_filtered(trial=trial)
             
     def _trial_filtered(self, message=None, trial=None):
         if message is not None:
             trial = message.data
-        fullpath = trial.filename
-        traces = getattr(trial, '%s_traces' % self.name.lower())
+        fullpath = trial.fullpath
+        traces = trial.traces[self.name.lower()]
         figure = self._plot_panels[fullpath].figure
         for trace, axes in zip(traces, figure.get_axes()):
             lines = axes.get_lines()

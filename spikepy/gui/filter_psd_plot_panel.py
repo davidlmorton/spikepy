@@ -22,7 +22,7 @@ class FilterPSDPlotPanel(MultiPlotPanel):
 
     def _trial_added(self, message):
         trial = message.data
-        fullpath = trial.filename
+        fullpath = trial.fullpath
         filename = os.path.split(fullpath)[1]
         self._plot_panels[fullpath] = PlotPanel(self, figsize=self.figsize,
                                                       facecolor=self.facecolor,
@@ -30,19 +30,19 @@ class FilterPSDPlotPanel(MultiPlotPanel):
 
         figure = self._plot_panels[fullpath].figure
 
-        traces = numpy.hstack(trial.traces) #all traces together
+        traces = numpy.hstack(trial.traces['raw']) #all traces together
         axes = figure.add_subplot(1,1,1)
         axes.psd(traces, Fs=trial.sampling_freq, label='Raw', 
                              linewidth=2.0, color='black')
 
-        if hasattr(trial, '%s_traces' % self.name.lower()):
+        if self.name.lower() in trial.traces.keys():
             self._trial_filtered(trial=trial)
             
     def _trial_filtered(self, message=None, trial=None):
         if message is not None:
             trial = message.data
-        fullpath = trial.filename
-        traces = numpy.hstack(getattr(trial, '%s_traces' % self.name.lower()))
+        fullpath = trial.fullpath
+        traces = numpy.hstack(trial.traces[self.name.lower()]) #all traces together
 
         figure = self._plot_panels[fullpath].figure
         for trace, axes in zip(traces, figure.get_axes()):

@@ -17,6 +17,12 @@ class Controller(object):
         pub.subscribe(self._open_file, topic="OPEN FILE")
         pub.subscribe(self._file_selection_changed, 
                       topic='FILE SELECTION CHANGED')
+        pub.subscribe(self._file_closed, topic='FILE CLOSED')
+
+    def _file_closed(self, message):
+        fullpath = message.data
+        pub.sendMessage(topic='REMOVE PLOT', data=fullpath)
+
 
     def _file_selection_changed(self, message):
         # XXX will this do something more?

@@ -11,6 +11,8 @@ class MultiPlotPanel(ScrolledPanel):
         Subscribes to pubsub message: 
             'SHOW PLOT' to alter which PlotPanel
                 is visible.  (data=new_panel_key)
+            'FILE CLOSED' to destroy PlotPanels after the file they are
+                associated with is closed.
         """
         ScrolledPanel.__init__(self, parent)
 
@@ -28,6 +30,14 @@ class MultiPlotPanel(ScrolledPanel):
 
         self.Bind(wx.EVT_CONTEXT_MENU, self._toggle_toolbar)
         pub.subscribe(self._show_plot, topic='SHOW PLOT')
+        pub.subscribe(self._remove_plot, topic='REMOVE PLOT')
+
+    def _remove_plot(self, message):
+        removed_panel_key = message.data
+        message.data = 'DEFAULT'
+        self._show_plot(message)
+        self._plot_panels[removed_panel_key].Destroy()
+        del self._plot_panels[removed_panel_key]
 
     def _toggle_toolbar(self, event):
         for plot_panel in self._plot_panels.values():
@@ -40,7 +50,8 @@ class MultiPlotPanel(ScrolledPanel):
     def _show_plot(self, message):
         new_panel_key = message.data
         if new_panel_key not in self._plot_panels.keys():
-            self._setup_new_plot(new_panel_key)
+            raise RuntimeError('Plot associated with "%s" does not exist.' %
+                                new_panel_key)
         shown_plot_panel = self._plot_panels[self._currently_shown]
         self.GetSizer().Detach(shown_plot_panel)
         shown_plot_panel.Show(False)

@@ -2,6 +2,7 @@ import wx
 from wx.lib.pubsub import Publisher as pub
 
 from .utils import NamedChoiceCtrl
+from ..stages import filtering
 
 class StrategyNotebook(wx.Notebook):
     def __init__(self, parent, **kwargs):
@@ -24,48 +25,41 @@ class FilterPanel(wx.Panel):
         wx.Panel.__init__(self, parent, **kwargs)
 
         title_panel = TitlePanel(self, stage_num, stage_name)
+
+        self.filtering_methods = filtering.methods
+        self.method_names = [filtering_method.name
+                        for filtering_method in self.filtering_methods]
+        self.method_descriptions = [filtering_method.description
+                        for filtering_method in self.filtering_methods]
         method_chooser = NamedChoiceCtrl(self, name="Filter method:",
-                                 choices=["Infinite impulse response",
-                                          "Finite impulse response"],
+                                 choices=self.method_names,
                                         )
-        self.method_description = wx.StaticText(self, 
+        self.method_description_text = wx.StaticText(self, 
                                   label="Description: Choose a filter method.") 
         method_controls = ControlsPanel(self)
-        # XXX Just for testing...
-        butterworth_button = wx.Button(self, label='Butterworth')
-        hamming_button     = wx.Button(self, label='Hamming')
-        self.Bind(wx.EVT_BUTTON, self._butter,  butterworth_button)
-        self.Bind(wx.EVT_BUTTON, self._hamming, hamming_button)
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         ea_flag = wx.EXPAND|wx.ALL
         sizer.Add(title_panel, proportion=0, flag=ea_flag, border=5)
         sizer.Add(method_chooser, proportion=1, flag=wx.ALL|wx.ALIGN_LEFT, 
                   border=5)
-        sizer.Add(self.method_description, proportion=1, flag=ea_flag, 
+        sizer.Add(self.method_description_text, proportion=1, flag=ea_flag, 
                   border=5)
         sizer.Add(method_controls, proportion=1, flag=ea_flag, border=5)
-        # XXX just for testing...
-        sizer.Add(butterworth_button, proportion=0)
-        sizer.Add(hamming_button, proportion=0)
         
         self.SetSizer(sizer)
         
         self.Bind(wx.EVT_CHOICE, self._method_choice_made,
                   method_chooser.choice)
+        self._method_choice_made(index=0)
 
-    # XXX just for testing...
-    def _butter(self, event):
-        pub.sendMessage(topic="TEST FILTERING BUTTER")
+    def _method_choice_made(self, event=None, index=None):
+        if index is None:
+            method_chosen = event.GetString()
+            index = self.method_names.index(method_chosen)
 
-    # XXX just for testing...
-    def _hamming(self, event):
-        pub.sendMessage(topic="TEST FILTERING HAMMING")
-
-    def _method_choice_made(self, event):
-        method_chosen = event.GetString()
-        self.method_description.SetLabel(
-           "Description: Description for %s filtering method." % method_chosen)
+        self.method_description_text.SetLabel(
+           "Description: %s" % self.method_descriptions[index])
         self.Layout()
 
 class DetectionPanel(wx.Panel):

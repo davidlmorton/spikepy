@@ -21,19 +21,23 @@ for file in files:
         print "registered '%s' type" % name
         file_readers[name] = eval('%s.read_file' % module_name)
 
-def open_data_file(filename, data_format='guess', **kwargs):
+def open_data_file(fullpath, data_format='guess', **kwargs):
     """
     Open a datafile given the filename and return a Trial object.
     """
-    time_collected = os.stat(filename).st_ctime # file creation time
+    time_collected = os.stat(fullpath).st_ctime # file creation time
 
     if data_format == 'guess':
-        data_format = guess_data_format(filename)
+        data_format = guess_data_format(fullpath)
     read_in_file = file_readers[data_format]
 
-    voltage_traces, sampling_freq = read_in_file(filename, **kwargs)
+    voltage_traces, sampling_freq = read_in_file(fullpath, **kwargs)
     trial = Trial()
-    trial.set_traces(voltage_traces, sampling_freq, time_collected, filename)
+    trial.set_traces(voltage_traces, 
+                     sampling_freq=sampling_freq, 
+                     time_collected=time_collected, 
+                     fullpath=fullpath,
+                     trace_type='raw')
     return trial
 
     

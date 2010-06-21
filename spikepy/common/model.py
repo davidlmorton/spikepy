@@ -4,8 +4,7 @@ import wx
 from wx.lib.pubsub import Publisher as pub
 
 from .open_data_file import open_data_file
-from ..filtering.simple_iir import butterworth, bessel
-from ..filtering.simple_fir import fir_filter
+from ..stages import filtering, detection, extraction, clustering
 
 class Model(object):
     def __init__(self):
@@ -14,8 +13,7 @@ class Model(object):
     def setup_subscriptions(self):
         pub.subscribe(self._open_data_file, "OPEN DATA FILE")
         pub.subscribe(self._close_data_file, "CLOSE DATA FILE")
-        pub.subscribe(self._filter_butter, "TEST FILTERING BUTTER")
-        pub.subscribe(self._filter_hamming, "TEST FILTERING HAMMING")
+        pub.subscribe(self._filter, "FILTER")
 
     def _open_data_file(self, message):
         fullpath = message.data
@@ -27,9 +25,11 @@ class Model(object):
     def open_file(self, fullpath):
         self.trials[fullpath] = open_data_file(fullpath)
         # call sendMessage after thread exits. (Publisher is NOT threadsafe)
-        wx.CallAfter(pub.sendMessage, topic='TRIAL ADDED', 
-                     data=self.trials[fullpath])
-        wx.CallAfter(pub.sendMessage, topic='FILE OPENED', data=fullpath)
+        wx.CallAfter(self._file_opened, fullpath)
+
+    def _file_opened(self, fullpath):
+        pub.sendMessage(topic='TRIAL ADDED', data=self.trials[fullpath])
+        pub.sendMessage(topic='FILE OPENED', data=fullpath)
 
     def _close_data_file(self, message):
         fullpath = message.data
@@ -37,21 +37,17 @@ class Model(object):
             del self.trials[fullpath]
             pub.sendMessage(topic='FILE CLOSED', data=fullpath)
 
-    def _filter_butter(self, message):
+    def _filter(self, message):
+        stage_name, method_name, method_parameters = message.data
+        trace_type = stage_name.split()[0]
         for trial in self.trials.values():
-            trial.detection_traces = []
-            for trace in trial.traces:
-                trial.detection_traces.append(
-                    butterworth(trace, trial.sampling_freq, 300, 3, 'high')) 
-            pub.sendMessage(topic='TRIAL DETECTION FILTERED', data=trial)
-
-    def _filter_hamming(self, message):
-        for trial in self.trials.values():
-            trial.detection_traces = []
-            for trace in trial.traces:
-                trial.detection_traces.append(
-                    fir_filter(trace, trial.sampling_freq, 300, 'hamming', 
-                               101, 'high')) 
-            pub.sendMessage(topic='TRIAL DETECTION FILTERED', data=trial)
-
+            raw_traces = trial.traces['raw']
+            filtered_traces = []
+            for raw_trace in raw_traces:
+                method = get_method(method_name)
+                filtered_trace = method(*method_parameters)
+                filtered_traces.append(filtered_trace)
+            trial.set_traces(filtered_traces, trace_type=trace_type)
+            pub.sendMessage(topic='TRIAL %s FILTERED' % trace_type.upper(),
+                            data=trial)
 
