@@ -27,7 +27,7 @@ class FilterPanel(wx.Panel):
         method_chooser = NamedChoiceCtrl(self, name="Filter method:",
                                  choices=["Infinite impulse response",
                                           "Finite impulse response"],
-                                          bar_width=80)
+                                        )
         self.method_description = wx.StaticText(self, 
                                   label="Description: Choose a filter method.") 
         method_controls = ControlsPanel(self)
@@ -40,7 +40,7 @@ class FilterPanel(wx.Panel):
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         ea_flag = wx.EXPAND|wx.ALL
         sizer.Add(title_panel, proportion=0, flag=ea_flag, border=5)
-        sizer.Add(method_chooser, proportion=1, flag=ea_flag|wx.ALIGN_CENTER, 
+        sizer.Add(method_chooser, proportion=1, flag=wx.ALL|wx.ALIGN_LEFT, 
                   border=5)
         sizer.Add(self.method_description, proportion=1, flag=ea_flag, 
                   border=5)

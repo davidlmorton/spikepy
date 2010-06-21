@@ -23,17 +23,26 @@ def get_bitmap_icon(name):
     raise RuntimeError("Cannot find image named %s in icons folder." % name)
 
 class NamedChoiceCtrl(wx.Panel):
-    def __init__(self, parent, name="", choices=[], bar_width=75, **kwargs):
+    def __init__(self, parent, name="", choices=[], bar_width=None, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
 
         self.name = wx.StaticText(self, label=name)
-        self.choice = wx.Choice(self, choices=choices, size=(bar_width,-1))
+        if bar_width == None and len(choices) > 0:
+            bar_width_in_characters = max(map(len, choices))
+            bar_width = bar_width_in_characters*8
+            self.choice = wx.Choice(self, choices=choices, size=(bar_width, 
+                                                                 -1))
+        elif bar_width == None and len(choices) == 0:
+            self.choice = wx.Choice(self, choices=choices, size=(75, -1))
+        else:
+            self.choice = wx.Choice(self, choices=choices, size=(bar_width,-1))
         
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        sizer.Add(self.name, proportion=1, 
-                  flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
-        sizer.Add(self.choice, proportion=1, 
-                  flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+        sizer.Add(self.name, proportion=0, 
+                  flag=wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add((10,5), proportion=0)
+        sizer.Add(self.choice, proportion=0, 
+                  flag=wx.ALIGN_CENTER_VERTICAL)
 
         self.SetSizer(sizer)
 
