@@ -64,3 +64,6 @@ class NamedTextCtrl(wx.Panel):
 
         self.SetSizer(sizer)
 
+    def GetValue(self):
+        return self.text_ctrl.GetValue()
+
