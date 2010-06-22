@@ -36,16 +36,14 @@ class FilterPanel(wx.Panel):
                                         )
         self.method_description_text = wx.StaticText(self, 
                                   label="Description: Choose a filter method.") 
-        method_controls = ControlsPanel(self)
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         ea_flag = wx.EXPAND|wx.ALL
         sizer.Add(title_panel, proportion=0, flag=ea_flag, border=5)
-        sizer.Add(method_chooser, proportion=1, flag=wx.ALL|wx.ALIGN_LEFT, 
+        sizer.Add(method_chooser, proportion=0, 
+                  flag=wx.ALL|wx.ALIGN_LEFT|wx.EXPAND, border=5)
+        sizer.Add(self.method_description_text, proportion=0, flag=ea_flag, 
                   border=5)
-        sizer.Add(self.method_description_text, proportion=1, flag=ea_flag, 
-                  border=5)
-        sizer.Add(method_controls, proportion=1, flag=ea_flag, border=5)
         
         self.SetSizer(sizer)
         
@@ -60,6 +58,11 @@ class FilterPanel(wx.Panel):
 
         self.method_description_text.SetLabel(
            "Description: %s" % self.method_descriptions[index])
+        method_controls = self.filtering_methods[index].ControlPanel(self)
+
+        sizer = self.GetSizer()
+        sizer.Add(method_controls, proportion=0, flag=wx.EXPAND|wx.ALL, 
+                 border=5)
         self.Layout()
 
 class DetectionPanel(wx.Panel):
@@ -86,9 +89,9 @@ class TitlePanel(wx.Panel):
         stage_name_text = wx.StaticText(self, label=stage_name)
         
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        sizer.Add(stage_num_text, proportion=1, flag=wx.EXPAND|wx.ALL, 
+        sizer.Add(stage_num_text, proportion=0, flag=wx.EXPAND|wx.ALL, 
                                                                     border=5)
-        sizer.Add(stage_name_text, proportion=1, 
+        sizer.Add(stage_name_text, proportion=0, 
                   flag=wx.ALIGN_CENTER_VERTICAL)
 
         self.SetSizer(sizer)
@@ -100,7 +103,7 @@ class DescriptionPanel(wx.Panel):
         description_text = wx.StaticText(self, 
                                     label="Description: %s" % self.description)
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        sizer.Add(description_text, proportion=1)
+        sizer.Add(description_text, proportion=0)
         
         self.SetSizer(sizer)
 

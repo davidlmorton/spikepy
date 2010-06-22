@@ -121,6 +121,7 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
     def _file_closed(self, message):
         fullpath = message.data
         self.opened_files.remove(fullpath)
+        pub.sendMessage(topic='SHOW PLOT', data='DEFAULT')
         self._update()
 
     def _open_file(self, event):

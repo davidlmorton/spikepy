@@ -30,20 +30,16 @@ class NamedChoiceCtrl(wx.Panel):
         if bar_width == None and len(choices) > 0:
             bar_width_in_characters = max(map(len, choices))
             bar_width = bar_width_in_characters*8
-            self.choice = wx.Choice(self, choices=choices, size=(bar_width, 
-                                                                 -1))
+            self.choice = wx.Choice(self, choices=choices) 
         elif bar_width == None and len(choices) == 0:
-            self.choice = wx.Choice(self, choices=choices, size=(75, -1))
+            self.choice = wx.Choice(self, choices=choices)
         else:
-            self.choice = wx.Choice(self, choices=choices, size=(bar_width,-1))
-        
+            self.choice = wx.Choice(self, choices=choices)
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        sizer.Add(self.name, proportion=0, 
-                  flag=wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add(self.name, proportion=0, flag=wx.ALIGN_CENTER_VERTICAL)
         sizer.Add((10,5), proportion=0)
-        sizer.Add(self.choice, proportion=0, 
-                  flag=wx.ALIGN_CENTER_VERTICAL)
-
+        sizer.Add(self.choice, proportion=1, flag=wx.ALIGN_CENTER_VERTICAL)
+        
         self.SetSizer(sizer)
 
 class NamedTextCtrl(wx.Panel):
@@ -54,8 +50,9 @@ class NamedTextCtrl(wx.Panel):
         self.text_ctrl = wx.TextCtrl(self, size=(75,-1))
         
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        sizer.Add(self.name, proportion=1, 
+        sizer.Add(self.name, proportion=0, 
                   flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+        sizer.Add((10,5), proportion=0)
         sizer.Add(self.text_ctrl, proportion=1, 
                   flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
 
