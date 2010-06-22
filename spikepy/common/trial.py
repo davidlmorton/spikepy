@@ -18,12 +18,19 @@ class Trial(object):
         self.units = {} # XXX Flesh out later
 
     def set_traces(self, trace_list, 
-                   sampling_freq=1.0, 
-                   time_collected=time.time(), 
-                   fullpath='FULLPATH NOT SET', 
+                   sampling_freq=None, 
+                   time_collected=None, 
+                   fullpath=None, 
                    trace_type='raw'):
         "Make this trace_list the trace set for this trial."
-        self.traces[trace_type] = numpy.array(trace_list, dtype=numpy.float64)
-        self.sampling_freq = sampling_freq
-        self.time_collected = time_collected
-        self.fullpath = fullpath
+        array_trace_list = [numpy.array(trace,dtype=numpy.float64)
+                            for trace in trace_list]
+        self.traces[trace_type.lower()] = numpy.vstack(
+                                                     array_trace_list)
+
+        if sampling_freq is not None:
+            self.sampling_freq = sampling_freq
+        if time_collected is not None:
+            self.time_collected = time_collected
+        if fullpath is not None:
+            self.fullpath = fullpath

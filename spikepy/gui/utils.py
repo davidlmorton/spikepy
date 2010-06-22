@@ -42,6 +42,12 @@ class NamedChoiceCtrl(wx.Panel):
         
         self.SetSizer(sizer)
 
+    def GetStringSelection(self):
+        return self.choice.GetStringSelection()
+
+    def SetStringSelection(self, string):
+        return self.choice.SetStringSelection(string)
+
 class NamedTextCtrl(wx.Panel):
     def __init__(self, parent, name="", **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)

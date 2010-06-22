@@ -44,23 +44,24 @@ class Model(object):
     # ---- FILTER ----
     def _filter(self, message):
         stage_name, method_name, method_parameters = message.data
-        trace_type = stage_name.split()[0]
+        trace_type = stage_name.split()[0] # removes ' filter' from name
         for trial in self.trials.values():
             startWorker(self._filter_consumer, self._filter_worker,
-                        wargs=(trial, method_name, method_parameters),
+                        wargs=(trial, method_name, method_parameters, 
+                               trace_type),
                         cargs=(trace_type,))
 
     def _filter_worker(self, trial, method_name, method_parameters, trace_type):
         raw_traces = trial.traces['raw']
         filtered_traces = []
-        for raw_trace in raw_traces:
-            method = get_method(method_name)
-            filtered_trace = method(*method_parameters)
-            filtered_traces.append(filtered_trace)
+        method = filtering.get_method(method_name)
+        filtered_traces = method.run(raw_traces, 
+                                    sampling_freq=trial.sampling_freq, 
+                                    **method_parameters)
         trial.set_traces(filtered_traces, trace_type=trace_type)
         return trial
 
-    def _filter_consumer(self, delayed_result):
+    def _filter_consumer(self, delayed_result, trace_type):
         trial = delayed_result.get()
         pub.sendMessage(topic='TRIAL_%s_FILTERED' % trace_type.upper(),
                         data=trial)

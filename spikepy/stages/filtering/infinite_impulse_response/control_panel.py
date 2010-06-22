@@ -17,7 +17,6 @@ class ControlPanel(wx.Panel):
                                              name="High cutoff frequency:")
         cutoff_textctrl = NamedTextCtrl(self, name="Cutoff frequency:")
         order_textctrl = NamedTextCtrl(self, name="Order:")
-        filter_button = wx.Button(self, label="Run filter")
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         sizer.Add(function_chooser, proportion=0, 
@@ -26,11 +25,8 @@ class ControlPanel(wx.Panel):
                   flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, border=2)
         sizer.Add(order_textctrl, proportion=0, 
                   flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, border=2)
-        sizer.Add(filter_button, proportion=0, 
-                  flag=wx.ALIGN_RIGHT|wx.ALL, border=2)
         self.SetSizer(sizer)
 
-        self.Bind(wx.EVT_BUTTON, self._run_filter, filter_button)
         self.Bind(wx.EVT_CHOICE, self._passband_choice_made, 
                   passband_chooser.choice)
         self.low_cutoff_textctrl = low_cutoff_textctrl
@@ -41,7 +37,7 @@ class ControlPanel(wx.Panel):
         self.order_textctrl = order_textctrl
         self._passband_choice_made()
 
-    def _run_filter(self, event=None):
+    def get_control_settings(self):
         function_chosen = self.function_chooser.choice.GetStringSelection()
         passband_chosen = self.passband_chooser.choice.GetStringSelection()
         if passband_chosen == "Band Pass":
@@ -53,11 +49,14 @@ class ControlPanel(wx.Panel):
         else:
             critical_freq = float(self.cutoff_textctrl.text_ctrl.GetValue())
         order = int(self.order_textctrl.text_ctrl.GetValue())
-        print function_chosen
-        print passband_chosen
-        print critical_freq
-        print order
 
+        kind = passband_chosen.lower().split()[0] 
+        settings = {'function_name':function_chosen, 
+                    'critical_freq':critical_freq, 
+                    'order':order, 
+                    'kind':kind}
+        print settings
+        return settings
 
     def _passband_choice_made(self, event=None):
         self.low_cutoff_textctrl.Show(False)
