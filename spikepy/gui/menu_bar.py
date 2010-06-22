@@ -54,13 +54,13 @@ class SpikepyMenuBar(wx.MenuBar):
         frame.Bind(wx.EVT_MENU, self._toggle_toolbars, id=TOGGLE_TOOLBARS)
 
     def _open_file(self, event):
-        pub.sendMessage(topic='OPEN FILE', data=None)
+        pub.sendMessage(topic='OPEN_FILE', data=None)
 
     def _close_window(self, event):
-        pub.sendMessage(topic='CLOSE APPLICATION', data=None)
+        pub.sendMessage(topic='CLOSE_APPLICATION', data=None)
 
     def _toggle_toolbars(self, event):
-        pub.sendMessage(topic='TOGGLE TOOLBAR', data=None)
+        pub.sendMessage(topic='TOGGLE_TOOLBAR', data=None)
 
     def _about_box(self, event):
         # dialog box to open when "About" is clicked

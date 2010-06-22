@@ -65,7 +65,7 @@ class MyFrame(wx.Frame):
         menubar = SpikepyMenuBar(self)
         self.SetMenuBar(menubar)
 
-        pub.subscribe(self._close_application, topic="CLOSE APPLICATION")
+        pub.subscribe(self._close_application, topic="CLOSE_APPLICATION")
         
 
     def _close_application(self, message):

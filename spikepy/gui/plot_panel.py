@@ -51,7 +51,7 @@ class PlotPanel (wx.Panel):
         min_size = (dpi*figwidth, dpi*figheight+toolbar_height)
         self.SetMinSize(min_size)
 
-        pub.subscribe(self._toggle_toolbar, topic="TOGGLE TOOLBAR")
+        pub.subscribe(self._toggle_toolbar, topic="TOGGLE_TOOLBAR")
 
     def _toggle_toolbar(self, message):
         if (message.data is None or 
