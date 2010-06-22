@@ -14,17 +14,17 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         Inputs:
             parent          : the parent panel/frame 
         Subscribes to:
-            'FILE OPENED'           : data=fullpath  will remove 'Opening' 
+            'FILE_OPENED'           : data=fullpath  will remove 'Opening' 
                                       status from Num column.
-            'FILE ALREADY OPENED'   : data=fullpath  will remove 'Opening' 
+            'FILE_ALREADY_OPENED'   : data=fullpath  will remove 'Opening' 
                                       status from Num column.
-            'FILE CLOSED'           : data=fullpath  will remove file from
+            'FILE_CLOSED'           : data=fullpath  will remove file from
                                       the list.
-            'OPENING DATA FILE'     : data=fullpath  will add file to the
+            'OPENING_DATA_FILE'     : data=fullpath  will add file to the
                                       list with Num column set to 'Opening'.
         Publishes:
-            'OPEN FILE'             : data=self        
-            'CLOSE DATA FILE'       : data=fullpath      
+            'OPEN_FILE'             : data=self        
+            'CLOSE_DATA_FILE'       : data=fullpath      
         """
         wx.ListCtrl.__init__(self, parent, **kwargs)
         listmix.ListCtrlAutoWidthMixin.__init__(self)
@@ -37,10 +37,10 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
 
         self.Bind(wx.EVT_CONTEXT_MENU, self._context_menu)
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self._item_selected)
-        pub.subscribe(self._file_opened, topic='FILE OPENED')
-        pub.subscribe(self._file_opened, topic='FILE ALREADY OPENED')
-        pub.subscribe(self._file_closed, topic='FILE CLOSED')
-        pub.subscribe(self._opening_data_file, topic='OPENING DATA FILE')
+        pub.subscribe(self._file_opened, topic='FILE_OPENED')
+        pub.subscribe(self._file_opened, topic='FILE_ALREADY_OPENED')
+        pub.subscribe(self._file_closed, topic='FILE_CLOSED')
+        pub.subscribe(self._opening_data_file, topic='OPENING_DATA_FILE')
 
     def _item_selected(self, event):
         item_num = self.GetFocusedItem()
@@ -48,7 +48,7 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
             self.SetItemState(item_num, 0, wx.LIST_STATE_SELECTED)
             return
         fullpath = self.opened_files[item_num]
-        pub.sendMessage(topic="FILE SELECTION CHANGED", data=fullpath)
+        pub.sendMessage(topic="FILE_SELECTION_CHANGED", data=fullpath)
 
     def _update(self):
         self.DeleteAllItems()
@@ -124,10 +124,10 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         self._update()
 
     def _open_file(self, event):
-        pub.sendMessage(topic='OPEN FILE', data=self)
+        pub.sendMessage(topic='OPEN_FILE', data=self)
 
     def _close_file(self, event):
         if self.GetItemCount():
             item_num = self.GetFocusedItem()
             fullpath = self.opened_files[item_num]
-            pub.sendMessage(topic='CLOSE DATA FILE', data=fullpath)
+            pub.sendMessage(topic='CLOSE_DATA_FILE', data=fullpath)

@@ -9,9 +9,9 @@ class MultiPlotPanel(ScrolledPanel):
         A panel which holds multiple similar PlotPanels. Right-click will
             toggle showing a toolbar with PlotPanels.
         Subscribes to pubsub message: 
-            'SHOW PLOT' to alter which PlotPanel
+            'SHOW_PLOT' to alter which PlotPanel
                 is visible.  (data=new_panel_key)
-            'FILE CLOSED' to destroy PlotPanels after the file they are
+            'FILE_CLOSED' to destroy PlotPanels after the file they are
                 associated with is closed.
         """
         ScrolledPanel.__init__(self, parent)
@@ -29,13 +29,12 @@ class MultiPlotPanel(ScrolledPanel):
         self.SetupScrolling()
 
         self.Bind(wx.EVT_CONTEXT_MENU, self._toggle_toolbar)
-        pub.subscribe(self._show_plot, topic='SHOW PLOT')
-        pub.subscribe(self._remove_plot, topic='REMOVE PLOT')
+        pub.subscribe(self._show_plot, topic='SHOW_PLOT')
+        pub.subscribe(self._remove_plot, topic='REMOVE_PLOT')
 
     def _remove_plot(self, message):
         removed_panel_key = message.data
-        message.data = 'DEFAULT'
-        self._show_plot(message)
+        self._show_plot(new_panel_key='DEFAULT')
         self._plot_panels[removed_panel_key].Destroy()
         del self._plot_panels[removed_panel_key]
 
@@ -47,8 +46,9 @@ class MultiPlotPanel(ScrolledPanel):
         else: 
             self._toolbar_visible = True
 
-    def _show_plot(self, message):
-        new_panel_key = message.data
+    def _show_plot(self, message=None, new_panel_key=None):
+        if new_panel_key is None:
+            new_panel_key = message.data
         if new_panel_key not in self._plot_panels.keys():
             raise RuntimeError('Plot associated with "%s" does not exist.' %
                                 new_panel_key)

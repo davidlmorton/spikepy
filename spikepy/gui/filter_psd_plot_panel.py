@@ -16,9 +16,9 @@ class FilterPSDPlotPanel(MultiPlotPanel):
         MultiPlotPanel.__init__(self, parent, figsize=self.figsize,
                                               facecolor=self.facecolor,
                                               dpi=self.dpi)
-        pub.subscribe(self._trial_added, topic='TRIAL ADDED')
+        pub.subscribe(self._trial_added, topic='TRIAL_ADDED')
         pub.subscribe(self._trial_filtered, 
-                      topic='TRIAL %s FILTERED' % name.upper())
+                      topic='TRIAL_%s_FILTERED' % name.upper())
 
     def _trial_added(self, message):
         trial = message.data
