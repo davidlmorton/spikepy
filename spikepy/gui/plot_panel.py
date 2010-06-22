@@ -21,9 +21,15 @@ class PlotPanel (wx.Panel):
             canvas              : a FigureCanvasWxAgg from matplotlib's
                                   backends
             toggle_toolbar()    : to toggle the visible state of the toolbar
+            show_toolbar()      : to show the toolbar
+            hide_toolbar()      : to hide the toolbar
         Subscribes to:
-            'TOGGLE TOOLBAR'    : if data=None or data=self will toggle the
+            'TOGGLE_TOOLBAR'    : if data=None or data=self will toggle the
                                   visible state of the toolbar
+            'SHOW_TOOLBAR'      : if data=None or data=self will show the
+                                  toolbar
+            'HIDE_TOOLBAR'      : if data=None or data=self will hide the
+                                  toolbar
         """
         wx.Panel.__init__(self, parent)
 
@@ -36,10 +42,11 @@ class PlotPanel (wx.Panel):
 
         self.toolbar = Toolbar(self.canvas)
         self.toolbar.Realize()
+        self._toolbar_visible = toolbar_visible
         if toolbar_visible:
-            self._show_toolbar(sizer)
+            self.show_toolbar()
         else:
-            self._hide_toolbar(sizer)
+            self.hide_toolbar()
 
         figheight = self.figure.get_figheight()
         figwidth  = self.figure.get_figwidth()
@@ -52,7 +59,10 @@ class PlotPanel (wx.Panel):
         self.SetMinSize(min_size)
 
         pub.subscribe(self._toggle_toolbar, topic="TOGGLE_TOOLBAR")
+        pub.subscribe(self._show_toolbar,   topic="SHOW_TOOLBAR")
+        pub.subscribe(self._hide_toolbar,   topic="HIDE_TOOLBAR")
 
+    # --- TOGGLE TOOLBAR ----
     def _toggle_toolbar(self, message):
         if (message.data is None or 
             self is message.data):
@@ -64,18 +74,43 @@ class PlotPanel (wx.Panel):
         '''
         sizer = self.GetSizer()
         if self._toolbar_visible:
-            self._hide_toolbar(sizer)
+            self.hide_toolbar()
         else:
-            self._show_toolbar(sizer)
+            self.show_toolbar()
 
-    def _show_toolbar(self, sizer):
-        self.toolbar.Show()
-        sizer.Add(self.toolbar, 0, wx.EXPAND)
-        self._toolbar_visible = True
-        sizer.Layout()
+    # --- SHOW TOOLBAR ----
+    def _show_toolbar(self, message):
+        if (message.data is None or 
+            self is message.data):
+            self.show_toolbar()
 
-    def _hide_toolbar(self, sizer):
-        self.toolbar.Show(False)
-        sizer.Detach(self.toolbar)
-        self._toolbar_visible = False
-        sizer.Layout()
+    def show_toolbar(self):
+        '''
+        Add the toolbar to the sizer and make it visible.
+        '''
+        if not self._toolbar_visible:
+            sizer = self.GetSizer()
+            sizer.Add(self.toolbar, 0, wx.EXPAND)
+
+            self.toolbar.Show()
+            self._toolbar_visible = True
+            sizer.Layout()
+
+    def _hide_toolbar(self, message):
+        if (message.data is None or 
+            self is message.data):
+            self.hide_toolbar()
+
+    # --- HIDE TOOLBAR ----
+    def hide_toolbar(self):
+        '''
+        Remove the toolbar from the sizer and make it invisible.
+        '''
+        if self._toolbar_visible:
+            self.toolbar.Show(False)
+
+            sizer = self.GetSizer()
+            sizer.Detach(self.toolbar)
+
+            self._toolbar_visible = False
+            sizer.Layout()

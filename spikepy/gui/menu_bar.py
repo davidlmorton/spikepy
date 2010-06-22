@@ -12,7 +12,7 @@ DEFAULT        = wx.NewId()
 ABOUT          = wx.ID_ABOUT
 NO_WORKSPACES  = wx.NewId()
 WORKSPACES     = wx.NewId()
-TOGGLE_TOOLBARS= wx.NewId()
+SHOW_TOOLBARS  = wx.NewId()
 
 class SpikepyMenuBar(wx.MenuBar):
     def __init__(self, frame, *args, **kwargs):
@@ -36,7 +36,7 @@ class SpikepyMenuBar(wx.MenuBar):
                                   text="No saved custom workspaces")
         workspaces_submenu.Enable(NO_WORKSPACES, False)
         view_menu.AppendMenu(WORKSPACES, "Workspaces", workspaces_submenu)
-        view_menu.Append(TOGGLE_TOOLBARS, text="Toggle toolbars on plots")
+        view_menu.Append(SHOW_TOOLBARS, text="Show toolbars on plots", kind=wx.ITEM_CHECK )
         
         # --- HELP ---
         help_menu = wx.Menu()
@@ -51,7 +51,9 @@ class SpikepyMenuBar(wx.MenuBar):
         frame.Bind(wx.EVT_MENU, self._close_window, id=EXIT)
         frame.Bind(wx.EVT_MENU, self._about_box, id=ABOUT)
         frame.Bind(wx.EVT_MENU, self._open_file, id=OPEN)
-        frame.Bind(wx.EVT_MENU, self._toggle_toolbars, id=TOGGLE_TOOLBARS)
+        frame.Bind(wx.EVT_MENU, self._show_toolbars, id=SHOW_TOOLBARS)
+
+        self._toolbars_shown = False
 
     def _open_file(self, event):
         pub.sendMessage(topic='OPEN_FILE', data=None)
@@ -59,8 +61,13 @@ class SpikepyMenuBar(wx.MenuBar):
     def _close_window(self, event):
         pub.sendMessage(topic='CLOSE_APPLICATION', data=None)
 
-    def _toggle_toolbars(self, event):
-        pub.sendMessage(topic='TOGGLE_TOOLBAR', data=None)
+    def _show_toolbars(self, event):
+        if self._toolbars_shown:
+            pub.sendMessage(topic='HIDE_TOOLBAR', data=None)
+            self._toolbars_shown = False
+        else:
+            pub.sendMessage(topic='SHOW_TOOLBAR', data=None)
+            self._toolbars_shown = True
 
     def _about_box(self, event):
         # dialog box to open when "About" is clicked
