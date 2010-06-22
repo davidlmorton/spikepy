@@ -61,8 +61,8 @@ class FilterPanel(wx.Panel):
         method_controls = self.filtering_methods[index].ControlPanel(self)
 
         sizer = self.GetSizer()
-        sizer.Add(method_controls, proportion=0, flag=wx.EXPAND|wx.ALL, 
-                 border=5)
+        sizer.Add(method_controls, proportion=1, 
+                  flag=wx.EXPAND|wx.ALL|wx.ALIGN_TOP, border=5)
         self.Layout()
 
 class DetectionPanel(wx.Panel):
