@@ -46,6 +46,7 @@ class FilterPSDPlotPanel(MultiPlotPanel):
 
         figure = self._plot_panels[fullpath].figure
         for trace, axes in zip(traces, figure.get_axes()):
+            axes.set_autoscale_on(False)
             lines = axes.get_lines()
             if len(lines) == 2:
                 del(axes.lines[1])
