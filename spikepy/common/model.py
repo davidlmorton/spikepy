@@ -1,4 +1,3 @@
-
 import wx
 from wx.lib.pubsub import Publisher as pub
 from wx.lib.delayedresult import startWorker
@@ -45,25 +44,23 @@ class Model(object):
     def _filter(self, message):
         stage_name, method_name, method_parameters = message.data
         trace_type = stage_name.split()[0] # removes ' filter' from name
-        for trial in self.trials.values():
-            startWorker(self._filter_consumer, self._filter_worker,
-                        wargs=(trial, method_name, method_parameters, 
+        startWorker(self._filter_consumer, self._filter_worker,
+                        wargs=(method_name, method_parameters, 
                                trace_type),
                         cargs=(trace_type,))
 
-    def _filter_worker(self, trial, method_name, method_parameters, trace_type):
-        raw_traces = trial.traces['raw']
-        filtered_traces = []
-        method = filtering.get_method(method_name)
-        filtered_traces = method.run(raw_traces, 
-                                    sampling_freq=trial.sampling_freq, 
-                                    **method_parameters)
-        trial.set_traces(filtered_traces, trace_type=trace_type)
-        return trial
+    def _filter_worker(self, method_name, method_parameters, trace_type):
+        for trial in self.trials.values():
+            raw_traces = trial.traces['raw']
+            filtered_traces = []
+            method = filtering.get_method(method_name)
+            filtered_traces = method.run(raw_traces, 
+                                        sampling_freq=trial.sampling_freq, 
+                                        **method_parameters)
+            trial.set_traces(filtered_traces, trace_type=trace_type)
 
     def _filter_consumer(self, delayed_result, trace_type):
-        trial = delayed_result.get()
-        pub.sendMessage(topic='TRIAL_%s_FILTERED' % trace_type.upper(),
-                        data=trial)
-
-
+        for trial in self.trials.values():
+            pub.sendMessage(topic='TRIAL_%s_FILTERED' % trace_type.upper(),
+                            data=trial)
+        pub.sendMessage(topic='FILTERING_COMPLETED')

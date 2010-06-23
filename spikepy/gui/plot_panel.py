@@ -37,6 +37,7 @@ class PlotPanel (wx.Panel):
         self.figure = Figure(**kwargs)
         self.canvas = Canvas(self, -1, self.figure)
         self.toolbar = Toolbar(self.canvas)
+        self.toolbar.Show(False)
         self.toolbar.Realize()
 
         sizer = wx.BoxSizer(wx.VERTICAL)

@@ -32,6 +32,10 @@ class MultiPlotPanel(ScrolledPanel):
         pub.subscribe(self._show_plot, topic='SHOW_PLOT')
         pub.subscribe(self._remove_plot, topic='REMOVE_PLOT')
 
+    def add_plot(self, plot_panel, key):
+        self._plot_panels[key] = plot_panel
+        self.GetSizer().Add(plot_panel, 1, wx.EXPAND)
+
     def _remove_plot(self, message):
         removed_panel_key = message.data
         self._show_plot(new_panel_key='DEFAULT')
@@ -53,12 +57,10 @@ class MultiPlotPanel(ScrolledPanel):
             raise RuntimeError('Plot associated with "%s" does not exist.' %
                                 new_panel_key)
         shown_plot_panel = self._plot_panels[self._currently_shown]
-        self.GetSizer().Detach(shown_plot_panel)
         shown_plot_panel.Show(False)
 
         self._currently_shown = new_panel_key
         showing_plot_panel = self._plot_panels[new_panel_key]
-        self.GetSizer().Add(showing_plot_panel, 1, wx.EXPAND)
         showing_plot_panel.Show(True)
         self.Layout()
 

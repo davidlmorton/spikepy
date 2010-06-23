@@ -9,9 +9,9 @@ from .plot_panel import PlotPanel
 
 class FilterPSDPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
-        self.figsize   = (6, 4.3)
+        self.figsize   = (5, 2)
         self.facecolor = 'white'
-        self.dpi       = 72.0
+        self.dpi       = 60.0
         self.name      = name
         MultiPlotPanel.__init__(self, parent, figsize=self.figsize,
                                               facecolor=self.facecolor,
@@ -24,9 +24,9 @@ class FilterPSDPlotPanel(MultiPlotPanel):
         trial = message.data
         fullpath = trial.fullpath
         filename = os.path.split(fullpath)[1]
-        self._plot_panels[fullpath] = PlotPanel(self, figsize=self.figsize,
-                                                      facecolor=self.facecolor,
-                                                      dpi=self.dpi)
+        self.add_plot(PlotPanel(self, figsize=self.figsize,
+                                      facecolor=self.facecolor,
+                                      dpi=self.dpi), fullpath)
 
         figure = self._plot_panels[fullpath].figure
 

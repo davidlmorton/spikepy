@@ -1,6 +1,7 @@
 import os
 
 from wx.lib.pubsub import Publisher as pub
+import wx
 
 from .multi_plot_panel import MultiPlotPanel
 from .plot_panel import PlotPanel
@@ -21,9 +22,9 @@ class FilterTracePlotPanel(MultiPlotPanel):
     def _trial_added(self, message):
         trial = message.data
         fullpath = trial.fullpath
-        self._plot_panels[fullpath] = PlotPanel(self, figsize=self.figsize,
-                                                      facecolor=self.facecolor,
-                                                      dpi=self.dpi)
+        self.add_plot(PlotPanel(self, figsize=self.figsize,
+                                      facecolor=self.facecolor,
+                                      dpi=self.dpi), fullpath)
 
         figure = self._plot_panels[fullpath].figure
 
@@ -37,7 +38,7 @@ class FilterTracePlotPanel(MultiPlotPanel):
                 axes = figure.add_subplot(len(traces), 1, i+1,
                                           sharex=first_axes,
                                           sharey=first_axes)
-            axes.plot(trace, color='black', linewidth=2.0, label='Raw')
+            axes.plot(trace, color='black', linewidth=1.3, label='Raw')
             axes.set_ylabel('Trace #%d' % (i+1))
             if i+1 < len(traces): #all but the last trace
                 # make the x/yticklabels dissapear
@@ -63,6 +64,6 @@ class FilterTracePlotPanel(MultiPlotPanel):
                 filtered_line = lines[1]
                 filtered_line.set_ydata(trace)
             else:
-                axes.plot(trace, color='blue', linewidth=1.5, label='Filtered')
+                axes.plot(trace, color='blue', linewidth=1.0, label='Filtered')
         axes.legend()
         figure.canvas.draw()

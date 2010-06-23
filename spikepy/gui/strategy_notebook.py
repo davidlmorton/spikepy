@@ -1,7 +1,7 @@
 import wx
 from wx.lib.pubsub import Publisher as pub
 
-from .utils import NamedChoiceCtrl
+from .utils import NamedChoiceCtrl, StaticBoxText
 from ..stages import filtering
 
 class StrategyNotebook(wx.Notebook):
@@ -43,7 +43,7 @@ class FilterPanel(wx.Panel):
         # --- setup other panel elements ---
         self.method_chooser = NamedChoiceCtrl(self, name="Filter method:",
                                  choices=self.method_names)
-        self.method_description_text = wx.StaticText(self) 
+        self.method_description_text = StaticBoxText(self, label='Description') 
         self.filter_button = wx.Button(self, label="Run filter")
         self.filter_button.Show(False)
 
@@ -58,7 +58,7 @@ class FilterPanel(wx.Panel):
                       flag=ea_flag,                        border=5)
         for method in self.methods.values():
             sizer.Add(method['control_panel'],  proportion=0,
-                      flag=wx.ALL|wx.ALIGN_TOP,            border=5)
+                      flag=ea_flag,  border=5)
         sizer.Add(self.filter_button,           proportion=0, 
                       flag=wx.ALL,                         border=3)
         self.SetSizer(sizer)
@@ -67,6 +67,12 @@ class FilterPanel(wx.Panel):
                   self.method_chooser.choice)
         self.Bind(wx.EVT_BUTTON, self._run_filter, self.filter_button)
         self._method_choice_made(method_name=self._method_name_chosen)
+        
+        pub.subscribe(self._filtering_completed, topic='FILTERING_COMPLETED')
+
+    def _filtering_completed(self, message=None):
+        self.filter_button.SetLabel('Run filter')
+        self.filter_button.Enable()
 
     def _method_choice_made(self, event=None, method_name=None):
         self.methods[self._method_name_chosen]['control_panel'].Show(False)
@@ -77,20 +83,23 @@ class FilterPanel(wx.Panel):
         else:
             self._method_name_chosen = self.method_chooser.GetStringSelection()
 
-        self.method_description_text.SetLabel(
-                "Description: %s" % 
+        self.method_description_text.SetText( 
                 self.methods[self._method_name_chosen]['description'])
 
         self.methods[self._method_name_chosen]['control_panel'].Show(True)
         self.filter_button.Show(True)
-        self.Layout()
+        wx.CallLater(10,self.Layout)
 
     def _run_filter(self, event=None):
         control_panel = self.methods[self._method_name_chosen]['control_panel']
         settings = control_panel.get_control_settings()
+        self.filter_button.SetLabel('Filtering...')
+        self.filter_button.Disable()
+        wx.Yield() # about to let scipy hog cpu, so process all wx events.
         pub.sendMessage(topic='FILTER', data=(self.stage_name, 
                                               self._method_name_chosen,
                                               settings))
+
         
 
 class DetectionPanel(wx.Panel):
