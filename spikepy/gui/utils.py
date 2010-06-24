@@ -40,9 +40,7 @@ class StaticBoxText(wx.Panel):
 
     def SetText(self, text):
         self.text.SetLabel(text)
-        while self.text.GetSize()[0] > (self.GetSize()[0]-2*self.border):
-            wx.Sleep(0.010)
-            self.Layout()
+        self.Layout()
 
 class NamedChoiceCtrl(wx.Panel):
     def __init__(self, parent, name="", choices=[], bar_width=None, **kwargs):
