@@ -88,7 +88,7 @@ class FilterPanel(wx.Panel):
 
         self.methods[self._method_name_chosen]['control_panel'].Show(True)
         self.filter_button.Show(True)
-        wx.CallLater(20, selfayout)
+        wx.CallLater(20, self.Layout)
 
     def _run_filter(self, event=None):
         control_panel = self.methods[self._method_name_chosen]['control_panel']
