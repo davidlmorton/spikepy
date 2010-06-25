@@ -44,8 +44,6 @@ class FilterPanel(wx.Panel):
         self.method_chooser = NamedChoiceCtrl(self, name="Filter method:",
                                  choices=self.method_names)
         self.method_description_text = StaticBoxText(self, label='Description') 
-        descr_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        descr_sizer.Add(self.method_description_text)
         self.filter_button = wx.Button(self, label="Run filter")
         self.filter_button.Show(False)
 
@@ -56,7 +54,7 @@ class FilterPanel(wx.Panel):
                       flag=ea_flag,                        border=5)
         sizer.Add(self.method_chooser,          proportion=0, 
                       flag=wx.ALL|wx.ALIGN_LEFT|wx.EXPAND, border=5)
-        sizer.Add(descr_sizer, proportion=0, 
+        sizer.Add(self.method_description_text, proportion=0, 
                       flag=ea_flag,                        border=5)
         for method in self.methods.values():
             sizer.Add(method['control_panel'],  proportion=0,
@@ -90,7 +88,7 @@ class FilterPanel(wx.Panel):
 
         self.methods[self._method_name_chosen]['control_panel'].Show(True)
         self.filter_button.Show(True)
-        self.Layout()
+        wx.CallLater(20, selfayout)
 
     def _run_filter(self, event=None):
         control_panel = self.methods[self._method_name_chosen]['control_panel']
