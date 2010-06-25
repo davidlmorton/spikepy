@@ -16,7 +16,7 @@ for file in files:
             name = module_name[5:-5]
         else:
             name = module_name[5:]
-        pub.sendMessage(topic=("registered '%s' type" % name).upper(), 
+        pub.sendMessage(topic=("REGISTERED_'%s'_TYPE" % name).upper(), 
                         data=name)
         print "registered '%s' type" % name
         file_readers[name] = eval('%s.read_file' % module_name)
