@@ -35,16 +35,7 @@ class MultiPlotPanel(ScrolledPanel):
     def add_plot(self, plot_panel, key):
         self._plot_panels[key] = plot_panel
         self.GetSizer().Add(plot_panel, 1, wx.EXPAND)
-
-        if self._currently_shown == 'DEFAULT':
-            shown_plot_panel = self._plot_panels[self._currently_shown]
-            shown_plot_panel.Show(False)
-
-            self._currently_shown = key
-            showing_plot_panel = self._plot_panels[key]
-            showing_plot_panel.Show(True)
-        else:
-            self._plot_panels[key].Show(False)
+        self._plot_panels[key].Show(False)
 
         self.Layout()
 

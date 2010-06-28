@@ -26,6 +26,11 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
             'OPEN_FILE'             : data=self        
             'CLOSE_DATA_FILE'       : data=fullpath      
         """
+        if 'style' in kwargs.keys():
+            kwargs['style'] = kwargs['style'] | wx.LC_SINGLE_SEL 
+        else:
+            kwargs['style'] = wx.LC_SINGLE_SEL
+
         wx.ListCtrl.__init__(self, parent, **kwargs)
         listmix.ListCtrlAutoWidthMixin.__init__(self)
 
@@ -42,8 +47,9 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         pub.subscribe(self._file_closed, topic='FILE_CLOSED')
         pub.subscribe(self._opening_data_file, topic='OPENING_DATA_FILE')
 
-    def _item_selected(self, event):
-        item_num = self.GetFocusedItem()
+    def _item_selected(self, event=None, item_num=None):
+        if item_num is None:
+            item_num = self.GetFocusedItem()
         if self.GetItemText(item_num) == 'Opening':
             self.SetItemState(item_num, 0, wx.LIST_STATE_SELECTED)
             return
@@ -93,13 +99,14 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         if self.GetItemCount():  
             item = wx.MenuItem(cm, self._cmid_open_file, 'Open Another File...')
         else:
-            item = wx.MenuItem(cm, self._cmid_open_file, 'Open File')
+            item = wx.MenuItem(cm, self._cmid_open_file, 'Open File...')
         bmp = utils.get_bitmap_icon('folder')
         item.SetBitmap(bmp)
         cm.AppendItem(item)
         # close file item
         if self.GetSelectedItemCount() > 1:
-            item = wx.MenuItem(cm, self._cmid_close_file, 'Close Files')
+            item = wx.MenuItem(cm, self._cmid_close_file, 'Close Files...')
+            raise NotImplimentedError()
         else: 
             item = wx.MenuItem(cm, self._cmid_close_file, 'Close File')
         bmp = utils.get_bitmap_icon('action_stop')
@@ -120,6 +127,11 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         fullpath = message.data
         self.opening_files.remove(fullpath)
         self._update()
+        if not self.opening_files:
+            index = self.opened_files.index(fullpath)
+            self.Select(index)
+            self._item_selected(item_num=index)
+
 
     def _file_closed(self, message):
         fullpath = message.data
@@ -131,10 +143,12 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         pub.sendMessage(topic='OPEN_FILE', data=self)
 
     def _close_file(self, event):
-        #if self.GetItemCount():
-        #    item_num = self.GetFocusedItem()
-        #    fullpath = self.opened_files[item_num]
-        #    pub.sendMessage(topic='CLOSE_DATA_FILE', data=fullpath)
+        if self.GetItemCount():
+            item_num = self.GetFocusedItem()
+            fullpath = self.opened_files[item_num]
+            pub.sendMessage(topic='CLOSE_DATA_FILE', data=fullpath)
+        # If we allow multiple items to be selected and closed...
+        """
         files_to_close = []
         selected_item_count = self.GetSelectedItemCount()
         if selected_item_count > 0:
@@ -150,4 +164,5 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
 
             for file in files_to_close:          
                 pub.sendMessage(topic='CLOSE_DATA_FILE', data=file)
+        """
 
