@@ -78,4 +78,6 @@ class ControlPanel(wx.Panel):
                          flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, border=2)
             self.high_cutoff_textctrl.Show(True)
             self.low_cutoff_textctrl.Show(True)
+        self.SetSize(self.GetBestSize())
         self.Layout()
+        self.GetParent().Layout()
