@@ -98,7 +98,10 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         item.SetBitmap(bmp)
         cm.AppendItem(item)
         # close file item
-        item = wx.MenuItem(cm, self._cmid_close_file, 'Close File')
+        if self.GetSelectedItemCount() > 1:
+            item = wx.MenuItem(cm, self._cmid_close_file, 'Close Files')
+        else: 
+            item = wx.MenuItem(cm, self._cmid_close_file, 'Close File')
         bmp = utils.get_bitmap_icon('action_stop')
         item.SetBitmap(bmp)
         cm.AppendItem(item)
@@ -128,7 +131,23 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         pub.sendMessage(topic='OPEN_FILE', data=self)
 
     def _close_file(self, event):
-        if self.GetItemCount():
-            item_num = self.GetFocusedItem()
+        #if self.GetItemCount():
+        #    item_num = self.GetFocusedItem()
+        #    fullpath = self.opened_files[item_num]
+        #    pub.sendMessage(topic='CLOSE_DATA_FILE', data=fullpath)
+        files_to_close = []
+        selected_item_count = self.GetSelectedItemCount()
+        if selected_item_count > 0:
+            item_num = self.GetFirstSelected()
             fullpath = self.opened_files[item_num]
-            pub.sendMessage(topic='CLOSE_DATA_FILE', data=fullpath)
+            files_to_close.append(fullpath)
+            item = 2
+            while item < selected_item_count + 1:
+                item_num = self.GetNextSelected(item_num)
+                fullpath = self.opened_files[item_num]
+                files_to_close.append(fullpath)
+                item += 1
+
+            for file in files_to_close:          
+                pub.sendMessage(topic='CLOSE_DATA_FILE', data=file)
+
