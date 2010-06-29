@@ -33,6 +33,12 @@ class MultiPlotPanel(ScrolledPanel):
         pub.subscribe(self._remove_plot, topic='REMOVE_PLOT')
 
     def add_plot(self, plot_panel, key):
+        ''' 
+        Add the plot, overwrite silently
+        '''
+        if key in self._plot_panels.keys():
+            self.GetSizer().Remove(self._plot_panels[key])
+
         self._plot_panels[key] = plot_panel
         self.GetSizer().Add(plot_panel, 1, wx.EXPAND)
         self._plot_panels[key].Show(False)

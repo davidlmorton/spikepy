@@ -18,7 +18,7 @@ class View(object):
         
 class MyFrame(wx.Frame):
 
-    def __init__(self, parent, id=-1, 
+    def __init__(self, parent, id=404040, 
                  title='Spikepy - A spike sorting framework.',
                  pos=wx.DefaultPosition, size=(1200, 550),
                  style=wx.DEFAULT_FRAME_STYLE|wx.SUNKEN_BORDER):

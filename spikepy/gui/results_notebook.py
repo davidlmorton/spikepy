@@ -1,8 +1,7 @@
 import wx
 from wx.lib.pubsub import Publisher as pub
 
-from .filter_trace_plot_panel import FilterTracePlotPanel
-from .filter_psd_plot_panel import FilterPSDPlotPanel
+from .filter_plot_panel import FilterPlotPanel
 
 class ResultsNotebook(wx.Notebook):
     def __init__(self, parent, **kwargs):
@@ -25,17 +24,10 @@ class FilterResultsPanel(wx.Panel):
         wx.Panel.__init__(self, parent, **kwargs)
         self.name = name
 
-        filter_trace_plot_panel = FilterTracePlotPanel(self, name)
-        filter_psd_plot_panel   = FilterPSDPlotPanel(self, name)
+        filter_plot_panel = FilterPlotPanel(self, name)
 
-        sizer = wx.GridBagSizer()
-        sizer.Add(filter_psd_plot_panel,   (0,0), span=(1,1), 
+        sizer = wx.BoxSizer(orient=wx.VERTICAL)
+        sizer.Add(filter_plot_panel, proportion=1, 
                 flag=wx.ALL|wx.EXPAND, border=10)
-        sizer.Add(filter_trace_plot_panel, (0,1), span=(2,1), 
-                flag= wx.ALL|wx.EXPAND, border=10)
-        sizer.AddGrowableRow(0, proportion=1)
-        sizer.AddGrowableRow(1, proportion=2)
-        sizer.AddGrowableCol(0, proportion=1)
-        sizer.AddGrowableCol(1, proportion=2)
         self.SetSizer(sizer)
 
