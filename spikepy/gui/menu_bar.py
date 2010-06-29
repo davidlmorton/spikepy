@@ -1,18 +1,19 @@
 import wx
+import wx.aui
 from wx.lib.pubsub import Publisher as pub
 from wx.lib.wordwrap import wordwrap
 
 from .program_text import about_text
 from .utils import get_bitmap_icon
 
-OPEN           = wx.ID_OPEN
-EXIT           = wx.ID_EXIT
-PREFERENCES    = wx.NewId()
-DEFAULT        = wx.NewId()
-ABOUT          = wx.ID_ABOUT
-NO_WORKSPACES  = wx.NewId()
-WORKSPACES     = wx.NewId()
-SHOW_TOOLBARS  = wx.NewId()
+OPEN             = wx.ID_OPEN
+EXIT             = wx.ID_EXIT
+PREFERENCES      = wx.NewId()
+DEFAULT          = wx.NewId()
+ABOUT            = wx.ID_ABOUT
+WORKSPACES       = wx.NewId()
+SHOW_TOOLBARS    = wx.NewId()
+SAVE_PERSPECTIVE = wx.NewId()
 
 class SpikepyMenuBar(wx.MenuBar):
     def __init__(self, frame, *args, **kwargs):
@@ -29,14 +30,11 @@ class SpikepyMenuBar(wx.MenuBar):
         
         # --- VIEW ---
         view_menu = wx.Menu()
-        workspaces_submenu = wx.Menu()
-        workspaces_submenu.Append(DEFAULT, text="Default")
-        workspaces_submenu.AppendSeparator()
-        workspaces_submenu.Append(NO_WORKSPACES, 
-                                  text="No saved custom workspaces")
-        workspaces_submenu.Enable(NO_WORKSPACES, False)
-        view_menu.AppendMenu(WORKSPACES, "Workspaces", workspaces_submenu)
-        view_menu.Append(SHOW_TOOLBARS, text="Show toolbars on plots", kind=wx.ITEM_CHECK )
+        self.workspaces_submenu = wx.Menu()
+        self._update_perspectives()
+        view_menu.AppendMenu(WORKSPACES, "Workspaces", self.workspaces_submenu)
+        view_menu.Append(SHOW_TOOLBARS, text="Show toolbars on plots", 
+                         kind=wx.ITEM_CHECK)
         
         # --- HELP ---
         help_menu = wx.Menu()
@@ -47,14 +45,45 @@ class SpikepyMenuBar(wx.MenuBar):
         self.Append(view_menu, "View")
         self.Append(help_menu, "Help")
         
-        # define what menu items actually do
+        # --- BIND MENU EVENTS ---
         frame.Bind(wx.EVT_MENU, self._close_window, id=EXIT)
         frame.Bind(wx.EVT_MENU, self._about_box, id=ABOUT)
         frame.Bind(wx.EVT_MENU, self._open_file, id=OPEN)
         frame.Bind(wx.EVT_MENU, self._show_toolbars, id=SHOW_TOOLBARS)
+        frame.Bind(wx.EVT_MENU, self._save_perspective, id=SAVE_PERSPECTIVE)
+
+        self.frame = frame
 
         self._toolbars_shown = False
 
+    def _update_perspectives(self, perspectives={}):
+        workspaces_submenu_items = self.workspaces_submenu.GetMenuItems()
+        for item in workspaces_submenu_items:
+            self.workspaces_submenu.RemoveItem(item)
+
+        perspective_names = perspectives.keys()
+        
+        perspective_ids = {}
+
+        for name in perspective_names:
+            perspective_ids[name] = wx.NewId()
+            self.workspaces_submenu.Append(perspective_ids[name], text=name)
+            self.frame.Bind(wx.EVT_MENU, self._load_perspective, 
+                      id=perspective_ids[name])
+        
+        self.workspaces_submenu.AppendSeparator()
+        self.workspaces_submenu.Append(SAVE_PERSPECTIVE, 
+                                       text="Save current workspace...")
+    
+    def _load_perspective(self, event=None):
+        chosen_item_id = event.GetId()
+        chosen_item = self.workspaces_submenu.FindItemById(chosen_item_id)
+        chosen_item_name = chosen_item.GetText()
+        pub.sendMessage(topic='LOAD_PERSPECTIVE', data=chosen_item_name)
+    
+    def _save_perspective(self, event=None):
+        pub.sendMessage(topic='SAVE_PERSPECTIVE', data=None)
+    
     def _open_file(self, event):
         pub.sendMessage(topic='OPEN_FILE', data=None)
 
