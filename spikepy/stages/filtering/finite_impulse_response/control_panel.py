@@ -1,7 +1,7 @@
 import wx
 
-from spikepy.gui.utils import NamedChoiceCtrl
-from spikepy.gui.utils import NamedTextCtrl
+from spikepy.gui.utils import NamedChoiceCtrl, NamedTextCtrl, recursive_layout
+
 
 class ControlPanel(wx.Panel):
     def __init__(self, parent, **kwargs):
@@ -82,6 +82,4 @@ class ControlPanel(wx.Panel):
                          flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, border=2)
             self.high_cutoff_textctrl.Show(True)
             self.low_cutoff_textctrl.Show(True)
-        self.SetSize(self.GetBestSize())
-        self.Layout()
-        self.GetParent().Layout()
+        recursive_layout(self)

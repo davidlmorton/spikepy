@@ -9,6 +9,12 @@ from wx.lib.pubsub import Publisher as pub
 gui_folder  = os.path.split(__file__)[0]
 icon_folder = os.path.join(gui_folder, 'icons')
 
+
+def recursive_layout(panel):
+    if panel is not None:
+        panel.Layout()
+        recursive_layout(panel.GetParent())
+
 def named_color(name):
     '''return a color given its name, in normalized rgb format.'''
     color = [chanel/255. for chanel in wx.NamedColor(name).Get()]
@@ -22,6 +28,7 @@ def get_bitmap_icon(name):
             return image.ConvertToBitmap()
     raise RuntimeError("Cannot find image named %s in icons folder." % name)
 
+"""
 class StaticBoxText(wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent)
@@ -40,7 +47,8 @@ class StaticBoxText(wx.Panel):
 
     def SetText(self, text):
         self.text.SetLabel(text)
-        self.Layout()
+            self.strategy_summary.select_stage(new_page_num+1)
+"""
 
 class NamedChoiceCtrl(wx.Panel):
     def __init__(self, parent, name="", choices=[], bar_width=None, **kwargs):
@@ -73,7 +81,7 @@ class NamedTextCtrl(wx.Panel):
         wx.Panel.__init__(self, parent, **kwargs)
 
         self.name = wx.StaticText(self, label=name)
-        self.text_ctrl = wx.TextCtrl(self, size=(75,-1))
+        self.text_ctrl = wx.TextCtrl(self, size=(50,-1))
         
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         sizer.Add(self.name, proportion=0, 

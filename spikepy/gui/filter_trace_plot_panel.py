@@ -8,7 +8,7 @@ from .plot_panel import PlotPanel
 
 class FilterTracePlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
-        self.figsize   = (6, 4.3)
+        self.figsize   = (5, 2.3)
         self.facecolor = 'white'
         self.dpi       = 72.0
         self.name      = name

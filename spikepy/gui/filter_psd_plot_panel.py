@@ -9,9 +9,9 @@ from .plot_panel import PlotPanel
 
 class FilterPSDPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
-        self.figsize   = (5, 2)
+        self.figsize   = (3, 1.2)
         self.facecolor = 'white'
-        self.dpi       = 60.0
+        self.dpi       = 30.0
         self.name      = name
         MultiPlotPanel.__init__(self, parent, figsize=self.figsize,
                                               facecolor=self.facecolor,
@@ -46,7 +46,7 @@ class FilterPSDPlotPanel(MultiPlotPanel):
 
         figure = self._plot_panels[fullpath].figure
         for trace, axes in zip(traces, figure.get_axes()):
-            axes.set_autoscale_on(False)
+            #axes.set_autoscale_on(False)
             lines = axes.get_lines()
             if len(lines) == 2:
                 del(axes.lines[1])
