@@ -10,12 +10,12 @@ from .utils import wx_to_matplotlib_color
 
 class FilterPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
-        self.figsize   = (9, 6.6)
+        self._figsize   = (8.9, 2.0)
         window_color = wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW)
         self.facecolor = wx_to_matplotlib_color(*window_color.Get(True))
         self.dpi       = 72.0
         self.name      = name
-        MultiPlotPanel.__init__(self, parent, figsize=self.figsize,
+        MultiPlotPanel.__init__(self, parent, figsize=self._figsize,
                                               facecolor=self.facecolor,
                                               edgecolor=self.facecolor,
                                               dpi=self.dpi)
@@ -23,8 +23,9 @@ class FilterPlotPanel(MultiPlotPanel):
         pub.subscribe(self._trial_filtered, 
                       topic='TRIAL_%s_FILTERED' % name.upper())
         pub.subscribe(self._show_psd, topic='SHOW_PSD')
+        pub.subscribe(self._zoom_plot, topic='ZOOM_PLOT')
 
-        self._psd_shown = True
+        self._psd_shown = False
         self._trials = {}
         self._trace_axes = {}
         self._psd_axes = {}
@@ -33,9 +34,17 @@ class FilterPlotPanel(MultiPlotPanel):
         name = message.data
         if name == self.name:
             self._psd_shown = True
-            trial = self._trials.values()
+            trials = self._trials.values()
             for trial in trials:
+                self._plot_panels[trial.fullpath].figure.clear()
                 self._trial_added(trial=trial)
+                self._show_plot(new_panel_key=trial.fullpath)
+
+    def _zoom_plot(self, message=None):
+        name, factor = message.data
+        if name != self.name:
+            return
+        self.zoom(factor)
 
     def _trial_added(self, message=None, trial=None):
         if message is not None:
@@ -47,8 +56,8 @@ class FilterPlotPanel(MultiPlotPanel):
 
         if self._psd_shown: psd = 1
         else: psd = 0
-        figsize = (self.figsize[0], self.figsize[1]*len(traces)+psd)
-        self.add_plot(PlotPanel(self, figsize=figsize,
+        _figsize = (self._figsize[0], self._figsize[1]*len(traces)+psd)
+        self.add_plot(PlotPanel(self, figsize=_figsize,
                                       facecolor=self.facecolor,
                                       edgecolor=self.facecolor,
                                       dpi=self.dpi), fullpath)
@@ -75,7 +84,11 @@ class FilterPlotPanel(MultiPlotPanel):
                 axes.set_yticklabels([''],visible=False)
 
         axes.set_xlabel('Sample Number')
-        figure.subplots_adjust(hspace=0.025, left=0.10, right=0.95, bottom=0.06)
+        # bottom is in percent, how big is text there in percent?
+        factor = len(traces)+psd
+        original_bottom = 0.2
+        figure.subplots_adjust(hspace=0.025, left=0.10, right=0.95, 
+                               bottom=original_bottom/factor+0.01)
 
         #add psd plot
         if self._psd_shown:
@@ -95,6 +108,9 @@ class FilterPlotPanel(MultiPlotPanel):
 
         if self.name.lower() in trial.traces.keys():
             self._trial_filtered(trial=trial)
+        self.SetupScrolling()
+        self.Layout()
+        figure.canvas.draw()
             
     def _trial_filtered(self, message=None, trial=None):
         if message is not None:
@@ -128,3 +144,5 @@ class FilterPlotPanel(MultiPlotPanel):
             self._trace_axes[fullpath][0].legend()
 
         figure.canvas.draw()
+
+
