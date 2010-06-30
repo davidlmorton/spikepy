@@ -24,22 +24,34 @@ class FilterPlotPanel(MultiPlotPanel):
                       topic='TRIAL_%s_FILTERED' % name.upper())
         pub.subscribe(self._show_psd, topic='SHOW_PSD')
         pub.subscribe(self._zoom_plot, topic='ZOOM_PLOT')
+        pub.subscribe(self._remove_trial, topic="REMOVE_PLOT")
 
         self._psd_shown = False
         self._trials = {}
         self._trace_axes = {}
         self._psd_axes = {}
 
+    def _remove_trial(self, message=None):
+        full_path = message.data
+        del self._trials[full_path]
+        del self._trace_axes[full_path]
+        try: 
+            self._psd_axes[full_path]
+        except KeyError:
+            pass
+
     def _show_psd(self, message=None):
-        name = message.data
+        name, psd_shown = message.data
         if name == self.name:
-            self._psd_shown = True
+            if psd_shown == self._psd_shown:
+                return
+            self._psd_shown = psd_shown
             trials = self._trials.values()
             for trial in trials:
                 self._plot_panels[trial.fullpath].figure.clear()
                 self._trial_added(trial=trial)
                 self._show_plot(new_panel_key=trial.fullpath)
-
+    
     def _zoom_plot(self, message=None):
         name, factor = message.data
         if name != self.name:
