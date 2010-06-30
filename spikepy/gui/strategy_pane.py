@@ -141,6 +141,7 @@ class FilterPanel(wx.Panel):
 #        self._method_choice_made(method_name=self._method_name_chosen)
         
         pub.subscribe(self._filtering_completed, topic='FILTERING_COMPLETED')
+        self._method_choice_made(method_name=self.method_names[0])
 
     def _filtering_completed(self, message=None):
         self.filter_button.SetLabel('Run filter')

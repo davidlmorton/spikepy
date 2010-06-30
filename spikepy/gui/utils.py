@@ -20,6 +20,11 @@ def named_color(name):
     color = [chanel/255. for chanel in wx.NamedColor(name).Get()]
     return color
 
+def wx_to_matplotlib_color(r, g, b, a=0):
+    '''return a color given its rgb values, in normalized rgb format.'''
+    color = [chanel/255. for chanel in [r, g, b, a]]
+    return color
+
 def get_bitmap_icon(name):
     icon_files = os.listdir(icon_folder)
     for file in icon_files:

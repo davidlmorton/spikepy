@@ -18,16 +18,16 @@ class View(object):
         
 class MyFrame(wx.Frame):
 
-    def __init__(self, parent, id=404040, 
+    def __init__(self, parent, id=wx.ID_ANY, 
                  title='Spikepy - A spike sorting framework.',
-                 pos=wx.DefaultPosition, size=(1200, 550),
+                 pos=wx.DefaultPosition, size=(1200, 700),
                  style=wx.DEFAULT_FRAME_STYLE|wx.SUNKEN_BORDER):
         wx.Frame.__init__(self, parent, id, title, pos, size, style)
 
         self._mgr = wx.aui.AuiManager(self)
 
         # --- STRATEGY PANE ---
-        strategy_pane  = StrategyPane(self, id=282828)        
+        strategy_pane  = StrategyPane(self)        
         strategy_pane_info = wx.aui.AuiPaneInfo()
         strategy_pane_info.Right()
         strategy_pane_info.CloseButton(   visible=False)
@@ -38,8 +38,7 @@ class MyFrame(wx.Frame):
         strategy_pane_info.Caption("Strategy")
 
         # --- FILE LIST PANE ---
-        file_list = FileListCtrl(self, style=wx.LC_REPORT|wx.LC_VRULES,
-                                 id=292929)
+        file_list = FileListCtrl(self, style=wx.LC_REPORT|wx.LC_VRULES)
         file_list_pane_info = wx.aui.AuiPaneInfo()
         file_list_pane_info.Left()
         file_list_pane_info.CloseButton(   visible=False)
@@ -50,7 +49,7 @@ class MyFrame(wx.Frame):
         file_list_pane_info.Caption("Opened Files List")
         
         # ---  RESULTS PANE ---
-        results_notebook = ResultsNotebook(self, id=303030)
+        results_notebook = ResultsNotebook(self)
 
         # add the panes to the manager
         self._mgr.AddPane(file_list, info=file_list_pane_info)
@@ -83,7 +82,6 @@ class MyFrame(wx.Frame):
                                               "perspectives.cPickle")
         perspectives_file = open(self.perspectives_file_path, 'r')
         self.perspectives = cPickle.load(perspectives_file)
-        print self.perspectives['sd']
         perspectives_file.close()
         self.menubar._update_perspectives(self.perspectives)
 
@@ -99,8 +97,6 @@ class MyFrame(wx.Frame):
             return
         
         perspective_data = self._mgr.SavePerspective()
-        print perspective_data
-        print dir(perspective_data)
         perspective_name = dlg.GetValue()
         dlg.Destroy()
         self.perspectives[perspective_name] = perspective_data
@@ -116,4 +112,22 @@ class MyFrame(wx.Frame):
     def _load_perspective(self, message):
         perspective_name = message.data
         perspective = self.perspectives[perspective_name]
+        perspective = update_with_current_names(perspective, self._mgr)
         self._mgr.LoadPerspective(perspective)
+
+def update_with_current_names(perspective, mgr):
+    # get names from this instance and replace them in the perspective
+    old_perspective = mgr.SavePerspective()
+    old_names = get_perspective_names(old_perspective)
+    new_names = get_perspective_names(perspective)
+    for old, new in zip(old_names, new_names):
+        perspective = perspective.replace(new, old)
+    return perspective
+    
+def get_perspective_names(perspective_string):
+    tokens = perspective_string.split(';')
+    names = []
+    for token in tokens:
+        if 'name=' in token:
+            names.append(token.split('name=')[-1])
+    return names

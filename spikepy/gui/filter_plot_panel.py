@@ -6,15 +6,18 @@ import numpy
 
 from .multi_plot_panel import MultiPlotPanel
 from .plot_panel import PlotPanel
+from .utils import wx_to_matplotlib_color
 
 class FilterPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
-        self.figsize   = (2.5, 1.0)
-        self.facecolor = 'white'
-        self.dpi       = 50.0
+        self.figsize   = (9, 6.6)
+        window_color = wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW)
+        self.facecolor = wx_to_matplotlib_color(*window_color.Get(True))
+        self.dpi       = 72.0
         self.name      = name
         MultiPlotPanel.__init__(self, parent, figsize=self.figsize,
                                               facecolor=self.facecolor,
+                                              edgecolor=self.facecolor,
                                               dpi=self.dpi)
         pub.subscribe(self._trial_added, topic='TRIAL_ADDED')
         pub.subscribe(self._trial_filtered, 
@@ -47,6 +50,7 @@ class FilterPlotPanel(MultiPlotPanel):
         figsize = (self.figsize[0], self.figsize[1]*len(traces)+psd)
         self.add_plot(PlotPanel(self, figsize=figsize,
                                       facecolor=self.facecolor,
+                                      edgecolor=self.facecolor,
                                       dpi=self.dpi), fullpath)
 
         figure = self._plot_panels[fullpath].figure
@@ -71,7 +75,7 @@ class FilterPlotPanel(MultiPlotPanel):
                 axes.set_yticklabels([''],visible=False)
 
         axes.set_xlabel('Sample Number')
-        figure.subplots_adjust(hspace=0.02)
+        figure.subplots_adjust(hspace=0.025, left=0.10, right=0.95, bottom=0.06)
 
         #add psd plot
         if self._psd_shown:
@@ -82,9 +86,11 @@ class FilterPlotPanel(MultiPlotPanel):
             psd_axes = self._psd_axes[fullpath]
             psd_axes.psd(traces, Fs=trial.sampling_freq, label='Raw',
                                linewidth=2.0, color='black')
+            psd_axes.set_ylabel('PSD (dB/Hz)')
             # move psd plot's bottom edge up a bit
             box = psd_axes.get_position()
-            box.p0 = (box.p0[0], box.p0[1]+0.05)
+            box.p0 = (box.p0[0], box.p0[1]+0.065)
+            box.p1 = (box.p1[0], 0.99)
             psd_axes.set_position(box)
 
         if self.name.lower() in trial.traces.keys():
@@ -116,6 +122,7 @@ class FilterPlotPanel(MultiPlotPanel):
             axes.psd(traces, Fs=trial.sampling_freq, 
                                        label='Filtered', 
                                        linewidth=1.5, color='blue')
+            axes.set_ylabel('PSD (dB/Hz)')
             axes.legend()
         else:
             self._trace_axes[fullpath][0].legend()
