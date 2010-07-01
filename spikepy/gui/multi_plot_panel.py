@@ -24,7 +24,7 @@ class MultiPlotPanel(ScrolledPanel):
         self._toolbar_visible = toolbar_visible 
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self._plot_panels['DEFAULT'], 0)
+        sizer.Add(self._plot_panels['DEFAULT'], proportion=1, flag=wx.EXPAND)
         self.SetSizer(sizer)
         self.SetupScrolling()
 
@@ -40,7 +40,7 @@ class MultiPlotPanel(ScrolledPanel):
             self.GetSizer().Remove(self._plot_panels[key])
 
         self._plot_panels[key] = plot_panel
-        self.GetSizer().Add(plot_panel, 0)
+        self.GetSizer().Add(plot_panel, proportion=1, flag=wx.EXPAND)
         self._plot_panels[key].Show(False)
 
         self.Layout()
@@ -73,12 +73,3 @@ class MultiPlotPanel(ScrolledPanel):
         showing_plot_panel.Show(True)
         self.Layout()
         self.SetupScrolling()
-
-    def zoom(self, factor=1.0):
-        old_min_size = self._plot_panels[
-                self._currently_shown].GetMinSize()
-        min_size = (old_min_size[0]*factor, old_min_size[1]*factor)
-        self._plot_panels[self._currently_shown].SetMinSize(min_size)
-        self.Layout()
-        self.SetupScrolling()
-

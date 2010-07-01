@@ -5,7 +5,64 @@ from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as Canvas,
                                              NavigationToolbar2WxAgg as Toolbar)
 from matplotlib.figure import Figure
 import wx
+from wx.lib.scrolledpanel import ScrolledPanel
 from wx.lib.pubsub import Publisher as pub
+
+from .utils import get_bitmap_icon
+
+class CustomToolbar(Toolbar):
+    """
+    A toolbar which has a button to enlarge the canvas, and shrink it.
+    """
+    def __init__(self, canvas, plot_panel, **kwargs):
+        Toolbar.__init__(self, canvas, **kwargs)
+
+        self.plot_panel = plot_panel
+
+        self.ENLARGE_CANVAS_ID = wx.NewId()
+        self.AddSimpleTool(self.ENLARGE_CANVAS_ID, 
+                           get_bitmap_icon('arrow_out'),
+                           shortHelpString='Enlarge Canvas',
+                           longHelpString='Enlarge Figure Canvas')
+        wx.EVT_TOOL(self, self.ENLARGE_CANVAS_ID, self._enlarge_canvas)
+
+        self.SHRINK_CANVAS_ID = wx.NewId()
+        self.AddSimpleTool(self.SHRINK_CANVAS_ID, 
+                           get_bitmap_icon('arrow_in'),
+                           shortHelpString='Shrink Canvas',
+                           longHelpString='Shrink Figure Canvas')
+        wx.EVT_TOOL(self, self.SHRINK_CANVAS_ID, self._shrink_canvas)
+        self.EnableTool(self.SHRINK_CANVAS_ID, False)
+
+    def _enlarge_canvas(self, event=None):
+        plot_panel = self.plot_panel
+        plot_panel._min_size_factor = min(plot_panel._min_size_factor+0.20, 4.0)
+        if plot_panel._min_size_factor == 4.0:
+            self.EnableTool(self.ENLARGE_CANVAS_ID, False)
+        self.EnableTool(self.SHRINK_CANVAS_ID, True)
+        new_min_size = (plot_panel._original_min_size[0] 
+                            * plot_panel._min_size_factor,
+                        plot_panel._original_min_size[1] 
+                            * plot_panel._min_size_factor)
+        plot_panel.SetMinSize(new_min_size)
+        if hasattr(plot_panel.GetParent(), 'SetupScrolling'):
+            plot_panel.GetParent().SetupScrolling()
+        event.Skip()
+
+    def _shrink_canvas(self, event=None):
+        plot_panel = self.plot_panel
+        plot_panel._min_size_factor = max(plot_panel._min_size_factor-0.20, 1.0)
+        if plot_panel._min_size_factor == 1.0:
+            self.EnableTool(self.SHRINK_CANVAS_ID, False)
+        self.EnableTool(self.ENLARGE_CANVAS_ID, True)
+        new_min_size = (plot_panel._original_min_size[0] 
+                            * plot_panel._min_size_factor,
+                        plot_panel._original_min_size[1] 
+                            * plot_panel._min_size_factor)
+        plot_panel.SetMinSize(new_min_size)
+        if hasattr(plot_panel.GetParent(), 'SetupScrolling'):
+            plot_panel.GetParent().SetupScrolling()
+        event.Skip()
 
 class PlotPanel (wx.Panel):
     def __init__(self, parent, toolbar_visible=False, **kwargs):
@@ -35,14 +92,14 @@ class PlotPanel (wx.Panel):
         wx.Panel.__init__(self, parent)
 
         self.figure = Figure(**kwargs)
-        self.canvas = Canvas(self, -1, self.figure)
-        self.toolbar = Toolbar(self.canvas)
+        self.canvas = Canvas(self, wx.ID_ANY, self.figure)
+        self.toolbar = CustomToolbar(self.canvas, self)
         self.toolbar.Show(False)
         self.toolbar.Realize()
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.canvas, 1, wx.EXPAND)
         sizer.Add(self.toolbar, 0, wx.EXPAND)
+        sizer.Add(self.canvas, 1, wx.EXPAND)
         self.SetSizer(sizer)
 
         figheight = self.figure.get_figheight()
@@ -54,6 +111,8 @@ class PlotPanel (wx.Panel):
         toolbar_height = self.toolbar.GetSize()[1]
         min_size = (dpi*figwidth, dpi*figheight+toolbar_height)
         self.SetMinSize(min_size)
+        self._original_min_size = min_size
+        self._min_size_factor = 1.0
 
         self._toolbar_visible = toolbar_visible
         if toolbar_visible:
@@ -92,7 +151,7 @@ class PlotPanel (wx.Panel):
         '''
         self.toolbar.Show(True)
         self._toolbar_visible = True
-        self.GetSizer().Layout()
+        self.Layout()
 
     # --- HIDE TOOLBAR ----
     def _hide_toolbar(self, message):
@@ -106,4 +165,4 @@ class PlotPanel (wx.Panel):
         '''
         self.toolbar.Show(False)
         self._toolbar_visible = False
-        self.GetSizer().Layout()
+        self.Layout()

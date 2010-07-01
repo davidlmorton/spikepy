@@ -1,4 +1,3 @@
-from .control_panel import ControlPanel
 
 name = "Voltage Threshold"
 description = "Spike detection using voltage threshold(s)"

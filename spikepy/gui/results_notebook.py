@@ -34,8 +34,6 @@ class FilterResultsPanel(wx.Panel):
         self.SetSizer(sizer)
 
         self.Bind(wx.EVT_BUTTON, self._psd_button, filter_buttons.psd_button)
-        self.Bind(wx.EVT_BUTTON, self._zoom_in, filter_buttons.zoom_in_button)
-        self.Bind(wx.EVT_BUTTON, self._zoom_out, filter_buttons.zoom_out_button)
         self.filter_buttons = filter_buttons
 
     def _psd_button(self, event=None):
@@ -46,25 +44,15 @@ class FilterResultsPanel(wx.Panel):
         else:
             pub.sendMessage(topic="SHOW_PSD", data=(self.name, False))
             self.filter_buttons.psd_button.SetLabel("Show Power Spectrum")
-
-    def _zoom_in(self, event=None):
-        pub.sendMessage(topic='ZOOM_PLOT', data=(self.name, 1.5) )
-
-    def _zoom_out(self, event=None):
-        pub.sendMessage(topic='ZOOM_PLOT', data=(self.name, 1/1.5) )
         
 class FilterButtons(wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
 
         self.psd_button = wx.Button(self, label='Show Power Spectrum')
-        self.zoom_in_button = wx.Button(self, label='Enlarge Figure')
-        self.zoom_out_button = wx.Button(self, label='Shrink Figure')
 
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         flag = wx.ALL
         sizer.Add(self.psd_button, proportion=0, flag=flag, border=4)
-        sizer.Add(self.zoom_in_button,  proportion=0, flag=flag, border=4)
-        sizer.Add(self.zoom_out_button, proportion=0, flag=flag, border=4)
         self.SetSizer(sizer)
 
