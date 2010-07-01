@@ -4,7 +4,7 @@ from wx.lib.scrolledpanel import ScrolledPanel
 from wx.lib.buttons import GenButton
 
 from .utils import NamedChoiceCtrl, recursive_layout
-from ..stages import filtering
+from ..stages import filtering, detection
 
 class StrategyPane(ScrolledPanel):
     def __init__(self, parent, **kwargs):
@@ -14,12 +14,12 @@ class StrategyPane(ScrolledPanel):
         line = wx.StaticLine(self)
         stage_choicebook = wx.Choicebook(self, wx.ID_ANY)
 
-        detection_filter_panel = FilterPanel(stage_choicebook, 
-                                             1, "Detection Filter")
-        detection_panel = DetectionPanel(stage_choicebook, 
-                                         2, "Spike Detection")
-        extraction_filter_panel = FilterPanel(stage_choicebook, 
-                                              3, "Extraction Filter")
+        detection_filter_panel = StagePanel(stage_choicebook, 
+                                             1, "Detection Filter", filtering)
+        detection_panel = StagePanel(stage_choicebook, 
+                                         2, "Spike Detection", detection)
+        extraction_filter_panel = StagePanel(stage_choicebook, 
+                                              3, "Extraction Filter", filtering)
         extraction_panel = wx.Panel(stage_choicebook)
         clustering_panel = wx.Panel(stage_choicebook)
 
@@ -91,9 +91,8 @@ class StrategySummary(wx.Panel):
         new_stage_text.SetFont(stage_font)
         self._selected_stage = stage_num
 
-
-class FilterPanel(wx.Panel):
-    def __init__(self, parent, stage_num, stage_name, **kwargs):
+class StagePanel(wx.Panel):
+    def __init__(self, parent, stage_num, stage_name, stage_module, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
         self.stage_num = stage_num
         self.stage_name = stage_name
@@ -102,8 +101,8 @@ class FilterPanel(wx.Panel):
 
         # --- setup methods ---
         self.methods = {}
-        self.method_names = filtering.method_names
-        for method_module, method_name in zip(filtering.method_modules, 
+        self.method_names = stage_module.method_names
+        for method_module, method_name in zip(stage_module.method_modules, 
                                               self.method_names):
             self.methods[method_name] = {}
             self.methods[method_name]['control_panel'] = \
@@ -113,11 +112,11 @@ class FilterPanel(wx.Panel):
         self._method_name_chosen = self.method_names[0]
 
         # --- setup other panel elements ---
-        self.method_chooser = NamedChoiceCtrl(self, name="Filter method:",
+        self.method_chooser = NamedChoiceCtrl(self, name="Method:",
                                  choices=self.method_names)
 #        self.method_description_text = StaticBoxText(self, label='Description') 
-        self.filter_button = wx.Button(self, label="Run filter")
-        self.filter_button.Show(False)
+        self.run_button = wx.Button(self, label="Run")
+        self.run_button.Show(False)
 
         # --- sizer config ---
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
@@ -131,21 +130,21 @@ class FilterPanel(wx.Panel):
         for method in self.methods.values():
             sizer.Add(method['control_panel'],  proportion=0,
                       flag=ea_flag,                        border=3)
-        sizer.Add(self.filter_button,           proportion=0, 
+        sizer.Add(self.run_button,           proportion=0, 
                       flag=wx.ALL,                         border=1)
         self.SetSizer(sizer)
         
         self.Bind(wx.EVT_CHOICE, self._method_choice_made,
                   self.method_chooser.choice)
-        self.Bind(wx.EVT_BUTTON, self._run_filter, self.filter_button)
+        self.Bind(wx.EVT_BUTTON, self._run, self.run_button)
 #        self._method_choice_made(method_name=self._method_name_chosen)
         
-        pub.subscribe(self._filtering_completed, topic='FILTERING_COMPLETED')
+        pub.subscribe(self._runing_completed, topic='FILTERING_COMPLETED')
         self._method_choice_made(method_name=self.method_names[0])
 
-    def _filtering_completed(self, message=None):
-        self.filter_button.SetLabel('Run filter')
-        self.filter_button.Enable()
+    def _runing_completed(self, message=None):
+        self.run_button.SetLabel('Run')
+        self.run_button.Enable()
 
     
     def _method_choice_made(self, event=None, method_name=None):
@@ -161,15 +160,15 @@ class FilterPanel(wx.Panel):
         #        self.methods[self._method_name_chosen]['description'])
 
         self.methods[self._method_name_chosen]['control_panel'].Show(True)
-        self.filter_button.Show(True)
+        self.run_button.Show(True)
         self.Layout()
     
 
-    def _run_filter(self, event=None):
+    def _run(self, event=None):
         control_panel = self.methods[self._method_name_chosen]['control_panel']
         settings = control_panel.get_control_settings()
-        self.filter_button.SetLabel('Filtering...')
-        self.filter_button.Disable()
+        self.run_button.SetLabel('Filtering...')
+        self.run_button.Disable()
         wx.Yield() # about to let scipy hog cpu, so process all wx events.
         pub.sendMessage(topic='FILTER', data=(self.stage_name, 
                                               self._method_name_chosen,

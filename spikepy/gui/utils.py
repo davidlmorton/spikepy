@@ -100,3 +100,22 @@ class NamedTextCtrl(wx.Panel):
     def GetValue(self):
         return self.text_ctrl.GetValue()
 
+class OptionalNamedTextCtrl(NamedTextCtrl):
+    def __init__(self, parent, name, enabled=False, **kwargs):
+        NamedTextCtrl.__init__(self, parent, name='', **kwargs)
+        
+        self.checkbox = wx.CheckBox(self, label=name)
+        self.GetSizer().Insert(0, self.checkbox, proportion=0, flag=wx.ALL,
+                                                 border=3)
+        self.Bind(wx.EVT_CHECKBOX, self._enable, self.checkbox)
+        self._enabled = enabled
+        self._enable(state=enabled)
+
+    def _enable(self, event=None, state=None):
+        if state is None:
+            state = event.IsChecked()
+        self._enabled = state
+        self.name.Enable(state)
+        self.text_ctrl.Enable(state)
+        
+
