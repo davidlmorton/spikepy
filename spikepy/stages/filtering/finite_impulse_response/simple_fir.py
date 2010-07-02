@@ -25,6 +25,11 @@ def fir_filter(signal, sampling_freq, critical_freq, kernel_window='hamming',
     Returns:
         filtered_signal     : an n element sequence
     """
+    def spectral_inversion(kernel):
+        kernel = -kernel
+        kernel[taps/2] += 1.0
+        return kernel
+
     nyquist_freq = sampling_freq/2
     critical_freq = numpy.array(critical_freq, dtype=numpy.float64)
     normalized_critical_freq = critical_freq / nyquist_freq
@@ -38,15 +43,17 @@ def fir_filter(signal, sampling_freq, critical_freq, kernel_window='hamming',
     elif kind.lower() in ['high', 'high pass', 'high_pass']:
         lp_kernel = scisig.firwin(taps, normalized_critical_freq, 
                                   window=kernel_window, **kwargs)
-        kernel = -lp_kernel # spectral inversion
-        kernel[taps/2] += 1.0
+        kernel = spectral_inversion(lp_kernel)
+        
     elif kind.lower() in ['band', 'band pass', 'band_pass']:
         lp_kernel = scisig.firwin(taps, normalized_critical_freq[0], 
                                   window=kernel_window, **kwargs)
-        hp_kernel = -scisig.firwin(taps, normalized_critical_freq[1], 
+        hp_kernel = scisig.firwin(taps, normalized_critical_freq[1], 
                                    window=kernel_window, **kwargs)
-        bp_kernel = - (lp_kernel + hp_kernel)
-        bp_kernel[taps/2] += 1.0
+        hp_kernel = spectral_inversion(hp_kernel)
+
+        bp_kernel = spectral_inversion(lp_kernel + hp_kernel)
         kernel = bp_kernel
 
     return numpy.roll(scisig.lfilter(kernel, [1], signal, **kwargs), -taps/2+1)
+
