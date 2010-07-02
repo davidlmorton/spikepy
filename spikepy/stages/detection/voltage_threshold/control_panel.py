@@ -74,6 +74,7 @@ class ControlPanel(wx.Panel):
         parameters['refractory_time'] = float(self.refractory_time.GetValue())
         parameters['max_spike_duration'] = float(
                                                 self.max_spike_width.GetValue())
+        parameters['using_sd_units'] = self._using_sd_units
         return parameters
 
         
