@@ -8,7 +8,7 @@ class ControlPanel(wx.Panel):
         wx.Panel.__init__(self, parent, **kwargs)
 
         window_names = ['boxcar', 'triang', 'Blackman', 'Hamming', 'Hanning',
-                        'Partlett', 'Parzen', 'Bohman', 'Blackman-Harris', 
+                        'Bartlett', 'Parzen', 'Bohman', 'Blackman-Harris', 
                         'Nuttall', 'Barthann']
         window_chooser = NamedChoiceCtrl(self, name="Windowing function:",
                                            choices=window_names)
@@ -40,7 +40,7 @@ class ControlPanel(wx.Panel):
         self.taps_textctrl = taps_textctrl
         self._passband_choice_made()
 
-    def get_control_settings(self):
+    def get_parameters(self):
         window_chosen = self.window_chooser.GetStringSelection()
         if window_chosen == 'Blackman-Harris':
             window_chosen = 'blackmanharris' # how scipy needs it.
@@ -59,7 +59,6 @@ class ControlPanel(wx.Panel):
                     'critical_freq':critical_freq, 
                     'taps':taps, 
                     'kind':kind}
-        print settings
         return settings
 
     def _passband_choice_made(self, event=None):

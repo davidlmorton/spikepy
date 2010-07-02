@@ -143,10 +143,10 @@ class StagePanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self._run, self.run_button)
 #        self._method_choice_made(method_name=self._method_name_chosen)
         
-        pub.subscribe(self._runing_completed, topic='FILTERING_COMPLETED')
+        pub.subscribe(self._running_completed, topic='RUNNING_COMPLETED')
         self._method_choice_made(method_name=self.method_names[0])
 
-    def _runing_completed(self, message=None):
+    def _running_completed(self, message=None):
         self.run_button.SetLabel('Run')
         self.run_button.Enable()
 
@@ -170,11 +170,13 @@ class StagePanel(wx.Panel):
 
     def _run(self, event=None):
         control_panel = self.methods[self._method_name_chosen]['control_panel']
-        settings = control_panel.get_control_settings()
-        self.run_button.SetLabel('Filtering...')
+        settings = control_panel.get_parameters()
+        self.run_button.SetLabel('Running...')
         self.run_button.Disable()
         wx.Yield() # about to let scipy hog cpu, so process all wx events.
-        pub.sendMessage(topic='FILTER', data=(self.stage_name, 
+        topic = self.stage_name.split()[-1].upper()
+        print settings
+        pub.sendMessage(topic=topic, data=(self.stage_name, 
                                               self._method_name_chosen,
                                               settings))
 

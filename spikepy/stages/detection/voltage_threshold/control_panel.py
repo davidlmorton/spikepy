@@ -13,9 +13,9 @@ class ControlPanel(wx.Panel):
         threshold_1    = NamedTextCtrl(self, name='Threshold:')
 
         threshold_2_sd = OptionalNamedTextCtrl(self, 
-                                               name='Threshold (SDs):')
+                                               name='Second Threshold (SDs):')
         threshold_2    = OptionalNamedTextCtrl(self, 
-                                                        name='Threshold:')
+                                                        name='Second Threshold:')
         refractory_time = NamedTextCtrl(self, name='Refractory period (ms):')
         max_spike_width = NamedTextCtrl(self, 
                                       name='Max spike width at threshold (ms):')
@@ -53,6 +53,27 @@ class ControlPanel(wx.Panel):
         self.threshold_1.Show(not state)
         self.threshold_2_sd.Show(state)
         self.threshold_2.Show(not state)
+
         self.Layout()
-            
+
+    def get_parameters(self):
+        parameters = {}
+        if self._using_sd_units:
+            thresholds = [self.threshold_1_sd]
+            if self.threshold_2_sd._enabled:
+                thresholds.append(self.threshold_2_sd)
+        else:
+            thresholds = [self.threshold_1]
+            if self.threshold_2._enabled:
+                thresholds.append(self.threshold_2)
+        parameters['threshold_1'] = float(thresholds[0].GetValue())
+        if len(thresholds) > 1:
+            parameters['threshold_2'] = float(thresholds[1].GetValue())
+        else:
+            parameters['threshold_2'] = parameters['threshold_1']
+        parameters['refractory_time'] = float(self.refractory_time.GetValue())
+        parameters['max_spike_duration'] = float(
+                                                self.max_spike_width.GetValue())
+        return parameters
+
         

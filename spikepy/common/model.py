@@ -14,6 +14,7 @@ class Model(object):
         pub.subscribe(self._open_data_file, "OPEN_DATA_FILE")
         pub.subscribe(self._close_data_file, "CLOSE_DATA_FILE")
         pub.subscribe(self._filter, "FILTER")
+        pub.subscribe(self._detection, "DETECTION")
 
     # ---- OPEN FILE ----
     def _open_data_file(self, message):
@@ -40,6 +41,28 @@ class Model(object):
             del self.trials[fullpath]
             pub.sendMessage(topic='FILE_CLOSED', data=fullpath)
 
+    # ---- DETECTION ----
+    def _detection(self, message):
+        stage_name, method_name, method_parameters = message.data
+        startWorker(self._detection_consumer, self._detection_worker,
+                        wargs=(method_name, method_parameters))
+
+    def _detection_worker(self, method_name, method_parameters):
+        for trial in self.trials.values():
+            filtered_traces = trial.traces['detection']
+            method = detection.get_method(method_name)
+            print filtered_traces
+            trial.spikes = method.run(filtered_traces, 
+                                     sampling_freq=trial.sampling_freq, 
+                                     **method_parameters)
+
+    def _detection_consumer(self, delayed_result):
+        for trial in self.trials.values():
+            pub.sendMessage(topic='TRIAL_DETECTIONED', data=trial)
+            print trial.spikes
+        pub.sendMessage(topic='RUNNING_COMPLETED')
+        
+
     # ---- FILTER ----
     def _filter(self, message):
         stage_name, method_name, method_parameters = message.data
@@ -63,4 +86,4 @@ class Model(object):
         for trial in self.trials.values():
             pub.sendMessage(topic='TRIAL_%s_FILTERED' % trace_type.upper(),
                             data=trial)
-        pub.sendMessage(topic='FILTERING_COMPLETED')
+        pub.sendMessage(topic='RUNNING_COMPLETED')

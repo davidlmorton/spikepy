@@ -37,7 +37,7 @@ class ControlPanel(wx.Panel):
         self.order_textctrl = order_textctrl
         self._passband_choice_made()
 
-    def get_control_settings(self):
+    def get_parameters(self):
         function_chosen = self.function_chooser.choice.GetStringSelection()
         passband_chosen = self.passband_chooser.choice.GetStringSelection()
         if passband_chosen == "Band Pass":
@@ -55,7 +55,6 @@ class ControlPanel(wx.Panel):
                     'critical_freq':critical_freq, 
                     'order':order, 
                     'kind':kind}
-        print settings
         return settings
 
     def _passband_choice_made(self, event=None):
