@@ -10,19 +10,24 @@ from .menu_bar import SpikepyMenuBar
 from .strategy_pane import StrategyPane
 from .file_list_ctrl import FileListCtrl
 from .results_notebook import ResultsNotebook
+from .look_and_feel_settings import lfs
+
 
 class View(object):
     def __init__(self, *args, **kwargs):
         self.frame = MyFrame(None, *args, **kwargs)
         self.frame.Show()
         
-class MyFrame(wx.Frame):
 
+class MyFrame(wx.Frame):
     def __init__(self, parent, id=wx.ID_ANY, 
-                 title='Spikepy - A spike sorting framework.',
-                 pos=wx.DefaultPosition, size=(1200, 700),
-                 style=wx.DEFAULT_FRAME_STYLE|wx.SUNKEN_BORDER):
-        wx.Frame.__init__(self, parent, id, title, pos, size, style)
+                 title=lfs.MAIN_FRAME_TITLE,
+                 size=None,
+                 style=lfs.MAIN_FRAME_STYLE):
+        # MAIN_FRAME_SIZE needs the wx.App() instance so can't be put 
+        #   in declaration
+        if size is None: size = lfs.MAIN_FRAME_SIZE
+        wx.Frame.__init__(self, parent, title=title, size=size, style=style)
 
         self._mgr = wx.aui.AuiManager(self)
 
@@ -33,20 +38,20 @@ class MyFrame(wx.Frame):
         strategy_pane_info.CloseButton(   visible=False)
         strategy_pane_info.MinimizeButton(visible=False)
         strategy_pane_info.MaximizeButton(visible=False)
-        strategy_pane_info.MinSize((310, 500))
-        strategy_pane_info.FloatingSize((310,500))
-        strategy_pane_info.Caption("Strategy")
+        strategy_pane_info.MinSize(lfs.STRATEGY_PANE_MIN_SIZE)
+        strategy_pane_info.FloatingSize(lfs.STRATEGY_PANE_MIN_SIZE)
+        strategy_pane_info.Caption(lfs.STRATEGY_PANE_TITLE)
 
         # --- FILE LIST PANE ---
-        file_list = FileListCtrl(self, style=wx.LC_REPORT|wx.LC_VRULES)
+        file_list = FileListCtrl(self, style=lfs.FILE_LISTCTRL_STYLE)
         file_list_pane_info = wx.aui.AuiPaneInfo()
         file_list_pane_info.Left()
         file_list_pane_info.CloseButton(   visible=False)
         file_list_pane_info.MinimizeButton(visible=False)
         file_list_pane_info.MaximizeButton(visible=False)
-        file_list_pane_info.MinSize((200,250))
-        file_list_pane_info.FloatingSize((200,250))
-        file_list_pane_info.Caption("Opened Files List")
+        file_list_pane_info.MinSize(lfs.FILE_LISTCTRL_MIN_SIZE)
+        file_list_pane_info.FloatingSize(lfs.FILE_LISTCTRL_MIN_SIZE)
+        file_list_pane_info.Caption(lfs.FILE_LISTCTRL_TITLE)
         
         # ---  RESULTS PANE ---
         results_notebook = ResultsNotebook(self)
@@ -69,26 +74,12 @@ class MyFrame(wx.Frame):
         self.menubar = SpikepyMenuBar(self)
         self.SetMenuBar(self.menubar)
 
-        self.panes = [file_list, strategy_pane, results_notebook]
         pub.subscribe(self._close_application, topic="CLOSE_APPLICATION")
         pub.subscribe(self._save_perspective, topic="SAVE_PERSPECTIVE")
         pub.subscribe(self._load_perspective, topic="LOAD_PERSPECTIVE")
         
-        # find and load perspectives
-        spikepy_location = spikepy.__file__
-        spikepy_directory = os.path.split(spikepy_location)[0]
-        self.perspectives_file_path = os.path.join(spikepy_directory, 
-                                              "perspectives",
-                                              "perspectives.cPickle")
-        perspectives_file = open(self.perspectives_file_path, 'r')
-        self.perspectives = cPickle.load(perspectives_file)
-        perspectives_file.close()
+        self.perspectives = read_in_perspectives()
         self.menubar._update_perspectives(self.perspectives)
-
-    def _close_application(self, message):
-        # deinitialize the frame manager
-        self._mgr.UnInit()
-        self.Destroy()
 
     def _save_perspective(self, message):
         dlg = wx.TextEntryDialog(self, "Enter a name for the new workspace:",
@@ -102,18 +93,35 @@ class MyFrame(wx.Frame):
         self.perspectives[perspective_name] = perspective_data
         self.menubar._update_perspectives(self.perspectives)
 
+        #TODO add warning if overwriting file
         perspectives_file = open(self.perspectives_file_path, 'w')
 
         cPickle.dump(self.perspectives, perspectives_file, protocol=-1)
         perspectives_file.close()
-        
-        #TODO add warning if overwriting file
         
     def _load_perspective(self, message):
         perspective_name = message.data
         perspective = self.perspectives[perspective_name]
         perspective = update_with_current_names(perspective, self._mgr)
         self._mgr.LoadPerspective(perspective)
+
+    def _close_application(self, message):
+        # deinitialize the frame manager
+        self._mgr.UnInit()
+        self.Destroy()
+
+
+def read_in_perspectives():
+    # find and load perspectives
+    spikepy_location = spikepy.__file__
+    spikepy_directory = os.path.split(spikepy_location)[0]
+    perspectives_file_path = os.path.join(spikepy_directory, 
+                                          "perspectives",
+                                          "perspectives.cPickle")
+    with open(perspectives_file_path, 'r') as perspectives_file:
+        perspectives = cPickle.load(perspectives_file)
+    return perspectives
+
 
 def update_with_current_names(perspective, mgr):
     # get names from this instance and replace them in the perspective
@@ -124,6 +132,7 @@ def update_with_current_names(perspective, mgr):
         perspective = perspective.replace(new, old)
     return perspective
     
+
 def get_perspective_names(perspective_string):
     tokens = perspective_string.split(';')
     names = []

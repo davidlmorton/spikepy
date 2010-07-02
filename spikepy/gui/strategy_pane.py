@@ -5,6 +5,7 @@ from wx.lib.buttons import GenButton
 
 from .utils import NamedChoiceCtrl, recursive_layout
 from ..stages import filtering, detection
+from .look_and_feel_settings import lfs
 
 class StrategyPane(ScrolledPanel):
     def __init__(self, parent, **kwargs):
@@ -34,7 +35,7 @@ class StrategyPane(ScrolledPanel):
         # setup the sizer
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         flag = wx.EXPAND|wx.ALL
-        border = 5
+        border = lfs.STRATEGY_PANE_BORDER
         sizer.Add(self.strategy_summary,  proportion=0, 
                                           flag=flag|wx.ALIGN_CENTER_HORIZONTAL, 
                                           border=border)
@@ -54,27 +55,29 @@ class StrategyPane(ScrolledPanel):
             self.strategy_summary.select_stage(new_page_num+1)
 
     def do_layout(self):
-        self.SetupScrolling(scroll_x = False)
+        self.SetupScrolling()
         self.Layout()
 
 class StrategySummary(wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
         
-        title = wx.StaticText(self, label='Stage)  Method')
         s = []
-        s.append(wx.StaticText(self, label=' 1)  Custom'))
-        s.append(wx.StaticText(self, label=' 2)  Custom'))
-        s.append(wx.StaticText(self, label=' 3)  Custom'))
-        s.append(wx.StaticText(self, label=' 4)  Custom'))
-        s.append(wx.StaticText(self, label=' 5)  Custom'))
+        stages = ['Detect\nion \nFilt\ner', 'Detection', 'Extraction Filter', 
+                  'Extraction', 'Clustering']
+        size = (140, -1)
+        for stage in stages:
+            s.append(wx.StaticText(self, label=stage+':', size=size,
+                               style=wx.ALIGN_RIGHT))
 
-        sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        flag = wx.ALL | wx.ALIGN_CENTER_HORIZONTAL
-        sizer.Add(title, proportion=0, flag=flag, border=3)
-        for stage_text in s:
-            sizer.Add(stage_text, proportion=0, flag=flag, 
-                                  border=4)
+        sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        lsizer = wx.BoxSizer(orient=wx.VERTICAL)
+        flag = wx.ALL
+        border = lfs.STRATEGY_SUMMARY_BORDER
+        for index, stage_text in enumerate(s):
+            lsizer.Add(stage_text, proportion=0, flag=flag, 
+                                  border=border)
+        sizer.Add(lsizer, proportion=1)
         self.SetSizer(sizer)
         self.stage_text_list = s
         self._selected_stage = 1
@@ -90,6 +93,7 @@ class StrategySummary(wx.Panel):
         stage_font.SetWeight(wx.FONTWEIGHT_BOLD)
         new_stage_text.SetFont(stage_font)
         self._selected_stage = stage_num
+        self.Layout()
 
 class StagePanel(wx.Panel):
     def __init__(self, parent, stage_num, stage_name, stage_module, **kwargs):
