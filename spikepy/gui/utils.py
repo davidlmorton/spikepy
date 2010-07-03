@@ -6,6 +6,8 @@ import os
 import wx
 from wx.lib.pubsub import Publisher as pub
 
+from .look_and_feel_settings import lfs
+
 gui_folder  = os.path.split(__file__)[0]
 icon_folder = os.path.join(gui_folder, 'icons')
 
@@ -69,9 +71,11 @@ class NamedChoiceCtrl(wx.Panel):
         else:
             self.choice = wx.Choice(self, choices=choices)
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        sizer.Add(self.name, proportion=0, flag=wx.ALIGN_CENTER_VERTICAL)
+        border = lfs.CHOICE_BORDER
+        flag = wx.ALIGN_CENTER_VERTICAL|wx.ALL
+        sizer.Add(self.name, proportion=0, flag=flag, border=border)
         sizer.Add((10,5), proportion=0)
-        sizer.Add(self.choice, proportion=1, flag=wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add(self.choice, proportion=1, flag=flag, border=border)
         
         self.SetSizer(sizer)
 
@@ -89,11 +93,13 @@ class NamedTextCtrl(wx.Panel):
         self.text_ctrl = wx.TextCtrl(self, size=(50,-1))
         
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        flag = wx.ALIGN_CENTER_VERTICAL|wx.ALL
+        border=lfs.TEXT_CTRL_BORDER
         sizer.Add(self.name, proportion=0, 
-                  flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+                  flag=flag|wx.ALIGN_RIGHT, border=border)
         sizer.Add((10,5), proportion=0)
         sizer.Add(self.text_ctrl, proportion=1, 
-                  flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+                  flag=flag|wx.ALIGN_LEFT, border=border)
 
         self.SetSizer(sizer)
 

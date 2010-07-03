@@ -1,6 +1,5 @@
 import wx
 import numpy
-from .utils import named_color, wx_to_matplotlib_color
 
 base_size = numpy.array((1440, 900)) 
 
@@ -23,6 +22,8 @@ class LookAndFeelSettings(object):
         # PLOT_COLOR_1 and 2 are properties below
         self.PLOT_LINEWIDTH_1 = 1.5
         self.PLOT_LINEWIDTH_2 = 2.5
+
+        self.CONTROL_PANEL_BORDER = 0
         
     def get_main_frame_size(self):
         # main frame size
@@ -34,17 +35,32 @@ class LookAndFeelSettings(object):
         return size_ratio*base_size
 
     @property
+    def TEXT_CTRL_BORDER(self):
+        return self.CHOICE_BORDER
+
+    @property
+    def CHOICE_BORDER(self):
+        if wx.Platform == '__WXMAC__':
+            return 2
+        else:
+            return 1
+
+    @property
     def MAIN_FRAME_SIZE(self):
         return self.get_main_frame_size()
 
     @property
     def PLOT_COLOR_1(self):
+        from .utils import named_color, wx_to_matplotlib_color
         return named_color('black')
 
     @property
     def PLOT_COLOR_2(self):
+        from .utils import named_color, wx_to_matplotlib_color
         color = wx_to_matplotlib_color(*wx.SystemSettings_GetColour(
                 wx.SYS_COLOUR_HIGHLIGHT).Get())
+        # make color a little darker
+        color = [max(0, channel-0.10) for channel in color]
         return color
 
 lfs = LookAndFeelSettings()

@@ -1,6 +1,7 @@
 import wx
 
 from spikepy.gui.utils import NamedChoiceCtrl, NamedTextCtrl, recursive_layout
+from spikepy.gui.look_and_feel_settings import lfs
 
 class ControlPanel(wx.Panel):
     def __init__(self, parent, **kwargs):
@@ -18,7 +19,7 @@ class ControlPanel(wx.Panel):
         order_textctrl = NamedTextCtrl(self, name="Order:")
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        border = 3
+        border = lfs.CONTROL_PANEL_BORDER
         sizer.Add(function_chooser, proportion=0, 
                   flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, border=border)
         sizer.Add(passband_chooser, proportion=0, 
