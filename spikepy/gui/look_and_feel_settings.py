@@ -1,5 +1,6 @@
 import wx
 import numpy
+from .utils import named_color, wx_to_matplotlib_color
 
 base_size = numpy.array((1440, 900)) 
 
@@ -19,7 +20,10 @@ class LookAndFeelSettings(object):
         self.FILE_LISTCTRL_MIN_SIZE = (200, 250)
         self.FILE_LISTCTRL_TITLE = 'Opened Files List'
         
-
+        # PLOT_COLOR_1 and 2 are properties below
+        self.PLOT_LINEWIDTH_1 = 1.5
+        self.PLOT_LINEWIDTH_2 = 2.5
+        
     def get_main_frame_size(self):
         # main frame size
         display_size = numpy.array(wx.GetDisplaySize())
@@ -32,5 +36,15 @@ class LookAndFeelSettings(object):
     @property
     def MAIN_FRAME_SIZE(self):
         return self.get_main_frame_size()
+
+    @property
+    def PLOT_COLOR_1(self):
+        return named_color('black')
+
+    @property
+    def PLOT_COLOR_2(self):
+        color = wx_to_matplotlib_color(*wx.SystemSettings_GetColour(
+                wx.SYS_COLOUR_HIGHLIGHT).Get())
+        return color
 
 lfs = LookAndFeelSettings()

@@ -36,6 +36,7 @@ class FilterResultsPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self._psd_button, filter_buttons.psd_button)
         self.filter_buttons = filter_buttons
 
+
     def _psd_button(self, event=None):
         button_label = self.filter_buttons.psd_button.GetLabel()
         if button_label == "Show Power Spectrum":
@@ -50,9 +51,57 @@ class FilterButtons(wx.Panel):
         wx.Panel.__init__(self, parent, **kwargs)
 
         self.psd_button = wx.Button(self, label='Show Power Spectrum')
+        self.x_text = wx.StaticText(self, label='', size=(150,-1), 
+                style=wx.ST_NO_AUTORESIZE)
+        self.y_text = wx.StaticText(self, label='', size=(150,-1),
+                style=wx.ST_NO_AUTORESIZE)
+        self.show_cursor_position_checkbox = wx.CheckBox(self, 
+                label='Show cursor position')
+        self.scientific_notation_checkbox = wx.CheckBox(self, 
+                label='Use scientific notation')
+        self.scientific_notation_checkbox.Disable()
+        self.Bind(wx.EVT_CHECKBOX, self._show_position, 
+                  self.show_cursor_position_checkbox)
+
+        # ---- SUBSCRIPTIONS ----
+        pub.subscribe(self._update_cursor_display, 
+                      topic='UPDATE_CURSOR_DISPLAY')
+
+        # ---- SIZERS ----
+        checkbox_sizer = wx.BoxSizer(orient=wx.VERTICAL)
+        flag = wx.ALL|wx.ALIGN_CENTER_VERTICAL
+        checkbox_sizer.Add(self.show_cursor_position_checkbox, proportion=0,
+                           flag=flag,
+                           border=2)
+        checkbox_sizer.Add(self.scientific_notation_checkbox, proportion=0,
+                           flag=flag,
+                           border=2)
+
+        position_sizer = wx.BoxSizer(orient=wx.VERTICAL)
+        position_sizer.Add(self.x_text, proportion=0, flag=flag, border=2)
+        position_sizer.Add(self.y_text, proportion=0, flag=flag, border=2)
 
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        flag = wx.ALL
         sizer.Add(self.psd_button, proportion=0, flag=flag, border=4)
+        sizer.Add(position_sizer,  proportion=0, flag=flag, border=1)
+        sizer.Add(checkbox_sizer,  proportion=0, flag=flag, border=1)
         self.SetSizer(sizer)
+
+
+    def _show_position(self, event=None):
+        self.scientific_notation_checkbox.Enable(event.IsChecked())
+
+    def _update_cursor_display(self, message=None):
+        if self.show_cursor_position_checkbox.IsChecked():
+            x, y = message.data
+            if x is not None:
+                if self.scientific_notation_checkbox.IsChecked():
+                    self.x_text.SetLabel('X = %1.8e' % x)
+                    self.y_text.SetLabel('Y = %1.8e' % y)
+                else:
+                    self.x_text.SetLabel('X = %8.8f' % x)
+                    self.y_text.SetLabel('Y = %8.8f' % y)
+            else:
+                self.x_text.SetLabel('')
+                self.y_text.SetLabel('')
 

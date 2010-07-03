@@ -7,6 +7,7 @@ import numpy
 from .multi_plot_panel import MultiPlotPanel
 from .plot_panel import PlotPanel
 from .utils import wx_to_matplotlib_color
+from .look_and_feel_settings import lfs
 
 class FilterPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
@@ -81,7 +82,9 @@ class FilterPlotPanel(MultiPlotPanel):
                                            sharex=top_axes,
                                            sharey=top_axes))
             axes = self._trace_axes[fullpath][-1]
-            axes.plot(trace, color='black', linewidth=1.3, label='Raw')
+            axes.plot(trace, color=lfs.PLOT_COLOR_1, 
+                             linewidth=lfs.PLOT_LINEWIDTH_1, 
+                             label='Raw')
             axes.set_ylabel('Trace #%d' % (i+1))
             if i+1 < len(traces): #all but the last trace
                 # make the x/yticklabels dissapear
@@ -103,7 +106,8 @@ class FilterPlotPanel(MultiPlotPanel):
                     len(self._trace_axes[fullpath])+psd, 1, 1)
             psd_axes = self._psd_axes[fullpath]
             psd_axes.psd(traces, Fs=trial.sampling_freq, label='Raw',
-                               linewidth=2.0, color='black')
+                               linewidth=lfs.PLOT_LINEWIDTH_1, 
+                               color=lfs.PLOT_COLOR_1)
             psd_axes.set_ylabel('PSD (dB/Hz)')
             # move psd plot's bottom edge up a bit
             box = psd_axes.get_position()
@@ -130,7 +134,9 @@ class FilterPlotPanel(MultiPlotPanel):
                 filtered_line = lines[1]
                 filtered_line.set_ydata(trace)
             else:
-                axes.plot(trace, color='blue', linewidth=1.0, label='Filtered')
+                axes.plot(trace, color=lfs.PLOT_COLOR_2, 
+                                 linewidth=lfs.PLOT_LINEWIDTH_2, 
+                                 label='Filtered')
 
         #add psd plot
         if self._psd_shown:
@@ -142,7 +148,8 @@ class FilterPlotPanel(MultiPlotPanel):
                 del(axes.lines[1])
             axes.psd(traces, Fs=trial.sampling_freq, 
                                        label='Filtered', 
-                                       linewidth=1.5, color='blue')
+                                       linewidth=lfs.PLOT_LINEWIDTH_2, 
+                                       color=lfs.PLOT_COLOR_2)
             axes.set_ylabel('PSD (dB/Hz)')
             axes.legend()
         else:
