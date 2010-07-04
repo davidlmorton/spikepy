@@ -63,7 +63,7 @@ class StrategySummary(wx.Panel):
         wx.Panel.__init__(self, parent, **kwargs)
         
         s = []
-        stages = ['Detect\nion \nFilt\ner', 'Detection', 'Extraction Filter', 
+        stages = ['Detection Filter', 'Detection', 'Extraction Filter', 
                   'Extraction', 'Clustering']
         size = (140, -1)
         for stage in stages:

@@ -1,10 +1,6 @@
 import numpy
 import scipy.signal as scisig
 
-def spectral_inversion(kernel):
-    kernel = -kernel
-    kernel[taps/2] += 1.0
-    return kernel
 
 def fir_filter(signal, sampling_freq, critical_freq, kernel_window='hamming',
                taps=101, kind='high', **kwargs):
@@ -33,6 +29,11 @@ def fir_filter(signal, sampling_freq, critical_freq, kernel_window='hamming',
     nyquist_freq = sampling_freq/2
     critical_freq = numpy.array(critical_freq, dtype=numpy.float64)
     normalized_critical_freq = critical_freq / nyquist_freq
+
+    def spectral_inversion(kernel):
+        kernel = -kernel
+        kernel[taps/2] += 1.0
+        return kernel
 
     if not taps % 2: # ensure taps is odd
         taps += 1
