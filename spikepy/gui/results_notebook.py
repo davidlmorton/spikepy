@@ -25,16 +25,20 @@ class FilterResultsPanel(wx.Panel):
         self.name = name
 
         filter_buttons = FilterButtons(self)
-        filter_plot_panel = FilterPlotPanel(self, name)
+        self.filter_plot_panel = FilterPlotPanel(self, name)
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         sizer.Add(filter_buttons, proportion=0, flag=wx.ALL|wx.EXPAND, border=0)
-        sizer.Add(filter_plot_panel, proportion=1, 
+        sizer.Add(self.filter_plot_panel, proportion=1, 
                 flag=wx.ALL|wx.EXPAND, border=10)
         self.SetSizer(sizer)
 
         self.Bind(wx.EVT_BUTTON, self._psd_button, filter_buttons.psd_button)
         self.filter_buttons = filter_buttons
+
+    def _tell_report_coordinates(self, report_coordinates):
+        for plot_panel in self.filter_plot_panel._plot_panels.values():
+            plot_panel._report_coordinates = report_coordinates
 
 
     def _psd_button(self, event=None):
@@ -89,6 +93,8 @@ class FilterButtons(wx.Panel):
 
 
     def _show_position(self, event=None):
+        # tell the plots shown in this window to report their coordinates or no.
+        self.GetParent()._tell_report_coordinates(event.IsChecked())
         self.scientific_notation_checkbox.Enable(event.IsChecked())
 
     def _update_cursor_display(self, message=None):

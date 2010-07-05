@@ -35,9 +35,6 @@ class CustomToolbar(Toolbar):
                            longHelpString='Shrink Figure Canvas')
         wx.EVT_TOOL(self, self.SHRINK_CANVAS_ID, self._shrink_canvas)
         self.EnableTool(self.SHRINK_CANVAS_ID, False)
-        
-        self.x_text = wx.StaticText(self, label='X= ')
-        self.y_text = wx.StaticText(self, label='Y= ')
 
     def _enlarge_canvas(self, event=None):
         plot_panel = self.plot_panel
@@ -121,6 +118,7 @@ class PlotPanel (wx.Panel):
         self._min_size_factor = 1.0
         self._last_time_coordinates_updated = 0
         self._coordinates_not_blank = False
+        self._report_coordinates = False
 
         self._toolbar_visible = toolbar_visible
         if toolbar_visible:
@@ -133,6 +131,8 @@ class PlotPanel (wx.Panel):
         pub.subscribe(self._hide_toolbar,   topic="HIDE_TOOLBAR")
 
     def _update_coordinates(self, event=None):
+        if not self._report_coordinates:
+            return
         if event.inaxes:
             now = time.time()
             # only once every 100 ms.
