@@ -23,6 +23,8 @@ class LookAndFeelSettings(object):
         self.PLOT_LINEWIDTH_1 = 1.5
         self.PLOT_LINEWIDTH_2 = 2.5
 
+        self.PYSHELL_DIALOG_SIZE = (500,400)
+
         self.CONTROL_PANEL_BORDER = 0
         
     def get_main_frame_size(self):

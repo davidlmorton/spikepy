@@ -5,12 +5,15 @@ from wx.lib.wordwrap import wordwrap
 
 from .program_text import about_text
 from .utils import get_bitmap_icon
+from .pyshell import PyShellDialog
+from .look_and_feel_settings import lfs
 
 OPEN             = wx.ID_OPEN
 EXIT             = wx.ID_EXIT
 PREFERENCES      = wx.NewId()
 DEFAULT          = wx.NewId()
 ABOUT            = wx.ID_ABOUT
+SHELL            = wx.NewId()
 WORKSPACES       = wx.NewId()
 SHOW_TOOLBARS    = wx.NewId()
 SAVE_PERSPECTIVE = wx.NewId()
@@ -38,6 +41,7 @@ class SpikepyMenuBar(wx.MenuBar):
         
         # --- HELP ---
         help_menu = wx.Menu()
+        help_menu.Append(SHELL, text="Python Shell")
         help_menu.Append(ABOUT, text="About")
 
         self.Append(file_menu, "File")
@@ -48,6 +52,7 @@ class SpikepyMenuBar(wx.MenuBar):
         # --- BIND MENU EVENTS ---
         frame.Bind(wx.EVT_MENU, self._close_window, id=EXIT)
         frame.Bind(wx.EVT_MENU, self._about_box, id=ABOUT)
+        frame.Bind(wx.EVT_MENU, self._python_shell, id=SHELL)
         frame.Bind(wx.EVT_MENU, self._open_file, id=OPEN)
         frame.Bind(wx.EVT_MENU, self._show_toolbars, id=SHOW_TOOLBARS)
         frame.Bind(wx.EVT_MENU, self._save_perspective, id=SAVE_PERSPECTIVE)
@@ -55,6 +60,11 @@ class SpikepyMenuBar(wx.MenuBar):
         self.frame = frame
 
         self._toolbars_shown = False
+
+    def _python_shell(self, event=None):
+        event.Skip()
+        dlg = PyShellDialog(self, size=lfs.PYSHELL_DIALOG_SIZE)
+        dlg.Show()
 
     def _update_perspectives(self, perspectives={}):
         workspaces_submenu_items = self.workspaces_submenu.GetMenuItems()

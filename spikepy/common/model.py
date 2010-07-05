@@ -1,3 +1,6 @@
+import traceback 
+import sys
+
 import wx
 from wx.lib.pubsub import Publisher as pub
 from wx.lib.delayedresult import startWorker
@@ -26,7 +29,11 @@ class Model(object):
             pub.sendMessage(topic='FILE_ALREADY_OPENED',data=fullpath)
 
     def _open_file_worker(self, fullpath):
-        self.trials[fullpath] = open_data_file(fullpath)
+        try:
+            self.trials[fullpath] = open_data_file(fullpath)
+        except:
+            traceback.print_exc()
+            sys.exit(1)
         return fullpath
 
     def _open_file_consumer(self, delayed_result):
@@ -48,13 +55,17 @@ class Model(object):
                         wargs=(method_name, method_parameters))
 
     def _detection_worker(self, method_name, method_parameters):
-        for trial in self.trials.values():
-            filtered_traces = trial.traces['detection']
-            method = detection.get_method(method_name)
-            print filtered_traces
-            trial.spikes = method.run(filtered_traces, 
-                                     sampling_freq=trial.sampling_freq, 
-                                     **method_parameters)
+        try:
+            for trial in self.trials.values():
+                filtered_traces = trial.traces['detection']
+                method = detection.get_method(method_name)
+                print filtered_traces
+                trial.spikes = method.run(filtered_traces, 
+                                         sampling_freq=trial.sampling_freq, 
+                                         **method_parameters)
+        except:
+            traceback.print_exc()
+            sys.exit(1)
 
     def _detection_consumer(self, delayed_result):
         for trial in self.trials.values():
@@ -73,14 +84,18 @@ class Model(object):
                         cargs=(trace_type,))
 
     def _filter_worker(self, method_name, method_parameters, trace_type):
-        for trial in self.trials.values():
-            raw_traces = trial.traces['raw']
-            filtered_traces = []
-            method = filtering.get_method(method_name)
-            filtered_traces = method.run(raw_traces, 
+        try:
+            for trial in self.trials.values():
+                raw_traces = trial.traces['raw']
+                filtered_traces = []
+                method = filtering.get_method(method_name)
+                filtered_traces = method.run(raw_traces, 
                                         sampling_freq=trial.sampling_freq, 
                                         **method_parameters)
-            trial.set_traces(filtered_traces, trace_type=trace_type)
+                trial.set_traces(filtered_traces, trace_type=trace_type)
+        except:
+            traceback.print_exc()
+            sys.exit(1)
 
     def _filter_consumer(self, delayed_result, trace_type):
         for trial in self.trials.values():
