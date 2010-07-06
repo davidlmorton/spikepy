@@ -19,13 +19,14 @@ class ControlPanel(wx.Panel):
         order_textctrl = NamedTextCtrl(self, name="Order:")
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
+        flag = wx.ALIGN_LEFT|wx.ALL|wx.EXPAND
         border = lfs.CONTROL_PANEL_BORDER
         sizer.Add(function_chooser, proportion=0, 
-                  flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, border=border)
+                  flag=flag, border=border)
         sizer.Add(passband_chooser, proportion=0, 
-                  flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, border=border)
-        sizer.Add(order_textctrl, proportion=0, 
-                  flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, border=border)
+                  flag=flag, border=border)
+        sizer.Add(order_textctrl,   proportion=0, 
+                  flag=flag, border=border)
         self.SetSizer(sizer)
 
         self.Bind(wx.EVT_CHOICE, self._passband_choice_made, 

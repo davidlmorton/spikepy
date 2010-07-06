@@ -110,7 +110,7 @@ class StagePanel(wx.Panel):
                                               self.method_names):
             self.methods[method_name] = {}
             self.methods[method_name]['control_panel'] = \
-                    method_module.ControlPanel(self)
+                    method_module.ControlPanel(self, style=wx.BORDER_SUNKEN)
             self.methods[method_name]['control_panel'].Show(False)
             self.methods[method_name]['description'] = method_module.description
         self._method_name_chosen = self.method_names[0]
@@ -133,7 +133,7 @@ class StagePanel(wx.Panel):
  #                     flag=ea_flag,                        border=3)
         for method in self.methods.values():
             sizer.Add(method['control_panel'],  proportion=0,
-                      flag=ea_flag,                        border=3)
+                      flag=ea_flag,                        border=6)
         sizer.Add(self.run_button,           proportion=0, 
                       flag=wx.ALL,                         border=1)
         self.SetSizer(sizer)

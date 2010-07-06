@@ -25,7 +25,7 @@ class LookAndFeelSettings(object):
 
         self.PYSHELL_DIALOG_SIZE = (500,400)
 
-        self.CONTROL_PANEL_BORDER = 0
+        self.CONTROL_PANEL_BORDER = 1
         
     def get_main_frame_size(self):
         # main frame size

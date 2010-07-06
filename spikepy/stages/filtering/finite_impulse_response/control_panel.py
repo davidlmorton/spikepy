@@ -1,6 +1,7 @@
 import wx
 
 from spikepy.gui.utils import NamedChoiceCtrl, NamedTextCtrl, recursive_layout
+from spikepy.gui.look_and_feel_settings import lfs
 
 
 class ControlPanel(wx.Panel):
@@ -22,12 +23,15 @@ class ControlPanel(wx.Panel):
         taps_textctrl = NamedTextCtrl(self, name="Taps:")
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        sizer.Add(window_chooser, proportion=0, 
-                  flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, border=2)
+
+        flag = wx.ALIGN_LEFT|wx.ALL|wx.EXPAND
+        border = lfs.CONTROL_PANEL_BORDER
+        sizer.Add(window_chooser,   proportion=0, 
+                  flag=flag, border=border)
         sizer.Add(passband_chooser, proportion=0, 
-                  flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, border=2)
-        sizer.Add(taps_textctrl, proportion=0, 
-                  flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, border=2)
+                  flag=flag, border=border)
+        sizer.Add(taps_textctrl,    proportion=0, 
+                  flag=flag, border=border)
         self.SetSizer(sizer)
 
         self.Bind(wx.EVT_CHOICE, self._passband_choice_made, 

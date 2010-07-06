@@ -1,6 +1,7 @@
 import wx
 
 from spikepy.gui.utils import NamedTextCtrl, OptionalNamedTextCtrl
+from spikepy.gui.look_and_feel_settings import lfs
 
 
 class ControlPanel(wx.Panel):
@@ -22,7 +23,7 @@ class ControlPanel(wx.Panel):
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         flag = wx.ALIGN_LEFT|wx.ALL|wx.EXPAND
-        border = 3
+        border = lfs.CONTROL_PANEL_BORDER
         sizer.Add(sd_units_checkbox, proportion=0, flag=flag, border=border)
         sizer.Add(threshold_1_sd,    proportion=0, flag=flag, border=border)
         sizer.Add(threshold_1,       proportion=0, flag=flag, border=border)
