@@ -68,7 +68,7 @@ class StrategySummary(wx.Panel):
         size = (140, -1)
         for stage in stages:
             s.append(wx.StaticText(self, label=stage+':', size=size,
-                               style=wx.ALIGN_RIGHT))
+                               style=wx.ALIGN_RIGHT|wx.ST_NO_AUTORESIZE))
 
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         lsizer = wx.BoxSizer(orient=wx.VERTICAL)
