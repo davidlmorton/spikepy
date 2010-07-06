@@ -1,5 +1,6 @@
 import traceback 
 import sys
+from multiprocessing import Pool
 
 import wx
 from wx.lib.pubsub import Publisher as pub
@@ -30,7 +31,10 @@ class Model(object):
 
     def _open_file_worker(self, fullpath):
         try:
-            self.trials[fullpath] = open_data_file(fullpath)
+            processing_pool = Pool()
+            result = processing_pool.apply_async(open_data_file, args=(fullpath,))
+            self.trials[fullpath] = result.get()
+            processing_pool.close()
         except:
             traceback.print_exc()
             sys.exit(1)
@@ -56,13 +60,15 @@ class Model(object):
 
     def _detection_worker(self, method_name, method_parameters):
         try:
+            processing_pool = Pool()
             for trial in self.trials.values():
                 filtered_traces = trial.traces['detection']
                 method = detection.get_method(method_name)
-                print filtered_traces
-                trial.spikes = method.run(filtered_traces, 
-                                         sampling_freq=trial.sampling_freq, 
-                                         **method_parameters)
+                method_parameters['sampling_freq'] = trial.sampling_freq
+                result = processing_pool.apply_async(method.run, 
+                                                     args=(filtered_traces,),
+                                                     kwds=method_parameters)
+                trial.spikes = result.get()
         except:
             traceback.print_exc()
             sys.exit(1)
@@ -85,14 +91,17 @@ class Model(object):
 
     def _filter_worker(self, method_name, method_parameters, trace_type):
         try:
+            processing_pool = Pool()
             for trial in self.trials.values():
                 raw_traces = trial.traces['raw']
                 filtered_traces = []
                 method = filtering.get_method(method_name)
-                filtered_traces = method.run(raw_traces, 
-                                        sampling_freq=trial.sampling_freq, 
-                                        **method_parameters)
+                method_parameters['sampling_freq'] = trial.sampling_freq
+                result = processing_pool.apply_async(method.run, args=(raw_traces,),
+                                                     kwds=method_parameters)
+                filtered_traces = result.get()
                 trial.set_traces(filtered_traces, trace_type=trace_type)
+            processing_pool.close()
         except:
             traceback.print_exc()
             sys.exit(1)
