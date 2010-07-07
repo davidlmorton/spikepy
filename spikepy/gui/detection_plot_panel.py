@@ -23,8 +23,8 @@ class DetectionPlotPanel(MultiPlotPanel):
                                               dpi=self.dpi)
         pub.subscribe(self._remove_trial, topic="REMOVE_PLOT")
         pub.subscribe(self._trial_added, topic='TRIAL_ADDED')
-        pub.subscribe(self._trial_detectioned, 
-                      topic='TRIAL_DETECTIONED')
+        pub.subscribe(self._trial_altered, topic='TRIAL_DETECTIONED')
+        pub.subscribe(self._trial_altered, topic="TRIAL_DETECTION_FILTERED")
 
         self._trials = {}
         self._trace_axes = {}
@@ -48,32 +48,33 @@ class DetectionPlotPanel(MultiPlotPanel):
                                 facecolor=self.facecolor,
                                 edgecolor=self.facecolor,
                                 dpi=self.dpi)
-        self._replot_panels.add(fullpath)
 
-    def _trial_detectioned(self, message=None):
+    def _trial_altered(self, message=None):
         trial = message.data
         fullpath = trial.fullpath
-        self._replot_panels.add(fullpath)
         if fullpath == self._currently_shown:
             self.plot(fullpath)
+        else:
             self._replot_panels.remove(fullpath)
 
     def plot(self, fullpath):
         trial = self._trials[fullpath]
         figure = self._plot_panels[fullpath].figure
-
+        
         if (fullpath not in self._trace_axes.keys() and
                 'detection' in trial.traces.keys()):
-            self._plot_filtered_traces(trial, figure, fullpath)
-        else:
-            return # this trial has not been detection filtered.
+            self._create_axes(trial, figure, fullpath)
+        self._plot_filtered_traces(trial, figure, fullpath)
         self._plot_spikes(trial, figure, fullpath)
 
+        old_shown_state = self._plot_panels[fullpath].IsShown()
+        self._plot_panels[fullpath].Show(False)
         figure.canvas.draw()
+        self._plot_panels[fullpath].Show(old_shown_state)
         self.SetupScrolling()
         self.Layout()
 
-    def _plot_filtered_traces(self, trial, figure, fullpath):
+    def _create_axes(self, trial, figure, fullpath):
         traces = trial.traces['detection']
         for i, trace in enumerate(traces):
             if i==0:
@@ -87,9 +88,6 @@ class DetectionPlotPanel(MultiPlotPanel):
                                            sharex=top_axes,
                                            sharey=top_axes))
             axes = self._trace_axes[fullpath][-1]
-            axes.plot(trace, color=lfs.PLOT_COLOR_1, 
-                             linewidth=lfs.PLOT_LINEWIDTH_1, 
-                             label='Detection Filtered')
             axes.set_ylabel('Trace #%d' % (i+1))
             if i+1 < len(traces): #all but the last trace
                 # make the x/yticklabels dissapear
@@ -109,22 +107,37 @@ class DetectionPlotPanel(MultiPlotPanel):
         spike_axes = self._spike_axes[fullpath]
         spike_axes.set_xlabel('Time (ms fixme)')
         spike_axes.set_ylabel('Estimated\nspike rate (Hz)')
-        # move psd plot's bottom edge up a bit
+        # move raster plot's bottom edge up a bit
         box = spike_axes.get_position()
         box.p0 = (box.p0[0], box.p0[1]+0.065)
         box.p1 = (box.p1[0], 0.99)
         spike_axes.set_position(box)
+        
 
+    def _plot_filtered_traces(self, trial, figure, fullpath):
+        if "detection" in trial.traces.keys():
+            traces = trial.traces['detection']
+        else:
+            return
+        for trace, axes in zip(traces, self._trace_axes[fullpath]):
+            while axes.lines:
+                del(axes.lines[0])     
+            axes.plot(trace, color=lfs.PLOT_COLOR_2, 
+                             linewidth=lfs.PLOT_LINEWIDTH_2, 
+                             label='Detection Filtered')
 
     def _plot_spikes(self, trial, figure, fullpath):
         if len(trial.spikes):
             spikes = trial.spikes
         else:
+            while self._spike_axes[fullpath].lines:
+                del(self._spike_axes[fullpath].lines[0])
             return # this trial has never been spike detected.
 
         for spike_list, axes in zip(spikes, self._trace_axes[fullpath]):
             axes.set_autoscale_on(False)
             lines = axes.get_lines()
+            # check if raster is already plotted
             if len(lines) == 2:
                 del(axes.lines[1])
             spike_y = max(axes.lines[0].get_ydata())
@@ -148,9 +161,8 @@ class DetectionPlotPanel(MultiPlotPanel):
         spike_axes = self._spike_axes[fullpath]
 
         # remove old lines if present.
-        lines = spike_axes.get_lines()
-        for i, line, in enumerate(lines):
-            del spike_axes[i]
+        while spike_axes.lines:
+            del spike_axes.lines[0]
             
         spike_axes.plot(spike_rate, color='black', linewidth=1.5)
         spike_y = 0.0
@@ -159,9 +171,6 @@ class DetectionPlotPanel(MultiPlotPanel):
                                 linewidth=0.0,
                                 marker='|',
                                 markersize=30)
-
-        self._trace_axes[fullpath][-1].legend(loc='lower right')
-
 
 def get_accepted_spike_list(spikes, samling_freq, width, required_proportion):
     '''

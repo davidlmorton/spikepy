@@ -12,11 +12,7 @@ class Trial(object):
         self.sampling_freq = 1.0
         self.time_collected = time.time() # right now
         self.fullpath = 'FULLPATH NOT SET'
-        self.traces = {} # keys = 'raw', 'detection', 'extraction', 'others?'
-        # a list of (lists of spikes) equal in len to num electrodes
-        self.spikes = []
-        self.features = []
-        self.units = {} # XXX Flesh out later
+        self.initialize_data()
 
     def set_traces(self, trace_list, 
                    sampling_freq=None, 
@@ -36,5 +32,32 @@ class Trial(object):
         if fullpath is not None:
             self.fullpath = fullpath
 
+    def initialize_data(self, last_stage_completed=None):
+        if last_stage_completed is not None:
+            last_stage_completed = last_stage_completed.lower()
+        if last_stage_completed is None:
+            # keys = 'raw', 'detection', 'extraction', 'others?'
+            self.traces = {} 
+            # a list of (lists of spikes) equal in len to num electrodes
+            self.spikes = []
+            self.features = []
+            self.units = {} 
+        elif last_stage_completed == "detection filter":
+            self.spikes = []
+            self.features = []
+            self.units = {}
+        elif last_stage_completed == "detection":
+            self.features = []
+            self.units = {}
+        elif last_stage_completed == "extraction filter":
+            self.features = []
+            self.units = {}
+        elif last_stage_completed == "extraction":
+            self.units = {}
+        elif last_stage_completed == 'clustring':
+            pass
+
+
 def zero_mean(trace_array):
     return trace_array - numpy.average(trace_array)
+

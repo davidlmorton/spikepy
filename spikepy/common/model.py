@@ -56,7 +56,8 @@ class Model(object):
     def _detection(self, message):
         stage_name, method_name, method_parameters = message.data
         startWorker(self._detection_consumer, self._detection_worker,
-                        wargs=(method_name, method_parameters))
+                        wargs=(method_name, method_parameters),
+                        cargs=(stage_name,))
 
     def _detection_worker(self, method_name, method_parameters):
         try:
@@ -74,10 +75,10 @@ class Model(object):
             traceback.print_exc()
             sys.exit(1)
 
-    def _detection_consumer(self, delayed_result):
+    def _detection_consumer(self, delayed_result, stage_name):
         for trial in self.trials.values():
+            trial.initialize_data(last_stage_completed=stage_name)
             pub.sendMessage(topic='TRIAL_DETECTIONED', data=trial)
-            print trial.spikes
         pub.sendMessage(topic='RUNNING_COMPLETED')
         
 
@@ -88,7 +89,7 @@ class Model(object):
         startWorker(self._filter_consumer, self._filter_worker,
                         wargs=(method_name, method_parameters, 
                                trace_type),
-                        cargs=(trace_type,))
+                        cargs=(trace_type, stage_name))
 
     def _filter_worker(self, method_name, method_parameters, trace_type):
         try:
@@ -107,8 +108,13 @@ class Model(object):
             traceback.print_exc()
             sys.exit(1)
 
-    def _filter_consumer(self, delayed_result, trace_type):
+    def _filter_consumer(self, delayed_result, trace_type, stage_name):
         for trial in self.trials.values():
+            trial.initialize_data(last_stage_completed=stage_name)
             pub.sendMessage(topic='TRIAL_%s_FILTERED' % trace_type.upper(),
                             data=trial)
         pub.sendMessage(topic='RUNNING_COMPLETED')
+
+            
+
+
