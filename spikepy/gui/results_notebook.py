@@ -2,13 +2,14 @@ import wx
 from wx.lib.pubsub import Publisher as pub
 
 from .filter_plot_panel import FilterPlotPanel
+from .detection_plot_panel import DetectionPlotPanel
 
 class ResultsNotebook(wx.Notebook):
     def __init__(self, parent, **kwargs):
         wx.Notebook.__init__(self, parent, **kwargs)
         
         detection_filter_panel = FilterResultsPanel(self, "detection")
-        detection_panel = wx.Panel(self)
+        detection_panel = DetectionResultsPanel(self, 'detection')
         extraction_filter_panel = FilterResultsPanel(self, "extraction")
         extraction_panel = wx.Panel(self)
         clustering_panel = wx.Panel(self)
@@ -24,17 +25,17 @@ class FilterResultsPanel(wx.Panel):
         wx.Panel.__init__(self, parent, **kwargs)
         self.name = name
 
-        filter_buttons = FilterButtons(self)
+        results_bar = ResultsBar(self)
         self.filter_plot_panel = FilterPlotPanel(self, name)
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        sizer.Add(filter_buttons, proportion=0, flag=wx.ALL|wx.EXPAND, border=0)
+        sizer.Add(results_bar, proportion=0, flag=wx.ALL|wx.EXPAND, border=0)
         sizer.Add(self.filter_plot_panel, proportion=1, 
                 flag=wx.ALL|wx.EXPAND, border=10)
         self.SetSizer(sizer)
 
-        self.Bind(wx.EVT_BUTTON, self._psd_button, filter_buttons.psd_button)
-        self.filter_buttons = filter_buttons
+        self.Bind(wx.EVT_BUTTON, self._psd_button, results_bar.psd_button)
+        self.results_bar = results_bar
 
     def _tell_report_coordinates(self, report_coordinates):
         for plot_panel in self.filter_plot_panel._plot_panels.values():
@@ -42,15 +43,46 @@ class FilterResultsPanel(wx.Panel):
 
 
     def _psd_button(self, event=None):
-        button_label = self.filter_buttons.psd_button.GetLabel()
+        button_label = self.results_bar.psd_button.GetLabel()
         if button_label == "Show Power Spectrum":
             pub.sendMessage(topic='SHOW_PSD', data=(self.name, True))
-            self.filter_buttons.psd_button.SetLabel("Hide Power Spectrum")
+            self.results_bar.psd_button.SetLabel("Hide Power Spectrum")
         else:
             pub.sendMessage(topic="SHOW_PSD", data=(self.name, False))
-            self.filter_buttons.psd_button.SetLabel("Show Power Spectrum")
+            self.results_bar.psd_button.SetLabel("Show Power Spectrum")
+
+class DetectionResultsPanel(wx.Panel):
+    def __init__(self, parent, name, **kwargs):
+        wx.Panel.__init__(self, parent, **kwargs)
+        self.name = name
+
+        results_bar = ResultsBar(self)
+        self.detection_plot_panel = DetectionPlotPanel(self, name)
+
+        sizer = wx.BoxSizer(orient=wx.VERTICAL)
+        sizer.Add(results_bar, proportion=0, flag=wx.ALL|wx.EXPAND, border=0)
+        sizer.Add(self.detection_plot_panel, proportion=1, 
+                flag=wx.ALL|wx.EXPAND, border=10)
+        self.SetSizer(sizer)
+
+        self.Bind(wx.EVT_BUTTON, self._psd_button, results_bar.psd_button)
+        self.results_bar = results_bar
+
+    def _tell_report_coordinates(self, report_coordinates):
+        for plot_panel in self.detection_plot_panel._plot_panels.values():
+            plot_panel._report_coordinates = report_coordinates
+
+
+    def _psd_button(self, event=None):
+        button_label = self.results_bar.psd_button.GetLabel()
+        if button_label == "Show Power Spectrum":
+            pub.sendMessage(topic='SHOW_PSD', data=(self.name, True))
+            self.results_bar.psd_button.SetLabel("Hide Power Spectrum")
+        else:
+            pub.sendMessage(topic="SHOW_PSD", data=(self.name, False))
+            self.results_bar.psd_button.SetLabel("Show Power Spectrum")
         
-class FilterButtons(wx.Panel):
+class ResultsBar(wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
 

@@ -1,3 +1,5 @@
+import copy
+
 import numpy
 
 from fast_thresh_detect import fast_thresh_detect
@@ -11,7 +13,9 @@ def two_threshold_spike_find(input_array, threshold_1, threshold_2=None,
     else:
         spikes_2 = find_spike_occurances(input_array, threshold_2, 
                                      refractory_period, max_spike_width)
-        return get_spike_indexes(spikes_1, spikes_2, 
+        all_spikes = copy.deepcopy(spikes_1)
+        all_spikes.extend(spikes_2)
+        return get_spike_indexes(all_spikes, all_spikes, 
                              max(max_spike_width, refractory_period), 
                              return_loners=True)
 
@@ -34,8 +38,10 @@ def get_spike_indexes(p_crossings, n_crossings, max_spike_width, return_loners=F
 def get_spike_index(p, ns, max_spike_width, return_loners):
         abs_differences = numpy.abs(ns-p)
         sorted_indexes  = numpy.argsort(abs_differences)
-        if abs_differences[sorted_indexes[0]] <= max_spike_width:
-            n_index = sorted_indexes[0]
+        if return_loners: small_index = 1
+        else: small_index = 0
+        if abs_differences[sorted_indexes[small_index]] <= max_spike_width:
+            n_index = sorted_indexes[small_index]
             spike_occurance = numpy.average([ns[n_index], p])
             return spike_occurance #TODO should spike occurance be an integer?
         if return_loners:

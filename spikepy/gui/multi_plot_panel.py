@@ -17,33 +17,42 @@ class MultiPlotPanel(ScrolledPanel):
         ScrolledPanel.__init__(self, parent)
 
         self._plot_panels = {}
-        self._plot_panels['DEFAULT'] = PlotPanel(self, 
-                                                toolbar_visible=toolbar_visible,
-                                                **kwargs)
+        kwargs['toolbar_visible'] = toolbar_visible
+        self._plot_kwargs = kwargs
         self._currently_shown = 'DEFAULT'
         self._toolbar_visible = toolbar_visible 
+        self._replot_panels = set()
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self._plot_panels['DEFAULT'], proportion=1, flag=wx.EXPAND)
         self.SetSizer(sizer)
+        self.add_plot('DEFAULT')
+        self._plot_panels['DEFAULT'].Show(True)
         self.SetupScrolling()
 
         self.Bind(wx.EVT_CONTEXT_MENU, self._toggle_toolbar)
         pub.subscribe(self._show_plot, topic='SHOW_PLOT')
         pub.subscribe(self._remove_plot, topic='REMOVE_PLOT')
 
-    def add_plot(self, plot_panel, key):
+    def add_plot(self, key, **kwargs):
         ''' 
-        Add the plot, overwrite silently
+        Add new plot, if key already exists, overwrite silently.
         '''
         if key in self._plot_panels.keys():
             self.GetSizer().Remove(self._plot_panels[key])
 
-        self._plot_panels[key] = plot_panel
-        self.GetSizer().Add(plot_panel, proportion=1, flag=wx.EXPAND)
-        self._plot_panels[key].Show(False)
+        kwargs.update(self._plot_kwargs)
+        self._plot_panels[key] = PlotPanel(self, **kwargs)
+        self.GetSizer().Add(self._plot_panels[key], proportion=1, 
+                                                    flag=wx.EXPAND)
 
+        self._plot_panels[key].Show(False)
         self.Layout()
+
+    def plot(self, key):
+        '''
+        to be overwritten in subclass
+        '''
+        pass
 
     def _remove_plot(self, message):
         removed_panel_key = message.data
@@ -65,11 +74,15 @@ class MultiPlotPanel(ScrolledPanel):
         if new_panel_key not in self._plot_panels.keys():
             raise RuntimeError('Plot associated with "%s" does not exist.' %
                                 new_panel_key)
+
         shown_plot_panel = self._plot_panels[self._currently_shown]
         shown_plot_panel.Show(False)
 
         self._currently_shown = new_panel_key
         showing_plot_panel = self._plot_panels[new_panel_key]
+        if new_panel_key in self._replot_panels:
+            self.plot(new_panel_key)
+            self._replot_panels.remove(new_panel_key)
         showing_plot_panel.Show(True)
         self.Layout()
         self.SetupScrolling()

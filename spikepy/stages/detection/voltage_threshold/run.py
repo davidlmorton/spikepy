@@ -22,6 +22,7 @@ def run(trace_list, sampling_freq, threshold_1=None,
             std = 1
         threshold_1 *= std 
         threshold_2 *= std 
+        print threshold_1, threshold_2
         
         # convert times to samples (times in ms)
         refractory_period = (refractory_time/1000.0)*sampling_freq

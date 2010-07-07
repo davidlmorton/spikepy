@@ -20,11 +20,10 @@ class FilterPlotPanel(MultiPlotPanel):
                                               facecolor=self.facecolor,
                                               edgecolor=self.facecolor,
                                               dpi=self.dpi)
+        pub.subscribe(self._remove_trial, topic="REMOVE_PLOT")
         pub.subscribe(self._trial_added, topic='TRIAL_ADDED')
         pub.subscribe(self._trial_filtered, 
                       topic='TRIAL_%s_FILTERED' % name.upper())
-        pub.subscribe(self._show_psd, topic='SHOW_PSD')
-        pub.subscribe(self._remove_trial, topic="REMOVE_PLOT")
 
         self._psd_shown = False
         self._trials = {}
@@ -40,45 +39,53 @@ class FilterPlotPanel(MultiPlotPanel):
         except KeyError:
             pass
 
-    def _show_psd(self, message=None):
-        name, psd_shown = message.data
-        if name == self.name:
-            if psd_shown == self._psd_shown:
-                return
-            self._psd_shown = psd_shown
-            trials = self._trials.values()
-            for trial in trials:
-                self._plot_panels[trial.fullpath].figure.clear()
-                self._trial_added(trial=trial)
-                self._show_plot(new_panel_key=self._currently_shown)
-    
     def _trial_added(self, message=None, trial=None):
         if message is not None:
             trial = message.data
 
         fullpath = trial.fullpath
         self._trials[fullpath] = trial
-        traces = trial.traces['raw']
+        num_traces = len(trial.traces['raw'])
+        # make room for multiple traces and a psd plot.
+        figsize = (self._figsize[0], self._figsize[1]*num_traces+1)
+        self.add_plot(fullpath, figsize=figsize, 
+                                facecolor=self.facecolor,
+                                edgecolor=self.facecolor,
+                                dpi=self.dpi)
+        self._replot_panels.add(fullpath)
 
-        if self._psd_shown: psd = 1
-        else: psd = 0
-        _figsize = (self._figsize[0], self._figsize[1]*len(traces)+psd)
-        self.add_plot(PlotPanel(self, figsize=_figsize,
-                                      facecolor=self.facecolor,
-                                      edgecolor=self.facecolor,
-                                      dpi=self.dpi), fullpath)
+    def _trial_filtered(self, message=None):
+        trial = message.data
+        fullpath = trial.fullpath
+        self._replot_panels.add(fullpath)
+        if fullpath == self._currently_shown:
+            self.plot(fullpath)
+            self._replot_panels.remove(fullpath)
 
+
+    def plot(self, fullpath):
+        trial = self._trials[fullpath]
         figure = self._plot_panels[fullpath].figure
 
+        if fullpath not in self._trace_axes.keys():
+            self._plot_raw_traces(trial, figure, fullpath)
+        self._plot_filtered_traces(trial, figure, fullpath)
+
+        figure.canvas.draw()
+        self.SetupScrolling()
+        self.Layout()
+
+    def _plot_raw_traces(self, trial, figure, fullpath):
+        traces = trial.traces['raw']
         for i, trace in enumerate(traces):
             if i==0:
                 self._trace_axes[fullpath] = [
-                        figure.add_subplot(len(traces)+psd, 1, i+1+psd)]
+                        figure.add_subplot(len(traces)+1, 1, i+2)]
                 top_axes = self._trace_axes[fullpath][0]
             else:
                 self._trace_axes[fullpath].append(
-                        figure.add_subplot(len(traces)+psd, 
-                                           1, i+1+psd,
+                        figure.add_subplot(len(traces)+1, 
+                                           1, i+2,
                                            sharex=top_axes,
                                            sharey=top_axes))
             axes = self._trace_axes[fullpath][-1]
@@ -93,40 +100,33 @@ class FilterPlotPanel(MultiPlotPanel):
 
         axes.set_xlabel('Sample Number')
         # bottom is in percent, how big is text there in percent?
-        factor = len(traces)+psd
+        factor = len(traces)+1
         original_bottom = 0.2
         figure.subplots_adjust(hspace=0.025, left=0.10, right=0.95, 
                                bottom=original_bottom/factor+0.01)
 
-        #add psd plot
-        if self._psd_shown:
-            # concat all traces
-            traces = numpy.hstack(traces)
-            self._psd_axes[fullpath] = figure.add_subplot(
-                    len(self._trace_axes[fullpath])+psd, 1, 1)
-            psd_axes = self._psd_axes[fullpath]
-            psd_axes.psd(traces, Fs=trial.sampling_freq, label='Raw',
-                               linewidth=lfs.PLOT_LINEWIDTH_1, 
-                               color=lfs.PLOT_COLOR_1)
-            psd_axes.set_ylabel('PSD (dB/Hz)')
-            # move psd plot's bottom edge up a bit
-            box = psd_axes.get_position()
-            box.p0 = (box.p0[0], box.p0[1]+0.065)
-            box.p1 = (box.p1[0], 0.99)
-            psd_axes.set_position(box)
+        # --- add psd plot ---
+        all_traces = numpy.hstack(traces)
+        self._psd_axes[fullpath] = figure.add_subplot(
+                len(self._trace_axes[fullpath])+1, 1, 1)
+        psd_axes = self._psd_axes[fullpath]
+        psd_axes.psd(all_traces, Fs=trial.sampling_freq, label='Raw',
+                                 linewidth=lfs.PLOT_LINEWIDTH_1, 
+                                 color=lfs.PLOT_COLOR_1)
+        psd_axes.set_ylabel('PSD (dB/Hz)')
+        # move psd plot's bottom edge up a bit
+        box = psd_axes.get_position()
+        box.p0 = (box.p0[0], box.p0[1]+0.065)
+        box.p1 = (box.p1[0], 0.99)
+        psd_axes.set_position(box)
 
+
+    def _plot_filtered_traces(self, trial, figure, fullpath):
         if self.name.lower() in trial.traces.keys():
-            self._trial_filtered(trial=trial)
-        self.SetupScrolling()
-        self.Layout()
-        figure.canvas.draw()
-            
-    def _trial_filtered(self, message=None, trial=None):
-        if message is not None:
-            trial = message.data
-        fullpath = trial.fullpath
-        traces = trial.traces[self.name.lower()]
-        figure = self._plot_panels[fullpath].figure
+            traces = trial.traces[self.name.lower()]
+        else:
+            return # this trial has never been filtered.
+
         for trace, axes in zip(traces, self._trace_axes[fullpath]):
             axes.set_autoscale_on(False)
             lines = axes.get_lines()
@@ -138,23 +138,16 @@ class FilterPlotPanel(MultiPlotPanel):
                                  linewidth=lfs.PLOT_LINEWIDTH_2, 
                                  label='Filtered')
 
-        #add psd plot
-        if self._psd_shown:
-            # concat all traces
-            traces = numpy.hstack(traces)
-            axes = self._psd_axes[fullpath]
-            lines = axes.get_lines()
-            if len(lines) == 2:
-                del(axes.lines[1])
-            axes.psd(traces, Fs=trial.sampling_freq, 
-                                       label='Filtered', 
-                                       linewidth=lfs.PLOT_LINEWIDTH_2, 
-                                       color=lfs.PLOT_COLOR_2)
-            axes.set_ylabel('PSD (dB/Hz)')
-            axes.legend()
-        else:
-            self._trace_axes[fullpath][0].legend()
-
-        figure.canvas.draw()
+        all_traces = numpy.hstack(traces)
+        axes = self._psd_axes[fullpath]
+        lines = axes.get_lines()
+        if len(lines) == 2:
+            del(axes.lines[1])
+        axes.psd(all_traces, Fs=trial.sampling_freq, 
+                                   label='Filtered', 
+                                   linewidth=lfs.PLOT_LINEWIDTH_2, 
+                                   color=lfs.PLOT_COLOR_2)
+        axes.set_ylabel('PSD (dB/Hz)')
+        axes.legend(loc='lower right')
 
 
