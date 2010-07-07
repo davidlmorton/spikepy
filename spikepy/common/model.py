@@ -60,15 +60,16 @@ class Model(object):
 
     def _detection_worker(self, method_name, method_parameters):
         try:
-            processing_pool = Pool()
+#            processing_pool = Pool()
             for trial in self.trials.values():
                 filtered_traces = trial.traces['detection']
                 method = detection.get_method(method_name)
                 method_parameters['sampling_freq'] = trial.sampling_freq
-                result = processing_pool.apply_async(method.run, 
-                                                     args=(filtered_traces,),
-                                                     kwds=method_parameters)
-                trial.spikes = result.get()
+#                result = processing_pool.apply_async(method.run, 
+#                                                     args=(filtered_traces,),
+#                                                     kwds=method_parameters)
+#                trial.spikes = result.get()
+                trial.spikes = method.run(filtered_traces, **method_parameters)
         except:
             traceback.print_exc()
             sys.exit(1)
