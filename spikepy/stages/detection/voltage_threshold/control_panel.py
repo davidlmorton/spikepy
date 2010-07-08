@@ -46,9 +46,22 @@ class ControlPanel(wx.Panel):
         self._using_sd_units = False
         self._units_check(state=self._using_sd_units)
 
+        # --- SET DEFAULTS ---
+        
+        threshold_1_sd.SetValue('4.0')
+        threshold_2_sd.SetValue('-4.0')
+        threshold_2_sd._enable(state=False)
+        threshold_1.SetValue('0.01')
+        threshold_2.SetValue('-0.01')
+        threshold_2._enable(state=False)
+        refractory_time.SetValue('0.0')
+        max_spike_width.SetValue('2.0')
+        self._units_check(state=True)
+
     def _units_check(self, event=None, state=None):
         if state is None:
             state = event.IsChecked()
+        self.sd_units_checkbox.SetValue(state)
         self._using_sd_units = state
         self.threshold_1_sd.Show(state)
         self.threshold_1.Show(not state)

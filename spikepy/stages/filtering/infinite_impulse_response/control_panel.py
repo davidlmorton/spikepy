@@ -1,6 +1,7 @@
 import wx
 
-from spikepy.gui.named_controls import NamedChoiceCtrl, NamedTextCtrl
+from spikepy.gui.named_controls import (NamedChoiceCtrl, NamedTextCtrl,
+                                        NamedSpinCtrl)
 from spikepy.gui.utils import recursive_layout
 from spikepy.gui.look_and_feel_settings import lfs
 
@@ -13,11 +14,14 @@ class ControlPanel(wx.Panel):
         passband_chooser = NamedChoiceCtrl(self, name="Passband Type:", 
                                            choices=["High Pass", "Low Pass", 
                                                     "Band Pass"])
-        low_cutoff_textctrl = NamedTextCtrl(self, name="Low cutoff frequency:")
-        high_cutoff_textctrl = NamedTextCtrl(self, 
-                                             name="High cutoff frequency:")
-        cutoff_textctrl = NamedTextCtrl(self, name="Cutoff frequency:")
-        order_textctrl = NamedTextCtrl(self, name="Order:")
+        low_cutoff_spinctrl = NamedSpinCtrl(self, name="Low cutoff frequency:",
+                                                  min=10, max=100000)
+        high_cutoff_spinctrl = NamedSpinCtrl(self, 
+                                             name="High cutoff frequency:",
+                                             min=10, max=100000)
+        cutoff_spinctrl = NamedSpinCtrl(self, name="Cutoff frequency:", 
+                                              min=10, max=100000)
+        order_spinctrl = NamedSpinCtrl(self, name="Order:", min=1, max=12)
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         flag = wx.ALIGN_LEFT|wx.ALL|wx.EXPAND
@@ -26,32 +30,44 @@ class ControlPanel(wx.Panel):
                   flag=flag, border=border)
         sizer.Add(passband_chooser, proportion=0, 
                   flag=flag, border=border)
-        sizer.Add(order_textctrl,   proportion=0, 
+        sizer.Add(low_cutoff_spinctrl, proportion=0, 
+                  flag=flag, border=border)
+        sizer.Add(high_cutoff_spinctrl, proportion=0, 
+                  flag=flag, border=border)
+        sizer.Add(cutoff_spinctrl, proportion=0, 
+                  flag=flag, border=border)
+        sizer.Add(order_spinctrl,   proportion=0, 
                   flag=flag, border=border)
         self.SetSizer(sizer)
 
         self.Bind(wx.EVT_CHOICE, self._passband_choice_made, 
                   passband_chooser.choice)
-        self.low_cutoff_textctrl = low_cutoff_textctrl
-        self.high_cutoff_textctrl = high_cutoff_textctrl
-        self.cutoff_textctrl = cutoff_textctrl
+        self.low_cutoff_spinctrl = low_cutoff_spinctrl
+        self.high_cutoff_spinctrl = high_cutoff_spinctrl
+        self.cutoff_spinctrl = cutoff_spinctrl
         self.function_chooser = function_chooser
         self.passband_chooser = passband_chooser
-        self.order_textctrl = order_textctrl
+        self.order_spinctrl = order_spinctrl
         self._passband_choice_made()
+
+        # --- SET DEFAULTS ---
+        self.function_chooser.SetStringSelection('Butterworth')
+        self.passband_chooser.SetStringSelection('High Pass')
+        high_cutoff_spinctrl.SetValue(3000)
+        low_cutoff_spinctrl.SetValue(300)
+        cutoff_spinctrl.SetValue(300)
+        order_spinctrl.SetValue(3)
 
     def get_parameters(self):
         function_chosen = self.function_chooser.choice.GetStringSelection()
         passband_chosen = self.passband_chooser.choice.GetStringSelection()
         if passband_chosen == "Band Pass":
-            low_cutoff_freq = float(
-                                  self.low_cutoff_textctrl.text_ctrl.GetValue())
-            high_cutoff_freq = float(
-                                 self.high_cutoff_textctrl.text_ctrl.GetValue())
+            low_cutoff_freq = float(self.low_cutoff_spinctrl.GetValue())
+            high_cutoff_freq = float(self.high_cutoff_spinctrl.GetValue())
             critical_freq = (low_cutoff_freq, high_cutoff_freq)
         else:
-            critical_freq = float(self.cutoff_textctrl.text_ctrl.GetValue())
-        order = int(self.order_textctrl.text_ctrl.GetValue())
+            critical_freq = float(self.cutoff_spinctrl.GetValue())
+        order = int(self.order_spinctrl.GetValue())
 
         kind = passband_chosen.lower().split()[0] 
         settings = {'function_name':function_chosen, 
@@ -60,24 +76,16 @@ class ControlPanel(wx.Panel):
                     'kind':kind}
         return settings
 
-    def _passband_choice_made(self, event=None):
-        self.low_cutoff_textctrl.Show(False)
-        self.high_cutoff_textctrl.Show(False)
-        self.cutoff_textctrl.Show(False)
-        sizer = self.GetSizer()
-        sizer.Detach(self.low_cutoff_textctrl)
-        sizer.Detach(self.high_cutoff_textctrl)
-        sizer.Detach(self.cutoff_textctrl)
-        if (event==None or event.GetString() == "High Pass" or
-            event.GetString() == "Low Pass"):
-            sizer.Insert(2, self.cutoff_textctrl, proportion=0, 
-                         flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, border=2)
-            self.cutoff_textctrl.Show(True)
+    def _passband_choice_made(self, event=None, band_type=None):
+        if event is not None:
+            band_type = event.GetString()
+        self.low_cutoff_spinctrl.Show(False)
+        self.high_cutoff_spinctrl.Show(False)
+        self.cutoff_spinctrl.Show(False)
+        if (band_type == "High Pass" or
+            band_type == "Low Pass"):
+            self.cutoff_spinctrl.Show(True)
         else:
-            sizer.Insert(2, self.high_cutoff_textctrl, proportion=0, 
-                         flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, border=2)
-            sizer.Insert(2, self.low_cutoff_textctrl, proportion=0, 
-                         flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, border=2)
-            self.high_cutoff_textctrl.Show(True)
-            self.low_cutoff_textctrl.Show(True)
+            self.high_cutoff_spinctrl.Show(True)
+            self.low_cutoff_spinctrl.Show(True)
         recursive_layout(self)

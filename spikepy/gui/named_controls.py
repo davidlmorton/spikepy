@@ -30,6 +30,38 @@ class NamedChoiceCtrl(wx.Panel):
     def SetStringSelection(self, string):
         return self.choice.SetStringSelection(string)
 
+
+class NamedSpinCtrl(wx.Panel):
+    def __init__(self, parent, name="", **kwargs):
+        wx.Panel.__init__(self, parent)
+
+        self.name = wx.StaticText(self, label=name)
+        if 'style' in kwargs.keys():
+            kwargs['style'] = kwargs['style']|wx.SP_ARROW_KEYS
+        else:
+            kwargs['style'] = wx.SP_ARROW_KEYS
+        self.spin_ctrl = wx.SpinCtrl(self, size=(50,-1), **kwargs)
+        
+        sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        flag = wx.ALIGN_CENTER_VERTICAL|wx.ALL
+        border=lfs.TEXT_CTRL_BORDER
+        sizer.Add(self.name, proportion=0, 
+                  flag=flag|wx.ALIGN_RIGHT, border=border)
+        sizer.Add((10,5), proportion=0)
+        sizer.Add(self.spin_ctrl, proportion=1, 
+                  flag=flag|wx.ALIGN_LEFT, border=border)
+
+        self.SetSizer(sizer)
+
+    def SetRange(self, range_tuple):
+        self.spin_ctrl.SetRange(range_tuple)
+
+    def GetValue(self):
+        return self.spin_ctrl.GetValue()
+
+    def SetValue(self, value):
+        return self.spin_ctrl.SetValue(value)
+
 class NamedTextCtrl(wx.Panel):
     def __init__(self, parent, name="", **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
@@ -51,6 +83,9 @@ class NamedTextCtrl(wx.Panel):
     def GetValue(self):
         return self.text_ctrl.GetValue()
 
+    def SetValue(self, value):
+        self.text_ctrl.SetValue(value)
+
 class OptionalNamedTextCtrl(NamedTextCtrl):
     def __init__(self, parent, name, enabled=False, **kwargs):
         NamedTextCtrl.__init__(self, parent, name='', **kwargs)
@@ -63,8 +98,15 @@ class OptionalNamedTextCtrl(NamedTextCtrl):
         self._enable(state=enabled)
 
     def _enable(self, event=None, state=None):
-        if state is None:
+        if event is not None:
             state = event.IsChecked()
         self._enabled = state
         self.name.Enable(state)
+        self.checkbox.SetValue(state)
         self.text_ctrl.Enable(state)
+
+    def GetValue(self):
+        return self.text_ctrl.GetValue()
+
+    def SetValue(self, value):
+        self.text_ctrl.SetValue(value)
