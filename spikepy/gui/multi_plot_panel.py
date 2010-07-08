@@ -40,8 +40,9 @@ class MultiPlotPanel(ScrolledPanel):
         if key in self._plot_panels.keys():
             self.GetSizer().Remove(self._plot_panels[key])
 
-        kwargs.update(self._plot_kwargs)
-        self._plot_panels[key] = PlotPanel(self, **kwargs)
+        self._plot_kwargs.update(kwargs)
+        print kwargs
+        self._plot_panels[key] = PlotPanel(self, **self._plot_kwargs)
         self.GetSizer().Add(self._plot_panels[key], proportion=1, 
                                                     flag=wx.EXPAND)
 

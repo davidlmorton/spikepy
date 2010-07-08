@@ -1,6 +1,7 @@
 import wx
 
-from spikepy.gui.utils import NamedChoiceCtrl, NamedTextCtrl, recursive_layout
+from spikepy.gui.named_controls import NamedChoiceCtrl, NamedTextCtrl
+from spikepy.gui.utils import recursive_layout
 from spikepy.gui.look_and_feel_settings import lfs
 
 class ControlPanel(wx.Panel):

@@ -3,7 +3,8 @@ from wx.lib.pubsub import Publisher as pub
 from wx.lib.scrolledpanel import ScrolledPanel
 from wx.lib.buttons import GenButton
 
-from .utils import NamedChoiceCtrl, recursive_layout
+from .named_controls import NamedChoiceCtrl
+from .utils import recursive_layout
 from ..stages import filtering, detection
 from .look_and_feel_settings import lfs
 

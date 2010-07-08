@@ -7,20 +7,19 @@ from scipy import signal as scisig
 
 from .multi_plot_panel import MultiPlotPanel
 from .plot_panel import PlotPanel
-from .utils import wx_to_matplotlib_color
+from .utils import rgb_to_matplotlib_color
 from .look_and_feel_settings import lfs
 
 class DetectionPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
-        self._figsize   = (8.9, 2.0)
-        window_color = wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW)
-        self.facecolor = wx_to_matplotlib_color(*window_color.Get(True))
-        self.dpi       = 72.0
+        self._dpi       = lfs.PLOT_DPI
+        self._figsize  = lfs.PLOT_FIGSIZE
+        self._facecolor = lfs.PLOT_FACECOLOR
         self.name      = name
         MultiPlotPanel.__init__(self, parent, figsize=self._figsize,
-                                              facecolor=self.facecolor,
-                                              edgecolor=self.facecolor,
-                                              dpi=self.dpi)
+                                              facecolor=self._facecolor,
+                                              edgecolor=self._facecolor,
+                                              dpi=self._dpi)
         pub.subscribe(self._remove_trial, topic="REMOVE_PLOT")
         pub.subscribe(self._trial_added, topic='TRIAL_ADDED')
         pub.subscribe(self._trial_altered, topic='TRIAL_DETECTIONED')
@@ -43,19 +42,22 @@ class DetectionPlotPanel(MultiPlotPanel):
         self._trials[fullpath] = trial
         num_traces = len(trial.traces['raw'])
         # make room for multiple traces and a spike-rate plot.
-        figsize = (self._figsize[0], self._figsize[1]*num_traces+1)
+        figsize = (self._figsize[0], self._figsize[1]*(num_traces+1))
+        print figsize, self._figsize
         self.add_plot(fullpath, figsize=figsize, 
-                                facecolor=self.facecolor,
-                                edgecolor=self.facecolor,
-                                dpi=self.dpi)
+                                facecolor=self._facecolor,
+                                edgecolor=self._facecolor,
+                                dpi=self._dpi)
 
     def _trial_altered(self, message=None):
         trial = message.data
         fullpath = trial.fullpath
         if fullpath == self._currently_shown:
             self.plot(fullpath)
+            if fullpath in self._replot_panels:
+                self._replot_panels.remove(fullpath)
         else:
-            self._replot_panels.remove(fullpath)
+            self._replot_panels.add(fullpath)
 
     def plot(self, fullpath):
         trial = self._trials[fullpath]
@@ -140,9 +142,11 @@ class DetectionPlotPanel(MultiPlotPanel):
             # check if raster is already plotted
             if len(lines) == 2:
                 del(axes.lines[1])
-            spike_y = max(axes.lines[0].get_ydata())
+            # FIXME decide which looks better.
+            #spike_y = max(axes.lines[0].get_ydata())
+            spike_y = 0.0
             spike_ys = [spike_y for spike_index in spike_list]
-            axes.plot(spike_list, spike_ys, color='blue', 
+            axes.plot(spike_list, spike_ys, color=lfs.SPIKE_RASTER_COLOR, 
                                  linewidth=0, 
                                  marker='|',
                                  markersize=30.0,
@@ -164,13 +168,15 @@ class DetectionPlotPanel(MultiPlotPanel):
         while spike_axes.lines:
             del spike_axes.lines[0]
             
-        spike_axes.plot(spike_rate, color='black', linewidth=1.5)
+        spike_axes.plot(spike_rate, color=lfs.PLOT_COLOR_2, 
+                                    linewidth=lfs.PLOT_LINEWIDTH_2)
         spike_y = 0.0
         spike_ys = [spike_y for spike_index in accepted_spike_list]
-        spike_axes.plot(accepted_spike_list, spike_ys, color='blue',
+        spike_axes.plot(accepted_spike_list, spike_ys, 
+                                color=lfs.SPIKE_RASTER_COLOR,
                                 linewidth=0.0,
                                 marker='|',
-                                markersize=30)
+                                markersize=60)
 
 def get_accepted_spike_list(spikes, samling_freq, width, required_proportion):
     '''

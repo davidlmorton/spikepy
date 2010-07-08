@@ -1,6 +1,6 @@
 import wx
 
-from spikepy.gui.utils import NamedTextCtrl, OptionalNamedTextCtrl
+from spikepy.gui.named_controls import NamedTextCtrl, OptionalNamedTextCtrl
 from spikepy.gui.look_and_feel_settings import lfs
 
 
