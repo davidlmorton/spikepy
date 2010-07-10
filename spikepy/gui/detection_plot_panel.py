@@ -10,7 +10,7 @@ from .plot_panel import PlotPanel
 from .utils import rgb_to_matplotlib_color
 from .look_and_feel_settings import lfs
 from .program_text import (TRACE_TEXT, SAMPLE_NUMBER_TEXT, 
-                           TIME_AXIS_LABEL_TEXT, SPIKE_RATE_AXIS_TEXT, 
+                           TIME_AXIS_TEXT, SPIKE_RATE_AXIS_TEXT, 
                            DETECTION_TRACE_GRAPH_LABEL_TEXT, 
                            SPIKES_GRAPH_LABEL_TEXT)
 
