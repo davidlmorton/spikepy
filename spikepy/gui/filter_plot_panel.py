@@ -8,6 +8,8 @@ from .multi_plot_panel import MultiPlotPanel
 from .plot_panel import PlotPanel
 from .utils import rgb_to_matplotlib_color
 from .look_and_feel_settings import lfs
+from .program_text import (TRACE_TEXT, RAW_TEXT, PSD_AXIS_TEXT, 
+                           FILTERED_TRACE_GRAPH_LABEL)
 
 class FilterPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
@@ -94,14 +96,14 @@ class FilterPlotPanel(MultiPlotPanel):
             axes = self._trace_axes[fullpath][-1]
             axes.plot(trace, color=lfs.PLOT_COLOR_1, 
                              linewidth=lfs.PLOT_LINEWIDTH_1, 
-                             label='Raw')
-            axes.set_ylabel('Trace #%d' % (i+1))
+                             label=RAW_TEXT)
+            axes.set_ylabel('%s #%d' % (TRACE_TEXT, (i+1)))
             if i+1 < len(traces): #all but the last trace
                 # make the x/yticklabels dissapear
                 axes.set_xticklabels([''],visible=False)
                 axes.set_yticklabels([''],visible=False)
 
-        axes.set_xlabel('Sample Number')
+        axes.set_xlabel(SAMPLE_NUMBER_TEXT)
         # bottom is in percent, how big is text there in percent?
         factor = len(traces)+1
         original_bottom = 0.2
@@ -113,10 +115,10 @@ class FilterPlotPanel(MultiPlotPanel):
         self._psd_axes[fullpath] = figure.add_subplot(
                 len(self._trace_axes[fullpath])+1, 1, 1)
         psd_axes = self._psd_axes[fullpath]
-        psd_axes.psd(all_traces, Fs=trial.sampling_freq, label='Raw',
+        psd_axes.psd(all_traces, Fs=trial.sampling_freq, label=RAW_TEXT,
                                  linewidth=lfs.PLOT_LINEWIDTH_1, 
                                  color=lfs.PLOT_COLOR_1)
-        psd_axes.set_ylabel('PSD (dB/Hz)')
+        psd_axes.set_ylabel(PSD_AXIS_TEXT)
         # move psd plot's bottom edge up a bit
         box = psd_axes.get_position()
         box.p0 = (box.p0[0], box.p0[1]+0.065)
@@ -139,7 +141,7 @@ class FilterPlotPanel(MultiPlotPanel):
             else:
                 axes.plot(trace, color=lfs.PLOT_COLOR_2, 
                                  linewidth=lfs.PLOT_LINEWIDTH_2, 
-                                 label='Filtered')
+                                 label=FILTERED_TRACE_GRAPH_LABEL)
 
         all_traces = numpy.hstack(traces)
         axes = self._psd_axes[fullpath]
@@ -147,10 +149,10 @@ class FilterPlotPanel(MultiPlotPanel):
         if len(lines) == 2:
             del(axes.lines[1])
         axes.psd(all_traces, Fs=trial.sampling_freq, 
-                                   label='Filtered', 
+                                   label=FILTERED_TRACE_GRAPH_LABEL, 
                                    linewidth=lfs.PLOT_LINEWIDTH_2, 
                                    color=lfs.PLOT_COLOR_2)
-        axes.set_ylabel('PSD (dB/Hz)')
+        axes.set_ylabel(PSD_AXIS_TEXT)
         axes.legend(loc='lower right')
 
 
