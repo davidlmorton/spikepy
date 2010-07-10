@@ -11,6 +11,8 @@ from .strategy_pane import StrategyPane
 from .file_list_ctrl import FileListCtrl
 from .results_notebook import ResultsNotebook
 from .look_and_feel_settings import lfs
+from .program_text import (ENTER_NEW_WORKSPACE_TEXT, 
+                           NEW_WORKSPACE_DLG_CAPTION_TEXT)
 
 
 class View(object):
@@ -82,8 +84,8 @@ class MyFrame(wx.Frame):
         self.menubar._update_perspectives(self.perspectives)
 
     def _save_perspective(self, message):
-        dlg = wx.TextEntryDialog(self, "Enter a name for the new workspace:",
-                                 caption="Save current workspace")
+        dlg = wx.TextEntryDialog(self, ENTER_NEW_WORKSPACE_TEXT,
+                                 caption=NEW_WORKSPACE_DLG_TEXT)
         if dlg.ShowModal() != wx.ID_OK:
             return
         
