@@ -70,18 +70,27 @@ class StrategySummary(wx.Panel):
         for stage in stages:
             s.append(wx.StaticText(self, label=stage+':', size=size,
                                style=wx.ALIGN_RIGHT|wx.ST_NO_AUTORESIZE))
+        stext = wx.StaticText(self, label="Some text", size=size, style=wx.ALIGN_RIGHT|wx.ST_NO_AUTORESIZE)
 
+        stext.SetBackgroundColour("red")
+        print stext.Alignment
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         lsizer = wx.BoxSizer(orient=wx.VERTICAL)
-        flag = wx.ALL
+        rsizer = wx.BoxSizer(orient=wx.VERTICAL)
+        flag = wx.ALL|wx.ALIGN_RIGHT|wx.FIXED_MINSIZE
         border = lfs.STRATEGY_SUMMARY_BORDER
         for index, stage_text in enumerate(s):
             lsizer.Add(stage_text, proportion=0, flag=flag, 
                                   border=border)
-        sizer.Add(lsizer, proportion=1)
+        lsizer.Add(stext, proportion=0, flag=flag, border=border)
+        print stext.Alignment
+        sizer.Add(lsizer, proportion=0)
+        sizer.Add(rsizer, proportion=1)
         self.SetSizer(sizer)
         self.stage_text_list = s
         self._selected_stage = 1
+        stext.SetAlignment = wx.ALIGN_LEFT
+        print stext.Alignment
 
     def select_stage(self, stage_num):
         old_stage_text = self.stage_text_list[self._selected_stage-1]
