@@ -12,7 +12,7 @@ class StrategyPane(ScrolledPanel):
     def __init__(self, parent, **kwargs):
         ScrolledPanel.__init__(self, parent, **kwargs)
         
-        self.strategy_summary = StrategySummary(self)
+        self.strategy_summary = StrategySummary(self, style=wx.SIMPLE_BORDER)
         line = wx.StaticLine(self)
         stage_choicebook = wx.Choicebook(self, wx.ID_ANY)
 
@@ -68,29 +68,25 @@ class StrategySummary(wx.Panel):
                   'Extraction', 'Clustering']
         size = (140, -1)
         for stage in stages:
-            s.append(wx.StaticText(self, label=stage+':', size=size,
-                               style=wx.ALIGN_RIGHT|wx.ST_NO_AUTORESIZE))
-        stext = wx.StaticText(self, label="Some text", size=size, style=wx.ALIGN_RIGHT|wx.ST_NO_AUTORESIZE)
+            s.append(wx.StaticText(self, label=stage+':',
+                               style=wx.ALIGN_RIGHT))
 
-        stext.SetBackgroundColour("red")
-        print stext.Alignment
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         lsizer = wx.BoxSizer(orient=wx.VERTICAL)
         rsizer = wx.BoxSizer(orient=wx.VERTICAL)
-        flag = wx.ALL|wx.ALIGN_RIGHT|wx.FIXED_MINSIZE
+        rsizer.Add(wx.PyWindow(self, style=wx.SIMPLE_BORDER))
+        flag = wx.ALL|wx.ALIGN_RIGHT
         border = lfs.STRATEGY_SUMMARY_BORDER
         for index, stage_text in enumerate(s):
             lsizer.Add(stage_text, proportion=0, flag=flag, 
                                   border=border)
-        lsizer.Add(stext, proportion=0, flag=flag, border=border)
-        print stext.Alignment
         sizer.Add(lsizer, proportion=0)
-        sizer.Add(rsizer, proportion=1)
+        sizer.Add(rsizer, proportion=1, flag=wx.EXPAND)
         self.SetSizer(sizer)
         self.stage_text_list = s
+        lsizer.SetMinSize(self._get_lsizer_minsize())
         self._selected_stage = 1
-        stext.SetAlignment = wx.ALIGN_LEFT
-        print stext.Alignment
+        self.lsizer = lsizer
 
     def select_stage(self, stage_num):
         old_stage_text = self.stage_text_list[self._selected_stage-1]
@@ -104,6 +100,20 @@ class StrategySummary(wx.Panel):
         new_stage_text.SetFont(stage_font)
         self._selected_stage = stage_num
         self.Layout()
+
+    def _get_lsizer_minsize(self):
+        stage_text_widths = []
+        for stage_text in self.stage_text_list:
+            font = stage_text.GetFont()
+            font.SetWeight(wx.FONTWEIGHT_BOLD)
+            stage_text.SetFont(font)
+            stage_text_widths.append(stage_text.GetSize()[0])
+            font.SetWeight(wx.FONTWEIGHT_NORMAL)
+            stage_text.SetFont(font)
+        minwidth = max(stage_text_widths)
+        minwidth = minwidth + 2*lfs.STRATEGY_SUMMARY_BORDER
+        minsize = (minwidth, 1)
+        return minsize 
 
 class StagePanel(wx.Panel):
     def __init__(self, parent, stage_num, stage_name, stage_module, **kwargs):
