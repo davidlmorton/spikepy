@@ -12,7 +12,7 @@ class StrategyPane(ScrolledPanel):
     def __init__(self, parent, **kwargs):
         ScrolledPanel.__init__(self, parent, **kwargs)
         
-        self.strategy_summary = StrategySummary(self, style=wx.SIMPLE_BORDER)
+        self.strategy_summary = StrategySummary(self)
         line = wx.StaticLine(self)
         stage_choicebook = wx.Choicebook(self, wx.ID_ANY)
 
@@ -26,12 +26,12 @@ class StrategyPane(ScrolledPanel):
         clustering_panel = wx.Panel(stage_choicebook)
 
         stage_choicebook.AddPage(detection_filter_panel, 
-                                 "Detection Filter Strategy")
-        stage_choicebook.AddPage(detection_panel, "Detection Strategy")
+                                 "Detection Filter Settings")
+        stage_choicebook.AddPage(detection_panel, "Detection Settings")
         stage_choicebook.AddPage(extraction_filter_panel, 
-                                 "Extraction Filter Strategy")
-        stage_choicebook.AddPage(extraction_panel, "Extraction Strategy")
-        stage_choicebook.AddPage(clustering_panel, "Clustering Strategy")
+                                 "Extraction Filter Settings")
+        stage_choicebook.AddPage(extraction_panel, "Extraction Settings")
+        stage_choicebook.AddPage(clustering_panel, "Clustering Settings")
         
         # setup the sizer
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
@@ -114,6 +114,10 @@ class StrategySummary(wx.Panel):
         minwidth = minwidth + 2*lfs.STRATEGY_SUMMARY_BORDER
         minsize = (minwidth, 1)
         return minsize 
+
+    def update_methods(self):
+        methods = []
+        pass 
 
 class StagePanel(wx.Panel):
     def __init__(self, parent, stage_num, stage_name, stage_module, **kwargs):
