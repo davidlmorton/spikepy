@@ -73,7 +73,7 @@ class ControlPanel(wx.Panel):
             high_cutoff_freq = float(self.high_cutoff_spinctrl.GetValue())
             critical_freq = (low_cutoff_freq, high_cutoff_freq)
         else:
-            critical_freq = float(self.cutoff_spinctrl.text_ctrl.GetValue())
+            critical_freq = float(self.cutoff_spinctrl.GetValue())
         taps = int(self.taps_spinctrl.GetValue())
 
         kind = passband_chosen.lower().split()[0] 

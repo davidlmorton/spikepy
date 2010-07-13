@@ -47,7 +47,6 @@ class ControlPanel(wx.Panel):
         self._units_check(state=self._using_sd_units)
 
         # --- SET DEFAULTS ---
-        
         threshold_1_sd.SetValue('4.0')
         threshold_2_sd.SetValue('-4.0')
         threshold_2_sd._enable(state=False)

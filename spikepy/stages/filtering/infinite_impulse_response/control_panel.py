@@ -48,11 +48,10 @@ class ControlPanel(wx.Panel):
         self.function_chooser = function_chooser
         self.passband_chooser = passband_chooser
         self.order_spinctrl = order_spinctrl
-        self._passband_choice_made()
 
         # --- SET DEFAULTS ---
         self.function_chooser.SetStringSelection('Butterworth')
-        self.passband_chooser.SetStringSelection('High Pass')
+        self._passband_choice_made(band_type='High Pass')
         high_cutoff_spinctrl.SetValue(3000)
         low_cutoff_spinctrl.SetValue(300)
         cutoff_spinctrl.SetValue(300)
@@ -79,6 +78,7 @@ class ControlPanel(wx.Panel):
     def _passband_choice_made(self, event=None, band_type=None):
         if event is not None:
             band_type = event.GetString()
+        self.passband_chooser.SetStringSelection(band_type)
         self.low_cutoff_spinctrl.Show(False)
         self.high_cutoff_spinctrl.Show(False)
         self.cutoff_spinctrl.Show(False)

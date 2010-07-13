@@ -25,10 +25,15 @@ class LookAndFeelSettings(object):
         self.PLOT_DPS = 72.0
         self.PLOT_LINEWIDTH_1 = 1.5
         self.PLOT_LINEWIDTH_2 = 2.5
+        self.PLOT_LINEWIDTH_3 = 2.5
         self.PLOT_COLOR_1 = rgb_to_matplotlib_color(0, 0, 0)
         # a nice bluish color
         self.PLOT_COLOR_2 = rgb_to_matplotlib_color(69, 109, 255)
+        # amber/orange
+        self.PLOT_COLOR_3 = rgb_to_matplotlib_color(255, 189, 63)
         self.SPIKE_RASTER_COLOR = rgb_to_matplotlib_color(0, 0, 0)
+        self.SPIKE_RASTER_ON_TRACES_POSITION = 'center' # 'top', 'bottom'
+        self.SPIKE_RASTER_ON_RATE_POSITION   = 'top'    # 'top', 'bottom'
 
         self.PYSHELL_DIALOG_SIZE = (500,400)
 
@@ -66,6 +71,10 @@ class LookAndFeelSettings(object):
         width_to_height = 3.14
         y_in_inches = x_left_in_inches/width_to_height
         return numpy.array((x_left_in_inches, y_in_inches))*0.8
+
+    @property
+    def SPIKE_RASTER_HEIGHT(self):
+        return int(self.MAIN_FRAME_SIZE[1]/30.0) # in pixels
 
     @property
     def TEXT_CTRL_BORDER(self):

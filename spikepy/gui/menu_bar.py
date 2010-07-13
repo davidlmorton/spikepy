@@ -6,6 +6,7 @@ from wx.lib.wordwrap import wordwrap
 from .utils import get_bitmap_icon
 from .pyshell import PyShellDialog
 from .look_and_feel_settings import lfs
+from . import program_text as pt
 from .program_text import (ABOUT_SPIKEPY_TEXT, OPEN_TEXT, EXIT_TEXT, 
                           PREFERENCES_TEXT, WORKSPACES_TEXT, ABOUT_TEXT,
                           SHOW_TOOLBARS_MENU_TEXT, PYTHON_SHELL_MENU_TEXT,

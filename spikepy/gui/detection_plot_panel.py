@@ -17,19 +17,19 @@ from .program_text import (TRACE_TEXT, SAMPLE_NUMBER_TEXT,
 class DetectionPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
         self._dpi       = lfs.PLOT_DPI
-        self._figsize  = lfs.PLOT_FIGSIZE
+        self._figsize   = lfs.PLOT_FIGSIZE
         self._facecolor = lfs.PLOT_FACECOLOR
-        self.name      = name
+        self.name       = name
         MultiPlotPanel.__init__(self, parent, figsize=self._figsize,
                                               facecolor=self._facecolor,
                                               edgecolor=self._facecolor,
                                               dpi=self._dpi)
-        pub.subscribe(self._remove_trial, topic="REMOVE_PLOT")
-        pub.subscribe(self._trial_added, topic='TRIAL_ADDED')
+        pub.subscribe(self._remove_trial,  topic="REMOVE_PLOT")
+        pub.subscribe(self._trial_added,   topic='TRIAL_ADDED')
         pub.subscribe(self._trial_altered, topic='TRIAL_DETECTIONED')
         pub.subscribe(self._trial_altered, topic="TRIAL_DETECTION_FILTERED")
 
-        self._trials = {}
+        self._trials     = {}
         self._trace_axes = {}
         self._spike_axes = {}
 
@@ -47,7 +47,6 @@ class DetectionPlotPanel(MultiPlotPanel):
         num_traces = len(trial.traces['raw'])
         # make room for multiple traces and a spike-rate plot.
         figsize = (self._figsize[0], self._figsize[1]*(num_traces+1))
-        print figsize, self._figsize
         self.add_plot(fullpath, figsize=figsize, 
                                 facecolor=self._facecolor,
                                 edgecolor=self._facecolor,
@@ -130,7 +129,7 @@ class DetectionPlotPanel(MultiPlotPanel):
                 del(axes.lines[0])     
             axes.plot(trace, color=lfs.PLOT_COLOR_2, 
                              linewidth=lfs.PLOT_LINEWIDTH_2, 
-                             label=DETECTION_TRACE_LABEL_TEXT)
+                             label=DETECTION_TRACE_GRAPH_LABEL_TEXT)
 
     def _plot_spikes(self, trial, figure, fullpath):
         if len(trial.spikes):
@@ -146,14 +145,20 @@ class DetectionPlotPanel(MultiPlotPanel):
             # check if raster is already plotted
             if len(lines) == 2:
                 del(axes.lines[1])
-            # FIXME decide which looks better.
-            #spike_y = max(axes.lines[0].get_ydata())
-            spike_y = 0.0
+            
+            raster_height_factor = 2.0
+            raster_pos = lfs.SPIKE_RASTER_ON_TRACES_POSITION
+            if raster_pos == 'top':    spike_y = max(axes.get_ylim())
+            if raster_pos == 'botom':  spike_y = min(axes.get_ylim())
+            if raster_pos == 'center': 
+                spike_y = numpy.average(axes.get_ylim())
+                raster_height_factor = 1.0
             spike_ys = [spike_y for spike_index in spike_list]
             axes.plot(spike_list, spike_ys, color=lfs.SPIKE_RASTER_COLOR, 
                                  linewidth=0, 
                                  marker='|',
-                                 markersize=30.0,
+                                 markersize=lfs.SPIKE_RASTER_HEIGHT*
+                                            raster_height_factor,
                                  label=SPIKES_GRAPH_LABEL_TEXT)
 
         # --- plot spike rate ---
@@ -174,13 +179,22 @@ class DetectionPlotPanel(MultiPlotPanel):
             
         spike_axes.plot(spike_rate, color=lfs.PLOT_COLOR_2, 
                                     linewidth=lfs.PLOT_LINEWIDTH_2)
-        spike_y = 0.0
+
+        raster_height_factor = 2.0
+        raster_pos = lfs.SPIKE_RASTER_ON_RATE_POSITION
+        if raster_pos == 'top':    spike_y = max(spike_axes.get_ylim())
+        if raster_pos == 'botom':  spike_y = min(spike_axes.get_ylim())
+        if raster_pos == 'center': 
+            spike_y = numpy.average(spike_axes.get_ylim())
+            raster_height_factor = 1.0
+            
         spike_ys = [spike_y for spike_index in accepted_spike_list]
         spike_axes.plot(accepted_spike_list, spike_ys, 
                                 color=lfs.SPIKE_RASTER_COLOR,
                                 linewidth=0.0,
                                 marker='|',
-                                markersize=60)
+                                markersize=lfs.SPIKE_RASTER_HEIGHT*
+                                            raster_height_factor)
 
 def get_accepted_spike_list(spikes, samling_freq, width, required_proportion):
     '''

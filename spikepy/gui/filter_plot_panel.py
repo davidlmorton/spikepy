@@ -8,7 +8,8 @@ from .multi_plot_panel import MultiPlotPanel
 from .plot_panel import PlotPanel
 from .utils import rgb_to_matplotlib_color
 from .look_and_feel_settings import lfs
-from .program_text import (TRACE_TEXT, RAW_TEXT, PSD_AXIS_TEXT, 
+from .program_text import (TRACE_TEXT, SAMPLE_NUMBER_TEXT, RAW_TEXT, 
+                           PSD_AXIS_TEXT, 
                            FILTERED_TRACE_GRAPH_LABEL)
 
 class FilterPlotPanel(MultiPlotPanel):
@@ -25,6 +26,13 @@ class FilterPlotPanel(MultiPlotPanel):
         pub.subscribe(self._trial_added, topic='TRIAL_ADDED')
         pub.subscribe(self._trial_filtered, 
                       topic='TRIAL_%s_FILTERED' % name.upper())
+
+        if name.lower() == 'detection':
+            self.line_color = lfs.PLOT_COLOR_2
+            self.line_width = lfs.PLOT_LINEWIDTH_2
+        if name.lower() == 'extraction':
+            self.line_color = lfs.PLOT_COLOR_3
+            self.line_width = lfs.PLOT_LINEWIDTH_3
 
         self._psd_shown = False
         self._trials = {}
@@ -139,8 +147,8 @@ class FilterPlotPanel(MultiPlotPanel):
                 filtered_line = lines[1]
                 filtered_line.set_ydata(trace)
             else:
-                axes.plot(trace, color=lfs.PLOT_COLOR_2, 
-                                 linewidth=lfs.PLOT_LINEWIDTH_2, 
+                axes.plot(trace, color=self.line_color, 
+                                 linewidth=self.line_width, 
                                  label=FILTERED_TRACE_GRAPH_LABEL)
 
         all_traces = numpy.hstack(traces)
@@ -150,8 +158,8 @@ class FilterPlotPanel(MultiPlotPanel):
             del(axes.lines[1])
         axes.psd(all_traces, Fs=trial.sampling_freq, 
                                    label=FILTERED_TRACE_GRAPH_LABEL, 
-                                   linewidth=lfs.PLOT_LINEWIDTH_2, 
-                                   color=lfs.PLOT_COLOR_2)
+                                   linewidth=self.line_width, 
+                                   color=self.line_color)
         axes.set_ylabel(PSD_AXIS_TEXT)
         axes.legend(loc='lower right')
 

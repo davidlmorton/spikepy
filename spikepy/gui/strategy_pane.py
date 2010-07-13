@@ -92,7 +92,7 @@ class StrategySummary(wx.Panel):
         #rsizer.Add(wx.PyWindow(self, style=wx.SIMPLE_BORDER))
         flag = wx.ALL|wx.ALIGN_RIGHT
         border = lfs.STRATEGY_SUMMARY_BORDER
-        for index, stage_text in enumerate(s):
+        for stage_text in s:
             lsizer.Add(stage_text, proportion=0, flag=flag, 
                                   border=border)
         sizer.Add(lsizer, proportion=0)
