@@ -24,6 +24,12 @@ class StrategyPane(ScrolledPanel):
                                               3, "Extraction Filter", filtering)
         extraction_panel = wx.Panel(stage_choicebook)
         clustering_panel = wx.Panel(stage_choicebook)
+        self.stage_panels = []
+        self.stage_panels.append(detection_filter_panel)
+        self.stage_panels.append(detection_panel)
+        self.stage_panels.append(extraction_filter_panel)
+        #self.stage_panels.append(extraction_panel)
+        #self.stage_panels.append(clustering_panel)
 
         stage_choicebook.AddPage(detection_filter_panel, 
                                  "Detection Filter Settings")
@@ -49,6 +55,8 @@ class StrategyPane(ScrolledPanel):
         self.do_layout()
 
         self.Bind(wx.EVT_CHOICEBOOK_PAGE_CHANGED, self._page_changed)
+        pub.subscribe(self._update_strategy_summary, "UPDATE_STRATEGY_SUMMARY")
+        self._update_strategy_summary(None)
 
     def _page_changed(self, event=None):
         if event is not None:
@@ -59,6 +67,14 @@ class StrategyPane(ScrolledPanel):
         self.SetupScrolling()
         self.Layout()
 
+    def _update_strategy_summary(self, message):
+        methods_string_list = []
+        for stage in self.stage_panels:
+            methods_string_list.append(
+                                      stage.method_chooser.GetStringSelection())
+        self.strategy_summary.update_methods(methods_string_list)
+        
+
 class StrategySummary(wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
@@ -66,7 +82,6 @@ class StrategySummary(wx.Panel):
         s = []
         stages = ['Detection Filter', 'Detection', 'Extraction Filter', 
                   'Extraction', 'Clustering']
-        size = (140, -1)
         for stage in stages:
             s.append(wx.StaticText(self, label=stage+':',
                                style=wx.ALIGN_RIGHT))
@@ -74,7 +89,7 @@ class StrategySummary(wx.Panel):
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         lsizer = wx.BoxSizer(orient=wx.VERTICAL)
         rsizer = wx.BoxSizer(orient=wx.VERTICAL)
-        rsizer.Add(wx.PyWindow(self, style=wx.SIMPLE_BORDER))
+        #rsizer.Add(wx.PyWindow(self, style=wx.SIMPLE_BORDER))
         flag = wx.ALL|wx.ALIGN_RIGHT
         border = lfs.STRATEGY_SUMMARY_BORDER
         for index, stage_text in enumerate(s):
@@ -87,6 +102,7 @@ class StrategySummary(wx.Panel):
         lsizer.SetMinSize(self._get_lsizer_minsize())
         self._selected_stage = 1
         self.lsizer = lsizer
+        self.rsizer = rsizer
 
     def select_stage(self, stage_num):
         old_stage_text = self.stage_text_list[self._selected_stage-1]
@@ -115,9 +131,18 @@ class StrategySummary(wx.Panel):
         minsize = (minwidth, 1)
         return minsize 
 
-    def update_methods(self):
-        methods = []
-        pass 
+    def update_methods(self, methods_string_list):
+        self.rsizer.Clear(deleteWindows=True)
+        methods_statictext_list = []
+        for method in methods_string_list:
+            methods_statictext_list.append(wx.StaticText(self, label=method,
+                               style=wx.ALIGN_LEFT))
+        
+        flag = wx.ALL|wx.ALIGN_LEFT
+        border = lfs.STRATEGY_SUMMARY_BORDER
+        for  method in methods_statictext_list:
+            self.rsizer.Add(method, proportion=0, flag=flag, border=border)
+        self.Layout()
 
 class StagePanel(wx.Panel):
     def __init__(self, parent, stage_num, stage_name, stage_module, **kwargs):
@@ -190,6 +215,7 @@ class StagePanel(wx.Panel):
         self.methods[self._method_name_chosen]['control_panel'].Show(True)
         self.run_button.Show(True)
         self.Layout()
+        pub.sendMessage(topic="UPDATE_STRATEGY_SUMMARY", data=None)
     
 
     def _run(self, event=None):
