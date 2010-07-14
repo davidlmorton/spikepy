@@ -67,19 +67,23 @@ class StrategySummary(wx.Panel):
         s = []
         stages = ['Detection Filter', 'Detection', 'Extraction Filter', 
                   'Extraction', 'Clustering']
+        self.method_text_list = []
         for stage in stages:
             s.append(wx.StaticText(self, label=stage+':',
                                style=wx.ALIGN_RIGHT))
+            self.method_text_list.append(wx.StaticText(self,label='', 
+                               style=wx.ALIGN_LEFT))
 
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         lsizer = wx.BoxSizer(orient=wx.VERTICAL)
         rsizer = wx.BoxSizer(orient=wx.VERTICAL)
-        blank_statictext_item = wx.StaticText(self, label='')
-        rsizer.Add(blank_statictext_item)
-        rsizer.Add(blank_statictext_item)
-        rsizer.Add(blank_statictext_item)
-        rsizer.Add(blank_statictext_item)
-        rsizer.Add(blank_statictext_item)
+        rsizer_flag = wx.ALL|wx.ALIGN_LEFT
+        rsizer_border = lfs.STRATEGY_SUMMARY_BORDER
+
+        for method_text in self.method_text_list:
+            rsizer.Add(method_text, proportion=0, flag=rsizer_flag, 
+                       border=rsizer_border)
+        
         flag = wx.ALL|wx.ALIGN_RIGHT
         border = lfs.STRATEGY_SUMMARY_BORDER
         for stage_text in s:
@@ -96,14 +100,18 @@ class StrategySummary(wx.Panel):
 
     def select_stage(self, stage_num):
         old_stage_text = self.stage_text_list[self._selected_stage-1]
+        old_method_text = self.method_text_list[self._selected_stage-1]
         stage_font = old_stage_text.GetFont()
         stage_font.SetWeight(wx.FONTWEIGHT_NORMAL)
         old_stage_text.SetFont(stage_font)
+        old_method_text.SetFont(stage_font)
 
         new_stage_text = self.stage_text_list[stage_num-1]
+        new_method_text = self.method_text_list[stage_num-1]
         stage_font = new_stage_text.GetFont()
         stage_font.SetWeight(wx.FONTWEIGHT_BOLD)
         new_stage_text.SetFont(stage_font)
+        new_method_text.SetFont(stage_font)
         self._selected_stage = stage_num
         self.Layout()
 
@@ -123,40 +131,9 @@ class StrategySummary(wx.Panel):
 
     def _update_methods(self, message):
         stage_num, method_string = message.data
-        print stage_num
-        method_statictext = wx.StaticText(self, label=method_string, 
-                                          style=wx.ALIGN_LEFT)
-        flag = wx.ALL|wx.ALIGN_LEFT
-        border = lfs.STRATEGY_SUMMARY_BORDER
-        code_to_try = 1 
+        method_statictext = self.method_text_list[stage_num-1]
+        method_statictext.SetLabel(method_string)
 
-        if code_to_try == 1:
-            self.rsizer.Remove(stage_num-1)
-            old_sizer_item = self.rsizer.GetItem(stage_num-1)
-            old_statictext = old_sizer_item.GetWindow()
-            #old_statictext.Destroy()
-            self.Layout()
-            self.rsizer.Insert(stage_num-1, method_statictext, proportion=0, 
-                           flag=flag, border=border)
-        elif code_to_try == 2:
-            old_sizer_item = self.rsizer.GetItem(stage_num-1)
-            old_statictext = old_sizer_item.GetWindow()
-            old_statictext.SetLabel(method_string)
-        elif code_to_try == 3:
-            self.rsizer.Replace(stage_num-1, method_statictext)
-        elif code_to_try == 4:
-            pass
-        # OLD STUFF
-        '''
-        self.rsizer.Clear(deleteWindows=True)
-        methods_statictext_list = []
-        for method in methods_string_list:
-            methods_statictext_list.append(wx.StaticText(self, label=method,
-                               style=wx.ALIGN_LEFT))
-        
-        for  method in methods_statictext_list:
-            self.rsizer.Add(method, proportion=0, flag=flag, border=border)
-        '''
         self.Layout()
 
 class StagePanel(wx.Panel):
