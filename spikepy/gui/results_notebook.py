@@ -21,6 +21,21 @@ class ResultsNotebook(wx.Notebook):
         self.AddPage(extraction_panel, "Extraction")
         self.AddPage(clustering_panel, "Clustering")
 
+        self.page_names = ['Detection Filter',
+                            'Detection', 
+                            'Extraction Filter',
+                            'Extraction',
+                            'Clustering']
+
+        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGING, self._page_changing)
+
+    def _page_changing(self, event=None):
+        old = event.GetOldSelection()
+        new = event.GetSelection()
+        pub.sendMessage(topic='RESULTS_NOTEBOOK_PAGE_CHANGING', 
+                        data=(self.page_names[old],self.page_names[new]))
+        event.Skip()
+
 class FilterResultsPanel(wx.Panel):
     def __init__(self, parent, name, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
@@ -96,8 +111,8 @@ class CursorPositionBar(wx.Panel):
         position_sizer.Add(self.y_text, proportion=0, flag=flag, border=2)
 
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        sizer.Add(position_sizer,  proportion=0, flag=flag, border=1)
-        sizer.Add(checkbox_sizer,  proportion=0, flag=flag, border=1)
+        sizer.Add(position_sizer,  proportion=0, flag=flag, border=10)
+        sizer.Add(checkbox_sizer,  proportion=0, flag=flag, border=10)
         self.SetSizer(sizer)
 
     def _show_position(self, event=None):

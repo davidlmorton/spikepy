@@ -151,7 +151,7 @@ class DetectionPlotPanel(MultiPlotPanel):
             if raster_pos == 'top':    spike_y = max(axes.get_ylim())
             if raster_pos == 'botom':  spike_y = min(axes.get_ylim())
             if raster_pos == 'center': 
-                spike_y = numpy.average(axes.get_ylim())
+                spike_y = 0.0
                 raster_height_factor = 1.0
             spike_ys = [spike_y for spike_index in spike_list]
             axes.plot(spike_list, spike_ys, color=lfs.SPIKE_RASTER_COLOR, 
@@ -185,7 +185,7 @@ class DetectionPlotPanel(MultiPlotPanel):
         if raster_pos == 'top':    spike_y = max(spike_axes.get_ylim())
         if raster_pos == 'botom':  spike_y = min(spike_axes.get_ylim())
         if raster_pos == 'center': 
-            spike_y = numpy.average(spike_axes.get_ylim())
+            spike_y = 0.0
             raster_height_factor = 1.0
             
         spike_ys = [spike_y for spike_index in accepted_spike_list]

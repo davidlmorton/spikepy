@@ -19,6 +19,7 @@ class Model(object):
         pub.subscribe(self._close_data_file, "CLOSE_DATA_FILE")
         pub.subscribe(self._filter, "FILTER")
         pub.subscribe(self._detection, "DETECTION")
+        pub.subscribe(self._extraction, "EXTRACTION")
 
     # ---- OPEN FILE ----
     def _open_data_file(self, message):
@@ -83,7 +84,7 @@ class Model(object):
         pub.sendMessage(topic='RUNNING_COMPLETED')
         
 
-    # ---- FILTER ----
+    # ---- filter ----
     def _filter(self, message):
         stage_name, method_name, method_parameters = message.data
         trace_type = stage_name.split()[0] # removes ' filter' from name
@@ -117,6 +118,33 @@ class Model(object):
                             data=trial)
         pub.sendMessage(topic='RUNNING_COMPLETED')
 
-            
+    # ---- EXTRACTION ----
+    def _extraction(self, message):
+        stage_name, method_name, method_parameters = message.data
+        startWorker(self._extraction_consumer, self._extraction_worker,
+                        wargs=(method_name, method_parameters),
+                        cargs=(stage_name,))
 
+    def _extraction_worker(self, method_name, method_parameters):
+        try:
+#            processing_pool = Pool()
+            for trial in self.trials.values():
+                filtered_traces = trial.traces['extraction']
+                method = extraction.get_method(method_name)
+                method_parameters['sampling_freq'] = trial.sampling_freq
+                method_parameters['spike_list'] = trial.spikes[0]
+#                result = processing_pool.apply_async(method.run, 
+#                                                     args=(filtered_traces,),
+#                                                     kwds=method_parameters)
+#                trial.spikes = result.get()
+                trial.features = method.run(filtered_traces, **method_parameters)
+        except:
+            traceback.print_exc()
+            sys.exit(1)
+
+    def _extraction_consumer(self, delayed_result, stage_name):
+        for trial in self.trials.values():
+            trial.initialize_data(last_stage_completed=stage_name)
+            pub.sendMessage(topic='TRIAL_EXTRACTIONED', data=trial)
+        pub.sendMessage(topic='RUNNING_COMPLETED')
 

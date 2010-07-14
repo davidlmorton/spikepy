@@ -12,7 +12,7 @@ class LookAndFeelSettings(object):
                 "Spikepy - A python-based spike sorting framework."
         self.MAIN_FRAME_STYLE = wx.DEFAULT_FRAME_STYLE
 
-        self.STRATEGY_PANE_MIN_SIZE = numpy.array((320, 500))
+        self.STRATEGY_PANE_MIN_SIZE = numpy.array((350, 500))
         self.STRATEGY_PANE_TITLE = 'Strategy'
         self.STRATEGY_PANE_BORDER = 4
         self.STRATEGY_SUMMARY_BORDER = 3

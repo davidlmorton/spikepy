@@ -5,7 +5,7 @@ from wx.lib.buttons import GenButton
 
 from .named_controls import NamedChoiceCtrl
 from .utils import recursive_layout
-from ..stages import filtering, detection
+from ..stages import filtering, detection, extraction
 from .look_and_feel_settings import lfs
 
 class StrategyPane(ScrolledPanel):
@@ -22,7 +22,8 @@ class StrategyPane(ScrolledPanel):
                                          2, "Spike Detection", detection)
         extraction_filter_panel = StagePanel(stage_choicebook, 
                                               3, "Extraction Filter", filtering)
-        extraction_panel = wx.Panel(stage_choicebook)
+        extraction_panel = StagePanel(stage_choicebook, 
+                                              4, "Extraction", extraction)
         clustering_panel = wx.Panel(stage_choicebook)
 
         stage_choicebook.AddPage(detection_filter_panel, 
@@ -32,6 +33,7 @@ class StrategyPane(ScrolledPanel):
                                  "Extraction Filter Settings")
         stage_choicebook.AddPage(extraction_panel, "Extraction Settings")
         stage_choicebook.AddPage(clustering_panel, "Clustering Settings")
+        self.stage_choicebook = stage_choicebook 
         
         # setup the sizer
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
@@ -49,6 +51,12 @@ class StrategyPane(ScrolledPanel):
         self.do_layout()
 
         self.Bind(wx.EVT_CHOICEBOOK_PAGE_CHANGED, self._page_changed)
+        pub.subscribe(self._results_notebook_page_changing, 
+                      topic='RESULTS_NOTEBOOK_PAGE_CHANGING')
+    
+    def _results_notebook_page_changing(self, message=None):
+        old_page, new_page = message.data
+        pass
 
     def _page_changed(self, event=None):
         if event is not None:
