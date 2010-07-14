@@ -24,12 +24,6 @@ class StrategyPane(ScrolledPanel):
                                               3, "Extraction Filter", filtering)
         extraction_panel = wx.Panel(stage_choicebook)
         clustering_panel = wx.Panel(stage_choicebook)
-        self.stage_panels = []
-        self.stage_panels.append(detection_filter_panel)
-        self.stage_panels.append(detection_panel)
-        self.stage_panels.append(extraction_filter_panel)
-        #self.stage_panels.append(extraction_panel)
-        #self.stage_panels.append(clustering_panel)
 
         stage_choicebook.AddPage(detection_filter_panel, 
                                  "Detection Filter Settings")
@@ -55,8 +49,6 @@ class StrategyPane(ScrolledPanel):
         self.do_layout()
 
         self.Bind(wx.EVT_CHOICEBOOK_PAGE_CHANGED, self._page_changed)
-        pub.subscribe(self._update_strategy_summary, "UPDATE_STRATEGY_SUMMARY")
-        self._update_strategy_summary(None)
 
     def _page_changed(self, event=None):
         if event is not None:
@@ -67,18 +59,11 @@ class StrategyPane(ScrolledPanel):
         self.SetupScrolling()
         self.Layout()
 
-    def _update_strategy_summary(self, message):
-        methods_string_list = []
-        for stage in self.stage_panels:
-            methods_string_list.append(
-                                      stage.method_chooser.GetStringSelection())
-        self.strategy_summary.update_methods(methods_string_list)
-        
-
 class StrategySummary(wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
         
+        pub.subscribe(self._update_methods, "UPDATE_STRATEGY_SUMMARY")
         s = []
         stages = ['Detection Filter', 'Detection', 'Extraction Filter', 
                   'Extraction', 'Clustering']
@@ -89,7 +74,12 @@ class StrategySummary(wx.Panel):
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         lsizer = wx.BoxSizer(orient=wx.VERTICAL)
         rsizer = wx.BoxSizer(orient=wx.VERTICAL)
-        #rsizer.Add(wx.PyWindow(self, style=wx.SIMPLE_BORDER))
+        blank_statictext_item = wx.StaticText(self, label='')
+        rsizer.Add(blank_statictext_item)
+        rsizer.Add(blank_statictext_item)
+        rsizer.Add(blank_statictext_item)
+        rsizer.Add(blank_statictext_item)
+        rsizer.Add(blank_statictext_item)
         flag = wx.ALL|wx.ALIGN_RIGHT
         border = lfs.STRATEGY_SUMMARY_BORDER
         for stage_text in s:
@@ -131,17 +121,42 @@ class StrategySummary(wx.Panel):
         minsize = (minwidth, 1)
         return minsize 
 
-    def update_methods(self, methods_string_list):
+    def _update_methods(self, message):
+        stage_num, method_string = message.data
+        print stage_num
+        method_statictext = wx.StaticText(self, label=method_string, 
+                                          style=wx.ALIGN_LEFT)
+        flag = wx.ALL|wx.ALIGN_LEFT
+        border = lfs.STRATEGY_SUMMARY_BORDER
+        code_to_try = 1 
+
+        if code_to_try == 1:
+            self.rsizer.Remove(stage_num-1)
+            old_sizer_item = self.rsizer.GetItem(stage_num-1)
+            old_statictext = old_sizer_item.GetWindow()
+            #old_statictext.Destroy()
+            self.Layout()
+            self.rsizer.Insert(stage_num-1, method_statictext, proportion=0, 
+                           flag=flag, border=border)
+        elif code_to_try == 2:
+            old_sizer_item = self.rsizer.GetItem(stage_num-1)
+            old_statictext = old_sizer_item.GetWindow()
+            old_statictext.SetLabel(method_string)
+        elif code_to_try == 3:
+            self.rsizer.Replace(stage_num-1, method_statictext)
+        elif code_to_try == 4:
+            pass
+        # OLD STUFF
+        '''
         self.rsizer.Clear(deleteWindows=True)
         methods_statictext_list = []
         for method in methods_string_list:
             methods_statictext_list.append(wx.StaticText(self, label=method,
                                style=wx.ALIGN_LEFT))
         
-        flag = wx.ALL|wx.ALIGN_LEFT
-        border = lfs.STRATEGY_SUMMARY_BORDER
         for  method in methods_statictext_list:
             self.rsizer.Add(method, proportion=0, flag=flag, border=border)
+        '''
         self.Layout()
 
 class StagePanel(wx.Panel):
@@ -215,7 +230,8 @@ class StagePanel(wx.Panel):
         self.methods[self._method_name_chosen]['control_panel'].Show(True)
         self.run_button.Show(True)
         self.Layout()
-        pub.sendMessage(topic="UPDATE_STRATEGY_SUMMARY", data=None)
+        pub.sendMessage(topic="UPDATE_STRATEGY_SUMMARY", 
+                        data=(self.stage_num, self._method_name_chosen))
     
 
     def _run(self, event=None):
