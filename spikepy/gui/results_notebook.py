@@ -4,6 +4,7 @@ from wx.lib.pubsub import Publisher as pub
 from .filter_plot_panel import FilterPlotPanel
 from .detection_plot_panel import DetectionPlotPanel
 from .look_and_feel_settings import lfs
+from . import program_text as pt
 
 class ResultsNotebook(wx.Notebook):
     def __init__(self, parent, **kwargs):
@@ -15,11 +16,11 @@ class ResultsNotebook(wx.Notebook):
         extraction_panel = wx.Panel(self)
         clustering_panel = wx.Panel(self)
         
-        self.AddPage(detection_filter_panel, "Detection Filter")
-        self.AddPage(detection_panel, "Detection")
-        self.AddPage(extraction_filter_panel, "Extraction Filter")
-        self.AddPage(extraction_panel, "Extraction")
-        self.AddPage(clustering_panel, "Clustering")
+        self.AddPage(detection_filter_panel,  pt.DETECTION_FILTER)
+        self.AddPage(detection_panel,         pt.DETECTION)
+        self.AddPage(extraction_filter_panel, pt.EXTRACTION_FILTER)
+        self.AddPage(extraction_panel,        pt.EXTRACTION)
+        self.AddPage(clustering_panel,        pt.CLUSTERING)
 
         self.page_names = ['Detection Filter',
                             'Detection', 
@@ -85,9 +86,9 @@ class CursorPositionBar(wx.Panel):
         self.y_text = wx.StaticText(self, label='', size=(150,-1),
                 style=wx.ST_NO_AUTORESIZE)
         self.show_cursor_position_checkbox = wx.CheckBox(self, 
-                label='Show cursor position')
+                label=pt.SHOW_CURSOR_POSITION)
         self.scientific_notation_checkbox = wx.CheckBox(self, 
-                label='Use scientific notation')
+                label=pt.USE_SCIENTIFIC_NOTATION)
         self.scientific_notation_checkbox.Disable()
         self.Bind(wx.EVT_CHECKBOX, self._show_position, 
                   self.show_cursor_position_checkbox)

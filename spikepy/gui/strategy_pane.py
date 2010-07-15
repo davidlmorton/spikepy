@@ -7,6 +7,7 @@ from .named_controls import NamedChoiceCtrl
 from .utils import recursive_layout
 from ..stages import filtering, detection, extraction
 from .look_and_feel_settings import lfs
+from . import program_text as pt
 
 class StrategyPane(ScrolledPanel):
     def __init__(self, parent, **kwargs):
@@ -17,22 +18,25 @@ class StrategyPane(ScrolledPanel):
         stage_choicebook = wx.Choicebook(self, wx.ID_ANY)
 
         detection_filter_panel = StagePanel(stage_choicebook, 
-                                             1, "Detection Filter", filtering)
+                                             1, pt.DETECTION_FILTER, filtering)
         detection_panel = StagePanel(stage_choicebook, 
-                                         2, "Spike Detection", detection)
+                                             2, pt.DETECTION, detection)
         extraction_filter_panel = StagePanel(stage_choicebook, 
-                                              3, "Extraction Filter", filtering)
+                                             3, pt.EXTRACTION_FILTER, filtering)
         extraction_panel = StagePanel(stage_choicebook, 
-                                              4, "Extraction", extraction)
+                                             4, pt.EXTRACTION, extraction)
         clustering_panel = wx.Panel(stage_choicebook)
 
         stage_choicebook.AddPage(detection_filter_panel, 
-                                 "Detection Filter Settings")
-        stage_choicebook.AddPage(detection_panel, "Detection Settings")
+                                 pt.DETECTION_FILTER+" "+pt.SETTINGS)
+        stage_choicebook.AddPage(detection_panel, 
+                                 pt.DETECTION+" "+pt.SETTINGS)
         stage_choicebook.AddPage(extraction_filter_panel, 
-                                 "Extraction Filter Settings")
-        stage_choicebook.AddPage(extraction_panel, "Extraction Settings")
-        stage_choicebook.AddPage(clustering_panel, "Clustering Settings")
+                                 pt.EXTRACTION_FILTER+" "+pt.SETTINGS)
+        stage_choicebook.AddPage(extraction_panel, 
+                                 pt.EXTRACTION+" "+pt.SETTINGS)
+        stage_choicebook.AddPage(clustering_panel, 
+                                 pt.CLUSTERING+" "+pt.SETTINGS)
         self.stage_choicebook = stage_choicebook 
         
         # setup the sizer

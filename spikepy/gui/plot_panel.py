@@ -11,6 +11,7 @@ from wx.lib.scrolledpanel import ScrolledPanel
 from wx.lib.pubsub import Publisher as pub
 
 from .utils import get_bitmap_icon
+from . import program_text as pt
 
 class CustomToolbar(Toolbar):
     """
@@ -24,15 +25,15 @@ class CustomToolbar(Toolbar):
         self.ENLARGE_CANVAS_ID = wx.NewId()
         self.AddSimpleTool(self.ENLARGE_CANVAS_ID, 
                            get_bitmap_icon('arrow_out'),
-                           shortHelpString='Enlarge Canvas',
-                           longHelpString='Enlarge Figure Canvas')
+                           shortHelpString=pt.ENLARGE_CANVAS,
+                           longHelpString=pt.ENLARGE_FIGURE_CANVAS)
         wx.EVT_TOOL(self, self.ENLARGE_CANVAS_ID, self._enlarge_canvas)
 
         self.SHRINK_CANVAS_ID = wx.NewId()
         self.AddSimpleTool(self.SHRINK_CANVAS_ID, 
                            get_bitmap_icon('arrow_in'),
-                           shortHelpString='Shrink Canvas',
-                           longHelpString='Shrink Figure Canvas')
+                           shortHelpString=pt.SHRINK_CANVAS,
+                           longHelpString=pt.SHRINK_FIGURE_CANVAS)
         wx.EVT_TOOL(self, self.SHRINK_CANVAS_ID, self._shrink_canvas)
         self.EnableTool(self.SHRINK_CANVAS_ID, False)
 

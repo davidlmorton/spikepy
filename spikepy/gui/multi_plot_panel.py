@@ -3,6 +3,8 @@ from .plot_panel import PlotPanel
 from wx.lib.pubsub import Publisher as pub
 from wx.lib.scrolledpanel import ScrolledPanel
 
+from . import program_text as pt
+
 class MultiPlotPanel(ScrolledPanel):
     def __init__(self, parent, toolbar_visible=False, **kwargs):
         """
@@ -72,7 +74,7 @@ class MultiPlotPanel(ScrolledPanel):
         if new_panel_key is None:
             new_panel_key = message.data
         if new_panel_key not in self._plot_panels.keys():
-            raise RuntimeError('Plot associated with "%s" does not exist.' %
+            raise RuntimeError(pt.MISSING_PLOT_ERROR %
                                 new_panel_key)
 
         shown_plot_panel = self._plot_panels[self._currently_shown]

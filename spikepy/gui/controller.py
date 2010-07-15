@@ -6,7 +6,7 @@ from wx.lib.pubsub import Publisher as pub
 from ..common.model import Model
 from .view import View
 from .utils import named_color
-from .program_text import OPEN_FILE_DLG_MESSAGE_TEXT
+from . import program_text as pt
 
 class Controller(object):
     def __init__(self):
@@ -39,7 +39,7 @@ class Controller(object):
         frame = message.data
 
         paths = []
-        dlg = wx.FileDialog(frame, message=OPEN_FILE_DLG_MESSAGE_TEXT,
+        dlg = wx.FileDialog(frame, message=pt.OPEN_FILE_DLG_MESSAGE,
                             defaultDir=os.getcwd(),
                             style=wx.OPEN|wx.MULTIPLE) 
         if dlg.ShowModal() == wx.ID_OK:

@@ -5,10 +5,7 @@ from wx.lib.pubsub import Publisher as pub
 import wx.lib.mixins.listctrl as listmix
 
 from spikepy.gui import utils
-from .program_text import (FILE_NUM_TEXT, FILENAME_TEXT, 
-                           FILE_OPENING_STATUS_TEXT, OPEN_ANOTHER_FILE_TEXT, 
-                           OPEN_FILE_TEXT, CLOSE_FILES_TEXT, CLOSE_FILE_TEXT)
-
+from . import program_text as pt
 
 class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
     def __init__(self, parent, **kwargs):
@@ -38,8 +35,8 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         wx.ListCtrl.__init__(self, parent, **kwargs)
         listmix.ListCtrlAutoWidthMixin.__init__(self)
 
-        self.InsertColumn(0, FILE_NUM_TEXT)
-        self.InsertColumn(1, FILENAME_TEXT)
+        self.InsertColumn(0, pt.FILE_NUM)
+        self.InsertColumn(1, pt.FILENAME)
 
         self.opened_files = []
         self.opening_files = []
@@ -54,7 +51,7 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
     def _item_selected(self, event=None, item_num=None):
         if item_num is None:
             item_num = self.GetFocusedItem()
-        if self.GetItemText(item_num) == FILE_OPENING_STATUS_TEXT:
+        if self.GetItemText(item_num) == pt.FILE_OPENING_STATUS:
             self.SetItemState(item_num, 0, wx.LIST_STATE_SELECTED)
             return
         fullpath = self.opened_files[item_num]
@@ -65,7 +62,7 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
         for index, file in enumerate(self.opened_files):
             path, filename = os.path.split(file)
             if file in self.opening_files:
-                file_id = FILE_OPENING_STATUS_TEXT
+                file_id = pt.FILE_OPENING_STATUS
             else:
                 file_id = index
             self.InsertStringItem(index, str(file_id))
@@ -101,18 +98,18 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
             cm.Enable(self._cmid_file_info, False)
         # open file item
         if self.GetItemCount():  
-            item = wx.MenuItem(cm, self._cmid_open_file, OPEN_ANOTHER_FILE_TEXT)
+            item = wx.MenuItem(cm, self._cmid_open_file, pt.OPEN_ANOTHER_FILE)
         else:
-            item = wx.MenuItem(cm, self._cmid_open_file, OPEN_FILE_TEXT)
+            item = wx.MenuItem(cm, self._cmid_open_file, pt.OPEN_FILE)
         bmp = utils.get_bitmap_icon('folder')
         item.SetBitmap(bmp)
         cm.AppendItem(item)
         # close file item
         if self.GetSelectedItemCount() > 1:
-            item = wx.MenuItem(cm, self._cmid_close_file, CLOSE_FILES_TEXT)
+            item = wx.MenuItem(cm, self._cmid_close_file, pt.CLOSE_FILES)
             raise NotImplimentedError()
         else: 
-            item = wx.MenuItem(cm, self._cmid_close_file, CLOSE_FILE_TEXT)
+            item = wx.MenuItem(cm, self._cmid_close_file, pt.CLOSE_FILE)
         bmp = utils.get_bitmap_icon('action_stop')
         item.SetBitmap(bmp)
         cm.AppendItem(item)

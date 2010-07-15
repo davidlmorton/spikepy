@@ -9,10 +9,7 @@ from .multi_plot_panel import MultiPlotPanel
 from .plot_panel import PlotPanel
 from .utils import rgb_to_matplotlib_color
 from .look_and_feel_settings import lfs
-from .program_text import (TRACE_TEXT, SAMPLE_NUMBER_TEXT, 
-                           TIME_AXIS_TEXT, SPIKE_RATE_AXIS_TEXT, 
-                           DETECTION_TRACE_GRAPH_LABEL_TEXT, 
-                           SPIKES_GRAPH_LABEL_TEXT)
+from . import program_text as pt
 
 class ExtractionPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
@@ -93,13 +90,13 @@ class ExtractionPlotPanel(MultiPlotPanel):
                                            sharex=top_axes,
                                            sharey=top_axes))
             axes = self._trace_axes[fullpath][-1]
-            axes.set_ylabel('%s #%d' % (TRACE_TEXT, (i+1)))
+            axes.set_ylabel('%s #%d' % (TRACE, (i+1)))
             if i+1 < len(traces): #all but the last trace
                 # make the x/yticklabels dissapear
                 axes.set_xticklabels([''],visible=False)
                 axes.set_yticklabels([''],visible=False)
 
-        axes.set_xlabel(SAMPLE_NUMBER_TEXT)
+        axes.set_xlabel(pt.SAMPLE_NUMBER)
         # bottom is in percent, how big is text there in percent?
         factor = len(traces)+1
         original_bottom = 0.2
@@ -110,8 +107,8 @@ class ExtractionPlotPanel(MultiPlotPanel):
         self._spike_axes[fullpath] = figure.add_subplot(
                 len(self._trace_axes[fullpath])+1, 1, 1)
         spike_axes = self._spike_axes[fullpath]
-        spike_axes.set_xlabel(TIME_AXIS_TEXT)
-        spike_axes.set_ylabel(SPIKE_RATE_AXIS_TEXT)
+        spike_axes.set_xlabel(pt.TIME_AXIS)
+        spike_axes.set_ylabel(pt.SPIKE_RATE_AXIS)
         # move raster plot's bottom edge up a bit
         box = spike_axes.get_position()
         box.p0 = (box.p0[0], box.p0[1]+0.065)
@@ -129,7 +126,7 @@ class ExtractionPlotPanel(MultiPlotPanel):
                 del(axes.lines[0])     
             axes.plot(trace, color=lfs.PLOT_COLOR_2, 
                              linewidth=lfs.PLOT_LINEWIDTH_2, 
-                             label=DETECTION_TRACE_GRAPH_LABEL_TEXT)
+                             label=pt.DETECTION_TRACE_GRAPH_LABEL)
 
     def _plot_spikes(self, trial, figure, fullpath):
         if len(trial.spikes):
@@ -159,7 +156,7 @@ class ExtractionPlotPanel(MultiPlotPanel):
                                  marker='|',
                                  markersize=lfs.SPIKE_RASTER_HEIGHT*
                                             raster_height_factor,
-                                 label=SPIKES_GRAPH_LABEL_TEXT)
+                                 label=pt.SPIKES_GRAPH_LABEL)
 
         # --- plot spike rate ---
         width = 50.0
