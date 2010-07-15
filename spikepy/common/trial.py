@@ -27,6 +27,8 @@ class Trial(object):
 
         if sampling_freq is not None:
             self.sampling_freq = sampling_freq
+            dt = (1.0/sampling_freq)*1000.0 # dt in ms
+            self.times = numpy.arange(0,len(self.traces['raw'][0]), 1)*dt
         if time_collected is not None:
             self.time_collected = time_collected
         if fullpath is not None:

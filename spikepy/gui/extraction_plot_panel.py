@@ -9,12 +9,12 @@ from .multi_plot_panel import MultiPlotPanel
 from .plot_panel import PlotPanel
 from .utils import rgb_to_matplotlib_color
 from .look_and_feel_settings import lfs
-from .program_text import (TRACE_TEXT, PLOT_TIME_TEXT, 
+from .program_text import (TRACE_TEXT, SAMPLE_NUMBER_TEXT, 
                            TIME_AXIS_TEXT, SPIKE_RATE_AXIS_TEXT, 
                            DETECTION_TRACE_GRAPH_LABEL_TEXT, 
                            SPIKES_GRAPH_LABEL_TEXT)
 
-class DetectionPlotPanel(MultiPlotPanel):
+class ExtractionPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
         self._dpi       = lfs.PLOT_DPI
         self._figsize   = lfs.PLOT_FIGSIZE
@@ -67,7 +67,7 @@ class DetectionPlotPanel(MultiPlotPanel):
         figure = self._plot_panels[fullpath].figure
         
         if (fullpath not in self._trace_axes.keys() and
-                'detection' in trial.traces.keys()):
+                'extraction' in trial.traces.keys()):
             self._create_axes(trial, figure, fullpath)
         self._plot_filtered_traces(trial, figure, fullpath)
         self._plot_spikes(trial, figure, fullpath)
@@ -80,7 +80,7 @@ class DetectionPlotPanel(MultiPlotPanel):
         self.Layout()
 
     def _create_axes(self, trial, figure, fullpath):
-        traces = trial.traces['detection']
+        traces = trial.traces['extraction']
         for i, trace in enumerate(traces):
             if i==0:
                 self._trace_axes[fullpath] = [
@@ -99,7 +99,7 @@ class DetectionPlotPanel(MultiPlotPanel):
                 axes.set_xticklabels([''],visible=False)
                 axes.set_yticklabels([''],visible=False)
 
-        axes.set_xlabel(PLOT_TIME_TEXT)
+        axes.set_xlabel(SAMPLE_NUMBER_TEXT)
         # bottom is in percent, how big is text there in percent?
         factor = len(traces)+1
         original_bottom = 0.2
@@ -110,7 +110,7 @@ class DetectionPlotPanel(MultiPlotPanel):
         self._spike_axes[fullpath] = figure.add_subplot(
                 len(self._trace_axes[fullpath])+1, 1, 1)
         spike_axes = self._spike_axes[fullpath]
-        spike_axes.set_xlabel(PLOT_TIME_TEXT)
+        spike_axes.set_xlabel(TIME_AXIS_TEXT)
         spike_axes.set_ylabel(SPIKE_RATE_AXIS_TEXT)
         # move raster plot's bottom edge up a bit
         box = spike_axes.get_position()
@@ -120,16 +120,14 @@ class DetectionPlotPanel(MultiPlotPanel):
         
 
     def _plot_filtered_traces(self, trial, figure, fullpath):
-        if "detection" in trial.traces.keys():
-            traces = trial.traces['detection']
+        if "extraction" in trial.traces.keys():
+            traces = trial.traces['extraction']
         else:
             return
-        times = trial.times
-
         for trace, axes in zip(traces, self._trace_axes[fullpath]):
             while axes.lines:
                 del(axes.lines[0])     
-            axes.plot(times, trace, color=lfs.PLOT_COLOR_2, 
+            axes.plot(trace, color=lfs.PLOT_COLOR_2, 
                              linewidth=lfs.PLOT_LINEWIDTH_2, 
                              label=DETECTION_TRACE_GRAPH_LABEL_TEXT)
 
@@ -140,7 +138,6 @@ class DetectionPlotPanel(MultiPlotPanel):
             while self._spike_axes[fullpath].lines:
                 del(self._spike_axes[fullpath].lines[0])
             return # this trial has never been spike detected.
-        times = trial.times
 
         for spike_list, axes in zip(spikes, self._trace_axes[fullpath]):
             axes.set_autoscale_on(False)
@@ -156,9 +153,8 @@ class DetectionPlotPanel(MultiPlotPanel):
             if raster_pos == 'center': 
                 spike_y = 0.0
                 raster_height_factor = 1.0
-            spike_xs = [times[int(spike_index)] for spike_index in spike_list]
             spike_ys = [spike_y for spike_index in spike_list]
-            axes.plot(spike_xs, spike_ys, color=lfs.SPIKE_RASTER_COLOR, 
+            axes.plot(spike_list, spike_ys, color=lfs.SPIKE_RASTER_COLOR, 
                                  linewidth=0, 
                                  marker='|',
                                  markersize=lfs.SPIKE_RASTER_HEIGHT*
@@ -174,14 +170,14 @@ class DetectionPlotPanel(MultiPlotPanel):
                                                       required_proportion)
         spike_rate = get_spike_rate(accepted_spike_list, width, 
                                     trial.sampling_freq, 
-                                    len(trial.traces['detection'][0]))
+                                    len(trial.traces['extraction'][0]))
         spike_axes = self._spike_axes[fullpath]
 
         # remove old lines if present.
         while spike_axes.lines:
             del spike_axes.lines[0]
             
-        spike_axes.plot(times, spike_rate, color=lfs.PLOT_COLOR_2, 
+        spike_axes.plot(spike_rate, color=lfs.PLOT_COLOR_2, 
                                     linewidth=lfs.PLOT_LINEWIDTH_2)
 
         raster_height_factor = 2.0
@@ -192,47 +188,11 @@ class DetectionPlotPanel(MultiPlotPanel):
             spike_y = 0.0
             raster_height_factor = 1.0
             
-        spike_xs = [times[int(spike_index)] 
-                    for spike_index in accepted_spike_list]
         spike_ys = [spike_y for spike_index in accepted_spike_list]
-        spike_axes.plot(spike_xs, spike_ys, 
+        spike_axes.plot(accepted_spike_list, spike_ys, 
                                 color=lfs.SPIKE_RASTER_COLOR,
                                 linewidth=0.0,
                                 marker='|',
                                 markersize=lfs.SPIKE_RASTER_HEIGHT*
                                             raster_height_factor)
 
-def get_accepted_spike_list(spikes, samling_freq, width, required_proportion):
-    '''
-    Gather the spikes which occur across <reqired_proportion> of electrodes
-    within <width> of spikes on the other electrodes.
-    '''
-    return spikes[0] # FIXME flesh out and put into detection code.
-
-
-def get_spike_rate(spike_list, width, sampling_rate, num_samples):
-    binary_spike_train = numpy.zeros(num_samples, dtype=numpy.float64)
-    for spike in spike_list:
-        binary_spike_train[int(spike)] = 1.0
-    kernel = gaussian_kernel(width, sampling_rate)
-    return scisig.convolve(kernel, binary_spike_train, mode='same')*1000.0
-
-
-def gaussian_kernel(width, sampling_rate):
-    "width in (ms), sampling_rate in (Hz)"
-    # -3*width to 3*width will get more than 99.7% of strength
-    samples_per_ms = sampling_rate/1000.0
-    num_samples = samples_per_ms * 6.0 * width
-    if not num_samples%2: # ensure odd num_samples
-        num_samples += 1
-    x_values = numpy.linspace(-3.0*width, 3.0*width, num_samples)
-    result = gaussian(x_values, width)
-    result /= (numpy.sum(result)/num_samples)*6.0*width # normalize
-    return result
-
-
-def gaussian(x, width):
-    peak = 1.0/numpy.sqrt(2*numpy.pi*width**2)
-    exponent = -x**2/(2*width**2)
-    return peak * numpy.exp(exponent)
-    

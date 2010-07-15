@@ -8,7 +8,7 @@ from .multi_plot_panel import MultiPlotPanel
 from .plot_panel import PlotPanel
 from .utils import rgb_to_matplotlib_color
 from .look_and_feel_settings import lfs
-from .program_text import (TRACE_TEXT, SAMPLE_NUMBER_TEXT, RAW_TEXT, 
+from .program_text import (TRACE_TEXT, PLOT_TIME_TEXT, RAW_TEXT, 
                            PSD_AXIS_TEXT, 
                            FILTERED_TRACE_GRAPH_LABEL)
 
@@ -90,6 +90,7 @@ class FilterPlotPanel(MultiPlotPanel):
 
     def _plot_raw_traces(self, trial, figure, fullpath):
         traces = trial.traces['raw']
+        times  = trial.times
         for i, trace in enumerate(traces):
             if i==0:
                 self._trace_axes[fullpath] = [
@@ -102,7 +103,7 @@ class FilterPlotPanel(MultiPlotPanel):
                                            sharex=top_axes,
                                            sharey=top_axes))
             axes = self._trace_axes[fullpath][-1]
-            axes.plot(trace, color=lfs.PLOT_COLOR_1, 
+            axes.plot(times, trace, color=lfs.PLOT_COLOR_1, 
                              linewidth=lfs.PLOT_LINEWIDTH_1, 
                              label=RAW_TEXT)
             axes.set_ylabel('%s #%d' % (TRACE_TEXT, (i+1)))
@@ -111,7 +112,7 @@ class FilterPlotPanel(MultiPlotPanel):
                 axes.set_xticklabels([''],visible=False)
                 axes.set_yticklabels([''],visible=False)
 
-        axes.set_xlabel(SAMPLE_NUMBER_TEXT)
+        axes.set_xlabel(PLOT_TIME_TEXT)
         # bottom is in percent, how big is text there in percent?
         factor = len(traces)+1
         original_bottom = 0.2
@@ -139,6 +140,7 @@ class FilterPlotPanel(MultiPlotPanel):
             traces = trial.traces[self.name.lower()]
         else:
             return # this trial has never been filtered.
+        times = trial.times
 
         for trace, axes in zip(traces, self._trace_axes[fullpath]):
             axes.set_autoscale_on(False)
@@ -147,7 +149,7 @@ class FilterPlotPanel(MultiPlotPanel):
                 filtered_line = lines[1]
                 filtered_line.set_ydata(trace)
             else:
-                axes.plot(trace, color=self.line_color, 
+                axes.plot(times, trace, color=self.line_color, 
                                  linewidth=self.line_width, 
                                  label=FILTERED_TRACE_GRAPH_LABEL)
 
