@@ -27,9 +27,10 @@ def run(trace_list, sampling_freq=None,
 
         waveforms          = defaultdict(list)
         excluded_waveforms = defaultdict(list)
-        print pre_padding_percent, window_duration, window_size
+        dt = (1.0/sampling_freq)*1000.0 # in ms
+        spike_index_list = spike_list/dt
         for trace in trace_list:
-            results = window_spikes(trace, spike_list,
+            results = window_spikes(trace, spike_index_list,
                     window_size=window_size,
                     pre_padding=pre_padding_percent,
                     exclude_overlappers=exclude_overlappers)
@@ -37,10 +38,6 @@ def run(trace_list, sampling_freq=None,
             spike_indexes    = results[1]
             excluded_windows = results[2]
             excluded_indexes = results[3]
-            print spike_windows
-            print spike_indexes
-            print excluded_windows
-            print excluded_indexes
 
             # collect waveforms from (potentially) multiple traces.
             for si, sw in zip(spike_indexes, spike_windows):
@@ -49,10 +46,26 @@ def run(trace_list, sampling_freq=None,
             for ei, ew in zip(excluded_indexes, excluded_windows):
                 excluded_waveforms[ei].append(
                         numpy.array(ew, dtype=numpy.float64))
+
         # concatenate collected waveforms from the same spike.
         for key in waveforms.keys():
             waveforms[key] = numpy.hstack(waveforms[key])
         for key in excluded_waveforms.keys():
             excluded_waveforms[key] = numpy.hstack(excluded_waveforms[key])
-             
-        return {'features':waveforms, 'excluded_features':excluded_waveforms}
+
+        # generate contents to be returned
+        waveform_list  = []
+        waveform_times = []
+        for spike_index, waveform in waveforms.items():
+            waveform_list.append(waveform)
+            waveform_times.append(spike_index*dt) 
+
+        excluded_waveform_list  = []
+        excluded_waveform_times = []
+        for spike_index, waveform in excluded_waveforms.items():
+            excluded_waveform_list.append(waveform)
+            excluded_waveform_times.append(spike_index*dt) 
+            
+        return {'features':waveform_list, 'feature_times':waveform_times,
+                'excluded_features':excluded_waveform_list,
+                'excluded_feature_times':excluded_waveform_times}

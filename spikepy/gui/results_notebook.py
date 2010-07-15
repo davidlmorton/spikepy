@@ -3,6 +3,7 @@ from wx.lib.pubsub import Publisher as pub
 
 from .filter_plot_panel import FilterPlotPanel
 from .detection_plot_panel import DetectionPlotPanel
+from .extraction_plot_panel import ExtractionPlotPanel
 from .look_and_feel_settings import lfs
 from . import program_text as pt
 
@@ -13,7 +14,7 @@ class ResultsNotebook(wx.Notebook):
         detection_filter_panel = FilterResultsPanel(self, "detection")
         detection_panel = DetectionResultsPanel(self, 'detection')
         extraction_filter_panel = FilterResultsPanel(self, "extraction")
-        extraction_panel = wx.Panel(self)
+        extraction_panel = ExtractionResultsPanel(self, "extraction")
         clustering_panel = wx.Panel(self)
         
         self.AddPage(detection_filter_panel,  pt.DETECTION_FILTER)
@@ -56,6 +57,25 @@ class FilterResultsPanel(wx.Panel):
         for plot_panel in self.filter_plot_panel._plot_panels.values():
             plot_panel._report_coordinates = report_coordinates
 
+
+class ExtractionResultsPanel(wx.Panel):
+    def __init__(self, parent, name, **kwargs):
+        wx.Panel.__init__(self, parent, **kwargs)
+        self.name = name
+
+        cursor_position_bar = CursorPositionBar(self)
+        self.extraction_plot_panel = ExtractionPlotPanel(self, name)
+
+        sizer = wx.BoxSizer(orient=wx.VERTICAL)
+        sizer.Add(cursor_position_bar, proportion=0, 
+                flag=wx.ALL|wx.EXPAND, border=0)
+        sizer.Add(self.extraction_plot_panel, proportion=1, 
+                flag=wx.ALL|wx.EXPAND, border=10)
+        self.SetSizer(sizer)
+
+    def _tell_report_coordinates(self, report_coordinates):
+        for plot_panel in self.detection_plot_panel._plot_panels.values():
+            plot_panel._report_coordinates = report_coordinates
 
 class DetectionResultsPanel(wx.Panel):
     def __init__(self, parent, name, **kwargs):

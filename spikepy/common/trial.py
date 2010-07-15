@@ -43,16 +43,28 @@ class Trial(object):
             # a list of (lists of spikes) equal in len to num electrodes
             self.spikes = []
             self.features = []
+            self.feature_times = []
+            self.excluded_features = []
+            self.excluded_feature_times = []
             self.units = {} 
         elif last_stage_completed == "detection filter":
             self.spikes = []
             self.features = []
+            self.feature_times = []
+            self.excluded_features = []
+            self.excluded_feature_times = []
             self.units = {}
         elif last_stage_completed == "detection":
             self.features = []
+            self.feature_times = []
+            self.excluded_features = []
+            self.excluded_feature_times = []
             self.units = {}
         elif last_stage_completed == "extraction filter":
             self.features = []
+            self.feature_times = []
+            self.excluded_features = []
+            self.excluded_feature_times = []
             self.units = {}
         elif last_stage_completed == "extraction":
             self.units = {}

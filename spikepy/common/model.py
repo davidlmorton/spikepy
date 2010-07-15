@@ -137,7 +137,8 @@ class Model(object):
 #                                                     args=(filtered_traces,),
 #                                                     kwds=method_parameters)
 #                trial.spikes = result.get()
-                trial.features = method.run(filtered_traces, **method_parameters)
+                results = method.run(filtered_traces, **method_parameters)
+                trial.__dict__.update(results)
         except:
             traceback.print_exc()
             sys.exit(1)

@@ -13,17 +13,17 @@ from . import program_text as pt
 class FilterPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
         self._dpi       = lfs.PLOT_DPI
-        self._figsize  = lfs.PLOT_FIGSIZE
+        self._figsize   = lfs.PLOT_FIGSIZE
         self._facecolor = lfs.PLOT_FACECOLOR
-        self.name      = name
+        self.name       = name
         MultiPlotPanel.__init__(self, parent, figsize=self._figsize,
                                               facecolor=self._facecolor,
                                               edgecolor=self._facecolor,
                                               dpi=self._dpi)
-        pub.subscribe(self._remove_trial, topic="REMOVE_PLOT")
-        pub.subscribe(self._trial_added, topic='TRIAL_ADDED')
-        pub.subscribe(self._trial_filtered, 
-                      topic='TRIAL_%s_FILTERED' % name.upper())
+        pub.subscribe(self._remove_trial,   topic="REMOVE_PLOT")
+        pub.subscribe(self._trial_added,    topic='TRIAL_ADDED')
+        pub.subscribe(self._trial_filtered, topic='TRIAL_%s_FILTERED' 
+                                                   % name.upper())
 
         if name.lower() == 'detection':
             self.line_color = lfs.PLOT_COLOR_2
@@ -32,7 +32,6 @@ class FilterPlotPanel(MultiPlotPanel):
             self.line_color = lfs.PLOT_COLOR_3
             self.line_width = lfs.PLOT_LINEWIDTH_3
 
-        self._psd_shown = False
         self._trials = {}
         self._trace_axes = {}
         self._psd_axes = {}
@@ -41,10 +40,7 @@ class FilterPlotPanel(MultiPlotPanel):
         full_path = message.data
         del self._trials[full_path]
         del self._trace_axes[full_path]
-        try: 
-            self._psd_axes[full_path]
-        except KeyError:
-            pass
+        del self._psd_axes[full_path]
 
     def _trial_added(self, message=None, trial=None):
         if message is not None:
@@ -79,16 +75,12 @@ class FilterPlotPanel(MultiPlotPanel):
             self._plot_raw_traces(trial, figure, fullpath)
         self._plot_filtered_traces(trial, figure, fullpath)
 
-        old_shown_state = self._plot_panels[fullpath].IsShown()
-        self._plot_panels[fullpath].Show(False)
-        figure.canvas.draw()
-        self._plot_panels[fullpath].Show(old_shown_state)
-        self.SetupScrolling()
-        self.Layout()
+        self.draw_canvas(fullpath)
 
     def _plot_raw_traces(self, trial, figure, fullpath):
         traces = trial.traces['raw']
         times  = trial.times
+
         for i, trace in enumerate(traces):
             if i==0:
                 self._trace_axes[fullpath] = [
@@ -132,7 +124,6 @@ class FilterPlotPanel(MultiPlotPanel):
         box.p0 = (box.p0[0], box.p0[1]+0.065)
         box.p1 = (box.p1[0], 0.99)
         psd_axes.set_position(box)
-
 
     def _plot_filtered_traces(self, trial, figure, fullpath):
         if self.name.lower() in trial.traces.keys():

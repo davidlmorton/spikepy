@@ -34,6 +34,7 @@ class DetectionPlotPanel(MultiPlotPanel):
         full_path = message.data
         del self._trials[full_path]
         del self._trace_axes[full_path]
+        del self._spike_axes[fullpath]
 
     def _trial_added(self, message=None, trial=None):
         if message is not None:
@@ -69,12 +70,7 @@ class DetectionPlotPanel(MultiPlotPanel):
         self._plot_filtered_traces(trial, figure, fullpath)
         self._plot_spikes(trial, figure, fullpath)
 
-        old_shown_state = self._plot_panels[fullpath].IsShown()
-        self._plot_panels[fullpath].Show(False)
-        figure.canvas.draw()
-        self._plot_panels[fullpath].Show(old_shown_state)
-        self.SetupScrolling()
-        self.Layout()
+        self.draw_canvas(fullpath)
 
     def _create_axes(self, trial, figure, fullpath):
         traces = trial.traces['detection']
@@ -153,7 +149,7 @@ class DetectionPlotPanel(MultiPlotPanel):
             if raster_pos == 'center': 
                 spike_y = 0.0
                 raster_height_factor = 1.0
-            spike_xs = [times[int(spike_index)] for spike_index in spike_list]
+            spike_xs = spike_list
             spike_ys = [spike_y for spike_index in spike_list]
             axes.plot(spike_xs, spike_ys, color=lfs.SPIKE_RASTER_COLOR, 
                                  linewidth=0, 
@@ -189,8 +185,7 @@ class DetectionPlotPanel(MultiPlotPanel):
             spike_y = 0.0
             raster_height_factor = 1.0
             
-        spike_xs = [times[int(spike_index)] 
-                    for spike_index in accepted_spike_list]
+        spike_xs = accepted_spike_list
         spike_ys = [spike_y for spike_index in accepted_spike_list]
         spike_axes.plot(spike_xs, spike_ys, 
                                 color=lfs.SPIKE_RASTER_COLOR,
@@ -209,8 +204,9 @@ def get_accepted_spike_list(spikes, samling_freq, width, required_proportion):
 
 def get_spike_rate(spike_list, width, sampling_rate, num_samples):
     binary_spike_train = numpy.zeros(num_samples, dtype=numpy.float64)
+    dt = (1.0/sampling_rate)*1000.0
     for spike in spike_list:
-        binary_spike_train[int(spike)] = 1.0
+        binary_spike_train[int(spike/dt)] = 1.0
     kernel = gaussian_kernel(width, sampling_rate)
     return scisig.convolve(kernel, binary_spike_train, mode='same')*1000.0
 

@@ -56,6 +56,16 @@ class MultiPlotPanel(ScrolledPanel):
         '''
         pass
 
+    def draw_canvas(self, key):
+        # hide -> draw -> unhide   to avoid display bugs with canvas
+        old_shown_state = self._plot_panels[key].IsShown()
+        self._plot_panels[key].Show(False)
+        figure = self._plot_panels[key].figure
+        figure.canvas.draw()
+        self._plot_panels[key].Show(old_shown_state)
+        self.SetupScrolling()
+        self.Layout()
+
     def _remove_plot(self, message):
         removed_panel_key = message.data
         self._show_plot(new_panel_key='DEFAULT')
