@@ -77,8 +77,8 @@ class StrategySummary(wx.Panel):
         
         pub.subscribe(self._update_methods, "UPDATE_STRATEGY_SUMMARY")
         s = []
-        stages = ['Detection Filter', 'Detection', 'Extraction Filter', 
-                  'Extraction', 'Clustering']
+        stages = [pt.DETECTION_FILTER, pt.DETECTION, pt.EXTRACTION_FILTER, 
+                  pt.EXTRACTION, pt.CLUSTERING]
         self.method_text_list = []
         for stage in stages:
             s.append(wx.StaticText(self, label=stage+':',
@@ -153,6 +153,7 @@ class StagePanel(wx.Panel):
         wx.Panel.__init__(self, parent, **kwargs)
         self.stage_num = stage_num
         self.stage_name = stage_name
+        
 
         title_panel = TitlePanel(self, stage_num, stage_name)
 
@@ -169,10 +170,10 @@ class StagePanel(wx.Panel):
         self._method_name_chosen = self.method_names[0]
 
         # --- setup other panel elements ---
-        self.method_chooser = NamedChoiceCtrl(self, name="Method:",
+        self.method_chooser = NamedChoiceCtrl(self, name=pt.METHOD+":",
                                  choices=self.method_names)
 #        self.method_description_text = StaticBoxText(self, label='Description') 
-        self.run_button = wx.Button(self, label="Run")
+        self.run_button = wx.Button(self, label=pt.RUN)
         self.run_button.Show(False)
 
         # --- sizer config ---
@@ -187,7 +188,7 @@ class StagePanel(wx.Panel):
         for method in self.methods.values():
             sizer.Add(method['control_panel'],  proportion=0,
                       flag=ea_flag,                        border=6)
-        sizer.Add(self.run_button,           proportion=0, 
+        sizer.Add(self.run_button,              proportion=0, 
                       flag=wx.ALL,                         border=1)
         self.SetSizer(sizer)
         
@@ -197,10 +198,11 @@ class StagePanel(wx.Panel):
 #        self._method_choice_made(method_name=self._method_name_chosen)
         
         pub.subscribe(self._running_completed, topic='RUNNING_COMPLETED')
+        #pub.subscribe(self._show_extras, topic="SHOW_%s_EXTRAS" %
         self._method_choice_made(method_name=self.method_names[0])
 
     def _running_completed(self, message=None):
-        self.run_button.SetLabel('Run')
+        self.run_button.SetLabel(pt.RUN)
         self.run_button.Enable()
 
     
@@ -226,7 +228,7 @@ class StagePanel(wx.Panel):
     def _run(self, event=None):
         control_panel = self.methods[self._method_name_chosen]['control_panel']
         settings = control_panel.get_parameters()
-        self.run_button.SetLabel('Running...')
+        self.run_button.SetLabel(pt.RUN_BUTTON_RUNNING_STATUS)
         self.run_button.Disable()
         wx.Yield() # about to let scipy hog cpu, so process all wx events.
         topic = self.stage_name.split()[-1].upper()
@@ -235,7 +237,13 @@ class StagePanel(wx.Panel):
                                               self._method_name_chosen,
                                               settings))
 
-        
+    def _show_extras(self):
+        '''
+        Create and display a dialog containing method specific results/features.
+        '''
+        pass
+        #method = 
+        #dlg = wx.Dialog(self, title=pt.METHOD_EXTRAS_DIALOG_TITLE % method)  
 
 class DetectionPanel(wx.Panel):
     def __init__(self, parent, stage_num, stage_name, **kwargs):

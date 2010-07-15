@@ -6,15 +6,16 @@ from .detection_plot_panel import DetectionPlotPanel
 from .extraction_plot_panel import ExtractionPlotPanel
 from .look_and_feel_settings import lfs
 from . import program_text as pt
+from ..stages import filtering, detection, extraction
 
 class ResultsNotebook(wx.Notebook):
     def __init__(self, parent, **kwargs):
         wx.Notebook.__init__(self, parent, **kwargs)
         
-        detection_filter_panel = FilterResultsPanel(self, "detection")
-        detection_panel = DetectionResultsPanel(self, 'detection')
+        detection_filter_panel = FilterResultsPanel(self,  "detection")
+        detection_panel = DetectionResultsPanel(self,      'detection')
         extraction_filter_panel = FilterResultsPanel(self, "extraction")
-        extraction_panel = ExtractionResultsPanel(self, "extraction")
+        extraction_panel = ExtractionResultsPanel(self,    "extraction")
         clustering_panel = wx.Panel(self)
         
         self.AddPage(detection_filter_panel,  pt.DETECTION_FILTER)
@@ -45,18 +46,29 @@ class FilterResultsPanel(wx.Panel):
 
         cursor_position_bar = CursorPositionBar(self)
         self.filter_plot_panel = FilterPlotPanel(self, name)
+        method_extras_button = wx.Button(self, label=pt.METHOD_EXTRAS)
 
+        top_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        top_sizer.Add(cursor_position_bar, proportion=0, 
+                flag=wx.ALL|wx.EXPAND, border=0)
+        top_sizer.Add(method_extras_button, proportion=0, 
+                flag=wx.ALL, border=0)
+        
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        sizer.Add(cursor_position_bar, proportion=0, 
+        sizer.Add(top_sizer, proportion=0, 
                 flag=wx.ALL|wx.EXPAND, border=0)
         sizer.Add(self.filter_plot_panel, proportion=1, 
                 flag=wx.ALL|wx.EXPAND, border=10)
         self.SetSizer(sizer)
 
+        self.Bind(wx.EVT_BUTTON, self._show_method_extras)
+
     def _tell_report_coordinates(self, report_coordinates):
         for plot_panel in self.filter_plot_panel._plot_panels.values():
             plot_panel._report_coordinates = report_coordinates
 
+    def _show_method_extras(self):
+        pub.sendMessage(topic="SHOW_%s_EXTRAS" % self.name.upper())
 
 class ExtractionResultsPanel(wx.Panel):
     def __init__(self, parent, name, **kwargs):
@@ -65,18 +77,30 @@ class ExtractionResultsPanel(wx.Panel):
 
         cursor_position_bar = CursorPositionBar(self)
         self.extraction_plot_panel = ExtractionPlotPanel(self, name)
+        method_extras_button = wx.Button(self, label=pt.METHOD_EXTRAS)
+
+        top_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        top_sizer.Add(cursor_position_bar, proportion=0, 
+                flag=wx.ALL|wx.EXPAND, border=0)
+        top_sizer.Add(method_extras_button, proportion=0, 
+                flag=wx.ALL, border=0)
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        sizer.Add(cursor_position_bar, proportion=0, 
+        sizer.Add(top_sizer, proportion=0, 
                 flag=wx.ALL|wx.EXPAND, border=0)
         sizer.Add(self.extraction_plot_panel, proportion=1, 
                 flag=wx.ALL|wx.EXPAND, border=10)
         self.SetSizer(sizer)
 
+        self.Bind(wx.EVT_BUTTON, self._show_method_extras)
+
     def _tell_report_coordinates(self, report_coordinates):
         for plot_panel in self.detection_plot_panel._plot_panels.values():
             plot_panel._report_coordinates = report_coordinates
 
+    def _show_method_extras(self):
+        pass
+    
 class DetectionResultsPanel(wx.Panel):
     def __init__(self, parent, name, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
@@ -84,17 +108,29 @@ class DetectionResultsPanel(wx.Panel):
 
         cursor_position_bar = CursorPositionBar(self)
         self.detection_plot_panel = DetectionPlotPanel(self, name)
+        method_extras_button = wx.Button(self, label=pt.METHOD_EXTRAS)
 
+        top_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        top_sizer.Add(cursor_position_bar, proportion=0, 
+                flag=wx.ALL|wx.EXPAND, border=0)
+        top_sizer.Add(method_extras_button, proportion=0, 
+                flag=wx.ALL, border=0)
+        
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        sizer.Add(cursor_position_bar, proportion=0, 
+        sizer.Add(top_sizer, proportion=0, 
                 flag=wx.ALL|wx.EXPAND, border=0)
         sizer.Add(self.detection_plot_panel, proportion=1, 
                 flag=wx.ALL|wx.EXPAND, border=10)
         self.SetSizer(sizer)
 
+        self.Bind(wx.EVT_BUTTON, self._show_method_extras)
+
     def _tell_report_coordinates(self, report_coordinates):
         for plot_panel in self.detection_plot_panel._plot_panels.values():
             plot_panel._report_coordinates = report_coordinates
+
+    def _show_method_extras(self):
+        pass
 
 
 class CursorPositionBar(wx.Panel):
@@ -132,8 +168,8 @@ class CursorPositionBar(wx.Panel):
         position_sizer.Add(self.y_text, proportion=0, flag=flag, border=2)
 
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        sizer.Add(position_sizer,  proportion=0, flag=flag, border=10)
         sizer.Add(checkbox_sizer,  proportion=0, flag=flag, border=10)
+        sizer.Add(position_sizer,  proportion=0, flag=flag, border=10)
         self.SetSizer(sizer)
 
     def _show_position(self, event=None):
