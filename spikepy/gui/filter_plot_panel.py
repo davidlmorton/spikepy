@@ -124,7 +124,8 @@ class FilterPlotPanel(MultiPlotPanel):
         self._psd_axes[fullpath] = figure.add_subplot(
                 len(self._trace_axes[fullpath])+1, 1, 1)
         psd_axes = self._psd_axes[fullpath]
-        psd_axes.psd(all_traces, Fs=trial.sampling_freq, label=RAW_TEXT,
+        psd_axes.psd(all_traces, Fs=trial.sampling_freq, NFFT=2**11,
+                                 label=RAW_TEXT,
                                  linewidth=lfs.PLOT_LINEWIDTH_1, 
                                  color=lfs.PLOT_COLOR_1)
         psd_axes.set_ylabel(PSD_AXIS_TEXT)
@@ -158,7 +159,7 @@ class FilterPlotPanel(MultiPlotPanel):
         lines = axes.get_lines()
         if len(lines) == 2:
             del(axes.lines[1])
-        axes.psd(all_traces, Fs=trial.sampling_freq, 
+        axes.psd(all_traces, Fs=trial.sampling_freq, NFFT=2**11, 
                                    label=FILTERED_TRACE_GRAPH_LABEL, 
                                    linewidth=self.line_width, 
                                    color=self.line_color)
