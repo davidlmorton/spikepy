@@ -15,11 +15,11 @@ class Model(object):
         self.trials = {}
 
     def setup_subscriptions(self):
-        pub.subscribe(self._open_data_file, "OPEN_DATA_FILE")
+        pub.subscribe(self._open_data_file,  "OPEN_DATA_FILE")
         pub.subscribe(self._close_data_file, "CLOSE_DATA_FILE")
-        pub.subscribe(self._filter, "FILTER")
-        pub.subscribe(self._detection, "DETECTION")
-        pub.subscribe(self._extraction, "EXTRACTION")
+        pub.subscribe(self._filter,          "FILTER")
+        pub.subscribe(self._detection,       "DETECTION")
+        pub.subscribe(self._extraction,      "EXTRACTION")
 
     # ---- OPEN FILE ----
     def _open_data_file(self, message):
@@ -63,16 +63,20 @@ class Model(object):
 
     def _detection_worker(self, method_name, method_parameters):
         try:
-#            processing_pool = Pool()
             for trial in self.trials.values():
                 filtered_traces = trial.traces['detection']
                 method = detection.get_method(method_name)
                 method_parameters['sampling_freq'] = trial.sampling_freq
-#                result = processing_pool.apply_async(method.run, 
-#                                                     args=(filtered_traces,),
-#                                                     kwds=method_parameters)
-#                trial.spikes = result.get()
-                trial.spikes = method.run(filtered_traces, **method_parameters)
+                if wx.Platform == '__WXMAC__':
+                    results = method.run(filtered_traces, **method_parameters)
+                else: # osx doesn't do well with multiprocessing.
+                    processing_pool = Pool()
+                    result = processing_pool.apply_async(method.run, 
+                            args=(filtered_traces,),
+                            kwds=method_parameters)
+                    results = result.get()
+                    processing_pool.close()
+                trial.spikes = results
         except:
             traceback.print_exc()
             sys.exit(1)
@@ -84,7 +88,7 @@ class Model(object):
         pub.sendMessage(topic='RUNNING_COMPLETED')
         
 
-    # ---- filter ----
+    # ---- FILTER ----
     def _filter(self, message):
         stage_name, method_name, method_parameters = message.data
         trace_type = stage_name.split()[0] # removes ' filter' from name
@@ -127,17 +131,20 @@ class Model(object):
 
     def _extraction_worker(self, method_name, method_parameters):
         try:
-#            processing_pool = Pool()
             for trial in self.trials.values():
                 filtered_traces = trial.traces['extraction']
                 method = extraction.get_method(method_name)
                 method_parameters['sampling_freq'] = trial.sampling_freq
                 method_parameters['spike_list'] = trial.spikes[0]
-#                result = processing_pool.apply_async(method.run, 
-#                                                     args=(filtered_traces,),
-#                                                     kwds=method_parameters)
-#                trial.spikes = result.get()
-                results = method.run(filtered_traces, **method_parameters)
+                if wx.Platform == '__WXMAC__':
+                    results = method.run(filtered_traces, **method_parameters)
+                else:
+                    processing_pool = Pool()
+                    result = processing_pool.apply_async(method.run, 
+                            args=(filtered_traces,),
+                            kwds=method_parameters)
+                    results = result.get()
+                    processing_pool.close()
                 trial.__dict__.update(results)
         except:
             traceback.print_exc()

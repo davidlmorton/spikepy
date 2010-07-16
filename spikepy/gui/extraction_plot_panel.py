@@ -80,8 +80,10 @@ class ExtractionPlotPanel(MultiPlotPanel):
         while axes.lines:
             del(axes.lines[0])     
 
+        axes.set_autoscale_on(True)
         for feature in features:
             axes.plot(feature, linewidth=lfs.PLOT_LINEWIDTH_4)
+        axes.set_xlim((0,len(features[0])-1))
         axes.set_title(pt.EXTRACTED_FEATURE_SETS + ': %d\n' % len(features) +
                        pt.EXCLUDED_FEATURE_SETS + 
                        ': %d' % num_excluded_features)

@@ -5,6 +5,9 @@ from .utils import rgb_to_matplotlib_color
 
 base_size = numpy.array((1440, 900)) 
 
+# look and feel settings must be a class because some of the 'settings'
+#   require a wx.app to have been created before they can be calculated.
+#   Those settings are made into properties so we can delay that calculation.
 class LookAndFeelSettings(object):
     def __init__(self):
         # MAIN_FRAME_SIZE is a property below
