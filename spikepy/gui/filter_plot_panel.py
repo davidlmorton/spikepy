@@ -24,7 +24,7 @@ class FilterPlotPanel(MultiPlotPanel):
         pub.subscribe(self._trial_added,    topic='TRIAL_ADDED')
         pub.subscribe(self._trial_filtered, topic='TRIAL_%s_FILTERED' 
                                                    % name.upper())
-        print name.lower()+"|"
+
         if name.lower() == 'detection':
             self.line_color = lfs.PLOT_COLOR_2
             self.line_width = lfs.PLOT_LINEWIDTH_2

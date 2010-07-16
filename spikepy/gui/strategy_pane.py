@@ -154,7 +154,6 @@ class StagePanel(wx.Panel):
         self.stage_num = stage_num
         self.stage_name = stage_name
         
-
         title_panel = TitlePanel(self, stage_num, stage_name)
 
         # --- setup methods ---
@@ -198,7 +197,6 @@ class StagePanel(wx.Panel):
 #        self._method_choice_made(method_name=self._method_name_chosen)
         
         pub.subscribe(self._running_completed, topic='RUNNING_COMPLETED')
-        #pub.subscribe(self._show_extras, topic="SHOW_%s_EXTRAS" %
         self._method_choice_made(method_name=self.method_names[0])
 
     def _running_completed(self, message=None):
@@ -236,14 +234,6 @@ class StagePanel(wx.Panel):
         pub.sendMessage(topic=topic, data=(self.stage_name, 
                                               self._method_name_chosen,
                                               settings))
-
-    def _show_extras(self):
-        '''
-        Create and display a dialog containing method specific results/features.
-        '''
-        pass
-        #method = 
-        #dlg = wx.Dialog(self, title=pt.METHOD_EXTRAS_DIALOG_TITLE % method)  
 
 class DetectionPanel(wx.Panel):
     def __init__(self, parent, stage_num, stage_name, **kwargs):

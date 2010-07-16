@@ -8,6 +8,11 @@ from .look_and_feel_settings import lfs
 from . import program_text as pt
 from ..stages import filtering, detection, extraction
 
+plot_panels = {"detection filter" : FilterPlotPanel,
+               "detection"        : DetectionPlotPanel,
+               "extraction filter": FilterPlotPanel,
+               "extraction"       : ExtractionPlotPanel}
+
 class ResultsNotebook(wx.Notebook):
     def __init__(self, parent, **kwargs):
         wx.Notebook.__init__(self, parent, **kwargs)
@@ -44,10 +49,6 @@ class ResultsPanel(wx.Panel):
         wx.Panel.__init__(self, parent, **kwargs)
         self.name = name
         cursor_position_bar = CursorPositionBar(self)
-        plot_panels = {"detection filter" : FilterPlotPanel,
-                       "detection"        : DetectionPlotPanel,
-                       "extraction filter": FilterPlotPanel,
-                       "extraction"       : ExtractionPlotPanel}
         self.plot_panel = plot_panels[self.name](self, self.name.split()[0])
 
         method_extras_button = wx.Button(self, label=pt.METHOD_EXTRAS)
@@ -71,9 +72,11 @@ class ResultsPanel(wx.Panel):
         for plot_panel in self.plot_panel._plot_panels.values():
             plot_panel._report_coordinates = report_coordinates
 
-    def _show_method_extras(self):
+    def _show_method_extras(self, event=None):
         results_stage = self.name
-        pub.sendMessage(topic="SHOW_METHOD_EXTRAS", data=results_stage)
+        fullpath = self.plot_panel._currently_shown
+        pub.sendMessage(topic="SHOW_METHOD_EXTRAS", data=(results_stage, 
+                                                          fullpath))
         
 class CursorPositionBar(wx.Panel):
     def __init__(self, parent, **kwargs):
