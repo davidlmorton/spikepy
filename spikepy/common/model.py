@@ -8,6 +8,7 @@ from wx.lib.delayedresult import startWorker
 
 from .open_data_file import open_data_file
 from ..stages import filtering, detection, extraction, clustering
+from .trial import format_traces
 
 
 class Model(object):
@@ -54,9 +55,55 @@ class Model(object):
             del self.trials[fullpath]
             pub.sendMessage(topic='FILE_CLOSED', data=fullpath)
 
+    # ---- FILTER ----
+    def _filter(self, message):
+        stage_name, method_name, method_parameters = message.data
+        for trial in self.trials.values():
+            stage_data = getattr(trial, stage_name.lower())
+            stage_data.method   = method_name
+            stage_data.settings = method_parameters
+            stage_data.reinitialize_results()
+        trace_type = stage_name.split()[0] # removes ' filter' from name
+        startWorker(self._filter_consumer, self._filter_worker,
+                        wargs=(stage_name, method_name, method_parameters, 
+                               trace_type),
+                        cargs=(trace_type, stage_name))
+
+    def _filter_worker(self, stage_name, method_name, 
+                             method_parameters, trace_type):
+        try:
+            processing_pool = Pool()
+            for trial in self.trials.values():
+                raw_traces = trial.raw_traces
+                filtered_traces = []
+                method = filtering.get_method(method_name)
+                method_parameters['sampling_freq'] = trial.sampling_freq
+                result = processing_pool.apply_async(method.run, 
+                                                     args=(raw_traces,),
+                                                     kwds=method_parameters)
+                filtered_traces = result.get()
+                stage_data = getattr(trial, stage_name.lower())
+                stage_data.results = format_traces(filtered_traes)
+            processing_pool.close()
+        except:
+            traceback.print_exc()
+            sys.exit(1)
+
+    def _filter_consumer(self, delayed_result, trace_type, stage_name):
+        for trial in self.trials.values():
+            pub.sendMessage(topic='TRIAL_%s_FILTERED' % trace_type.upper(),
+                            data=trial)
+        pub.sendMessage(topic='RUNNING_COMPLETED')
+
+
     # ---- DETECTION ----
     def _detection(self, message):
         stage_name, method_name, method_parameters = message.data
+        for trial in self.trials.values():
+            trial.detection.method   = method_name
+            trial.detection.settings = method_parameters
+            trial.detection.reinitialize_results()
+
         startWorker(self._detection_consumer, self._detection_worker,
                         wargs=(method_name, method_parameters),
                         cargs=(stage_name,))
@@ -64,7 +111,7 @@ class Model(object):
     def _detection_worker(self, method_name, method_parameters):
         try:
             for trial in self.trials.values():
-                filtered_traces = trial.traces['detection']
+                filtered_traces = trial.detection_filter.results
                 method = detection.get_method(method_name)
                 method_parameters['sampling_freq'] = trial.sampling_freq
                 if wx.Platform == '__WXMAC__':
@@ -76,55 +123,23 @@ class Model(object):
                             kwds=method_parameters)
                     results = result.get()
                     processing_pool.close()
-                trial.spikes = results
+                trial.detection.results = results
         except:
             traceback.print_exc()
             sys.exit(1)
 
     def _detection_consumer(self, delayed_result, stage_name):
         for trial in self.trials.values():
-            trial.initialize_data(last_stage_completed=stage_name)
             pub.sendMessage(topic='TRIAL_DETECTIONED', data=trial)
-        pub.sendMessage(topic='RUNNING_COMPLETED')
-        
-
-    # ---- FILTER ----
-    def _filter(self, message):
-        stage_name, method_name, method_parameters = message.data
-        trace_type = stage_name.split()[0] # removes ' filter' from name
-        startWorker(self._filter_consumer, self._filter_worker,
-                        wargs=(method_name, method_parameters, 
-                               trace_type),
-                        cargs=(trace_type, stage_name))
-
-    def _filter_worker(self, method_name, method_parameters, trace_type):
-        try:
-            processing_pool = Pool()
-            for trial in self.trials.values():
-                raw_traces = trial.traces['raw']
-                filtered_traces = []
-                method = filtering.get_method(method_name)
-                method_parameters['sampling_freq'] = trial.sampling_freq
-                result = processing_pool.apply_async(method.run, 
-                                                     args=(raw_traces,),
-                                                     kwds=method_parameters)
-                filtered_traces = result.get()
-                trial.set_traces(filtered_traces, trace_type=trace_type)
-            processing_pool.close()
-        except:
-            traceback.print_exc()
-            sys.exit(1)
-
-    def _filter_consumer(self, delayed_result, trace_type, stage_name):
-        for trial in self.trials.values():
-            trial.initialize_data(last_stage_completed=stage_name)
-            pub.sendMessage(topic='TRIAL_%s_FILTERED' % trace_type.upper(),
-                            data=trial)
         pub.sendMessage(topic='RUNNING_COMPLETED')
 
     # ---- EXTRACTION ----
     def _extraction(self, message):
         stage_name, method_name, method_parameters = message.data
+        for trial in self.trials.values():
+            trial.extraction.method   = method_name
+            trial.extraction.settings = method_parameters
+            trial.extraction.reinitialize_results()
         startWorker(self._extraction_consumer, self._extraction_worker,
                         wargs=(method_name, method_parameters),
                         cargs=(stage_name,))
@@ -132,10 +147,10 @@ class Model(object):
     def _extraction_worker(self, method_name, method_parameters):
         try:
             for trial in self.trials.values():
-                filtered_traces = trial.traces['extraction']
+                filtered_traces = trial.extraction_filter.results
                 method = extraction.get_method(method_name)
                 method_parameters['sampling_freq'] = trial.sampling_freq
-                method_parameters['spike_list'] = trial.spikes[0]
+                method_parameters['spike_list'] = trial.detection.results[0]
                 if wx.Platform == '__WXMAC__':
                     results = method.run(filtered_traces, **method_parameters)
                 else:
@@ -145,14 +160,13 @@ class Model(object):
                             kwds=method_parameters)
                     results = result.get()
                     processing_pool.close()
-                trial.__dict__.update(results)
+                trial.extraction.results = results
         except:
             traceback.print_exc()
             sys.exit(1)
 
     def _extraction_consumer(self, delayed_result, stage_name):
         for trial in self.trials.values():
-            trial.initialize_data(last_stage_completed=stage_name)
             pub.sendMessage(topic='TRIAL_EXTRACTIONED', data=trial)
         pub.sendMessage(topic='RUNNING_COMPLETED')
 

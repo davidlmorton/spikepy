@@ -25,19 +25,15 @@ def open_data_file(fullpath, data_format='guess', **kwargs):
     """
     Open a datafile given the filename and return a Trial object.
     """
-    time_collected = os.stat(fullpath).st_ctime # file creation time
-
+    print fullpath, data_format, kwargs
     if data_format == 'guess':
         data_format = guess_data_format(fullpath)
     read_in_file = file_readers[data_format]
 
     voltage_traces, sampling_freq = read_in_file(fullpath, **kwargs)
-    trial = Trial()
-    trial.set_traces(voltage_traces, 
-                     sampling_freq=sampling_freq, 
-                     time_collected=time_collected, 
-                     fullpath=fullpath,
-                     trace_type='raw')
+    trial = Trial(sampling_freq=sampling_freq,
+                  raw_traces=voltage_traces,
+                  fullpath=fullpath)
     return trial
 
     

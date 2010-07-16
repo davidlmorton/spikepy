@@ -48,7 +48,7 @@ class FilterPlotPanel(MultiPlotPanel):
 
         fullpath = trial.fullpath
         self._trials[fullpath] = trial
-        num_traces = len(trial.traces['raw'])
+        num_traces = len(trial.raw_traces)
         # make room for multiple traces and a psd plot.
         figsize = (self._figsize[0], self._figsize[1]*(num_traces+1))
         self.add_plot(fullpath, figsize=figsize, 
@@ -78,7 +78,7 @@ class FilterPlotPanel(MultiPlotPanel):
         self.draw_canvas(fullpath)
 
     def _plot_raw_traces(self, trial, figure, fullpath):
-        traces = trial.traces['raw']
+        traces = trial.raw_traces
         times  = trial.times
 
         for i, trace in enumerate(traces):
@@ -127,7 +127,8 @@ class FilterPlotPanel(MultiPlotPanel):
 
     def _plot_filtered_traces(self, trial, figure, fullpath):
         if self.name.lower() in trial.traces.keys():
-            traces = trial.traces[self.name.lower()]
+            stage_data = getattr(trial, self.name.lower()+'_filter')
+            traces = stage_data.results
         else:
             return # this trial has never been filtered.
         times = trial.times

@@ -1,6 +1,7 @@
 import time
 import datetime
 
+from wx.lib.pubsub import Publisher as pub
 import numpy
 
 
@@ -8,70 +9,60 @@ class Trial(object):
     """This class represents an individual trial consisting of (potentially)
     multiple electrodes recording simultaneously.
     """
-    def __init__(self):
-        self.sampling_freq = 1.0
-        self.time_collected = time.time() # right now
-        self.fullpath = 'FULLPATH NOT SET'
-        self.initialize_data()
+    def __init__(self, sampling_freq=1.0, 
+                       raw_traces=[], 
+                       fullpath='FULLPATH NOT SET'):
+        self.fullpath      = fullpath
+        self.raw_traces    = format_traces(raw_traces)
 
-    def set_traces(self, trace_list, 
-                   sampling_freq=None, 
-                   time_collected=None, 
-                   fullpath=None, 
-                   trace_type='raw'):
-        "Make this trace_list the trace set for this trial."
-        array_trace_list = [zero_mean(numpy.array(trace,dtype=numpy.float64))
-                            for trace in trace_list]
-        self.traces[trace_type.lower()] = numpy.vstack(
-                                                     array_trace_list)
+        self.sampling_freq = sampling_freq
+        self.dt            = (1.0/sampling_freq)*1000.0 # dt in ms
+        if len(self.raw_traces):
+            trace_length = len(self.raw_traces[0])
+            self.times = numpy.arange(0, trace_length, 1)*self.dt
+        else:
+            self.times = None
 
-        if sampling_freq is not None:
-            self.sampling_freq = sampling_freq
-            dt = (1.0/sampling_freq)*1000.0 # dt in ms
-            self.times = numpy.arange(0,len(self.traces['raw'][0]), 1)*dt
-        if time_collected is not None:
-            self.time_collected = time_collected
-        if fullpath is not None:
-            self.fullpath = fullpath
-
-    def initialize_data(self, last_stage_completed=None):
-        if last_stage_completed is not None:
-            last_stage_completed = last_stage_completed.lower()
-        if last_stage_completed is None:
-            # keys = 'raw', 'detection', 'extraction', 'others?'
-            self.traces = {} 
-            # a list of (lists of spikes) equal in len to num electrodes
-            self.spikes = []
-            self.features = []
-            self.feature_times = []
-            self.excluded_features = []
-            self.excluded_feature_times = []
-            self.units = {} 
-        elif last_stage_completed == "detection filter":
-            self.spikes = []
-            self.features = []
-            self.feature_times = []
-            self.excluded_features = []
-            self.excluded_feature_times = []
-            self.units = {}
-        elif last_stage_completed == "detection":
-            self.features = []
-            self.feature_times = []
-            self.excluded_features = []
-            self.excluded_feature_times = []
-            self.units = {}
-        elif last_stage_completed == "extraction filter":
-            self.features = []
-            self.feature_times = []
-            self.excluded_features = []
-            self.excluded_feature_times = []
-            self.units = {}
-        elif last_stage_completed == "extraction":
-            self.units = {}
-        elif last_stage_completed == 'clustring':
-            pass
+        self.detection_filter  = StageData(name='detection_filter', 
+                                           dependents=['detection'])
+        self.detection         = StageData(name='detection',        
+                                           dependents=['extraction'])
+        self.extraction_filter = StageData(name='extraction_filter',
+                                           dependents=['extraction'])
+        self.extraction        = StageData(name='extraction',       
+                                           dependents=['clustering'])
+        self.clustering        = StageData(name='clustering',       
+                                           dependents=None)
 
 
 def zero_mean(trace_array):
     return trace_array - numpy.average(trace_array)
+
+
+def format_traces(trace_list):
+    array_trace_list = [zero_mean(numpy.array(trace,dtype=numpy.float64))
+                        for trace in trace_list]
+    traces = numpy.vstack(array_trace_list)
+    return traces
+
+
+class StageData(object):
+    def __init__(self, name, dependents):
+        self.name = name
+        self.dependents = dependents
+
+        self.settings   = None
+        self.method     = None
+        self.results    = None
+
+        self.reinitialize_results()
+        pub.subscribe(self.reinitialize_results, 
+                      topic='REINITIALIZE_%s' % name.upper())
+
+    def reinitialize_results(self, message=None):
+        if self.results is not None:
+            self.results = None
+            for dependent in self.dependents:
+                pub.sendMessage(topic='REINITIALIZE_%s' % dependent.upper())
+
 
