@@ -42,7 +42,7 @@ class DetectionPlotPanel(MultiPlotPanel):
 
         fullpath = trial.fullpath
         self._trials[fullpath] = trial
-        num_traces = len(trial.traces['raw'])
+        num_traces = len(trial.raw_traces)
         # make room for multiple traces and a spike-rate plot.
         figsize = (self._figsize[0], self._figsize[1]*(num_traces+1))
         self.add_plot(fullpath, figsize=figsize, 
@@ -65,7 +65,7 @@ class DetectionPlotPanel(MultiPlotPanel):
         figure = self._plot_panels[fullpath].figure
         
         if (fullpath not in self._trace_axes.keys() and
-                'detection' in trial.traces.keys()):
+                trial.detection_filter.results is not None):
             self._create_axes(trial, figure, fullpath)
         self._plot_filtered_traces(trial, figure, fullpath)
         self._plot_spikes(trial, figure, fullpath)
@@ -73,7 +73,7 @@ class DetectionPlotPanel(MultiPlotPanel):
         self.draw_canvas(fullpath)
 
     def _create_axes(self, trial, figure, fullpath):
-        traces = trial.traces['detection']
+        traces = trial.detection_filter.results
         for i, trace in enumerate(traces):
             if i==0:
                 self._trace_axes[fullpath] = [
@@ -113,8 +113,8 @@ class DetectionPlotPanel(MultiPlotPanel):
         
 
     def _plot_filtered_traces(self, trial, figure, fullpath):
-        if "detection" in trial.traces.keys():
-            traces = trial.traces['detection']
+        if trial.detection_filter.results is not None:
+            traces = trial.detection_filter.results
         else:
             return
         times = trial.times
@@ -127,8 +127,8 @@ class DetectionPlotPanel(MultiPlotPanel):
                              label=pt.DETECTION_TRACE_GRAPH_LABEL)
 
     def _plot_spikes(self, trial, figure, fullpath):
-        if len(trial.spikes):
-            spikes = trial.spikes
+        if len(trial.detection.results):
+            spikes = trial.detection.results
         else:
             while self._spike_axes[fullpath].lines:
                 del(self._spike_axes[fullpath].lines[0])
@@ -161,13 +161,13 @@ class DetectionPlotPanel(MultiPlotPanel):
         # --- plot spike rate ---
         width = 50.0
         required_proportion = 0.75
-        accepted_spike_list = get_accepted_spike_list(trial.spikes, 
+        accepted_spike_list = get_accepted_spike_list(trial.detection.results, 
                                                       trial.sampling_freq, 
                                                       width,
                                                       required_proportion)
         spike_rate = get_spike_rate(accepted_spike_list, width, 
                                     trial.sampling_freq, 
-                                    len(trial.traces['detection'][0]))
+                                    len(trial.detection_filter.results[0]))
         spike_axes = self._spike_axes[fullpath]
 
         # remove old lines if present.

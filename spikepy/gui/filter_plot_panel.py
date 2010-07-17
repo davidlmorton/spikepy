@@ -126,8 +126,9 @@ class FilterPlotPanel(MultiPlotPanel):
         psd_axes.set_position(box)
 
     def _plot_filtered_traces(self, trial, figure, fullpath):
-        if self.name.lower() in trial.traces.keys():
-            stage_data = getattr(trial, self.name.lower()+'_filter')
+        print self.name.lower()
+        stage_data = getattr(trial, self.name.lower()+'_filter')
+        if stage_data.results is not None:
             traces = stage_data.results
         else:
             return # this trial has never been filtered.
