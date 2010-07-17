@@ -23,17 +23,22 @@ class Trial(object):
         else:
             self.times = None
 
-        self.detection_filter  = StageData(name='detection_filter', 
-                                           dependents=['detection'])
-        self.detection         = StageData(name='detection',        
-                                           dependents=['extraction'])
-        self.extraction_filter = StageData(name='extraction_filter',
-                                           dependents=['extraction'])
-        self.extraction        = StageData(name='extraction',       
-                                           dependents=['clustering'])
         self.clustering        = StageData(name='clustering',       
                                            dependents=None)
+        self.extraction        = StageData(name='extraction',       
+                                           dependents=[self.clustering])
+        self.detection         = StageData(name='detection',        
+                                           dependents=[self.extraction])
+        self.extraction_filter = StageData(name='extraction_filter',
+                                           dependents=[self.extraction])
+        self.detection_filter  = StageData(name='detection_filter', 
+                                           dependents=[self.detection])
 
+
+    def reset_stage_results(self, message=None):
+        if message is not None:
+            stage_data = getattr(self, message.data)
+            stage_data.reset_results()
 
 def zero_mean(trace_array):
     return trace_array - numpy.average(trace_array)
@@ -55,14 +60,12 @@ class StageData(object):
         self.method     = None
         self.results    = None
 
-        self.reinitialize_results()
-        pub.subscribe(self.reinitialize_results, 
-                      topic='REINITIALIZE_%s' % name.upper())
+        self.reset_results()
 
-    def reinitialize_results(self, message=None):
+    def reset_results(self, message=None):
         if self.results is not None:
             self.results = None
             for dependent in self.dependents:
-                pub.sendMessage(topic='REINITIALIZE_%s' % dependent.upper())
+                dependent.reset_results()
 
 

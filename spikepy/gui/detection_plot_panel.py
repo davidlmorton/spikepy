@@ -127,7 +127,7 @@ class DetectionPlotPanel(MultiPlotPanel):
                              label=pt.DETECTION_TRACE_GRAPH_LABEL)
 
     def _plot_spikes(self, trial, figure, fullpath):
-        if len(trial.detection.results):
+        if trial.detection.results is not None:
             spikes = trial.detection.results
         else:
             while self._spike_axes[fullpath].lines:

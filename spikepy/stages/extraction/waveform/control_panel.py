@@ -37,9 +37,9 @@ class ControlPanel(wx.Panel):
         self.post_window_ctrl             = post_window_ctrl
 
         # --- SET DEFAULTS ---
-        pre_window_ctrl.SetValue('0.5')
+        pre_window_ctrl.SetValue('1.5')
         self._spike_centered(should_center_spike=True)
-        post_window_ctrl.SetValue('1.0')
+        post_window_ctrl.SetValue('3.25')
         exclude_overlappers_checkbox.SetValue(False)
 
     def _spike_centered(self, event=None, should_center_spike=None):

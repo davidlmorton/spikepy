@@ -70,11 +70,12 @@ class ExtractionPlotPanel(MultiPlotPanel):
         axes.set_xlabel(pt.FEATURE_INDEX)
 
     def _plot_features(self, trial, figure, fullpath):
-        if trial.features:
-            features = trial.features
+        if trial.extraction.results is not None:
+            features = trial.extraction.results['features']
         else:
             return
-        num_excluded_features = len(trial.excluded_features)
+        num_excluded_features = len(
+                trial.extraction.results['excluded_features'])
 
         axes = self._feature_axes[fullpath]
         while axes.lines:
@@ -82,7 +83,8 @@ class ExtractionPlotPanel(MultiPlotPanel):
 
         axes.set_autoscale_on(True)
         for feature in features:
-            axes.plot(feature, linewidth=lfs.PLOT_LINEWIDTH_4)
+            axes.plot(feature, linewidth=lfs.PLOT_LINEWIDTH_4,
+                               marker='.')
         axes.set_xlim((0,len(features[0])-1))
         axes.set_title(pt.EXTRACTED_FEATURE_SETS + ': %d\n' % len(features) +
                        pt.EXCLUDED_FEATURE_SETS + 
