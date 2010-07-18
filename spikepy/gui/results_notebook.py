@@ -36,13 +36,21 @@ class ResultsNotebook(wx.Notebook):
                            'Clustering']
 
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGING, self._page_changing)
+        pub.subscribe(self._change_page, 
+                      topic='STRATEGY_CHOICEBOOK_PAGE_CHANGED')
 
     def _page_changing(self, event=None):
-        old = event.GetOldSelection()
-        new = event.GetSelection()
+        old_page_num  = event.GetOldSelection()
+        new_page_num  = event.GetSelection()
+        old_page_name = self.page_names[old_page_num]
+        new_page_name = self.page_names[new_page_num]
         pub.sendMessage(topic='RESULTS_NOTEBOOK_PAGE_CHANGING', 
-                        data=(self.page_names[old],self.page_names[new]))
+                        data=(old_page_num, new_page_num))
         event.Skip()
+
+    def _change_page(self, message=None):
+        new_page_num = message.data
+        self.SetSelection(new_page_num)
 
 class ResultsPanel(wx.Panel):
     def __init__(self, parent, name, **kwargs):
