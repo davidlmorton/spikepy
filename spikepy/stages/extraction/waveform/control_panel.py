@@ -48,6 +48,13 @@ class ControlPanel(wx.Panel):
         self.spike_centered_checkbox.SetValue(should_center_spike)
         self.post_window_ctrl.Enable(not should_center_spike)
 
+    def set_parameters(self, pre_padding="1.5", post_padding="3.25", 
+                       exclude_overlappers=False):
+        self._spike_centered(should_center_spike=(pre_padding == post_padding))
+        self.pre_window_ctrl.SetValue(pre_padding)
+        self.post_window_ctrl.SetValue(post_padding)
+        self.exclude_overlappers_checkbox.SetValue(exclude_overlappers)
+        
     def get_parameters(self):
         pre_window = float(self.pre_window_ctrl.GetValue())
         if self.spike_centered_checkbox.IsChecked():

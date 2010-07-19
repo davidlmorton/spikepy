@@ -12,11 +12,11 @@ for file in files_in_this_dir:
         not file.startswith(".")):
         exec('from . import %s' % file)
         method_modules.append(eval(file))
-        method_names.append(method_modules[-1].name.lower())
+        method_names.append(method_modules[-1].name)
 
 def get_method(method_name=None):
     if method_name is None:
         print "Method Names available are %s" % str(method_names)
         return
-    index = method_names.index(method_name.lower())
+    index = method_names.index(method_name)
     return method_modules[index]

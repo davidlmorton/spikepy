@@ -63,6 +63,17 @@ class ControlPanel(wx.Panel):
         cutoff_spinctrl.SetValue(300)
         taps_spinctrl.SetValue(101)
 
+    def set_parameters(self, window_name='Hamming', critical_freq=300, 
+                             taps=101, kind='High Pass'):
+        self.window_chooser.SetStringSelection(window_name)
+        self._passband_choice_made(band_type=kind)
+        if kind == "Band Pass":
+            self.low_cutoff_spinctrl.SetValue( critical_freq[0])
+            self.high_cutoff_spinctrl.SetValue(critical_freq[1])
+        else:
+            self.cutoff_spinctrl.SetValue(critical_freq)
+        self.taps_spinctrl.SetValue(taps)
+
     def get_parameters(self):
         window_chosen = self.window_chooser.GetStringSelection()
         if window_chosen == 'Blackman-Harris':
@@ -87,6 +98,7 @@ class ControlPanel(wx.Panel):
     def _passband_choice_made(self, event=None, band_type=None):
         if event is not None:
             band_type = event.GetString()
+        self.passband_chooser.SetStringSelection(band_type)
         self.low_cutoff_spinctrl.Show(False)
         self.high_cutoff_spinctrl.Show(False)
         self.cutoff_spinctrl.Show(False)

@@ -61,7 +61,7 @@ class StrategyPane(ScrolledPanel):
     
     def _results_notebook_page_changing(self, message=None):
         old_page_num, new_page_num = message.data
-        self.stage_choicebook.SetSelection(new_page_num)
+        self.stage_choicebook.ChangeSelection(new_page_num)
 
     def _page_changed(self, event=None):
         if event is not None:
@@ -207,8 +207,10 @@ class StagePanel(wx.Panel):
         kwargs = message.data
         stage_name = kwargs['stage_name']
         if stage_name.lower() != self.stage_name.lower():
+            print "not right panel. This panel is %s" % self.stage_name
+            print "stage_name.lower is %s" % stage_name.lower()
             return # not the right stage_panel
-        method_name = kwargs['method_name'].lower()
+        method_name = kwargs['method_name']
         parameters = {}
         for key, value in kwargs.items():
             if (key != 'stage_name' and 
@@ -216,6 +218,7 @@ class StagePanel(wx.Panel):
                 parameters[key] = value
         print parameters
         self.methods[method_name]['control_panel'].set_parameters(**parameters)
+        self._method_choice_made(method_name=method_name)
 
     def _running_completed(self, message=None):
         self.run_button.SetLabel(pt.RUN)
@@ -298,3 +301,4 @@ class DescriptionPanel(wx.Panel):
 class ControlsPanel(wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
+

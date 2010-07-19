@@ -15,6 +15,9 @@ class ControlPanel(wx.Panel):
         border = lfs.CONTROL_PANEL_BORDER
         sizer.Add(instructions, proportion=0, flag=flag, border=border)
         self.SetSizer(sizer)
+        
+    def set_parameters(self):
+        pass
 
     def get_parameters(self):
         parameters = {}

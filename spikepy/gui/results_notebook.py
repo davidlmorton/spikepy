@@ -50,7 +50,7 @@ class ResultsNotebook(wx.Notebook):
 
     def _change_page(self, message=None):
         new_page_num = message.data
-        self.SetSelection(new_page_num)
+        self.ChangeSelection(new_page_num)
 
 class ResultsPanel(wx.Panel):
     def __init__(self, parent, name, **kwargs):
