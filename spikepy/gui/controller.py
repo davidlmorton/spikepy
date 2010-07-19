@@ -7,12 +7,19 @@ from ..common.model import Model
 from .view import View
 from .utils import named_color
 from . import program_text as pt
+from .pyshell import locals_dict
 
 class Controller(object):
     def __init__(self):
         self.model = Model()
         self.model.setup_subscriptions()
         self.view = View()
+
+        # save for locals in pyshell
+        locals_dict['model']      = self.model
+        locals_dict['view']       = self.view
+        locals_dict['controller'] = self
+
 
     def setup_subscriptions(self):
         pub.subscribe(self._open_file, topic="OPEN_FILE")

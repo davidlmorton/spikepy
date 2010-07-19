@@ -2,9 +2,13 @@ import wx.py as py
 from wx.lib.pubsub import Publisher as pub
 import wx
 
+# this is filled up when program runs, it is just a repository of
+#   handy local variables for the pyshell.
+locals_dict = {'pub': pub}
+
 
 class PyShellDialog(wx.Dialog):
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent, locals={}, **kwargs):
         if 'style' in kwargs.keys():
             kwargs['style'] = (kwargs['style']|wx.RESIZE_BORDER|
                                                wx.DEFAULT_DIALOG_STYLE)
@@ -14,7 +18,7 @@ class PyShellDialog(wx.Dialog):
 
         # Assigning key value pairs to locals is used to save time during
         #     debugging.
-        locals = {'pub':pub}
+        locals.update(locals_dict)
         locals['dict'] = {'stage_name':'Detection Filter', 
                           'method_name':'Infinite Impulse Response'}
         locals['dict'] = {'stage_name':'Spike Detection', 
