@@ -200,7 +200,22 @@ class StagePanel(wx.Panel):
 #        self._method_choice_made(method_name=self._method_name_chosen)
         
         pub.subscribe(self._running_completed, topic='RUNNING_COMPLETED')
+        pub.subscribe(self._set_stage_parameters, topic='SET_PARAMETERS')
         self._method_choice_made(method_name=self.method_names[0])
+
+    def _set_stage_parameters(self, message=None):
+        kwargs = message.data
+        stage_name = kwargs['stage_name']
+        if stage_name.lower() != self.stage_name.lower():
+            return # not the right stage_panel
+        method_name = kwargs['method_name'].lower()
+        parameters = {}
+        for key, value in kwargs.items():
+            if (key != 'stage_name' and 
+                key != 'method_name'):
+                parameters[key] = value
+        print parameters
+        self.methods[method_name]['control_panel'].set_parameters(**parameters)
 
     def _running_completed(self, message=None):
         self.run_button.SetLabel(pt.RUN)

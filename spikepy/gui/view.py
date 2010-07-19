@@ -32,7 +32,7 @@ class MyFrame(wx.Frame):
         self._mgr = wx.aui.AuiManager(self)
 
         # --- STRATEGY PANE ---
-        strategy_pane  = StrategyPane(self)        
+        self.strategy_pane = strategy_pane  = StrategyPane(self)        
         strategy_pane_info = wx.aui.AuiPaneInfo()
         strategy_pane_info.Right()
         strategy_pane_info.CloseButton(   visible=False)
@@ -43,7 +43,8 @@ class MyFrame(wx.Frame):
         strategy_pane_info.Caption(lfs.STRATEGY_PANE_TITLE)
 
         # --- FILE LIST PANE ---
-        file_list = FileListCtrl(self, style=lfs.FILE_LISTCTRL_STYLE)
+        self.file_list = file_list = FileListCtrl(self, 
+                style=lfs.FILE_LISTCTRL_STYLE)
         file_list_pane_info = wx.aui.AuiPaneInfo()
         file_list_pane_info.Left()
         file_list_pane_info.CloseButton(   visible=False)
@@ -54,7 +55,7 @@ class MyFrame(wx.Frame):
         file_list_pane_info.Caption(lfs.FILE_LISTCTRL_TITLE)
         
         # ---  RESULTS PANE ---
-        results_notebook = ResultsNotebook(self)
+        self.results_notebook = results_notebook = ResultsNotebook(self)
 
         # add the panes to the manager
         self._mgr.AddPane(file_list, info=file_list_pane_info)

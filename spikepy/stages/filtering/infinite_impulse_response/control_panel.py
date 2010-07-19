@@ -57,6 +57,17 @@ class ControlPanel(wx.Panel):
         cutoff_spinctrl.SetValue(300)
         order_spinctrl.SetValue(3)
 
+    def set_parameters(self, function_name='Butterworth', critical_freq=300, 
+                             order=3, kind='High Pass'):
+        self.function_chooser.SetStringSelection(function_name)
+        self._passband_choice_made(band_type=kind)
+        if kind == "Band Pass":
+            self.low_cutoff_spinctrl.SetValue( critical_freq[0])
+            self.high_cutoff_spinctrl.SetValue(critical_freq[1])
+        else:
+            self.cutoff_spinctrl.SetValue(critical_freq)
+        self.order_spinctrl.SetValue(order)
+
     def get_parameters(self):
         function_chosen = self.function_chooser.choice.GetStringSelection()
         passband_chosen = self.passband_chooser.choice.GetStringSelection()
