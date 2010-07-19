@@ -33,11 +33,16 @@ class Model(object):
 
     def _open_file_worker(self, fullpath):
         try:
-            processing_pool = Pool()
-            result = processing_pool.apply_async(open_data_file, 
-                                                 args=(fullpath,))
-            self.trials[fullpath] = result.get()
-            processing_pool.close()
+            if wx.Platform == '__WXMAC__':
+                trial = open_data_file(fullpath)
+            else:
+                processing_pool = Pool()
+                result = processing_pool.apply_async(open_data_file, 
+                                                     args=(fullpath,))
+                self.trials[fullpath] = result.get()
+                trial = result.get()
+                processing_pool.close()
+            self.trials[fullpath] = trial
         except:
             traceback.print_exc()
             sys.exit(1)
@@ -72,19 +77,23 @@ class Model(object):
     def _filter_worker(self, stage_name, method_name, 
                              method_parameters, trace_type):
         try:
-            processing_pool = Pool()
             for trial in self.trials.values():
                 raw_traces = trial.raw_traces
                 filtered_traces = []
                 method = filtering.get_method(method_name)
                 method_parameters['sampling_freq'] = trial.sampling_freq
-                result = processing_pool.apply_async(method.run, 
-                                                     args=(raw_traces,),
-                                                     kwds=method_parameters)
-                filtered_traces = result.get()
+                if wx.Platform == '__WXMAC__':
+                    filtered_traces = method.run(raw_traces, **method_parameters)
+                else:
+                    processing_pool = Pool()
+                    result = processing_pool.apply_async(method.run, 
+                                                         args=(raw_traces,),
+                                                         kwds=method_parameters)
+                    filtered_traces = result.get()
+                    processing_pool.close()
+
                 stage_data = getattr(trial, stage_name.lower().replace(' ','_'))
                 stage_data.results = format_traces(filtered_traces)
-            processing_pool.close()
         except:
             traceback.print_exc()
             sys.exit(1)
