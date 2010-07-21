@@ -1,4 +1,5 @@
 {
+    "__comment": "DO NOT EDIT THIS DOCUMENT (BAD THINGS WILL HAPPEN)",
     "Test(test)": {
         "methods_used": {
             "spike_detection": "Voltage Threshold", 

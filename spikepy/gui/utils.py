@@ -46,5 +46,10 @@ class HashableDict(dict):
         return hash(hashable_thing)
 
 
-        
+def make_dict_hashable(unhashable_dict):
+    for key in unhashable_dict.keys():
+        if (isinstance(unhashable_dict[key], dict) and 
+            not isinstance(unhashable_dict[key], HashableDict)):
+            unhashable_dict[key] = HashableDict(unhashable_dict[key])
+            make_dict_hashable(unhashable_dict[key])
 
