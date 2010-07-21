@@ -93,11 +93,15 @@ class DetectionPlotPanel(MultiPlotPanel):
                 axes.set_yticklabels([''],visible=False)
 
         axes.set_xlabel(pt.PLOT_TIME)
-        # bottom is in percent, how big is text there in percent?
-        factor = len(traces)+1
-        original_bottom = 0.2
-        figure.subplots_adjust(hspace=0.025, left=0.10, right=0.95, 
-                               bottom=original_bottom/factor+0.01)
+
+        # lay out subplots
+        canvas_size = self._plot_panels[fullpath]._original_min_size
+        left   = lfs.PLOT_LEFT_BORDER / canvas_size[0]
+        right  = 1.0 - lfs.PLOT_RIGHT_BORDER / canvas_size[0]
+        top    = 1.0 - lfs.PLOT_TOP_BORDER / canvas_size[1]
+        bottom = lfs.PLOT_BOTTOM_BORDER / canvas_size[1]
+        figure.subplots_adjust(hspace=0.025, left=left, right=right, 
+                               bottom=bottom, top=top)
 
         # --- add axis for spike plot ---
         self._spike_axes[fullpath] = figure.add_subplot(
@@ -105,10 +109,12 @@ class DetectionPlotPanel(MultiPlotPanel):
         spike_axes = self._spike_axes[fullpath]
         spike_axes.set_xlabel(pt.PLOT_TIME)
         spike_axes.set_ylabel(pt.SPIKE_RATE_AXIS)
+        title = os.path.split(fullpath)[1]
+        spike_axes.set_title(title)
+        
         # move raster plot's bottom edge up a bit
         box = spike_axes.get_position()
-        box.p0 = (box.p0[0], box.p0[1]+0.065)
-        box.p1 = (box.p1[0], 0.99)
+        box.p0 = (box.p0[0], box.p0[1]+bottom)
         spike_axes.set_position(box)
         
 

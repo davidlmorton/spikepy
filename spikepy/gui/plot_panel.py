@@ -12,6 +12,7 @@ from wx.lib.pubsub import Publisher as pub
 
 from .utils import get_bitmap_icon
 from . import program_text as pt
+from .look_and_feel_settings import lfs
 
 class CustomToolbar(Toolbar):
     """
@@ -113,7 +114,10 @@ class PlotPanel (wx.Panel):
         #   it from riding up on the plot when it is visible and the
         #   panel is shrunk down.
         toolbar_height = self.toolbar.GetSize()[1]
-        min_size = (dpi*figwidth, dpi*figheight+toolbar_height)
+        min_size_x = dpi*figwidth
+        min_size_y = dpi*figheight+toolbar_height
+        min_size = (max(lfs.PLOT_MIN_SIZE_X, min_size_x),
+                    max(lfs.PLOT_MIN_SIZE_Y, min_size_y))
         self.SetMinSize(min_size)
         self._original_min_size = min_size
         self._min_size_factor = 1.0
@@ -188,3 +192,4 @@ class PlotPanel (wx.Panel):
         self.toolbar.Show(False)
         self._toolbar_visible = False
         self.Layout()
+
