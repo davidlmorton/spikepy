@@ -40,7 +40,7 @@ class MyFrame(wx.Frame):
         strategy_pane_info.MaximizeButton(visible=False)
         strategy_pane_info.MinSize(lfs.STRATEGY_PANE_MIN_SIZE)
         strategy_pane_info.FloatingSize(lfs.STRATEGY_PANE_MIN_SIZE)
-        strategy_pane_info.Caption(lfs.STRATEGY_PANE_TITLE)
+        strategy_pane_info.Caption(pt.STRATEGY)
 
         # --- FILE LIST PANE ---
         self.file_list = file_list = FileListCtrl(self, 
@@ -52,7 +52,7 @@ class MyFrame(wx.Frame):
         file_list_pane_info.MaximizeButton(visible=False)
         file_list_pane_info.MinSize(lfs.FILE_LISTCTRL_MIN_SIZE)
         file_list_pane_info.FloatingSize(lfs.FILE_LISTCTRL_MIN_SIZE)
-        file_list_pane_info.Caption(lfs.FILE_LISTCTRL_TITLE)
+        file_list_pane_info.Caption(pt.FILE_LISTCTRL_TITLE)
         
         # ---  RESULTS PANE ---
         self.results_notebook = results_notebook = ResultsNotebook(self)

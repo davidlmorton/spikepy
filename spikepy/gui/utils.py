@@ -34,6 +34,17 @@ def get_bitmap_icon(name):
             return image.ConvertToBitmap()
     raise RuntimeError(pt.MISSING_IMAGE_ERROR % name)
 
+class HashableDict(dict):
+    def __init__(self, *args, **kwargs):
+        dict.__init__(self, *args, **kwargs)
+
+    def __hash__(self):
+        sorted_keys = sorted(self.keys())
+        key_value_list = [(key, self[key]) 
+                          for key in sorted_keys]
+        hashable_thing = tuple(key_value_list)
+        return hash(hashable_thing)
+
 
         
 

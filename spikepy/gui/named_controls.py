@@ -28,7 +28,10 @@ class NamedChoiceCtrl(wx.Panel):
         return self.choice.GetStringSelection()
 
     def SetStringSelection(self, string):
-        return self.choice.SetStringSelection(string)
+        self.choice.SetStringSelection(string)
+
+    def SetItems(self, item_list):
+        self.choice.SetItems(item_list)
 
 
 class NamedSpinCtrl(wx.Panel):

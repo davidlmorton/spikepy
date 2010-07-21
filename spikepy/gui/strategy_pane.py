@@ -1,3 +1,5 @@
+import json
+
 import wx
 from wx.lib.pubsub import Publisher as pub
 from wx.lib.scrolledpanel import ScrolledPanel
@@ -8,12 +10,17 @@ from .utils import recursive_layout
 from ..stages import filtering, detection, extraction
 from .look_and_feel_settings import lfs
 from . import program_text as pt
+from .utils import HashableDict 
 
 class StrategyPane(ScrolledPanel):
     def __init__(self, parent, **kwargs):
         ScrolledPanel.__init__(self, parent, **kwargs)
         
+        self.strategy_names = self.get_archived_strategy_names()
+        self.strategy_chooser_panel = StrategyChooser(self, 
+                                                 choices=self.strategy_names)
         self.strategy_summary = StrategySummary(self)
+        self.save_button = wx.Button(self, label=pt.SAVE)
         line = wx.StaticLine(self)
         stage_choicebook = wx.Choicebook(self, wx.ID_ANY)
 
@@ -38,14 +45,25 @@ class StrategyPane(ScrolledPanel):
         stage_choicebook.AddPage(clustering_panel, 
                                  pt.CLUSTERING+" "+pt.SETTINGS)
         self.stage_choicebook = stage_choicebook 
+        self.stages = [detection_filter_panel,
+                       detection_panel,
+                       extraction_filter_panel,
+                       extraction_panel,
+                       clustering_panel][:-1]
         
         # setup the sizer
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         flag = wx.EXPAND|wx.ALL
         border = lfs.STRATEGY_PANE_BORDER
+        sizer.Add(self.strategy_chooser_panel, proportion=0, 
+                                          flag=flag|wx.ALIGN_CENTER_HORIZONTAL, 
+                                          border=border)
         sizer.Add(self.strategy_summary,  proportion=0, 
                                           flag=flag|wx.ALIGN_CENTER_HORIZONTAL, 
                                           border=border)
+        sizer.Add(self.save_button, proportion=0, flag=wx.ALL|wx.ALIGN_RIGHT, 
+                  border=border)
+        
         sizer.Add(line,  proportion=0, 
                                           flag=flag|wx.ALIGN_CENTER_HORIZONTAL, 
                                           border=border)
@@ -55,9 +73,74 @@ class StrategyPane(ScrolledPanel):
         self.do_layout()
 
         self.Bind(wx.EVT_CHOICEBOOK_PAGE_CHANGED, self._page_changed)
+        self.Bind(wx.EVT_IDLE, self._update_strategy_chooser)
         pub.subscribe(self._results_notebook_page_changing, 
                       topic='RESULTS_NOTEBOOK_PAGE_CHANGING')
+        self._should_update_strategy = True
 
+    def get_archived_strategy_names(self, 
+            strategy_archive_file='strategies_archive.txt'):
+        with open(strategy_archive_file) as infile:
+            saved_strategies = json.load(infile)
+        return saved_strategies.keys()
+
+    def _update_strategy_chooser(self, event=None):
+        if self._should_update_strategy:
+            self._should_update_strategy = False
+            wx.CallLater(lfs.STRATEGY_WAIT_TIME, self._set_update_strategy)
+            strategy_name = self.get_strategy_name()
+            if strategy_name not in self.strategy_names:
+                self.strategy_names.append(strategy_name)
+                self.strategy_names.sort()
+                self.strategy_chooser_panel.SetItems(self.strategy_names)
+
+            self.strategy_chooser_panel.SetStringSelection(strategy_name)
+
+            if 'custom' in strategy_name.lower():
+                self.save_button.Enable()
+            else:
+                self.save_button.Enable(False)
+
+    def get_strategy_name(self, strategy_archive_file='strategies_archive.txt'):
+        with open(strategy_archive_file) as infile:
+            saved_strategies = json.load(infile)
+            make_dict_hashable(saved_strategies)
+        saved_methods  = {}
+        saved_settings = {}
+        for key, value in saved_strategies.items():
+            saved_methods[value['methods_used']] = key
+            saved_settings[value['settings']]    = key
+        current_methods, current_settings = self.get_current_strategy()
+        try:
+            strategy_main_name = saved_methods[current_methods].split('(')[0]
+            try:
+                strategy_sub_name = saved_settings[
+                        current_settings].split('(')[1][:-1]
+            except KeyError:
+                strategy_sub_name = 'custom'
+        except KeyError:
+            strategy_main_name = 'Custom'
+            strategy_sub_name = 'custom'
+        strategy_name = strategy_main_name + '(%s)' % strategy_sub_name 
+        return strategy_name 
+
+    def get_current_strategy(self):
+        methods_used = HashableDict()
+        settings     = HashableDict()
+        for stage in self.stages:
+            method_chosen = stage._method_name_chosen
+            control_panel = stage.methods[method_chosen]['control_panel']
+            hashable_settings = HashableDict(control_panel.get_parameters())
+
+            stage_name = stage.stage_name.lower().replace(' ', '_')
+            methods_used[stage_name] = method_chosen
+            settings[stage_name]     = hashable_settings
+
+        return methods_used, settings
+        
+
+    def _set_update_strategy(self, value=True):
+        self._should_update_strategy = value
     
     def _results_notebook_page_changing(self, message=None):
         old_page_num, new_page_num = message.data
@@ -73,6 +156,11 @@ class StrategyPane(ScrolledPanel):
     def do_layout(self):
         self.SetupScrolling()
         self.Layout()
+
+class StrategyChooser(NamedChoiceCtrl):
+    def __init__(self, parent, **kwargs):
+        NamedChoiceCtrl.__init__(self, parent, name=pt.STRATEGY_NAME, 
+                                 **kwargs)
 
 class StrategySummary(wx.Panel):
     def __init__(self, parent, **kwargs):
@@ -301,4 +389,12 @@ class DescriptionPanel(wx.Panel):
 class ControlsPanel(wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
+
+def make_dict_hashable(unhashable_dict):
+    for key in unhashable_dict.keys():
+        if (isinstance(unhashable_dict[key], dict) and 
+            not isinstance(unhashable_dict[key], HashableDict)):
+            unhashable_dict[key] = HashableDict(unhashable_dict[key])
+            make_dict_hashable(unhashable_dict[key])
+
 

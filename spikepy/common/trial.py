@@ -1,5 +1,6 @@
 import time
 import datetime
+import json
 
 from wx.lib.pubsub import Publisher as pub
 import numpy
@@ -27,12 +28,29 @@ class Trial(object):
                                            dependents=None)
         self.extraction        = StageData(name='extraction',       
                                            dependents=[self.clustering])
-        self.detection         = StageData(name='detection',        
+        self.detection         = StageData(name='spike_detection',        
                                            dependents=[self.extraction])
         self.extraction_filter = StageData(name='extraction_filter',
                                            dependents=[self.extraction])
         self.detection_filter  = StageData(name='detection_filter', 
                                            dependents=[self.detection])
+        self.stages = [self.detection_filter,
+                       self.detection,
+                       self.extraction_filter,
+                       self.extraction,
+                       self.clustering]
+
+    def save_session_settings(self, filename, strategy_name='Custom(custom)'):
+        methods_used = {}
+        settings = {}
+        for stage in self.stages:
+            methods_used[stage.name] = stage.method
+            settings[stage.name] = stage.settings
+        results = {'strategy_name':strategy_name,
+                   'methods_used':methods_used,
+                   'settings':settings}
+        with open(filename, 'w') as ofile:
+            json.dump(results, ofile, indent=4)
 
 
     def reset_stage_results(self, message=None):

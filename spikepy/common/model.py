@@ -1,6 +1,7 @@
 import traceback 
 import sys
 from multiprocessing import Pool
+import copy
 
 import wx
 from wx.lib.pubsub import Publisher as pub
@@ -66,7 +67,7 @@ class Model(object):
         for trial in self.trials.values():
             stage_data = getattr(trial, stage_name.lower().replace(' ','_'))
             stage_data.method   = method_name
-            stage_data.settings = method_parameters
+            stage_data.settings = copy.deepcopy(method_parameters)
             stage_data.reset_results()
         trace_type = stage_name.split()[0] # removes ' filter' from name
         startWorker(self._filter_consumer, self._filter_worker,
@@ -110,7 +111,7 @@ class Model(object):
         stage_name, method_name, method_parameters = message.data
         for trial in self.trials.values():
             trial.detection.method   = method_name
-            trial.detection.settings = method_parameters
+            trial.detection.settings = copy.deepcopy(method_parameters)
             trial.detection.reset_results()
 
         startWorker(self._detection_consumer, self._detection_worker,
@@ -147,7 +148,7 @@ class Model(object):
         stage_name, method_name, method_parameters = message.data
         for trial in self.trials.values():
             trial.extraction.method   = method_name
-            trial.extraction.settings = method_parameters
+            trial.extraction.settings = copy.deepcopy(method_parameters)
             trial.extraction.reset_results()
         startWorker(self._extraction_consumer, self._extraction_worker,
                         wargs=(method_name, method_parameters),

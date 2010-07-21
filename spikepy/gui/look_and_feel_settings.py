@@ -19,6 +19,7 @@ class LookAndFeelSettings(object):
         self.STRATEGY_PANE_TITLE = 'Strategy'
         self.STRATEGY_PANE_BORDER = 4
         self.STRATEGY_SUMMARY_BORDER = 3
+        self.STRATEGY_WAIT_TIME = 350# in ms
 
         self.FILE_LISTCTRL_STYLE = wx.LC_REPORT|wx.LC_VRULES
         self.FILE_LISTCTRL_MIN_SIZE = numpy.array((200, 250))
