@@ -3,7 +3,7 @@ import json
 import wx
 
 from . import program_text as pt
-from .utils import HashableDict, make_dict_hashable
+from .utils import HashableDict, make_dict_hashable, strip_unicode
 from .look_and_feel_settings import lfs
 
 
@@ -48,7 +48,10 @@ class StrategyManager(object):
 
             control_panel = stage.methods[method_name]['control_panel'] 
             stage_settings = settings[stage_name]
-            control_panel.set_parameters(**stage_settings)
+            non_unicode_stage_settings = strip_unicode(stage_settings)
+            print stage_settings
+            print non_unicode_stage_settings
+            control_panel.set_parameters(**non_unicode_stage_settings)
 
     def _sync(self, event=None):
         if self._should_sync:

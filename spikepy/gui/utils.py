@@ -2,6 +2,7 @@
 A collection of utility functions for the spikepy gui.
 """
 import os
+import copy
 
 import wx
 from wx.lib.pubsub import Publisher as pub
@@ -52,4 +53,10 @@ def make_dict_hashable(unhashable_dict):
             not isinstance(unhashable_dict[key], HashableDict)):
             unhashable_dict[key] = HashableDict(unhashable_dict[key])
             make_dict_hashable(unhashable_dict[key])
+
+def strip_unicode(dictionary):
+    striped_dict = {}
+    for key, value in dictionary.items():
+        striped_dict[str(key)] = copy.deepcopy(value)
+    return striped_dict 
 
