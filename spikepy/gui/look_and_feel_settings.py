@@ -27,11 +27,10 @@ class LookAndFeelSettings(object):
         self.FILE_LISTCTRL_TITLE = 'Opened Files List'
         
         self.PLOT_FACECOLOR = rgb_to_matplotlib_color(255, 255, 255, 255)
-        self.PLOT_DPS = 72.0
-        self.PLOT_LEFT_BORDER   = 60.0 # pixels
-        self.PLOT_RIGHT_BORDER  = 20.0 # pixels
+        self.PLOT_LEFT_BORDER   = 70.0 # pixels
+        self.PLOT_RIGHT_BORDER  = 30.0 # pixels
         self.PLOT_TOP_BORDER    = 40.0 # pixels
-        self.PLOT_BOTTOM_BORDER = 40.0 # pixels
+        self.PLOT_BOTTOM_BORDER = 45.0 # pixels
         self.PLOT_LINEWIDTH_1 = 1.5
         self.PLOT_LINEWIDTH_2 = 2.5
         self.PLOT_LINEWIDTH_3 = 2.5
@@ -76,15 +75,15 @@ class LookAndFeelSettings(object):
 
     @property
     def PLOT_MIN_SIZE_X(self):
-        return 0.90*self.get_results_frame_size()[0]
+        return 0.84*self.get_results_frame_size()[0]
 
     @property
     def PLOT_MIN_SIZE_Y(self):
-        return self.get_results_frame_size()[0]-110.0
+        return self.get_results_frame_size()[1]*0.70
 
     @property
     def PLOT_DPI(self):
-        return self._base_dpi*self.get_size_ratio()
+        return self._base_dpi
 
     @property
     def PLOT_FIGSIZE(self):
