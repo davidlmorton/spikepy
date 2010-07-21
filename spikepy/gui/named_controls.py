@@ -33,6 +33,8 @@ class NamedChoiceCtrl(wx.Panel):
     def SetItems(self, item_list):
         self.choice.SetItems(item_list)
 
+    def GetItems(self):
+        return self.choice.GetItems()
 
 class NamedSpinCtrl(wx.Panel):
     def __init__(self, parent, name="", **kwargs):

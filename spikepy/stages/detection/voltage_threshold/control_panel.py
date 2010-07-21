@@ -70,9 +70,13 @@ class ControlPanel(wx.Panel):
         self.Layout()
 
     def set_parameters(self, threshold_1="4.0", threshold_2="-4.0", 
-                       refractory_time="0.0", max_spike_width="2.0", 
+                       refractory_time="0.0", max_spike_duration="2.0", 
                        using_sd_units=True):
-        enable_second_threshold = (threshold_1 == threshold_2)
+        threshold_1 = str(threshold_1)
+        threshold_2 = str(threshold_2)
+        refractory_time = str(refractory_time)
+        max_spike_duration = str(max_spike_duration)
+        enable_second_threshold = (threshold_1 != threshold_2)
         self.threshold_2_sd._enable(state=enable_second_threshold)
         self.threshold_2._enable(   state=enable_second_threshold)
             
@@ -86,8 +90,8 @@ class ControlPanel(wx.Panel):
         threshold_ctrl_2.SetValue(threshold_2)
 
         self.refractory_time.SetValue(refractory_time)
-        self.max_spike_width.SetValue(max_spike_width)
-        self._units_check(state=True)
+        self.max_spike_width.SetValue(max_spike_duration)
+        self._units_check(state=using_sd_units)
         
 
     def get_parameters(self):

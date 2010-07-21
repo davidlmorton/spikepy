@@ -67,7 +67,7 @@ class ControlPanel(wx.Panel):
                              taps=101, kind='High Pass'):
         self.window_chooser.SetStringSelection(window_name)
         self._passband_choice_made(band_type=kind)
-        if kind == "Band Pass":
+        if kind == "band":
             self.low_cutoff_spinctrl.SetValue( critical_freq[0])
             self.high_cutoff_spinctrl.SetValue(critical_freq[1])
         else:
@@ -102,8 +102,8 @@ class ControlPanel(wx.Panel):
         self.low_cutoff_spinctrl.Show(False)
         self.high_cutoff_spinctrl.Show(False)
         self.cutoff_spinctrl.Show(False)
-        if (band_type == "High Pass" or
-            band_type == "Low Pass"):
+        if ("high" in band_type.lower() or
+            "low" in band_type.lower()):
             self.cutoff_spinctrl.Show(True)
         else:
             self.high_cutoff_spinctrl.Show(True)

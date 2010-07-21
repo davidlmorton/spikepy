@@ -10,6 +10,7 @@ from .look_and_feel_settings import lfs
 class StrategyManager(object):
     def __init__(self, strategy_pane):
         self.strategy_pane = strategy_pane
+        self.strategy_chooser = self.strategy_pane.strategy_chooser
         # dictionaries are named by their values.
         self.methods        = {}
         self.methods_names  = {}
@@ -19,6 +20,8 @@ class StrategyManager(object):
 
         self._should_sync = True
         self.strategy_pane.Bind(wx.EVT_IDLE, self._sync)
+        self.strategy_pane.Bind(wx.EVT_CHOICE, self._strategy_choice_made, 
+                                self.strategy_chooser.choice) 
 
     @property
     def strategy_names(self):
@@ -33,6 +36,20 @@ class StrategyManager(object):
         
         self._add_strategy(saved_strategies)
 
+    def _strategy_choice_made(self, event=None):
+        strategy_chosen = self.strategy_chooser.GetStringSelection()
+        main_strategy = strategy_chosen.split("(")[0]
+        methods_used = self.methods[main_strategy]
+        settings = self.settings[strategy_chosen]
+        for stage in self.strategy_pane.stages:
+            stage_name = stage.stage_name.lower().replace(" ","_")
+            method_name = methods_used[stage_name]        
+            stage._method_choice_made(method_name=method_name)
+
+            control_panel = stage.methods[method_name]['control_panel'] 
+            stage_settings = settings[stage_name]
+            control_panel.set_parameters(**stage_settings)
+
     def _sync(self, event=None):
         if self._should_sync:
             self._should_sync = False
@@ -40,10 +57,13 @@ class StrategyManager(object):
             current_strategy      = self.get_current_strategy()
             current_strategy_name = current_strategy.keys()[0]
 
-            if not self.settings.has_key(current_strategy_name):
+            if (not self.settings.has_key(current_strategy_name) or
+                'custom' in current_strategy_name.lower()):
                 self._add_strategy(current_strategy)
-            self.strategy_pane.strategy_chooser.SetStringSelection(
-                    current_strategy_name)
+            strategy_chooser = self.strategy_chooser
+            if current_strategy_name != strategy_chooser.GetStringSelection():
+                strategy_chooser.SetStringSelection(
+                        current_strategy_name)
 
             if 'custom' in current_strategy_name.lower():
                 self.strategy_pane.save_button.Enable()
@@ -54,18 +74,25 @@ class StrategyManager(object):
         for key, value in strategy.items():
             method_name = key.split('(')[0]
             method_dict = value['methods_used']
+            if self.methods.has_key(method_name):
+                old_method_dict = self.methods[method_name]
+                del self.methods_names[old_method_dict]
             self.methods[method_name]       = method_dict
             self.methods_names[method_dict] = method_name
 
             settings_name = key
             settings_dict = value['settings'] 
+            if self.settings.has_key(settings_name):
+                old_settings_dict = self.settings[settings_name]
+                del self.settings_names[old_settings_dict]
             self.settings[settings_name]       = settings_dict
             self.settings_names[settings_dict] = settings_name
         self._update_strategy_choices()
 
     def _update_strategy_choices(self):
-        chooser = self.strategy_pane.strategy_chooser
-        chooser.SetItems(self.strategy_names)
+        old_items = self.strategy_chooser.GetItems()
+        if old_items != self.strategy_names:
+            self.strategy_chooser.SetItems(self.strategy_names)
 
     def _toggle_should_sync(self):
         self._should_sync = not self._should_sync 

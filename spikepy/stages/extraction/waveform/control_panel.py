@@ -50,6 +50,8 @@ class ControlPanel(wx.Panel):
 
     def set_parameters(self, pre_padding="1.5", post_padding="3.25", 
                        exclude_overlappers=False):
+        pre_padding = str(pre_padding)
+        post_padding = str(post_padding)
         self._spike_centered(should_center_spike=(pre_padding == post_padding))
         self.pre_window_ctrl.SetValue(pre_padding)
         self.post_window_ctrl.SetValue(post_padding)
