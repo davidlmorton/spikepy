@@ -171,17 +171,26 @@ class DetectionPlotPanel(MultiPlotPanel):
                                                       trial.sampling_freq, 
                                                       width,
                                                       required_proportion)
-        spike_rate = get_spike_rate(accepted_spike_list, width, 
-                                    trial.sampling_freq, 
-                                    len(trial.detection_filter.results[0]))
+        #spike_rate = get_spike_rate(accepted_spike_list, width, 
+        #                            trial.sampling_freq, 
+        #                            len(trial.detection_filter.results[0]))
+        bin_width = 200.0
+        spikes, bins = bin_spikes(accepted_spike_list, trial.times[-1], 
+                                  bin_width=bin_width)
+
         spike_axes = self._spike_axes[fullpath]
 
         # remove old lines if present.
         while spike_axes.lines:
             del spike_axes.lines[0]
             
-        spike_axes.plot(times, spike_rate, color=lfs.PLOT_COLOR_2, 
-                                    linewidth=lfs.PLOT_LINEWIDTH_2)
+        #spike_axes.plot(times, spike_rate, color=lfs.PLOT_COLOR_2, 
+        #                            linewidth=lfs.PLOT_LINEWIDTH_2)
+        for bin, spike_count in zip(bins, spikes):
+            spike_axes.bar(bin, spike_count, width=bin_width, 
+                           color=lfs.PLOT_COLOR_2_light, 
+                           edgecolor=lfs.PLOT_COLOR_2,
+                           linewidth=lfs.PLOT_LINEWIDTH_2)
 
         raster_height_factor = 2.0
         raster_pos = lfs.SPIKE_RASTER_ON_RATE_POSITION
@@ -199,6 +208,8 @@ class DetectionPlotPanel(MultiPlotPanel):
                                 marker='|',
                                 markersize=lfs.SPIKE_RASTER_HEIGHT*
                                             raster_height_factor)
+
+        spike_axes.set_xlim(0.0, trial.times[-1])
 
 def get_accepted_spike_list(spikes, samling_freq, width, required_proportion):
     '''
@@ -234,4 +245,30 @@ def gaussian(x, width):
     peak = 1.0/numpy.sqrt(2*numpy.pi*width**2)
     exponent = -x**2/(2*width**2)
     return peak * numpy.exp(exponent)
+
+def bin_spikes(spike_list, total_time, bin_width=50.0):
+    high_end = bin_width
+
+    spike_stack = list(spike_list)
+    spike_stack.reverse()
+    this_spike_time = spike_stack.pop()
+
+    bins   = []
+    spikes = []
+    while high_end <= total_time:
+        spike_count = 0
+        while this_spike_time <= high_end:
+            spike_count += 1
+            if spike_stack:
+                this_spike_time = spike_stack.pop()
+            else:
+                this_spike_time = total_time+2*bin_width
+
+        spikes.append(spike_count)
+        bins.append(high_end-bin_width)
+        high_end += bin_width
+    if spike_stack: # put remaining spikes in last bin.
+        spikes.append(len(spike_stack))
+        bins.append(high_end-bin_width)
+    return spikes, bins
     

@@ -38,6 +38,7 @@ class LookAndFeelSettings(object):
         self.PLOT_COLOR_1 = rgb_to_matplotlib_color(0, 0, 0)
         # a nice bluish color
         self.PLOT_COLOR_2 = rgb_to_matplotlib_color(69, 109, 255)
+        self.PLOT_COLOR_2_light = '#87CEFF'
         # amber/orange
         self.PLOT_COLOR_3 = rgb_to_matplotlib_color(255, 189, 63)
         self.SPIKE_RASTER_COLOR = rgb_to_matplotlib_color(0, 0, 0)
