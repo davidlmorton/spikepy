@@ -22,13 +22,13 @@
             }, 
             "detection_filter": {
                 "critical_freq": 300.0, 
-                "kind": "high", 
+                "kind": "High Pass", 
                 "order": 3, 
                 "function_name": "Butterworth"
             }, 
             "extraction_filter": {
                 "critical_freq": 300.0, 
-                "kind": "high", 
+                "kind": "High Pass", 
                 "order": 3, 
                 "function_name": "Butterworth"
             }

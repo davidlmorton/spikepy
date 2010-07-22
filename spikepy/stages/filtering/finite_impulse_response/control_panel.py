@@ -67,7 +67,7 @@ class ControlPanel(wx.Panel):
                              taps=101, kind='High Pass'):
         self.window_chooser.SetStringSelection(window_name)
         self._passband_choice_made(band_type=kind)
-        if kind == "band":
+        if "Band" in kind:
             self.low_cutoff_spinctrl.SetValue( critical_freq[0])
             self.high_cutoff_spinctrl.SetValue(critical_freq[1])
         else:
@@ -87,7 +87,7 @@ class ControlPanel(wx.Panel):
             critical_freq = float(self.cutoff_spinctrl.GetValue())
         taps = int(self.taps_spinctrl.GetValue())
 
-        kind = passband_chosen.lower().split()[0] 
+        kind = passband_chosen
         settings = {'window_name':str(window_chosen).lower(), # scipy can't
                                                               # deal w/ unicode
                     'critical_freq':critical_freq, 
@@ -102,8 +102,8 @@ class ControlPanel(wx.Panel):
         self.low_cutoff_spinctrl.Show(False)
         self.high_cutoff_spinctrl.Show(False)
         self.cutoff_spinctrl.Show(False)
-        if ("high" in band_type.lower() or
-            "low" in band_type.lower()):
+        if ("High" in band_type or
+            "Low" in band_type):
             self.cutoff_spinctrl.Show(True)
         else:
             self.high_cutoff_spinctrl.Show(True)

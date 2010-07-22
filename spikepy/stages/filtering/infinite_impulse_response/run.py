@@ -21,6 +21,7 @@ def run(trace_list, function_name=None,
         else:
             raise RuntimeError('Function name cannot be:"%s", must be one of "butterworth" or "bessel"' % function_name.lower())
         filtered_trace_list = []
+        kind = kind.lower().split()[0]
         for trace in trace_list:
             filtered_trace_list.append(
                 filter_function(trace, sampling_freq, critical_freq,

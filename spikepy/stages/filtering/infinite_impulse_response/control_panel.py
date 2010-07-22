@@ -61,7 +61,7 @@ class ControlPanel(wx.Panel):
                              order=3, kind='High Pass'):
         self.function_chooser.SetStringSelection(function_name)
         self._passband_choice_made(band_type=kind)
-        if kind == "band":
+        if "Band" in kind:
             self.low_cutoff_spinctrl.SetValue( critical_freq[0])
             self.high_cutoff_spinctrl.SetValue(critical_freq[1])
         else:
@@ -79,7 +79,7 @@ class ControlPanel(wx.Panel):
             critical_freq = float(self.cutoff_spinctrl.GetValue())
         order = int(self.order_spinctrl.GetValue())
 
-        kind = passband_chosen.lower().split()[0] 
+        kind = passband_chosen 
         settings = {'function_name':function_chosen, 
                     'critical_freq':critical_freq, 
                     'order':order, 
@@ -93,11 +93,10 @@ class ControlPanel(wx.Panel):
         self.low_cutoff_spinctrl.Show(False)
         self.high_cutoff_spinctrl.Show(False)
         self.cutoff_spinctrl.Show(False)
-        if ("high" in band_type.lower() or
-            "low" in band_type.lower()):
+        if ("High" in band_type or
+            "Low" in band_type):
             self.cutoff_spinctrl.Show(True)
         else:
-            print band_type
             self.high_cutoff_spinctrl.Show(True)
             self.low_cutoff_spinctrl.Show(True)
         recursive_layout(self)
