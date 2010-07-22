@@ -56,7 +56,7 @@ class StrategyPane(ScrolledPanel):
                                           flag=flag|wx.ALIGN_CENTER_HORIZONTAL, 
                                           border=border)
         sizer.Add(self.save_button, proportion=0, flag=wx.ALL|wx.ALIGN_RIGHT, 
-                  border=border)
+                                          border=border)
         
         sizer.Add(line,  proportion=0, 
                                           flag=flag|wx.ALIGN_CENTER_HORIZONTAL, 

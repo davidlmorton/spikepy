@@ -13,6 +13,11 @@ plot_panels = {"detection filter" : FilterPlotPanel,
                "extraction filter": FilterPlotPanel,
                "extraction"       : ExtractionPlotPanel}
 
+stage_modules = {"detection filter"  : filtering,
+                 "detection"         : detection,
+                 "extraction filter" : filtering,
+                 "extraction"        : extraction,}
+
 class ResultsNotebook(wx.Notebook):
     def __init__(self, parent, **kwargs):
         wx.Notebook.__init__(self, parent, **kwargs)
@@ -81,10 +86,20 @@ class ResultsPanel(wx.Panel):
             plot_panel._report_coordinates = report_coordinates
 
     def _show_method_extras(self, event=None):
-        results_stage = self.name
+        stage_name = self.name
         fullpath = self.plot_panel._currently_shown
-        pub.sendMessage(topic="SHOW_METHOD_EXTRAS", data=(results_stage, 
-                                                          fullpath))
+        trial = self.plot_panel._trials[fullpath]
+        stage_data = getattr(trial, stage_name.lower().replace(' ', '_'))
+        method_name = stage_data.method
+        settings = stage_data.settings
+        results = stage_data.results
+        stage_module = stage_modules[stage_name]
+        method_index = stage_module.method_names.index(method_name)
+        method_module = stage_module.method_modules[method_index]
+        dlg = wx.Dialog(self, title=pt.METHOD_EXTRAS_DIALOG_TITLE % method_name)
+        extras_panel = method_module.ExtrasPanel(dlg, settings=settings, 
+                                                 results=results)
+        dlg.ShowModal()
         
 class CursorPositionBar(wx.Panel):
     def __init__(self, parent, **kwargs):

@@ -11,18 +11,16 @@ from .open_data_file import open_data_file
 from ..stages import filtering, detection, extraction, clustering
 from .trial import format_traces
 
-
 class Model(object):
     def __init__(self):
         self.trials = {}
 
     def setup_subscriptions(self):
-        pub.subscribe(self._open_data_file,     "OPEN_DATA_FILE")
-        pub.subscribe(self._close_data_file,    "CLOSE_DATA_FILE")
-        pub.subscribe(self._filter,             "FILTER")
-        pub.subscribe(self._detection,          "DETECTION")
-        pub.subscribe(self._extraction,         "EXTRACTION")
-        pub.subscribe(self._show_method_extras, "SHOW_METHOD_EXTRAS")
+        pub.subscribe(self._open_data_file,        "OPEN_DATA_FILE")
+        pub.subscribe(self._close_data_file,       "CLOSE_DATA_FILE")
+        pub.subscribe(self._filter,                "FILTER")
+        pub.subscribe(self._detection,             "DETECTION")
+        pub.subscribe(self._extraction,            "EXTRACTION")
 
     # ---- OPEN FILE ----
     def _open_data_file(self, message):
@@ -85,7 +83,8 @@ class Model(object):
                 method = filtering.get_method(method_name)
                 method_parameters['sampling_freq'] = trial.sampling_freq
                 if wx.Platform == '__WXMAC__':
-                    filtered_traces = method.run(raw_traces, **method_parameters)
+                    filtered_traces = method.run(raw_traces, 
+                                                 **method_parameters)
                 else:
                     processing_pool = Pool()
                     result = processing_pool.apply_async(method.run, 
@@ -180,10 +179,3 @@ class Model(object):
         for trial in self.trials.values():
             pub.sendMessage(topic='TRIAL_EXTRACTIONED', data=trial)
         pub.sendMessage(topic='RUNNING_COMPLETED')
-
-    # ---- SHOW METHOD EXTRAS ----
-    def _show_method_extras(self, message):
-        results_stage, fullpath = message.data
-        trial = self.trials[fullpath]
-
-

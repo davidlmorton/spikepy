@@ -75,9 +75,9 @@ class MyFrame(wx.Frame):
         self.menubar = SpikepyMenuBar(self)
         self.SetMenuBar(self.menubar)
 
-        pub.subscribe(self._close_application, topic="CLOSE_APPLICATION")
-        pub.subscribe(self._save_perspective, topic="SAVE_PERSPECTIVE")
-        pub.subscribe(self._load_perspective, topic="LOAD_PERSPECTIVE")
+        pub.subscribe(self._close_application,  topic="CLOSE_APPLICATION")
+        pub.subscribe(self._save_perspective,   topic="SAVE_PERSPECTIVE")
+        pub.subscribe(self._load_perspective,   topic="LOAD_PERSPECTIVE")
         
         self.perspectives = read_in_perspectives()
         self.menubar._update_perspectives(self.perspectives)
