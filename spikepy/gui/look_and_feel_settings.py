@@ -43,7 +43,7 @@ class LookAndFeelSettings(object):
         self.PLOT_COLOR_3 = rgb_to_matplotlib_color(255, 189, 63)
         self.SPIKE_RASTER_COLOR = rgb_to_matplotlib_color(0, 0, 0)
         self.SPIKE_RASTER_ON_TRACES_POSITION = 'center' # 'top', 'bottom'
-        self.SPIKE_RASTER_ON_RATE_POSITION   = 'top'    # 'top', 'bottom'
+        self.SPIKE_RASTER_ON_RATE_POSITION   = 'bottom'    # 'top', 'bottom'
 
         self.PYSHELL_DIALOG_SIZE = (500,400)
 

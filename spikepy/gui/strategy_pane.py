@@ -17,7 +17,7 @@ class StrategyPane(ScrolledPanel):
         
         self.strategy_chooser = NamedChoiceCtrl(self, name=pt.STRATEGY_NAME)
         self.strategy_summary = StrategySummary(self)
-        self.save_button = wx.Button(self, label=pt.SAVE)
+        self.save_button = wx.Button(self, label=pt.SAVE_STRATEGY)
         line = wx.StaticLine(self)
         stage_choicebook = wx.Choicebook(self, wx.ID_ANY)
 
@@ -75,6 +75,8 @@ class StrategyPane(ScrolledPanel):
                        extraction_panel,
                        clustering_panel][:-1]
         self.strategy_manager = StrategyManager(self)
+        self.Bind(wx.EVT_BUTTON, self.strategy_manager.save_strategy, 
+                  self.save_button)
     
     def _results_notebook_page_changing(self, message=None):
         old_page_num, new_page_num = message.data

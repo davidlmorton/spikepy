@@ -107,16 +107,18 @@ class DetectionPlotPanel(MultiPlotPanel):
         self._spike_axes[fullpath] = figure.add_subplot(
                 len(self._trace_axes[fullpath])+1, 1, 1)
         spike_axes = self._spike_axes[fullpath]
+        self.setup_spike_axes_labels(spike_axes, fullpath)
+        
+        # move rate plot's bottom edge up a bit
+        box = spike_axes.get_position()
+        box.p0 = (box.p0[0], box.p0[1]+bottom)
+        spike_axes.set_position(box)
+
+    def setup_spike_axes_labels(self, spike_axes, fullpath):
         spike_axes.set_xlabel(pt.PLOT_TIME)
         spike_axes.set_ylabel(pt.SPIKE_RATE_AXIS)
         title = os.path.split(fullpath)[1]
         spike_axes.set_title(title)
-        
-        # move raster plot's bottom edge up a bit
-        box = spike_axes.get_position()
-        box.p0 = (box.p0[0], box.p0[1]+bottom)
-        spike_axes.set_position(box)
-        
 
     def _plot_filtered_traces(self, trial, figure, fullpath):
         if trial.detection_filter.results is not None:
@@ -181,13 +183,13 @@ class DetectionPlotPanel(MultiPlotPanel):
         spike_axes = self._spike_axes[fullpath]
 
         # remove old lines if present.
-        while spike_axes.lines:
-            del spike_axes.lines[0]
+        spike_axes.clear()
+        self.setup_spike_axes_labels(spike_axes, fullpath)
             
         #spike_axes.plot(times, spike_rate, color=lfs.PLOT_COLOR_2, 
         #                            linewidth=lfs.PLOT_LINEWIDTH_2)
         for bin, spike_count in zip(bins, spikes):
-            spike_axes.bar(bin, spike_count, width=bin_width, 
+            spike_axes.bar(bin, spike_count*1000.0/bin_width, width=bin_width, 
                            color=lfs.PLOT_COLOR_2_light, 
                            edgecolor=lfs.PLOT_COLOR_2,
                            linewidth=lfs.PLOT_LINEWIDTH_2)
@@ -267,8 +269,15 @@ def bin_spikes(spike_list, total_time, bin_width=50.0):
         spikes.append(spike_count)
         bins.append(high_end-bin_width)
         high_end += bin_width
-    if spike_stack: # put remaining spikes in last bin.
-        spikes.append(len(spike_stack))
+    # cornercase of one spike left in final region.
+    if this_spike_time > (high_end-bin_width): 
+        spike_count = 1
+    else:
+        spike_count = 0
+    # put remaining spikes in last bin
+    if spike_stack or spike_count: 
+        spikes.append(len(spike_stack)+spike_count)
         bins.append(high_end-bin_width)
+    print spikes, bins
     return spikes, bins
     

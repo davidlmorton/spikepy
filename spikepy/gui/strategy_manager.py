@@ -5,6 +5,7 @@ import wx
 from . import program_text as pt
 from .utils import HashableDict, make_dict_hashable, strip_unicode
 from .look_and_feel_settings import lfs
+from .named_controls import NamedTextCtrl 
 
 
 class StrategyManager(object):
@@ -73,6 +74,43 @@ class StrategyManager(object):
             else:
                 self.strategy_pane.save_button.Enable(False)
 
+    def save_strategy(self, event=None):
+        current_strategy = self.get_current_strategy() 
+        current_strategy_name = current_strategy.keys()[0]
+        dlg = SaveStrategyDialog(self.strategy_pane, current_strategy_name,
+                                 self.strategy_names,
+                                 title=pt.SAVE_STRATEGY_DIALOG_TITLE,
+                                 style=wx.DEFAULT_DIALOG_STYLE)
+        if dlg.ShowModal() == wx.ID_OK:
+            new_name = dlg.get_strategy_name()
+            dlg.Destroy
+            if new_name in self.strategy_names:
+                confirm_dlg = wx.MessageDialog(self.strategy_pane,
+                        new_name + pt.ALREADY_EXISTS_LINE,
+                        caption=pt.CONFIRM_OVERWRITE,
+                        style=wx.YES_NO|wx.ICON_WARNING)
+                if confirm_dlg.ShowModal() == wx.ID_YES:
+                    confirm_dlg.Destroy()
+                else:
+                    confirm_dlg.Destroy()
+                    self.save_strategy()
+                    return
+
+                    
+            self._remove_strategy(current_strategy)
+            renamed_strategy = self._get_renamed_strategy(current_strategy, 
+                                                          new_name)
+            self._add_strategy(renamed_strategy)
+
+    def _get_renamed_strategy(self, strategy, new_name):
+        new_strategy = {}
+        old_name = strategy.keys()[0]
+        methods_used = strategy[old_name]['methods_used']
+        settings     = strategy[old_name]['settings']
+        new_strategy[new_name] = {'methods_used':methods_used,
+                                  'settings':settings}
+        return new_strategy
+        
     def _add_strategy(self, strategy):
         for key, value in strategy.items():
             method_name = key.split('(')[0]
@@ -91,6 +129,19 @@ class StrategyManager(object):
             self.settings[settings_name]       = settings_dict
             self.settings_names[settings_dict] = settings_name
         self._update_strategy_choices()
+
+    def _remove_strategy(self, strategy):
+        strategy_name = strategy.keys()[0]
+        method_name   = strategy_name.split('(')[0]
+        settings_name = strategy_name
+        method_dict    = strategy[strategy_name]['methods_used']
+        settings_dict  = strategy[strategy_name]['settings']
+        del self.methods[method_name]
+        del self.settings[settings_name]
+
+        del self.methods_names[method_dict]
+        del self.settings_names[settings_dict]
+        
 
     def _update_strategy_choices(self):
         old_items = self.strategy_chooser.GetItems()
@@ -131,4 +182,120 @@ class StrategyManager(object):
         return_dict[strategy_name] = {'methods_used':methods_used, 
                                       'settings':settings}
         return return_dict
+
+
+class SaveStrategyDialog(wx.Dialog):
+    def __init__(self, parent, old_name, all_names, **kwargs):
+        wx.Dialog.__init__(self, parent, **kwargs)
+
+        self.all_names = all_names
+        self.old_name  = old_name
+        self.all_methods_set_names = [get_methods_set_name(name)
+                                      for name in all_names]
+        self.save_as_text = wx.StaticText(self, 
+                            label='Save as: ')
+        save_as_font = self.save_as_text.GetFont()
+        save_as_font.SetWeight(wx.FONTWEIGHT_BOLD)
+        save_as_font.SetPointSize(16)
+        self.save_as_text.SetFont(save_as_font)
+
+        method_set_name = old_name.split('(')[0]
+        self.method_set_textctrl = NamedTextCtrl(self, name=pt.METHOD_SET_NAME)
+        self.method_set_textctrl.SetTextctrlSize((200,-1))
+        self.method_set_textctrl.SetValue(method_set_name)
+
+        settings_name   = old_name.split('(')[1][:-1]
+        self.settings_textctrl   = NamedTextCtrl(self, name=pt.SETTINGS_NAME)
+        self.settings_textctrl.SetTextctrlSize((200,-1))
+        self.settings_textctrl.SetValue(settings_name)
+
+        self.warning_text = wx.StaticText(self, 
+                            label='Choose a set of names for the strategy.')
+
+        self.ok_button = wx.Button(self, id=wx.ID_OK)
+        cancel_button  = wx.Button(self, id=wx.ID_CANCEL)
+
+        button_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        flag = wx.ALL|wx.EXPAND
+        border = 5
+        button_sizer.Add(cancel_button, proportion=0, flag=flag, border=border)
+        button_sizer.Add(self.ok_button, proportion=0, flag=flag, border=border)
+
+        sizer = wx.BoxSizer(orient=wx.VERTICAL)
+        flag = wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND
+        sizer.Add(self.save_as_text, proportion=0, 
+                  flag=flag, border=15)
+        sizer.Add(self.method_set_textctrl, proportion=0, 
+                  flag=flag, border=5)
+        sizer.Add(self.settings_textctrl, proportion=0, 
+                  flag=flag, border=5)
+        sizer.Add(button_sizer, proportion=0, flag=wx.ALIGN_RIGHT)
+        sizer.Add(self.warning_text, proportion=0, 
+                  flag=flag, border=5)
+        self.SetSizerAndFit(sizer)
+        size = self.GetSize()
+        self.SetSize((size[0]+10, size[1]+100))
+
+        if not old_name.lower().startswith('custom'):
+            self.method_set_textctrl.Enable(False)
+
+        self.Bind(wx.EVT_TEXT, self._check_inputs, 
+                  self.method_set_textctrl.text_ctrl)
+        self.Bind(wx.EVT_TEXT, self._check_inputs, 
+                  self.settings_textctrl.text_ctrl)
+        self._check_inputs()
+
+    def get_strategy_name(self):
+        method_set_name = self.method_set_textctrl.GetValue()
+        settings_name   = self.settings_textctrl.GetValue()
+        new_name = get_strategy_name(method_set_name, settings_name)
+        return new_name
+
+    def _check_inputs(self, event=None):
+        method_set_name = self.method_set_textctrl.GetValue()
+        settings_name   = self.settings_textctrl.GetValue()
+        new_name = get_strategy_name(method_set_name, settings_name)
+        self.save_as_text.SetLabel(pt.STRATEGY_SAVE_AS + 
+                                   new_name)
+        if len(method_set_name) < 1 or len(settings_name) < 1:
+            self.warning_text.SetLabel(pt.AT_LEAST_ONE_CHARACTER)
+            self.ok_button.Enable(False)
+            return
+        if ('custom' in new_name.lower()):
+            self.warning_text.SetLabel(pt.NOT_CONTAIN_CUSTOM)
+            self.ok_button.Enable(False)
+            return
+        if ('"' in new_name.lower()):
+            self.warning_text.SetLabel(pt.NOT_CONTAIN_DQUOTE)
+            self.ok_button.Enable(False)
+            return
+        if ("'" in new_name.lower()):
+            self.warning_text.SetLabel(pt.NOT_CONTAIN_QUOTE)
+            self.ok_button.Enable(False)
+            return
+        if (' ' in new_name.lower()):
+            self.warning_text.SetLabel(pt.NOT_CONTAIN_SPACE)
+            self.ok_button.Enable(False)
+            return
+        if ('custom' in get_methods_set_name(self.old_name).lower() and 
+            get_methods_set_name(new_name) in self.all_methods_set_names):
+            self.warning_text.SetLabel(pt.NOT_ONE_OF + 
+                                       str(self.all_methods_set_names))
+            self.ok_button.Enable(False)
+            return
+        self.warning_text.SetLabel(pt.OK_TO_SAVE)
+        self.ok_button.Enable(True)
+
+def get_methods_set_name(strategy_name):
+    return strategy_name.split('(')[0]
+
+def get_strategy_name(method_set_name, settings_name):
+    pre  = method_set_name
+    post = settings_name
+    if len(pre) >= 1:
+        new_name = pre[0].upper() + pre[1:].lower() + '(%s)' % post.lower()
+    else:
+        new_name = "*Invalid*"
+    return new_name
+
         

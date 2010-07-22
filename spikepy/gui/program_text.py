@@ -63,7 +63,22 @@ METHOD = "Method"
 METHOD_EXTRAS = "Method Extras"
 METHOD_EXTRAS_DIALOG_TITLE = "Extras for %s"
 RUN_BUTTON_RUNNING_STATUS = "Running"
-SAVE = "Save Strategy"
+SAVE_STRATEGY = "Save Strategy..."
 STRATEGY = "Strategy"
 STRATEGY_NAME = "Strategy Name:"
 FILE_LISTCTRL_TITLE = "Opened Files"
+
+METHOD_SET_NAME = 'Method Set Name:'
+SETTINGS_NAME = 'Settings Name:'
+SAVE_STRATEGY_DIALOG_TITLE = 'Save Current Strategy'
+ALREADY_EXISTS_LINE = ' already exists, would you like to overwrite?'
+CONFIRM_OVERWRITE = 'Confirm Overwrite'
+
+AT_LEAST_ONE_CHARACTER = '* Name must be at least one character long.'
+NOT_CONTAIN_CUSTOM = '* Names may not contain "custom".'
+NOT_CONTAIN_DQUOTE = '* Names may not contain the " symbol.'
+NOT_CONTAIN_QUOTE = "* Names may not contain the ' symbol."
+NOT_CONTAIN_SPACE = "* Names may not contain spaces."
+NOT_ONE_OF = "* Method Set Name must not be one of \n"
+STRATEGY_SAVE_AS = "Save as: "
+OK_TO_SAVE = 'Press OK to save.'
