@@ -91,14 +91,12 @@ class ResultsPanel(wx.Panel):
         trial = self.plot_panel._trials[fullpath]
         stage_data = getattr(trial, stage_name.lower().replace(' ', '_'))
         method_name = stage_data.method
-        settings = stage_data.settings
-        results = stage_data.results
         stage_module = stage_modules[stage_name]
         method_index = stage_module.method_names.index(method_name)
         method_module = stage_module.method_modules[method_index]
-        dlg = wx.Dialog(self, title=pt.METHOD_EXTRAS_DIALOG_TITLE % method_name)
-        extras_panel = method_module.ExtrasPanel(dlg, settings=settings, 
-                                                 results=results)
+        dlg = wx.Dialog(self, title=pt.METHOD_EXTRAS_DIALOG_TITLE % method_name,
+                        style=wx.RESIZE_BORDER)
+        extras_panel = method_module.ExtrasPanel(dlg, trial, stage_name)
         dlg.ShowModal()
         
 class CursorPositionBar(wx.Panel):

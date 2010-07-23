@@ -104,7 +104,7 @@ class PlotPanel (wx.Panel):
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.toolbar, 0, wx.EXPAND)
-        sizer.Add(self.canvas, 1, wx.EXPAND)
+        sizer.Add(self.canvas,  1, wx.EXPAND)
         self.SetSizer(sizer)
 
         figheight = self.figure.get_figheight()
