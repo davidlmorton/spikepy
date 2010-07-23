@@ -1,6 +1,7 @@
 import json
 
 import wx
+from wx.lib.pubsub import Publisher as pub
 
 from . import program_text as pt
 from .utils import HashableDict, make_dict_hashable, strip_unicode
@@ -23,6 +24,7 @@ class StrategyManager(object):
         self.strategy_pane.Bind(wx.EVT_IDLE, self._sync)
         self.strategy_pane.Bind(wx.EVT_CHOICE, self._strategy_choice_made, 
                                 self.strategy_chooser.choice) 
+        pub.subscribe(self.save_all_strategies, topic='SAVE_ALL_STRATEGIES')
 
     @property
     def strategy_names(self):
@@ -36,6 +38,28 @@ class StrategyManager(object):
             make_dict_hashable(saved_strategies)
         
         self._add_strategy(saved_strategies)
+
+    def save_all_strategies(self, message=None):
+        strategy_list = []
+        for strategy_name in self.strategy_names:
+            methods_set_name = get_methods_set_name(strategy_name)
+            methods_dict = self.methods[methods_set_name]
+            settings_dict = self.settings[strategy_name]
+            this_strategy_dict = make_strategy(strategy_name, 
+                                               methods_dict, 
+                                               settings_dict)
+            strategy_list.append(this_strategy_dict)
+        self.save_strategies(strategy_list)
+        
+    def save_strategies(self, strategy_list, filename='strategies_archive.txt'):
+        all_strategies_dict = {}
+        for strategy in strategy_list:
+            all_strategies_dict.update(strategy)
+        all_strategies_dict['__comment'] = \
+                "DO NOT EDIT THIS DOCUMENT (BAD THINGS WILL HAPPEN)"
+        with open(filename, 'w') as ofile:
+            json.dump(all_strategies_dict, ofile, indent=4)
+        
 
     def _strategy_choice_made(self, event=None):
         strategy_chosen = self.strategy_chooser.GetStringSelection()
@@ -178,11 +202,14 @@ class StrategyManager(object):
             settings[stage_name]     = hashable_settings
 
         strategy_name = self.get_strategy_name(methods_used, settings)
-        return_dict = {}
-        return_dict[strategy_name] = {'methods_used':methods_used, 
-                                      'settings':settings}
-        return return_dict
+        return make_strategy(strategy_name, methods_used, settings)
 
+def make_strategy(strategy_name, methods_used_dict, settings_dict):
+    return_dict = {}
+    return_dict[strategy_name] = {'methods_used':methods_used_dict, 
+                                      'settings':settings_dict}
+    return return_dict
+    
 
 class SaveStrategyDialog(wx.Dialog):
     def __init__(self, parent, old_name, all_names, **kwargs):

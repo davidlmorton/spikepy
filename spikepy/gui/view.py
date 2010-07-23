@@ -107,6 +107,7 @@ class MyFrame(wx.Frame):
         self._mgr.LoadPerspective(perspective)
 
     def _close_application(self, message):
+        pub.sendMessage(topic='SAVE_ALL_STRATEGIES')
         pub.unsubAll()
         # deinitialize the frame manager
         self._mgr.UnInit()

@@ -27,7 +27,7 @@ class LookAndFeelSettings(object):
         self.FILE_LISTCTRL_TITLE = 'Opened Files List'
         
         self.PLOT_FACECOLOR = rgb_to_matplotlib_color(255, 255, 255, 255)
-        self.PLOT_LEFT_BORDER   = 70.0 # pixels
+        self.PLOT_LEFT_BORDER   = 90.0 # pixels
         self.PLOT_RIGHT_BORDER  = 30.0 # pixels
         self.PLOT_TOP_BORDER    = 40.0 # pixels
         self.PLOT_BOTTOM_BORDER = 45.0 # pixels
