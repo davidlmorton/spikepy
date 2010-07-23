@@ -13,7 +13,7 @@ class MultiPlotPanel(ScrolledPanel):
         Subscribes to pubsub message: 
             'SHOW_PLOT' to alter which PlotPanel
                 is visible.  (data=new_panel_key)
-            'FILE_CLOSED' to destroy PlotPanels after the file they are
+            'REMOVE_PLOT' to destroy PlotPanels after the file they are
                 associated with is closed.
         """
         ScrolledPanel.__init__(self, parent)

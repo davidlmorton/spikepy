@@ -112,7 +112,7 @@ class SpikepyMenuBar(wx.MenuBar):
         # dialog box to open when "About" is clicked
         info = wx.AboutDialogInfo()
         icon = wx.EmptyIcon() 
-        icon.CopyFromBitmap(get_bitmap_icon('spikepy_logo'))
+        icon.CopyFromBitmap(get_bitmap_icon('spikepy_splash'))
         info.Icon = icon
         info.Name = "Spikepy"
         info.Version = "0.0"

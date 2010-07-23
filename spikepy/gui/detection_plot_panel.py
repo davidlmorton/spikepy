@@ -31,9 +31,9 @@ class DetectionPlotPanel(MultiPlotPanel):
         self._spike_axes = {}
 
     def _remove_trial(self, message=None):
-        full_path = message.data
-        del self._trials[full_path]
-        del self._trace_axes[full_path]
+        fullpath = message.data
+        del self._trials[fullpath]
+        del self._trace_axes[fullpath]
         del self._spike_axes[fullpath]
 
     def _trial_added(self, message=None, trial=None):
@@ -49,6 +49,9 @@ class DetectionPlotPanel(MultiPlotPanel):
                                 facecolor=self._facecolor,
                                 edgecolor=self._facecolor,
                                 dpi=self._dpi)
+        figure = self._plot_panels[fullpath].figure
+        self._create_axes(trial, figure, fullpath)
+        
 
     def _trial_altered(self, message=None):
         trial = message.data
@@ -64,16 +67,13 @@ class DetectionPlotPanel(MultiPlotPanel):
         trial = self._trials[fullpath]
         figure = self._plot_panels[fullpath].figure
         
-        if (fullpath not in self._trace_axes.keys() and
-                trial.detection_filter.results is not None):
-            self._create_axes(trial, figure, fullpath)
         self._plot_filtered_traces(trial, figure, fullpath)
         self._plot_spikes(trial, figure, fullpath)
 
         self.draw_canvas(fullpath)
 
     def _create_axes(self, trial, figure, fullpath):
-        traces = trial.detection_filter.results
+        traces = trial.raw_traces
         for i, trace in enumerate(traces):
             if i==0:
                 self._trace_axes[fullpath] = [
@@ -248,36 +248,26 @@ def gaussian(x, width):
     exponent = -x**2/(2*width**2)
     return peak * numpy.exp(exponent)
 
+
 def bin_spikes(spike_list, total_time, bin_width=50.0):
     high_end = bin_width
 
-    spike_stack = list(spike_list)
-    spike_stack.reverse()
-    this_spike_time = spike_stack.pop()
+    low  = 0.0
+    high = 0.0
+    def is_between(value):
+        return low <= value <= high
 
-    bins   = []
+    bins = numpy.arange(0.0, total_time, bin_width)
     spikes = []
-    while high_end <= total_time:
-        spike_count = 0
-        while this_spike_time <= high_end:
-            spike_count += 1
-            if spike_stack:
-                this_spike_time = spike_stack.pop()
-            else:
-                this_spike_time = total_time+2*bin_width
-
+    for i in xrange(len(bins)-1):
+        low  = bins[i]
+        high = bins[i+1]
+        spike_count = len(filter(is_between, spike_list))
         spikes.append(spike_count)
-        bins.append(high_end-bin_width)
-        high_end += bin_width
-    # cornercase of one spike left in final region.
-    if this_spike_time > (high_end-bin_width): 
-        spike_count = 1
-    else:
-        spike_count = 0
-    # put remaining spikes in last bin
-    if spike_stack or spike_count: 
-        spikes.append(len(spike_stack)+spike_count)
-        bins.append(high_end-bin_width)
-    print spikes, bins
+    # final bin
+    low = bins[-1]
+    high = total_time
+    spike_count = len(filter(is_between, spike_list))
+    spikes.append(spike_count)
     return spikes, bins
     

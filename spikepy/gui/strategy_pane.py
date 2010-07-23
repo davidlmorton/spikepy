@@ -80,7 +80,7 @@ class StrategyPane(ScrolledPanel):
     
     def _results_notebook_page_changing(self, message=None):
         old_page_num, new_page_num = message.data
-        self.stage_choicebook.ChangeSelection(new_page_num)
+        self.stage_choicebook.SetSelection(new_page_num)
 
     def _page_changed(self, event=None):
         if event is not None:

@@ -29,9 +29,9 @@ class ExtractionPlotPanel(MultiPlotPanel):
         self._feature_axes = {}
 
     def _remove_trial(self, message=None):
-        full_path = message.data
-        del self._trials[full_path]
-        del self._feature_axes[full_path]
+        fullpath = message.data
+        del self._trials[fullpath]
+        del self._feature_axes[fullpath]
 
     def _trial_added(self, message=None, trial=None):
         if message is not None:
@@ -43,6 +43,8 @@ class ExtractionPlotPanel(MultiPlotPanel):
                                 facecolor=self._facecolor,
                                 edgecolor=self._facecolor,
                                 dpi=self._dpi)
+        figure = self._plot_panels[fullpath].figure
+        self._create_axes(trial, figure, fullpath)
 
     def _trial_altered(self, message=None):
         trial = message.data
@@ -58,8 +60,6 @@ class ExtractionPlotPanel(MultiPlotPanel):
         trial = self._trials[fullpath]
         figure = self._plot_panels[fullpath].figure
         
-        if (fullpath not in self._feature_axes.keys()):
-            self._create_axes(trial, figure, fullpath)
         self._plot_features(trial, figure, fullpath)
 
         self.draw_canvas(fullpath)
