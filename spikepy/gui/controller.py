@@ -5,15 +5,19 @@ from wx.lib.pubsub import Publisher as pub
 
 from ..common.model import Model
 from .view import View
-from .utils import named_color
+from .utils import named_color, get_bitmap_icon 
 from . import program_text as pt
 from .pyshell import locals_dict
 
+
 class Controller(object):
     def __init__(self):
+        splash_screen = wx.SplashScreen(get_bitmap_icon('spikepy_splash'), 
+                wx.SPLASH_CENTRE_ON_SCREEN|wx.SPLASH_NO_TIMEOUT, 8000, None)
         self.model = Model()
         self.model.setup_subscriptions()
         self.view = View()
+        splash_screen.Destroy()
 
         # save for locals in pyshell
         locals_dict['model']      = self.model
