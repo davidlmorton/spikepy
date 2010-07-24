@@ -75,8 +75,6 @@ class StrategyPane(ScrolledPanel):
                        extraction_panel,
                        clustering_panel][:-1]
         self.strategy_manager = StrategyManager(self)
-        self.Bind(wx.EVT_BUTTON, self.strategy_manager.save_strategy, 
-                  self.save_button)
     
     def _results_notebook_page_changing(self, message=None):
         old_page_num, new_page_num = message.data

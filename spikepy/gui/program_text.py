@@ -75,10 +75,12 @@ ALREADY_EXISTS_LINE = ' already exists, would you like to overwrite?'
 CONFIRM_OVERWRITE = 'Confirm Overwrite'
 
 AT_LEAST_ONE_CHARACTER = '* Name must be at least one character long.'
-NOT_CONTAIN_CUSTOM = '* Names may not contain "custom".'
-NOT_CONTAIN_DQUOTE = '* Names may not contain the " symbol.'
-NOT_CONTAIN_QUOTE = "* Names may not contain the ' symbol."
-NOT_CONTAIN_SPACE = "* Names may not contain spaces."
-NOT_ONE_OF = "* Method Set Name must not be one of \n"
+QUOTES = 'quotes'
+APOSTROPHES = 'apostrophes'
+SPACES = 'spaces'
+PARENTHESES = 'parentheses'
+CUSTOM = "'custom'"
+NOT_CONTAIN = '* Names may not contain'
+NOT_ONE_OF = "* Method Set Name must not be one of: \n"
 STRATEGY_SAVE_AS = "Save as: "
 OK_TO_SAVE = 'Press OK to save.'
