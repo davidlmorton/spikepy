@@ -94,8 +94,9 @@ class ResultsPanel(wx.Panel):
         stage_module = stage_modules[stage_name]
         method_index = stage_module.method_names.index(method_name)
         method_module = stage_module.method_modules[method_index]
+        style = wx.RESIZE_BORDER|wx.MINIMIZE_BOX|wx.MAXIMIZE_BOX|wx.CLOSE_BOX
         dlg = wx.Dialog(self, title=pt.METHOD_EXTRAS_DIALOG_TITLE % method_name,
-                        style=wx.RESIZE_BORDER)
+                        style=style)
         extras_panel = method_module.ExtrasPanel(dlg, trial, stage_name)
         dlg.ShowModal()
         

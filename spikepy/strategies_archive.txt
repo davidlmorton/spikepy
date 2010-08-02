@@ -71,7 +71,7 @@
     "Custom(custom)": {
         "methods_used": {
             "spike_detection": "Voltage Threshold", 
-            "detection_filter": "None", 
+            "detection_filter": "Finite Impulse Response", 
             "extraction_filter": "Infinite Impulse Response", 
             "extraction": "Waveform"
         }, 
@@ -83,7 +83,12 @@
                 "refractory_time": 0.0, 
                 "threshold_1": 4.0
             }, 
-            "detection_filter": {}, 
+            "detection_filter": {
+                "critical_freq": 300.0, 
+                "taps": 101, 
+                "window_name": "hamming", 
+                "kind": "High Pass"
+            }, 
             "extraction_filter": {
                 "critical_freq": 300.0, 
                 "kind": "High Pass", 
