@@ -40,11 +40,11 @@ class ResultsNotebook(wx.Notebook):
                            'Extraction',
                            'Clustering']
 
-        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGING, self._page_changing)
+        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self._page_changed)
         pub.subscribe(self._change_page, 
                       topic='STRATEGY_CHOICEBOOK_PAGE_CHANGED')
 
-    def _page_changing(self, event=None):
+    def _page_changed(self, event=None):
         old_page_num  = event.GetOldSelection()
         new_page_num  = event.GetSelection()
         old_page_name = self.page_names[old_page_num]
