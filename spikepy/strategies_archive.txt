@@ -71,8 +71,8 @@
     "Custom(custom)": {
         "methods_used": {
             "spike_detection": "Voltage Threshold", 
-            "detection_filter": "None", 
-            "extraction_filter": "Infinite Impulse Response", 
+            "detection_filter": "Finite Impulse Response", 
+            "extraction_filter": "Finite Impulse Response", 
             "extraction": "Waveform"
         }, 
         "settings": {
@@ -83,15 +83,23 @@
                 "refractory_time": 0.0, 
                 "threshold_1": 4.0
             }, 
-            "detection_filter": {}, 
+            "detection_filter": {
+                "critical_freq": [
+                    300.0, 
+                    1200.0
+                ], 
+                "taps": 101, 
+                "window_name": "hamming", 
+                "kind": "Band Pass"
+            }, 
             "extraction_filter": {
                 "critical_freq": 300.0, 
-                "kind": "High Pass", 
-                "order": 3, 
-                "function_name": "Butterworth"
+                "taps": 101, 
+                "window_name": "hamming", 
+                "kind": "High Pass"
             }, 
             "extraction": {
-                "post_padding": 1.5, 
+                "post_padding": 3.25, 
                 "exclude_overlappers": false, 
                 "pre_padding": 1.5
             }
