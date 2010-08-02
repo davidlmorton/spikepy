@@ -5,6 +5,8 @@ import json
 from wx.lib.pubsub import Publisher as pub
 import numpy
 
+from spikepy.gui.strategy_manager import make_strategy
+
 
 class Trial(object):
     """This class represents an individual trial consisting of (potentially)
@@ -40,17 +42,20 @@ class Trial(object):
                        self.extraction,
                        self.clustering]
 
-    def save_session_settings(self, filename, strategy_name='Custom(custom)'):
+    def get_session_strategy(self, strategy_name):
         methods_used = {}
         settings = {}
         for stage in self.stages:
             methods_used[stage.name] = stage.method
             settings[stage.name] = stage.settings
-        results = {'strategy_name':strategy_name,
-                   'methods_used':methods_used,
-                   'settings':settings}
+        strategy = make_strategy(strategy_name, 
+                                       methods_used, settings_dict)
+        return strategy
+
+    def save_session_strategy(self, filename, strategy_name='Custom(custom)'):
+        strategy = self.get_session_strategy(strategy_name)
         with open(filename, 'w') as ofile:
-            json.dump(results, ofile, indent=4)
+            json.dump(strategy, ofile, indent=4)
 
 
     def reset_stage_results(self, message=None):

@@ -234,7 +234,6 @@ class StagePanel(wx.Panel):
             if (key != 'stage_name' and 
                 key != 'method_name'):
                 parameters[key] = value
-        print parameters
         self.methods[method_name]['control_panel'].set_parameters(**parameters)
         self._method_choice_made(method_name=method_name)
 
@@ -269,7 +268,6 @@ class StagePanel(wx.Panel):
         self.run_button.Disable()
         wx.Yield() # about to let scipy hog cpu, so process all wx events.
         topic = self.stage_name.split()[-1].upper()
-        print settings
         pub.sendMessage(topic=topic, data=(self.stage_name, 
                                               self._method_name_chosen,
                                               settings))

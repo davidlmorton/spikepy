@@ -61,7 +61,6 @@ class StrategyManager(object):
 
         comment = "DO NOT EDIT THIS DOCUMENT (BAD THINGS WILL HAPPEN)" 
         all_strategies_dict['__comment'] = comment
-
         with open(filename, 'w') as ofile:
             json.dump(all_strategies_dict, ofile, indent=4)
         

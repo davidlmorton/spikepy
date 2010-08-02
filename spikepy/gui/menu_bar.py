@@ -17,6 +17,8 @@ SHELL            = wx.NewId()
 WORKSPACES       = wx.NewId()
 SHOW_TOOLBARS    = wx.NewId()
 SAVE_PERSPECTIVE = wx.NewId()
+SAVE_SESSION     = wx.NewId()
+LOAD_SESSION     = wx.NewId()
 
 class SpikepyMenuBar(wx.MenuBar):
     def __init__(self, frame, *args, **kwargs):
@@ -25,6 +27,10 @@ class SpikepyMenuBar(wx.MenuBar):
         # --- FILE ---
         file_menu = wx.Menu()
         file_menu.Append(OPEN, text=pt.OPEN)
+        file_menu.AppendSeparator()
+        file_menu.Append(LOAD_SESSION, text=pt.LOAD_SESSION)
+        file_menu.Append(SAVE_SESSION, text=pt.SAVE_SESSION)
+        file_menu.AppendSeparator()
         file_menu.Append(EXIT, text=pt.EXIT)
         
         # --- EDIT ---
@@ -50,16 +56,34 @@ class SpikepyMenuBar(wx.MenuBar):
         self.Append(help_menu, pt.HELP)
         
         # --- BIND MENU EVENTS ---
+        frame.Bind(wx.EVT_MENU, self._open_file, id=OPEN)
+        frame.Bind(wx.EVT_MENU, self._load_session, id=LOAD_SESSION)
+        frame.Bind(wx.EVT_MENU, self._save_session, id=SAVE_SESSION)
         frame.Bind(wx.EVT_MENU, self._close_window, id=EXIT)
         frame.Bind(wx.EVT_MENU, self._about_box, id=ABOUT)
         frame.Bind(wx.EVT_MENU, self._python_shell, id=SHELL)
-        frame.Bind(wx.EVT_MENU, self._open_file, id=OPEN)
         frame.Bind(wx.EVT_MENU, self._show_toolbars, id=SHOW_TOOLBARS)
         frame.Bind(wx.EVT_MENU, self._save_perspective, id=SAVE_PERSPECTIVE)
 
         self.frame = frame
 
         self._toolbars_shown = False
+
+    def _load_session(self, event=None):
+        dlg = wx.FileDialog(self, message=pt.LOAD_SESSION, 
+                                  style=wx.FD_OPEN)
+        if dlg.ShowModal() == wx.ID_OK:
+            save_path = dlg.GetPath()
+            pub.sendMessage(topic='LOAD_SESSION', data=save_path)
+        dlg.Destroy()
+
+    def _save_session(self, event=None):
+        dlg = wx.FileDialog(self, message=pt.SAVE_SESSION, 
+                                  style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        if dlg.ShowModal() == wx.ID_OK:
+            save_path = dlg.GetPath()
+            pub.sendMessage(topic='SAVE_SESSION', data=save_path)
+        dlg.Destroy()
 
     def _python_shell(self, event=None):
         event.Skip()

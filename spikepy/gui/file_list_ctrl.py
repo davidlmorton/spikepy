@@ -143,11 +143,12 @@ class FileListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
     def _open_file(self, event):
         pub.sendMessage(topic='OPEN_FILE', data=self)
 
-    def _close_file(self, event):
-        if self.GetItemCount():
-            item_num = self.GetFocusedItem()
-            fullpath = self.opened_files[item_num]
-            pub.sendMessage(topic='CLOSE_DATA_FILE', data=fullpath)
+    def _close_file(self, event=None, fullpath=None):
+        if fullpath is None:
+            if self.GetItemCount():
+                item_num = self.GetFocusedItem()
+                fullpath = self.opened_files[item_num]
+        pub.sendMessage(topic='CLOSE_DATA_FILE', data=fullpath)
         # If we allow multiple items to be selected and closed...
         """
         files_to_close = []

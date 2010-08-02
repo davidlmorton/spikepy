@@ -133,7 +133,8 @@ class Model(object):
                             kwds=method_parameters)
                     results = result.get()
                     processing_pool.close()
-                trial.detection.results = results
+                if len(results[0]) > 0: # ensure at least one spike was found.
+                    trial.detection.results = results
         except:
             traceback.print_exc()
             sys.exit(1)
@@ -161,6 +162,8 @@ class Model(object):
                 method = extraction.get_method(method_name)
                 method_parameters['sampling_freq'] = trial.sampling_freq
                 method_parameters['spike_list'] = trial.detection.results[0]
+                if len(method_parameters['spike_list']) == 0:
+                    return # no spikes from detection = no extraction
                 if wx.Platform == '__WXMAC__':
                     results = method.run(filtered_traces, **method_parameters)
                 else:

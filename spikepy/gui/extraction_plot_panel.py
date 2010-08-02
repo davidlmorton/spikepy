@@ -24,6 +24,9 @@ class ExtractionPlotPanel(MultiPlotPanel):
         pub.subscribe(self._remove_trial,  topic="REMOVE_PLOT")
         pub.subscribe(self._trial_added,   topic='TRIAL_ADDED')
         pub.subscribe(self._trial_altered, topic='TRIAL_EXTRACTIONED')
+        pub.subscribe(self._trial_altered, topic='TRIAL_EXTRACTION_FILTERED')
+        pub.subscribe(self._trial_altered, topic='TRIAL_DETECTIONED')
+        pub.subscribe(self._trial_altered, topic='TRIAL_DETECTION_FILTERED')
 
         self._trials       = {}
         self._feature_axes = {}
@@ -31,7 +34,8 @@ class ExtractionPlotPanel(MultiPlotPanel):
     def _remove_trial(self, message=None):
         fullpath = message.data
         del self._trials[fullpath]
-        del self._feature_axes[fullpath]
+        if fullpath in self._feature_axes.keys():
+            del self._feature_axes[fullpath]
 
     def _trial_added(self, message=None, trial=None):
         if message is not None:
@@ -45,6 +49,7 @@ class ExtractionPlotPanel(MultiPlotPanel):
                                 dpi=self._dpi)
         figure = self._plot_panels[fullpath].figure
         self._create_axes(trial, figure, fullpath)
+        self._replot_panels.add(fullpath)
 
     def _trial_altered(self, message=None):
         trial = message.data
@@ -70,16 +75,16 @@ class ExtractionPlotPanel(MultiPlotPanel):
         axes.set_xlabel(pt.FEATURE_INDEX)
 
     def _plot_features(self, trial, figure, fullpath):
+        axes = self._feature_axes[fullpath]
+        while axes.lines:
+            del(axes.lines[0])     
+
         if trial.extraction.results is not None:
             features = trial.extraction.results['features']
         else:
             return
         num_excluded_features = len(
                 trial.extraction.results['excluded_features'])
-
-        axes = self._feature_axes[fullpath]
-        while axes.lines:
-            del(axes.lines[0])     
 
         axes.set_autoscale_on(True)
         for feature in features:

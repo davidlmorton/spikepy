@@ -33,8 +33,10 @@ class DetectionPlotPanel(MultiPlotPanel):
     def _remove_trial(self, message=None):
         fullpath = message.data
         del self._trials[fullpath]
-        del self._trace_axes[fullpath]
-        del self._spike_axes[fullpath]
+        if fullpath in self._trace_axes.keys():
+            del self._trace_axes[fullpath]
+        if fullpath in self._spike_axes.keys():
+            del self._spike_axes[fullpath]
 
     def _trial_added(self, message=None, trial=None):
         if message is not None:
@@ -51,6 +53,7 @@ class DetectionPlotPanel(MultiPlotPanel):
                                 dpi=self._dpi)
         figure = self._plot_panels[fullpath].figure
         self._create_axes(trial, figure, fullpath)
+        self._replot_panels.add(fullpath)
         
 
     def _trial_altered(self, message=None):
@@ -135,6 +138,11 @@ class DetectionPlotPanel(MultiPlotPanel):
                              label=pt.DETECTION_TRACE_GRAPH_LABEL)
 
     def _plot_spikes(self, trial, figure, fullpath):
+        # remove old lines if present.
+        spike_axes = self._spike_axes[fullpath]
+        spike_axes.clear()
+        self.setup_spike_axes_labels(spike_axes, fullpath)
+
         if trial.detection.results is not None:
             spikes = trial.detection.results
         else:
@@ -180,11 +188,6 @@ class DetectionPlotPanel(MultiPlotPanel):
         spikes, bins = bin_spikes(accepted_spike_list, trial.times[-1], 
                                   bin_width=bin_width)
 
-        spike_axes = self._spike_axes[fullpath]
-
-        # remove old lines if present.
-        spike_axes.clear()
-        self.setup_spike_axes_labels(spike_axes, fullpath)
             
         #spike_axes.plot(times, spike_rate, color=lfs.PLOT_COLOR_2, 
         #                            linewidth=lfs.PLOT_LINEWIDTH_2)
