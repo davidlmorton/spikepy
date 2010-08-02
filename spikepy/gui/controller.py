@@ -40,15 +40,34 @@ class Controller(object):
 
     def _load_session(self, message):
         session_fullpath = message.data
-        session_name = os.path.split(session_fullpath)[1]
+        session_filename = os.path.split(session_fullpath)[1]
+        session_name = os.path.splitext(session_filename)[0]
         with open(session_fullpath) as ifile:
             trials = cPickle.load(ifile)
+
         # change the fullpath so it corresponds to the session file
+        new_filename = ''
+        new_filenames = set()
+        new_filenames.add(new_filename)
         for trial in trials.values():
             old_fullpath = trial.fullpath
             old_dir = os.path.split(old_fullpath)[0]
             old_filename = os.path.split(old_fullpath)[1]
-            new_filename = session_name + '-' + old_filename
+            count = 0
+            original_session_name = session_name
+            while new_filename in new_filenames:
+                tokens = old_filename.split('--')
+                if count != 0:
+                    this_session_name = original_session_name + '(%d)' % count
+                else:
+                    this_session_name = original_session_name
+                if len(tokens) > 1:
+                    new_filename = old_filename.replace(tokens[0], 
+                            this_session_name)
+                else:
+                    new_filename = this_session_name + '--' + old_filename
+                count += 1
+            new_filenames.add(new_filename)
             trial.fullpath = os.path.join(old_dir, new_filename)
 
         # close opened files

@@ -1,3 +1,5 @@
+import os
+
 import wx
 import wx.aui
 from wx.lib.pubsub import Publisher as pub
@@ -70,18 +72,28 @@ class SpikepyMenuBar(wx.MenuBar):
         self._toolbars_shown = False
 
     def _load_session(self, event=None):
+        wildcard = pt.SESSION_FILES + '|*.ses|'
+        wildcard += pt.ALL_FILES + '|*'
         dlg = wx.FileDialog(self, message=pt.LOAD_SESSION, 
-                                  style=wx.FD_OPEN)
+                                  style=wx.FD_OPEN, 
+                                  wildcard=wildcard)
         if dlg.ShowModal() == wx.ID_OK:
             save_path = dlg.GetPath()
             pub.sendMessage(topic='LOAD_SESSION', data=save_path)
         dlg.Destroy()
 
     def _save_session(self, event=None):
+        wildcard = pt.SESSION_FILES + '|*.ses|'
+        wildcard += pt.ALL_FILES + '|*'
         dlg = wx.FileDialog(self, message=pt.SAVE_SESSION, 
-                                  style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+                                  style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT,
+                                  wildcard=wildcard)
         if dlg.ShowModal() == wx.ID_OK:
             save_path = dlg.GetPath()
+            save_path_minus_extention, save_path_extention =\
+                    os.path.splitext(save_path)
+            if 'ses' != save_path_extention:
+                save_path = save_path_minus_extention + os.path.extsep + 'ses'
             pub.sendMessage(topic='SAVE_SESSION', data=save_path)
         dlg.Destroy()
 
