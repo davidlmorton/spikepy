@@ -4,7 +4,7 @@ import wx
 from wx.lib.pubsub import Publisher as pub
 
 from . import program_text as pt
-from .utils import HashableDict, make_dict_hashable, strip_unicode
+from .utils import strip_unicode
 from .look_and_feel_settings import lfs
 from .named_controls import NamedTextCtrl 
 
@@ -17,9 +17,7 @@ class StrategyManager(object):
         self.save_button = self.strategy_pane.save_button
         # dictionaries are named by their values.
         self.methods        = {}
-        self.methods_names  = {}
         self.settings       = {}
-        self.settings_names = {}
         self.load_archived_strategies()
 
         self._should_sync = True
@@ -32,14 +30,13 @@ class StrategyManager(object):
 
     @property
     def strategy_names(self):
-        return sorted(self.settings_names.values())
+        return sorted(self.settings.keys())
 
     def load_archived_strategies(self, 
             strategy_archive_file=STRATEGIES_ARCHIVE_FILE):
         with open(strategy_archive_file) as infile:
             saved_strategies = json.load(infile)
             del saved_strategies['__comment']
-            make_dict_hashable(saved_strategies)
         self._add_strategy(saved_strategies)
 
     def save_all_strategies(self, message=None):
@@ -65,6 +62,7 @@ class StrategyManager(object):
             json.dump(all_strategies_dict, ofile, indent=4)
         
     def _strategy_choice_made(self, event=None):
+        'Update The Strategy Pane based on the choice made.'
         strategy_name = self.strategy_chooser.GetStringSelection()
         methods_set_name = get_methods_set_name(strategy_name)
         methods_used = self.methods[methods_set_name]
@@ -132,35 +130,25 @@ class StrategyManager(object):
         return new_strategy
         
     def _add_strategy(self, strategy):
-        for key, value in strategy.items():
-            method_name = key.split('(')[0]
+        for strategy_name, value in strategy.items():
+            method_name = get_methods_set_name(strategy_name)
             method_dict = value['methods_used']
-            if self.methods.has_key(method_name):
-                old_method_dict = self.methods[method_name]
-                del self.methods_names[old_method_dict]
             self.methods[method_name]       = method_dict
-            self.methods_names[method_dict] = method_name
 
-            settings_name = key
+            settings_name = strategy_name
             settings_dict = value['settings'] 
-            if self.settings.has_key(settings_name):
-                old_settings_dict = self.settings[settings_name]
-                del self.settings_names[old_settings_dict]
             self.settings[settings_name]       = settings_dict
-            self.settings_names[settings_dict] = settings_name
         self._update_strategy_choices()
 
     def _remove_strategy(self, strategy):
         strategy_name = strategy.keys()[0]
-        method_name   = strategy_name.split('(')[0]
+        method_name   = get_methods_set_name(strategy_name)
         settings_name = strategy_name
         method_dict    = strategy[strategy_name]['methods_used']
         settings_dict  = strategy[strategy_name]['settings']
         del self.methods[method_name]
         del self.settings[settings_name]
 
-        del self.methods_names[method_dict]
-        del self.settings_names[settings_dict]
         self._update_strategy_choices()
         
     def _update_strategy_choices(self):
@@ -172,26 +160,27 @@ class StrategyManager(object):
         self._should_sync = not self._should_sync 
 
     def get_strategy_name(self, methods_used, settings):
-        if self.methods_names.has_key(methods_used):
-            strategy_main_name = self.methods_names[methods_used]
-            if self.settings_names.has_key(settings):
-                return self.settings_names[settings]
-            else:
-                strategy_sub_name = 'custom'
-        else:
-            strategy_main_name = 'Custom'
-            strategy_sub_name  = 'custom'
+        for strategy_name, settings_dict in self.settings.items():
+            if settings == settings_dict:
+                # potential match
+                name = strategy_name
+                method_set_name = get_methods_set_name(name)
+                if self.methods[method_set_name] == methods_used:
+                    return name
 
-        strategy_name = strategy_main_name + '(%s)' % strategy_sub_name 
-        return strategy_name 
+        for method_set_name, methods_dict in self.methods.items():
+            if methods_dict == methods_used:
+                return method_set_name + '(custom)'
+
+        return 'Custom(custom)'
 
     def get_current_strategy(self):
-        methods_used = HashableDict()
-        settings     = HashableDict()
+        methods_used = {}
+        settings     = {}
         for stage in self.strategy_pane.stages:
             method_chosen = stage._method_name_chosen
             control_panel = stage.methods[method_chosen]['control_panel']
-            hashable_settings = HashableDict(control_panel.get_parameters())
+            hashable_settings = control_panel.get_parameters()
 
             stage_name = stage.stage_name.lower().replace(' ', '_')
             methods_used[stage_name] = method_chosen
@@ -221,7 +210,6 @@ def get_strategy_name(methods_set_name, settings_name):
     else:
         new_name = "*Invalid*"
     return new_name
-
 
 class SaveStrategyDialog(wx.Dialog):
     def __init__(self, parent, old_name, all_names, **kwargs):
