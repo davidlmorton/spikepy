@@ -85,13 +85,13 @@ class StrategyManager(object):
             current_strategy_name = current_strategy.keys()[0]
 
             if (not self.settings.has_key(current_strategy_name) or
-                'custom' in current_strategy_name.lower()):
+                pt.CUSTOM_LC in current_strategy_name.lower()):
                 self._add_strategy(current_strategy)
             strategy_chooser = self.strategy_chooser
             if current_strategy_name != strategy_chooser.GetStringSelection():
                 strategy_chooser.SetStringSelection(current_strategy_name)
 
-            button_state = 'custom' in current_strategy_name.lower()
+            button_state = pt.CUSTOM_LC in current_strategy_name.lower()
             self.strategy_pane.save_button.Enable(button_state)
 
     def save_button_pressed(self, event=None):
@@ -170,9 +170,9 @@ class StrategyManager(object):
 
         for method_set_name, methods_dict in self.methods.items():
             if methods_dict == methods_used:
-                return method_set_name + '(custom)'
+                return method_set_name + '(' + pt.CUSTOM_LC + ')'
 
-        return 'Custom(custom)'
+        return pt.CUSTOM_ST + '(' + pt.CUSTOM_LC + ')'
 
     def get_current_strategy(self):
         methods_used = {}
@@ -219,14 +219,14 @@ class SaveStrategyDialog(wx.Dialog):
         self.old_name  = old_name
         self.all_methods_set_names = list(set([str(get_methods_set_name(name))
                                                for name in all_names]))
-        self.contraban_list = {'(':pt.PARENTHESES, 
-                               ')':pt.PARENTHESES, 
-                               '"':pt.QUOTES, 
-                               "'":pt.APOSTROPHES, 
-                               'custom':pt.CUSTOM,
-                               ' ':pt.SPACES}
+        self.contraban_list = {'('         :pt.PARENTHESES, 
+                               ')'         :pt.PARENTHESES, 
+                               '"'         :pt.QUOTES, 
+                               "'"         :pt.APOSTROPHES, 
+                               pt.CUSTOM_LC:"'" + pt.CUSTOM_LC + "'",
+                               ' '         :pt.SPACES}
         self.save_as_text = wx.StaticText(self, 
-                            label='Save as: ')
+                            label=pt.STRATEGY_SAVE_AS)
         save_as_font = self.save_as_text.GetFont()
         save_as_font.SetWeight(wx.FONTWEIGHT_BOLD)
         save_as_font.SetPointSize(16)
@@ -242,8 +242,7 @@ class SaveStrategyDialog(wx.Dialog):
         self.settings_textctrl.SetTextctrlSize((200,-1))
         self.settings_textctrl.SetValue(settings_name)
 
-        self.warning_text = wx.StaticText(self, 
-                            label='Choose a set of names for the strategy.')
+        self.warning_text = wx.StaticText(self, label='')
 
         self.ok_button = wx.Button(self, id=wx.ID_OK)
         cancel_button  = wx.Button(self, id=wx.ID_CANCEL)
@@ -266,7 +265,7 @@ class SaveStrategyDialog(wx.Dialog):
         size = self.GetSize()
         self.SetSize((size[0]+10, size[1]+100))
 
-        if not old_name.lower().startswith('custom'):
+        if not old_name.lower().startswith(pt.CUSTOM_LC):
             self.methods_set_textctrl.Enable(False)
 
         self.Bind(wx.EVT_TEXT, self._check_inputs, 
@@ -298,7 +297,7 @@ class SaveStrategyDialog(wx.Dialog):
                                            ' %s.' % contraban_name)
                 self.ok_button.Enable(False)
                 return
-        if ('custom' in get_methods_set_name(self.old_name).lower() and 
+        if (pt.CUSTOM_LC in get_methods_set_name(self.old_name).lower() and 
             get_methods_set_name(new_name) in self.all_methods_set_names):
             count = 0
             first_name = self.all_methods_set_names[0]

@@ -44,9 +44,9 @@
         "settings": {
             "spike_detection": {
                 "max_spike_duration": 2.0, 
-                "refractory_time": 0.0, 
                 "using_sd_units": true, 
                 "threshold_2": 4.0, 
+                "refractory_time": 0.0, 
                 "threshold_1": 4.0
             }, 
             "detection_filter": {
@@ -84,9 +84,9 @@
                 "threshold_1": 4.0
             }, 
             "detection_filter": {
-                "critical_freq": 299.0, 
+                "critical_freq": 296.0, 
                 "kind": "Low Pass", 
-                "order": 3, 
+                "order": 2, 
                 "function_name": "Bessel"
             }, 
             "extraction_filter": {
@@ -105,19 +105,24 @@
     "Custom(custom)": {
         "methods_used": {
             "spike_detection": "Voltage Threshold", 
-            "detection_filter": "None", 
+            "detection_filter": "Finite Impulse Response", 
             "extraction_filter": "Infinite Impulse Response", 
             "extraction": "Waveform"
         }, 
         "settings": {
             "spike_detection": {
                 "max_spike_duration": 2.0, 
-                "refractory_time": 0.0, 
                 "using_sd_units": true, 
                 "threshold_2": 4.0, 
+                "refractory_time": 0.0, 
                 "threshold_1": 4.0
             }, 
-            "detection_filter": {}, 
+            "detection_filter": {
+                "critical_freq": 300.0, 
+                "taps": 101, 
+                "window_name": "hamming", 
+                "kind": "High Pass"
+            }, 
             "extraction_filter": {
                 "critical_freq": 300.0, 
                 "kind": "High Pass", 

@@ -1,5 +1,5 @@
 # To differentiate between the strings that only differ by case, consider 
-# ending variable with sc, uc, lc for start case, upper case, and lower case.\
+# ending variable with sc, uc, lc for start case, upper case, and lower case.
 
 ABOUT_SPIKEPY = ("Spikepy is a python-based spike sorting "
             "framework. It has been designed to be general enough to implement "
@@ -78,12 +78,13 @@ SAVE_STRATEGY_DIALOG_TITLE = 'Save Current Strategy'
 ALREADY_EXISTS_LINE = ' already exists, would you like to overwrite?'
 CONFIRM_OVERWRITE = 'Confirm Overwrite'
 
+CUSTOM_LC = "custom"
+CUSTOM_SC = "Custom"
 AT_LEAST_ONE_CHARACTER = '* Name must be at least one character long.'
 QUOTES = 'quotes'
 APOSTROPHES = 'apostrophes'
 SPACES = 'spaces'
 PARENTHESES = 'parentheses'
-CUSTOM = "'custom'"
 NOT_CONTAIN = '* Names may not contain'
 NOT_ONE_OF = "* Method Set Name must not be one of: \n"
 STRATEGY_SAVE_AS = "Save as: "
