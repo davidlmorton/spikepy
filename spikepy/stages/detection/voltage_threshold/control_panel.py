@@ -1,6 +1,6 @@
 import wx
 
-from spikepy.gui.named_controls import NamedTextCtrl, OptionalNamedTextCtrl
+from spikepy.gui.named_controls import NamedFloatCtrl, OptionalNamedFloatCtrl
 from spikepy.gui.look_and_feel_settings import lfs
 
 
@@ -10,15 +10,15 @@ class ControlPanel(wx.Panel):
 
         sd_units_checkbox = wx.CheckBox(self,
                 label='Thresholds as multiple\nof standard deviation.')
-        threshold_1_sd = NamedTextCtrl(self, name='Threshold (SDs):')
-        threshold_1    = NamedTextCtrl(self, name='Threshold:')
+        threshold_1_sd = NamedFloatCtrl(self, name='Threshold (SDs):')
+        threshold_1    = NamedFloatCtrl(self, name='Threshold:')
 
-        threshold_2_sd = OptionalNamedTextCtrl(self, 
+        threshold_2_sd = OptionalNamedFloatCtrl(self, 
                                                name='Second Threshold (SDs):')
-        threshold_2    = OptionalNamedTextCtrl(self, 
-                                                        name='Second Threshold:')
-        refractory_time = NamedTextCtrl(self, name='Refractory period (ms):')
-        max_spike_width = NamedTextCtrl(self, 
+        threshold_2    = OptionalNamedFloatCtrl(self, 
+                                               name='Second Threshold:')
+        refractory_time = NamedFloatCtrl(self, name='Refractory period (ms):')
+        max_spike_width = NamedFloatCtrl(self, 
                                       name='Max spike width at threshold (ms):')
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)

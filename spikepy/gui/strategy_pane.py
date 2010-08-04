@@ -174,10 +174,8 @@ class StagePanel(wx.Panel):
         wx.Panel.__init__(self, parent, **kwargs)
         self.stage_num = stage_num
         self.stage_name = stage_name
-        
-        title_panel = TitlePanel(self, stage_num, stage_name)
 
-        # --- setup methods ---
+        # --- METHODS ---
         self.methods = {}
         self.method_names = stage_module.method_names
         for method_module, method_name in zip(stage_module.method_modules, 
@@ -189,22 +187,18 @@ class StagePanel(wx.Panel):
             self.methods[method_name]['description'] = method_module.description
         self._method_name_chosen = self.method_names[0]
 
-        # --- setup other panel elements ---
         self.method_chooser = NamedChoiceCtrl(self, name=pt.METHOD+":",
                                  choices=self.method_names)
-#        self.method_description_text = StaticBoxText(self, label='Description') 
+
+        # --- RUN BUTTON ---
         self.run_button = wx.Button(self, label=pt.RUN)
         self.run_button.Show(False)
 
-        # --- sizer config ---
+        # --- SIZER ---
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         ea_flag = wx.EXPAND|wx.ALL
-        sizer.Add(title_panel,                  proportion=0, 
-                      flag=ea_flag,                        border=3)
         sizer.Add(self.method_chooser,          proportion=0, 
                       flag=ea_flag,                        border=3)
- #       sizer.Add(self.method_description_text, proportion=0, 
- #                     flag=ea_flag,                        border=3)
         for method in self.methods.values():
             sizer.Add(method['control_panel'],  proportion=0,
                       flag=ea_flag,                        border=6)
@@ -215,7 +209,6 @@ class StagePanel(wx.Panel):
         self.Bind(wx.EVT_CHOICE, self._method_choice_made,
                   self.method_chooser.choice)
         self.Bind(wx.EVT_BUTTON, self._run, self.run_button)
-#        self._method_choice_made(method_name=self._method_name_chosen)
         
         pub.subscribe(self._running_completed, topic='RUNNING_COMPLETED')
         pub.subscribe(self._set_stage_parameters, topic='SET_PARAMETERS')
@@ -240,7 +233,6 @@ class StagePanel(wx.Panel):
     def _running_completed(self, message=None):
         self.run_button.SetLabel(pt.RUN)
         self.run_button.Enable()
-
     
     def _method_choice_made(self, event=None, method_name=None):
         self.methods[self._method_name_chosen]['control_panel'].Show(False)
@@ -251,15 +243,11 @@ class StagePanel(wx.Panel):
         else:
             self._method_name_chosen = self.method_chooser.GetStringSelection()
 
-        #self.method_description_text.SetText( 
-        #        self.methods[self._method_name_chosen]['description'])
-
         self.methods[self._method_name_chosen]['control_panel'].Show(True)
         self.run_button.Show(True)
         self.Layout()
         pub.sendMessage(topic="UPDATE_STRATEGY_SUMMARY", 
                         data=(self.stage_num, self._method_name_chosen))
-    
 
     def _run(self, event=None):
         control_panel = self.methods[self._method_name_chosen]['control_panel']

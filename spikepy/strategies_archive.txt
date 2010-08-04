@@ -84,7 +84,7 @@
                 "threshold_1": 4.0
             }, 
             "detection_filter": {
-                "critical_freq": 301.0, 
+                "critical_freq": 2300.0, 
                 "kind": "High Pass", 
                 "order": 3, 
                 "function_name": "Butterworth"

@@ -1,6 +1,6 @@
 import wx
 
-from spikepy.gui.named_controls import NamedTextCtrl, OptionalNamedTextCtrl
+from spikepy.gui.named_controls import NamedFloatCtrl, OptionalNamedFloatCtrl
 from spikepy.gui.look_and_feel_settings import lfs
 
 
@@ -8,10 +8,10 @@ class ControlPanel(wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
 
-        pre_window_ctrl = NamedTextCtrl(self, name='Window Prepadding (ms)')
+        pre_window_ctrl = NamedFloatCtrl(self, name='Window Prepadding (ms)')
         spike_centered_checkbox = wx.CheckBox(self, 
                 label='Window centered on spike.')
-        post_window_ctrl = NamedTextCtrl(self, name='Window Postpadding (ms)')
+        post_window_ctrl = NamedFloatCtrl(self, name='Window Postpadding (ms)')
         exclude_overlappers_checkbox = wx.CheckBox(self, 
                 label='Exclude windows that overlap.')
 

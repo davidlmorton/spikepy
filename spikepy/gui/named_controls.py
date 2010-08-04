@@ -1,3 +1,5 @@
+import string
+
 import wx
 
 from .look_and_feel_settings import lfs
@@ -67,6 +69,63 @@ class NamedSpinCtrl(wx.Panel):
     def SetValue(self, value):
         return self.spin_ctrl.SetValue(value)
 
+class FloatValidator(wx.PyValidator):
+    def __init__(self):
+        wx.PyValidator.__init__(self)
+        self.Bind(wx.EVT_CHAR, self._on_char)
+
+    def Clone(self):
+        return FloatValidator()
+
+    def Validate(self):
+        win = self.GetWindow()
+        val = win.GetValue()
+
+        try:
+            float(val)
+            win.SetBackgroundColour('white')
+            return True
+        except ValueError:
+            win.SetBackgroundColour('pink')
+            return False
+
+    def _on_char(self, event):
+        key = event.GetKeyCode()
+        if key < 256 and chr(key) in string.letters:
+            return # eat the event.
+        event.Skip()
+        wx.CallLater(10, self.Validate)
+
+        
+
+class NamedFloatCtrl(wx.Panel):
+    def __init__(self, parent, name="", **kwargs):
+        wx.Panel.__init__(self, parent, **kwargs)
+
+        self.name = wx.StaticText(self, label=name)
+        self.text_ctrl = wx.TextCtrl(self, size=(50,-1),
+                                     validator=FloatValidator())
+        
+        sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        flag = wx.ALIGN_CENTER_VERTICAL|wx.ALL
+        border=lfs.TEXT_CTRL_BORDER
+        sizer.Add(self.name, proportion=0, 
+                  flag=flag|wx.ALIGN_RIGHT, border=border)
+        sizer.Add((10,5), proportion=0)
+        sizer.Add(self.text_ctrl, proportion=1, 
+                  flag=flag|wx.ALIGN_LEFT, border=border)
+
+        self.SetSizer(sizer)
+
+    def SetTextctrlSize(self, size):
+        self.text_ctrl.SetMinSize(size)
+
+    def GetValue(self):
+        return self.text_ctrl.GetValue()
+
+    def SetValue(self, value):
+        self.text_ctrl.SetValue(value)
+
 class NamedTextCtrl(wx.Panel):
     def __init__(self, parent, name="", **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
@@ -94,9 +153,9 @@ class NamedTextCtrl(wx.Panel):
     def SetValue(self, value):
         self.text_ctrl.SetValue(value)
 
-class OptionalNamedTextCtrl(NamedTextCtrl):
+class OptionalNamedFloatCtrl(NamedFloatCtrl):
     def __init__(self, parent, name, enabled=False, **kwargs):
-        NamedTextCtrl.__init__(self, parent, name='', **kwargs)
+        NamedFloatCtrl.__init__(self, parent, name='', **kwargs)
         
         self.checkbox = wx.CheckBox(self, label=name)
         self.GetSizer().Insert(0, self.checkbox, proportion=0, flag=wx.ALL,
