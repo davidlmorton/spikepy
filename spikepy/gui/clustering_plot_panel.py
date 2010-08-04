@@ -1,6 +1,8 @@
+from collections import defaultdict
 
 from wx.lib.pubsub import Publisher as pub
 import wx
+import scipy
 
 from .multi_plot_panel import MultiPlotPanel
 from .plot_panel import PlotPanel
@@ -25,7 +27,7 @@ class ClusteringPlotPanel(MultiPlotPanel):
         pub.subscribe(self._trial_altered, topic='TRIAL_DETECTION_FILTERED')
         pub.subscribe(self._trial_altered, topic='TRIAL_CLUSTERINGED')
 
-        self._trials       = {}
+        self._trials = {}
 
     def _remove_trial(self, message=None):
         fullpath = message.data
@@ -41,7 +43,6 @@ class ClusteringPlotPanel(MultiPlotPanel):
                                 facecolor=self._facecolor,
                                 edgecolor=self._facecolor,
                                 dpi=self._dpi)
-        figure = self._plot_panels[fullpath].figure
         self._replot_panels.add(fullpath)
 
     def _trial_altered(self, message=None):
@@ -57,15 +58,56 @@ class ClusteringPlotPanel(MultiPlotPanel):
     def plot(self, fullpath):
         trial = self._trials[fullpath]
         figure = self._plot_panels[fullpath].figure
-        
-        self._plot_rasters(trial, figure, fullpath)
-        self._plot_clusters(trial, figure, fullpath)
+        if trial.clustering.results is not None:
+            num_clusters = len(trial.clustering.results.keys())
+            num_cluster_combinations = nchoosek(num_clusters, 2)
+            
+            self._plot_rasters(trial,   figure, fullpath, 
+                               num_cluster_combinations)
+            self._plot_clusters(trial,  figure, fullpath, 
+                                num_cluster_combinations)
+            self._plot_distances(trial, figure, fullpath, 
+                                 num_cluster_combinations)
 
-        self.draw_canvas(fullpath)
+            self.draw_canvas(fullpath)
 
-    def _plot_rasters(self, trial, figure, fullpath):
+    def _plot_rasters(self, trial, figure, fullpath, ncc):
+        raster_axes = figure.add_subplot(ncc+2, 1, 1)
         pass
         
-    def _plot_clusters(self, trial, figure, fullpath):
+    def _plot_clusters(self, trial, figure, fullpath, ncc):
+        averages, stds = self._get_averages_and_stds(trial)
+        
+        average_axes = figure.add_subplot(ncc+2, 2, 3)
+        for cluster_num, average in averages.items():
+            average_axes.plot(average, label='Cluster %d' % cluster_num)
+
+        std_axes = figure.add_subplot(ncc+2, 2, 4)
+        for cluster_num, std in stds.items():
+            std_axes.plot(std, label='Cluster %d' % cluster_num)
+
+
+    def _get_averages_and_stds(self, trial):
+        times = trial.clustering.results
+        feature_list  = trial.extraction.results['features']
+        feature_times = trial.extraction.results['feature_times']
+        features = defaultdict(list)
+        for cluster_num, time_list in clusters.items():
+            for time in time_list:
+                feature_list_index = feature_times.index(time) 
+                features[cluster_num].append(feature_list[feature_list_index])
+        stds = {}
+        averages = {}
+        for key in features.keys():
+            features[key] = numpy.array(features[key])
+            stds[key]     = numpy.std(features[key],     axis=0)
+            averages[key] = numpy.average(features[key], axis=0)
+        return averages, stds
+
+    def _plot_distances(self, trial, figure, fullpath):
         pass
 
+
+def nchoosek(n, k):
+    f = scipy.factorial
+    return f(n)/(f(k)*f(n-k))
