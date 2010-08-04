@@ -25,6 +25,7 @@ class StrategyManager(object):
         self.strategy_pane.Bind(wx.EVT_CHOICE, self._strategy_choice_made, 
                                 self.strategy_chooser.choice) 
         pub.subscribe(self.save_all_strategies, topic='SAVE_ALL_STRATEGIES')
+        pub.subscribe(self._set_strategy, topic='SET_STRATEGY')
         self.strategy_pane.Bind(wx.EVT_BUTTON, self.save_button_pressed, 
                                 self.save_button)
 
@@ -67,15 +68,26 @@ class StrategyManager(object):
         methods_set_name = get_methods_set_name(strategy_name)
         methods_used = self.methods[methods_set_name]
         settings     = self.settings[strategy_name]
+        self._set_strategy_pane(methods_used, settings)
+
+    def _set_strategy(self, message):
+        methods_used, settings = message.data
+        self._set_strategy_pane(methods_used, settings)
+
+    def _set_strategy_pane(self, methods_used, settings):
         for stage in self.strategy_pane.stages:
             stage_name = stage.stage_name.lower().replace(" ","_")
             method_name = methods_used[stage_name]        
-            stage._method_choice_made(method_name=method_name)
+            if method_name is not None:
+                stage._method_choice_made(method_name=method_name)
+            else:
+                continue
 
             control_panel = stage.methods[method_name]['control_panel'] 
             stage_settings = settings[stage_name]
-            non_unicode_stage_settings = strip_unicode(stage_settings)
-            control_panel.set_parameters(**non_unicode_stage_settings)
+            if stage_settings is not None:
+                non_unicode_stage_settings = strip_unicode(stage_settings)
+                control_panel.set_parameters(**non_unicode_stage_settings)
 
     def _sync(self, event=None):
         if self._should_sync:
@@ -133,19 +145,17 @@ class StrategyManager(object):
         for strategy_name, value in strategy.items():
             method_name = get_methods_set_name(strategy_name)
             method_dict = value['methods_used']
-            self.methods[method_name]       = method_dict
+            self.methods[method_name]    = method_dict
 
             settings_name = strategy_name
             settings_dict = value['settings'] 
-            self.settings[settings_name]       = settings_dict
+            self.settings[settings_name] = settings_dict
         self._update_strategy_choices()
 
     def _remove_strategy(self, strategy):
         strategy_name = strategy.keys()[0]
         method_name   = get_methods_set_name(strategy_name)
         settings_name = strategy_name
-        method_dict    = strategy[strategy_name]['methods_used']
-        settings_dict  = strategy[strategy_name]['settings']
         del self.methods[method_name]
         del self.settings[settings_name]
 

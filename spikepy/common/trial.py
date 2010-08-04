@@ -42,21 +42,19 @@ class Trial(object):
                        self.extraction,
                        self.clustering]
 
-    def get_session_strategy(self, strategy_name):
-        methods_used = {}
-        settings = {}
+    @property
+    def methods_used(self):
+        _methods_used = {}
         for stage in self.stages:
-            methods_used[stage.name] = stage.method
-            settings[stage.name] = stage.settings
-        strategy = make_strategy(strategy_name, 
-                                       methods_used, settings_dict)
-        return strategy
+            _methods_used[stage.name] = stage.method
+        return _methods_used
 
-    def save_session_strategy(self, filename, strategy_name='Custom(custom)'):
-        strategy = self.get_session_strategy(strategy_name)
-        with open(filename, 'w') as ofile:
-            json.dump(strategy, ofile, indent=4)
-
+    @property
+    def settings(self):
+        _settings = {}
+        for stage in self.stages:
+            _settings[stage.name] = stage.settings
+        return _settings
 
     def reset_stage_results(self, message=None):
         if message is not None:

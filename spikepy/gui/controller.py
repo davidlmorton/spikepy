@@ -80,6 +80,9 @@ class Controller(object):
             pub.sendMessage(topic='OPENING_DATA_FILE', data=trial.fullpath)
             pub.sendMessage(topic='TRIAL_ADDED', data=trial)
             pub.sendMessage(topic='FILE_OPENED', data=trial.fullpath)
+            pub.sendMessage(topic='SET_STRATEGY', 
+                            data=(trial.methods_used, trial.settings))
+            
             
     def _print_messages(self, message):
         topic = message.topic

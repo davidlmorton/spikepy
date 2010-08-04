@@ -84,10 +84,10 @@
                 "threshold_1": 4.0
             }, 
             "detection_filter": {
-                "critical_freq": 296.0, 
-                "kind": "Low Pass", 
-                "order": 2, 
-                "function_name": "Bessel"
+                "critical_freq": 301.0, 
+                "kind": "High Pass", 
+                "order": 3, 
+                "function_name": "Butterworth"
             }, 
             "extraction_filter": {
                 "critical_freq": 300.0, 
