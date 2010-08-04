@@ -184,18 +184,31 @@ class StrategyManager(object):
 
         return pt.CUSTOM_ST + '(' + pt.CUSTOM_LC + ')'
 
-    def get_current_strategy(self):
+    def get_current_methods_used(self):
         methods_used = {}
+        for stage in self.strategy_pane.stages:
+            method_chosen = stage._method_name_chosen
+            stage_name = stage.stage_name.lower().replace(' ', '_')
+            methods_used[stage_name] = method_chosen
+        return methods_used
+
+    def get_current_settings(self):
         settings     = {}
         for stage in self.strategy_pane.stages:
             method_chosen = stage._method_name_chosen
             control_panel = stage.methods[method_chosen]['control_panel']
-            hashable_settings = control_panel.get_parameters()
+            try:
+                _settings = control_panel.get_parameters()
+            except ValueError:
+                _settings = None
 
             stage_name = stage.stage_name.lower().replace(' ', '_')
-            methods_used[stage_name] = method_chosen
-            settings[stage_name]     = hashable_settings
+            settings[stage_name]     = _settings
+        return settings
 
+    def get_current_strategy(self):
+        methods_used = self.get_current_methods_used()
+        settings      = self.get_current_settings()
         strategy_name = self.get_strategy_name(methods_used, settings)
         return make_strategy(strategy_name, methods_used, settings)
 

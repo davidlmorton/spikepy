@@ -84,7 +84,7 @@
                 "threshold_1": 4.0
             }, 
             "detection_filter": {
-                "critical_freq": 2300.0, 
+                "critical_freq": 301.0, 
                 "kind": "High Pass", 
                 "order": 3, 
                 "function_name": "Butterworth"
@@ -112,9 +112,9 @@
         "settings": {
             "spike_detection": {
                 "max_spike_duration": 2.0, 
+                "refractory_time": 0.0, 
                 "using_sd_units": true, 
                 "threshold_2": 4.0, 
-                "refractory_time": 0.0, 
                 "threshold_1": 4.0
             }, 
             "detection_filter": {

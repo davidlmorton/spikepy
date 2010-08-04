@@ -4,6 +4,7 @@ from wx.lib.pubsub import Publisher as pub
 from .filter_plot_panel import FilterPlotPanel
 from .detection_plot_panel import DetectionPlotPanel
 from .extraction_plot_panel import ExtractionPlotPanel
+from .clustering_plot_panel import ClusteringPlotPanel
 from .look_and_feel_settings import lfs
 from . import program_text as pt
 from ..stages import filtering, detection, extraction
@@ -11,7 +12,8 @@ from ..stages import filtering, detection, extraction
 plot_panels = {"detection filter" : FilterPlotPanel,
                "detection"        : DetectionPlotPanel,
                "extraction filter": FilterPlotPanel,
-               "extraction"       : ExtractionPlotPanel}
+               "extraction"       : ExtractionPlotPanel,
+               "clustering"       : ClusteringPlotPanel}
 
 stage_modules = {"detection filter"  : filtering,
                  "detection"         : detection,
@@ -26,7 +28,7 @@ class ResultsNotebook(wx.Notebook):
         detection_panel = ResultsPanel(self,         "detection")
         extraction_filter_panel = ResultsPanel(self, "extraction filter")
         extraction_panel = ResultsPanel(self,        "extraction")
-        clustering_panel = wx.Panel(self)
+        clustering_panel = ResultsPanel(self,        "clustering")
         
         self.AddPage(detection_filter_panel,  pt.DETECTION_FILTER)
         self.AddPage(detection_panel,         pt.DETECTION)

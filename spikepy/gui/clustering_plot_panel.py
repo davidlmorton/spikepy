@@ -7,7 +7,7 @@ from .plot_panel import PlotPanel
 from .look_and_feel_settings import lfs
 from . import program_text as pt
 
-class ExtractionPlotPanel(MultiPlotPanel):
+class ClusteringPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
         self._dpi       = lfs.PLOT_DPI
         self._figsize   = lfs.PLOT_FIGSIZE
@@ -23,15 +23,13 @@ class ExtractionPlotPanel(MultiPlotPanel):
         pub.subscribe(self._trial_altered, topic='TRIAL_EXTRACTION_FILTERED')
         pub.subscribe(self._trial_altered, topic='TRIAL_DETECTIONED')
         pub.subscribe(self._trial_altered, topic='TRIAL_DETECTION_FILTERED')
+        pub.subscribe(self._trial_altered, topic='TRIAL_CLUSTERINGED')
 
         self._trials       = {}
-        self._feature_axes = {}
 
     def _remove_trial(self, message=None):
         fullpath = message.data
         del self._trials[fullpath]
-        if fullpath in self._feature_axes.keys():
-            del self._feature_axes[fullpath]
 
     def _trial_added(self, message=None, trial=None):
         if message is not None:
@@ -44,7 +42,6 @@ class ExtractionPlotPanel(MultiPlotPanel):
                                 edgecolor=self._facecolor,
                                 dpi=self._dpi)
         figure = self._plot_panels[fullpath].figure
-        self._create_axes(trial, figure, fullpath)
         self._replot_panels.add(fullpath)
 
     def _trial_altered(self, message=None):
@@ -61,32 +58,14 @@ class ExtractionPlotPanel(MultiPlotPanel):
         trial = self._trials[fullpath]
         figure = self._plot_panels[fullpath].figure
         
-        self._plot_features(trial, figure, fullpath)
+        self._plot_rasters(trial, figure, fullpath)
+        self._plot_clusters(trial, figure, fullpath)
 
         self.draw_canvas(fullpath)
 
-    def _create_axes(self, trial, figure, fullpath):
-        axes = self._feature_axes[fullpath] = figure.add_subplot(1,1,1)
-        axes.set_ylabel(pt.FEATURE_AMPLITUDE)
-        axes.set_xlabel(pt.FEATURE_INDEX)
+    def _plot_rasters(self, trial, figure, fullpath):
+        pass
+        
+    def _plot_clusters(self, trial, figure, fullpath):
+        pass
 
-    def _plot_features(self, trial, figure, fullpath):
-        axes = self._feature_axes[fullpath]
-        while axes.lines:
-            del(axes.lines[0])     
-
-        if trial.extraction.results is not None:
-            features = trial.extraction.results['features']
-        else:
-            return
-        num_excluded_features = len(
-                trial.extraction.results['excluded_features'])
-
-        axes.set_autoscale_on(True)
-        for feature in features:
-            axes.plot(feature, linewidth=lfs.PLOT_LINEWIDTH_4,
-                               marker='.')
-        axes.set_xlim((0,len(features[0])-1))
-        axes.set_title(pt.EXTRACTED_FEATURE_SETS + ': %d\n' % len(features) +
-                       pt.EXCLUDED_FEATURE_SETS + 
-                       ': %d' % num_excluded_features)
