@@ -109,16 +109,8 @@ class PlotPanel (wx.Panel):
 
         figheight = self.figure.get_figheight()
         figwidth  = self.figure.get_figwidth()
-        dpi       = self.figure.get_dpi()
-        # compensate for toolbar height, even if not visible, to keep
-        #   it from riding up on the plot when it is visible and the
-        #   panel is shrunk down.
-        toolbar_height = self.toolbar.GetSize()[1]
-        min_size_x = dpi*figwidth
-        min_size_y = dpi*figheight+toolbar_height
-        min_size = (max(lfs.PLOT_MIN_SIZE_X, min_size_x),
-                    max(lfs.PLOT_MIN_SIZE_Y, min_size_y))
-        self.SetMinSize(min_size)
+        min_size = self.set_minsize(figwidth ,figheight)
+
         self._original_min_size = min_size
         self._min_size_factor = 1.0
         self._last_time_coordinates_updated = 0
@@ -134,6 +126,19 @@ class PlotPanel (wx.Panel):
         pub.subscribe(self._toggle_toolbar, topic="TOGGLE_TOOLBAR")
         pub.subscribe(self._show_toolbar,   topic="SHOW_TOOLBAR")
         pub.subscribe(self._hide_toolbar,   topic="HIDE_TOOLBAR")
+
+    def set_minsize(self, figwidth, figheight):
+        dpi = self.figure.get_dpi()
+        # compensate for toolbar height, even if not visible, to keep
+        #   it from riding up on the plot when it is visible and the
+        #   panel is shrunk down.
+        toolbar_height = self.toolbar.GetSize()[1]
+        min_size_x = dpi*figwidth
+        min_size_y = dpi*figheight+toolbar_height
+        min_size = (max(lfs.PLOT_MIN_SIZE_X, min_size_x),
+                    max(lfs.PLOT_MIN_SIZE_Y, min_size_y))
+        self.SetMinSize(min_size)
+        return min_size
 
     def _update_coordinates(self, event=None):
         if not self._report_coordinates:

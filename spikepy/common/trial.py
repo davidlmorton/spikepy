@@ -27,7 +27,7 @@ class Trial(object):
             self.times = None
 
         self.clustering        = StageData(name='clustering',       
-                                           dependents=None)
+                                           dependents=[])
         self.extraction        = StageData(name='extraction',       
                                            dependents=[self.clustering])
         self.detection         = StageData(name='spike_detection',        

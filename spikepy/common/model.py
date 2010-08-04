@@ -21,6 +21,7 @@ class Model(object):
         pub.subscribe(self._filter,                "FILTER")
         pub.subscribe(self._detection,             "DETECTION")
         pub.subscribe(self._extraction,            "EXTRACTION")
+        pub.subscribe(self._clustering,            "CLUSTERING")
 
     # ---- OPEN FILE ----
     def _open_data_file(self, message):
@@ -180,4 +181,65 @@ class Model(object):
     def _extraction_consumer(self, delayed_result, stage_name):
         for trial in self.trials.values():
             pub.sendMessage(topic='TRIAL_EXTRACTIONED', data=trial)
+        pub.sendMessage(topic='RUNNING_COMPLETED')
+
+    # ---- CLUSTERING ----
+    def _clustering(self, message):
+        stage_name, method_name, method_parameters = message.data
+        for trial in self.trials.values():
+            trial.clustering.method   = method_name
+            trial.clustering.settings = copy.deepcopy(method_parameters)
+            trial.clustering.reset_results()
+        startWorker(self._clustering_consumer, self._clustering_worker,
+                        wargs=(method_name, method_parameters),
+                        cargs=(stage_name,))
+
+    def _clustering_worker(self, method_name, method_parameters):
+        try:
+            # get all feature_sets from all trials in a single long list.
+            feature_set_list = []
+            feature_time_list = []
+            master_key_list = []
+            trial_keys = sorted(self.trials.keys())
+            for key in trial_keys:
+                features = self.trials[key].extraction.results['features']
+                feature_times = (self.trials[key].extraction.
+                                 results['feature_times'])
+                key_list = [key for i in xrange(len(features))]
+                feature_set_list.extend(features)
+                feature_time_list.extend(feature_times)
+                master_key_list.extend(key_list)
+
+            method = clustering.get_method(method_name)
+            if len(feature_set_list) == 0:
+                return # no spikes = no clustering
+            if True or wx.Platform == '__WXMAC__':
+                results = method.run(feature_set_list, **method_parameters)
+            else:
+                processing_pool = Pool()
+                result = processing_pool.apply_async(method.run, 
+                        args=(feature_set_list,),
+                        kwds=method_parameters)
+                results = result.get()
+                processing_pool.close()
+
+            # initialize clustering results to empty_list_dictionaries
+            cluster_identities = set(results)
+            for trial in self.trials.values():
+                empty_dict = {}
+                for ci in cluster_identities:
+                    empty_dict[ci] = []
+                trial.clustering.results = empty_dict 
+            # unpack results from run back into trial results.
+            for mkey, result, feature_time in \
+                    zip(master_key_list, results, feature_time_list):
+                trial_results = self.trials[mkey].clustering.results[result]
+                trial_results.append(feature_time)
+        except:
+            traceback.print_exc()
+            sys.exit(1)
+
+    def _clustering_consumer(self, delayed_result, stage_name):
+        for trial in self.trials.values():
+            pub.sendMessage(topic='TRIAL_CLUSTERINGED', data=trial)
         pub.sendMessage(topic='RUNNING_COMPLETED')

@@ -1,6 +1,7 @@
 import os 
 import traceback 
 import sys
+import cPickle
 from multiprocessing import Pool
 
 import wx

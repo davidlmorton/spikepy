@@ -2,6 +2,7 @@ from collections import defaultdict
 
 from wx.lib.pubsub import Publisher as pub
 import wx
+import numpy
 import scipy
 
 from .multi_plot_panel import MultiPlotPanel
@@ -92,7 +93,7 @@ class ClusteringPlotPanel(MultiPlotPanel):
         feature_list  = trial.extraction.results['features']
         feature_times = trial.extraction.results['feature_times']
         features = defaultdict(list)
-        for cluster_num, time_list in clusters.items():
+        for cluster_num, time_list in times.items():
             for time in time_list:
                 feature_list_index = feature_times.index(time) 
                 features[cluster_num].append(feature_list[feature_list_index])
@@ -104,7 +105,7 @@ class ClusteringPlotPanel(MultiPlotPanel):
             averages[key] = numpy.average(features[key], axis=0)
         return averages, stds
 
-    def _plot_distances(self, trial, figure, fullpath):
+    def _plot_distances(self, trial, figure, fullpath, ncc):
         pass
 
 

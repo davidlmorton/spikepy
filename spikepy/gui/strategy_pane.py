@@ -6,7 +6,7 @@ from wx.lib.buttons import GenButton
 
 from .named_controls import NamedChoiceCtrl
 from .utils import recursive_layout
-from ..stages import filtering, detection, extraction
+from ..stages import filtering, detection, extraction, clustering
 from .look_and_feel_settings import lfs
 from . import program_text as pt
 from .strategy_manager import StrategyManager
@@ -30,7 +30,8 @@ class StrategyPane(ScrolledPanel):
                                              3, pt.EXTRACTION_FILTER, filtering)
         extraction_panel = StagePanel(stage_choicebook, 
                                              4, pt.EXTRACTION, extraction)
-        clustering_panel = wx.Panel(stage_choicebook)
+        clustering_panel = StagePanel(stage_choicebook, 
+                                             5, pt.CLUSTERING, clustering)
 
         # ===== CHOICEBOOK PAGES =====
         stage_choicebook.AddPage(detection_filter_panel, 
