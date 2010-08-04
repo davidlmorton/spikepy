@@ -66,3 +66,16 @@ def load_pickle(path):
         pickled_thing = cPickle.load(ifile)
     return pickled_thing
     
+class SinglePanelFrame(wx.Frame):
+    # After creating an instance of this class, create a panel with the frame
+    # instance as its parent.
+    def __init__(self, parent, id=wx.ID_ANY, title='', size=(50, 50), 
+                 style=wx.DEFAULT_FRAME_STYLE, is_modal=True):
+        wx.Frame.__init__(self, parent, title=title, size=size, style=style)
+        if is_modal:
+            self.MakeModal(True)
+        self.Bind(wx.EVT_CLOSE, self._close_frame)
+    
+    def _close_frame(self, message=None):
+        self.MakeModal(False)
+        self.Destroy()

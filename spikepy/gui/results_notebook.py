@@ -8,6 +8,7 @@ from .clustering_plot_panel import ClusteringPlotPanel
 from .look_and_feel_settings import lfs
 from . import program_text as pt
 from ..stages import filtering, detection, extraction
+from .utils import SinglePanelFrame
 
 plot_panels = {"detection filter" : FilterPlotPanel,
                "detection"        : DetectionPlotPanel,
@@ -96,12 +97,14 @@ class ResultsPanel(wx.Panel):
         stage_module = stage_modules[stage_name]
         method_index = stage_module.method_names.index(method_name)
         method_module = stage_module.method_modules[method_index]
-        style = wx.RESIZE_BORDER|wx.MINIMIZE_BOX|wx.MAXIMIZE_BOX|wx.CLOSE_BOX
-        dlg = wx.Dialog(self, title=pt.METHOD_EXTRAS_DIALOG_TITLE % method_name,
-                        style=style)
-        extras_panel = method_module.ExtrasPanel(dlg, trial, stage_name)
-        dlg.ShowModal()
-        
+        title = pt.METHOD_EXTRAS_FRAME_TITLE % method_name
+        size = lfs.METHOD_EXTRAS_FRAME_SIZE
+        style = lfs.METHOD_EXTRAS_FRAME_STYLE
+        frame = SinglePanelFrame(self, title=title, size=size, style=style)
+        extras_panel = method_module.ExtrasPanel(frame, trial, stage_name)
+        frame.Show()
+
+
 class CursorPositionBar(wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)

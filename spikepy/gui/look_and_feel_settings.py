@@ -12,6 +12,7 @@ class LookAndFeelSettings(object):
     def __init__(self):
         # MAIN_FRAME_SIZE is a property below
         self.MAIN_FRAME_STYLE = wx.DEFAULT_FRAME_STYLE
+        self.METHOD_EXTRAS_FRAME_STYLE = wx.DEFAULT_FRAME_STYLE
         self._have_size_ratio = False
 
         self.STRATEGY_PANE_MIN_SIZE = numpy.array((350, 500))
@@ -115,6 +116,12 @@ class LookAndFeelSettings(object):
     def PREFERENCES_FRAME_SIZE(self):
         # FIXME change this once we decide what we size we want for the 
         #       preferences frame
+        return numpy.array(self.get_main_frame_size())
+
+    @property
+    def METHOD_EXTRAS_FRAME_SIZE(self):
+        # FIXME change this once we decide what we size we want for the 
+        #       method extras frame
         return numpy.array(self.get_main_frame_size())
 
 lfs = LookAndFeelSettings()

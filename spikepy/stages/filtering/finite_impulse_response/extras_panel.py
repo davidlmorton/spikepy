@@ -4,10 +4,11 @@ import wx
 from spikepy.gui.plot_panel import PlotPanel
 from spikepy.gui.look_and_feel_settings import lfs
 from .simple_fir import make_fir_filter
+from wx.lib.scrolledpanel import ScrolledPanel
 
-class ExtrasPanel(wx.Panel):
+class ExtrasPanel(ScrolledPanel):
     def __init__(self, parent, trial, stage_name, **kwargs):
-        wx.Panel.__init__(self, parent, **kwargs)
+        ScrolledPanel.__init__(self, parent, **kwargs)
         self._dpi       = lfs.PLOT_DPI
         self._figsize   = lfs.PLOT_FIGSIZE
         self._facecolor = lfs.PLOT_FACECOLOR
@@ -41,3 +42,4 @@ class ExtrasPanel(wx.Panel):
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         sizer.Add(plot_panel)
         self.SetSizer(sizer)
+        self.SetupScrolling()

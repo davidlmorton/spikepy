@@ -101,8 +101,8 @@ class Controller(object):
         for trial in trials.values():
             self.model.trials[trial.fullpath] = trial
             pub.sendMessage(topic='OPENING_DATA_FILE', data=trial.fullpath)
-            pub.sendMessage(topic='TRIAL_ADDED', data=trial)
-            pub.sendMessage(topic='FILE_OPENED', data=trial.fullpath)
+            pub.sendMessage(topic='TRIAL_ADDED',       data=trial)
+            pub.sendMessage(topic='FILE_OPENED',       data=trial.fullpath)
             pub.sendMessage(topic='SET_STRATEGY', 
                             data=(trial.methods_used, trial.settings))
             
