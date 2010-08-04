@@ -11,20 +11,16 @@ base_size = numpy.array((1440, 900))
 class LookAndFeelSettings(object):
     def __init__(self):
         # MAIN_FRAME_SIZE is a property below
-        self.MAIN_FRAME_TITLE =\
-                "Spikepy - A python-based spike sorting framework."
         self.MAIN_FRAME_STYLE = wx.DEFAULT_FRAME_STYLE
         self._have_size_ratio = False
 
         self.STRATEGY_PANE_MIN_SIZE = numpy.array((350, 500))
-        self.STRATEGY_PANE_TITLE = 'Strategy'
         self.STRATEGY_PANE_BORDER = 4
         self.STRATEGY_SUMMARY_BORDER = 3
         self.STRATEGY_WAIT_TIME = 350 # in ms
 
         self.FILE_LISTCTRL_STYLE = wx.LC_REPORT|wx.LC_VRULES
         self.FILE_LISTCTRL_MIN_SIZE = numpy.array((200, 250))
-        self.FILE_LISTCTRL_TITLE = 'Opened Files List'
         
         self.PLOT_FACECOLOR = rgb_to_matplotlib_color(255, 255, 255, 255)
         self.PLOT_LEFT_BORDER   = 90.0 # pixels
@@ -113,6 +109,12 @@ class LookAndFeelSettings(object):
 
     @property
     def MAIN_FRAME_SIZE(self):
+        return numpy.array(self.get_main_frame_size())
+        
+    @property
+    def PREFERENCES_FRAME_SIZE(self):
+        # FIXME change this once we decide what we size we want for the 
+        #       preferences frame
         return numpy.array(self.get_main_frame_size())
 
 lfs = LookAndFeelSettings()

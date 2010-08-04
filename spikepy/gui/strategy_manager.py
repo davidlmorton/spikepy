@@ -182,7 +182,7 @@ class StrategyManager(object):
             if methods_dict == methods_used:
                 return method_set_name + '(' + pt.CUSTOM_LC + ')'
 
-        return pt.CUSTOM_ST + '(' + pt.CUSTOM_LC + ')'
+        return pt.CUSTOM_SC + '(' + pt.CUSTOM_LC + ')'
 
     def get_current_methods_used(self):
         methods_used = {}

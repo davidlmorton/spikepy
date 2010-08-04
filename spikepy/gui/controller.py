@@ -1,12 +1,15 @@
 import os 
-import cPickle
+import traceback 
+import sys
+from multiprocessing import Pool
 
 import wx
 from wx.lib.pubsub import Publisher as pub
+from wx.lib.delayedresult import startWorker
 
 from ..common.model import Model
 from .view import View
-from .utils import named_color
+from .utils import named_color, load_pickle
 from . import program_text as pt
 from .pyshell import locals_dict
 
@@ -37,15 +40,35 @@ class Controller(object):
         trials = self.model.trials
         with open(save_path, 'w') as ofile:
             cPickle.dump(trials, ofile, protocol=-1)
-
+        
     def _load_session(self, message):
         session_fullpath = message.data
         session_filename = os.path.split(session_fullpath)[1]
         session_name = os.path.splitext(session_filename)[0]
-        with open(session_fullpath) as ifile:
-            trials = cPickle.load(ifile)
+        startWorker(self._load_session_consumer, self._load_session_worker, 
+                    wargs=(session_fullpath,), cargs=(session_filename, 
+                                                      session_name))
 
+    def _load_session_worker(self, session_fullpath):
+        try:
+            if wx.Platform == '__WXMAC__':
+                trials = load_pickle(session_fullpath)
+            else:
+                processing_pool = Pool()
+                result = processing_pool.apply_async(load_pickle, 
+                                                     args=(session_fullpath,))
+                trials = result.get()
+                processing_pool.close()
+        except:
+            traceback.print_exc()
+            sys.exit(1)
+        return trials
+
+
+    def _load_session_consumer(self, delayed_result, session_filename, 
+                               session_name):
         # change the fullpath so it corresponds to the session file
+        trials = delayed_result.get()
         new_filename = ''
         new_filenames = set()
         new_filenames.add(new_filename)
@@ -112,6 +135,3 @@ class Controller(object):
         for path in paths:
             pub.sendMessage(topic='OPENING_DATA_FILE', data=path)
             pub.sendMessage(topic='OPEN_DATA_FILE', data=path)
-
-
-

@@ -9,18 +9,20 @@ from .utils import get_bitmap_icon
 from .pyshell import PyShellDialog
 from .look_and_feel_settings import lfs
 from . import program_text as pt
+from .preferences_frame import PreferencesFrame
 
-OPEN             = wx.ID_OPEN
-EXIT             = wx.ID_EXIT
-PREFERENCES      = wx.NewId()
-DEFAULT          = wx.NewId()
-ABOUT            = wx.ID_ABOUT
-SHELL            = wx.NewId()
-WORKSPACES       = wx.NewId()
-SHOW_TOOLBARS    = wx.NewId()
-SAVE_PERSPECTIVE = wx.NewId()
-SAVE_SESSION     = wx.NewId()
-LOAD_SESSION     = wx.NewId()
+OPEN               = wx.ID_OPEN
+EXIT               = wx.ID_EXIT
+PREFERENCES        = wx.NewId()
+DEFAULT            = wx.NewId()
+ABOUT              = wx.ID_ABOUT
+SHELL              = wx.NewId()
+WORKSPACES         = wx.NewId()
+WORKSPACES_MANAGER = wx.NewId()
+SHOW_TOOLBARS      = wx.NewId()
+SAVE_PERSPECTIVE   = wx.NewId()
+SAVE_SESSION       = wx.NewId()
+LOAD_SESSION       = wx.NewId()
 
 class SpikepyMenuBar(wx.MenuBar):
     def __init__(self, frame, *args, **kwargs):
@@ -58,18 +60,31 @@ class SpikepyMenuBar(wx.MenuBar):
         self.Append(help_menu, pt.HELP)
         
         # --- BIND MENU EVENTS ---
-        frame.Bind(wx.EVT_MENU, self._open_file, id=OPEN)
-        frame.Bind(wx.EVT_MENU, self._load_session, id=LOAD_SESSION)
-        frame.Bind(wx.EVT_MENU, self._save_session, id=SAVE_SESSION)
-        frame.Bind(wx.EVT_MENU, self._close_window, id=EXIT)
-        frame.Bind(wx.EVT_MENU, self._about_box, id=ABOUT)
-        frame.Bind(wx.EVT_MENU, self._python_shell, id=SHELL)
-        frame.Bind(wx.EVT_MENU, self._show_toolbars, id=SHOW_TOOLBARS)
+        # File
+        frame.Bind(wx.EVT_MENU, self._open_file,        id=OPEN)
+        frame.Bind(wx.EVT_MENU, self._load_session,     id=LOAD_SESSION)
+        frame.Bind(wx.EVT_MENU, self._save_session,     id=SAVE_SESSION)
+        frame.Bind(wx.EVT_MENU, self._close_window,     id=EXIT)
+        # Edit
+        frame.Bind(wx.EVT_MENU, self._show_preferences, id=PREFERENCES)
+        # View
+        frame.Bind(wx.EVT_MENU, self._show_toolbars,    id=SHOW_TOOLBARS)
         frame.Bind(wx.EVT_MENU, self._save_perspective, id=SAVE_PERSPECTIVE)
+        frame.Bind(wx.EVT_MENU, self._go_to_workspaces_manager, 
+                                                        id=WORKSPACES_MANAGER)
+        # Help
+        frame.Bind(wx.EVT_MENU, self._python_shell,     id=SHELL)
+        frame.Bind(wx.EVT_MENU, self._about_box,        id=ABOUT)
 
         self.frame = frame
 
         self._toolbars_shown = False
+
+    def _go_to_workspaces_manager(self):
+        pass
+
+    def _show_preferences(self, event=None):
+        preferences_frame = PreferencesFrame(self)
 
     def _load_session(self, event=None):
         wildcard = pt.SESSION_FILES + '|*.ses|'
@@ -120,6 +135,8 @@ class SpikepyMenuBar(wx.MenuBar):
         self.workspaces_submenu.AppendSeparator()
         self.workspaces_submenu.Append(SAVE_PERSPECTIVE, 
                                        text=pt.SAVE_WORKSPACE)
+        self.workspaces_submenu.Append(WORKSPACES_MANAGER,
+                                       text=pt.WORKSPACES_MANAGER)
     
     def _load_perspective(self, event=None):
         chosen_item_id = event.GetId()

@@ -3,6 +3,7 @@ A collection of utility functions for the spikepy gui.
 """
 import os
 import copy
+import cPickle
 
 import wx
 from wx.lib.pubsub import Publisher as pub
@@ -60,3 +61,8 @@ def strip_unicode(dictionary):
         striped_dict[str(key)] = copy.deepcopy(value)
     return striped_dict 
 
+def load_pickle(path):
+    with open(path) as ifile:
+        pickled_thing = cPickle.load(ifile)
+    return pickled_thing
+    

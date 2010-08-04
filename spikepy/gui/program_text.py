@@ -1,6 +1,14 @@
 # To differentiate between the strings that only differ by case, consider 
 # ending variable with sc, uc, lc for start case, upper case, and lower case.
 
+MAIN_FRAME_TITLE = "Spikepy - A python-based spike sorting framework."
+STRATEGY_PANE_TITLE = 'Strategy'
+FILE_LISTCTRL_TITLE = 'Opened Files List'
+
+# ---- Preferences Frame Text ----
+PREFERENCES_FRAME_TITLE = "Preferences"
+WORKSPACES_MANAGER = "Workspaces Manager"
+
 ABOUT_SPIKEPY = ("Spikepy is a python-based spike sorting "
             "framework. It has been designed to be general enough to implement "
             "many different spike sorting algorithms. Spikepy can be used by "
@@ -8,27 +16,32 @@ ABOUT_SPIKEPY = ("Spikepy is a python-based spike sorting "
             "Additionally, spikepy can be easily extended to include many more "
             "algorithms, or to mix and match aspects of any existing "
             "algorithms.")
+
+# ---- Menu Bar Text ----            
+FILE = "File"
 OPEN = "Open File..."
+LOAD_SESSION = "Load Session..."
+SAVE_SESSION = "Save Session..."
 EXIT = "Exit"
+EDIT = "Edit"
 PREFERENCES = "Preferences" 
+VIEW = "View"
 WORKSPACES = "Workspaces"
+SAVE_WORKSPACE = "Save current workspace..."
 SHOW_TOOLBARS_MENU = "Show toolbars on plots"
+HELP = "Help"
 PYTHON_SHELL_MENU = "Python shell"
 ABOUT = "About"
-FILE = "File"
-EDIT = "Edit"
-VIEW = "View"
-HELP = "Help"
-SAVE_WORKSPACE = "Save current workspace..."
+
+# ---- File List Text ----
 FILE_NUM = "Num"
 FILENAME = "Filename"
 FILE_OPENING_STATUS = "Opening"
 OPEN_ANOTHER_FILE = "Open Another File..."
 OPEN_FILE = "Open File..."
-SAVE_SESSION = "Save Session..."
-LOAD_SESSION = "Load Session..."
 CLOSE_FILES = "Close Files"
 CLOSE_FILE = "Close File"
+
 ALL_FILES = "All Files (*)"
 SESSION_FILES = "Session Files (*.ses)"
 ENTER_NEW_WORKSPACE = "Enter a name for the new workspace:"

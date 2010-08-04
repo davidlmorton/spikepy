@@ -39,7 +39,6 @@ class Model(object):
                 processing_pool = Pool()
                 result = processing_pool.apply_async(open_data_file, 
                                                      args=(fullpath,))
-                self.trials[fullpath] = result.get()
                 trial = result.get()
                 processing_pool.close()
             self.trials[fullpath] = trial

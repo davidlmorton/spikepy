@@ -21,7 +21,7 @@ class View(object):
 
 class MyFrame(wx.Frame):
     def __init__(self, parent, id=wx.ID_ANY, 
-                 title=lfs.MAIN_FRAME_TITLE,
+                 title=pt.MAIN_FRAME_TITLE,
                  size=None,
                  style=lfs.MAIN_FRAME_STYLE):
         # MAIN_FRAME_SIZE needs the wx.App() instance so can't be put 
@@ -84,7 +84,7 @@ class MyFrame(wx.Frame):
 
     def _save_perspective(self, message):
         dlg = wx.TextEntryDialog(self, pt.ENTER_NEW_WORKSPACE,
-                                 caption=pt.NEW_WORKSPACE_DLG)
+                                 caption=pt.NEW_WORKSPACE_DLG_CAPTION)
         if dlg.ShowModal() != wx.ID_OK:
             return
         
