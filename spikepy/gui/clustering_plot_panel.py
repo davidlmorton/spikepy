@@ -58,10 +58,13 @@ class ClusteringPlotPanel(MultiPlotPanel):
 
     def plot(self, fullpath):
         trial = self._trials[fullpath]
-        figure = self._plot_panels[fullpath].figure
         if trial.clustering.results is not None:
             num_clusters = len(trial.clustering.results.keys())
             num_cluster_combinations = nchoosek(num_clusters, 2)
+            self._plot_panels[fullpath].set_minsize(self._figsize[0], 
+                                        self._figsize[1]*(num_clusters+2))
+            figure = self._plot_panels[fullpath].figure
+            figure.clear()
             
             self._plot_rasters(trial,   figure, fullpath, 
                                num_cluster_combinations)
@@ -74,7 +77,25 @@ class ClusteringPlotPanel(MultiPlotPanel):
 
     def _plot_rasters(self, trial, figure, fullpath, ncc):
         raster_axes = figure.add_subplot(ncc+2, 1, 1)
-        pass
+
+        times = trial.times
+        traces = trial.detection_filter.results
+        std = numpy.std(traces)
+        for i, trace in enumerate(traces):
+            raster_axes.plot(times, trace-i*20*std, color=lfs.PLOT_COLOR_2, 
+                                 linewidth=lfs.PLOT_LINEWIDTH_2, 
+                                 label=pt.DETECTION_TRACE_GRAPH_LABEL,
+                                 alpha=0.4)
+
+        '''
+        times = trial.clustering.results
+        keys = sorted(times.keys())
+        for key in keys:
+            spike_ys = [key for i in xrange(len(times[key]))]
+            spike_xs = times[key]
+            raster_axes.plot(spike_xs, spike_ys, linewidth=0, marker='|')
+            '''
+
         
     def _plot_clusters(self, trial, figure, fullpath, ncc):
         averages, stds = self._get_averages_and_stds(trial)

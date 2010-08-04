@@ -111,7 +111,6 @@ class PlotPanel (wx.Panel):
         figwidth  = self.figure.get_figwidth()
         min_size = self.set_minsize(figwidth ,figheight)
 
-        self._original_min_size = min_size
         self._min_size_factor = 1.0
         self._last_time_coordinates_updated = 0
         self._coordinates_not_blank = False
@@ -138,6 +137,7 @@ class PlotPanel (wx.Panel):
         min_size = (max(lfs.PLOT_MIN_SIZE_X, min_size_x),
                     max(lfs.PLOT_MIN_SIZE_Y, min_size_y))
         self.SetMinSize(min_size)
+        self._original_min_size = min_size
         return min_size
 
     def _update_coordinates(self, event=None):
