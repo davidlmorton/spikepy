@@ -53,7 +53,6 @@ class Controller(object):
 
         # all stage states are False at this point.
         for trial in self.model.trials.values():
-            print 'blah'
             tmethods_used = trial.methods_used
             tsettings     = trial.settings
             for stage_name in methods_used.keys():
@@ -62,8 +61,10 @@ class Controller(object):
                 ts = tsettings[stage_name]
                 s  = settings[stage_name]
                 if tmu is not None and tmu == mu:
-                    novelty = ts != s
+                    novelty = (ts != s)
+                    print novelty
                 else:
+                    print tmu, mu
                     novelty = True
                 # novelty in any file = able to run for all files.
                 print stage_name, novelty

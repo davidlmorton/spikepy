@@ -47,6 +47,9 @@ def window_spikes(signal, spike_index_list, window_size=40,
     truncated_spike_index_list = classified_spike_index_lists[2]
     if not exclude_overlappers: 
         good_spike_index_list.extend(excluded_spike_index_list)
+        excluded_spike_index_list = truncated_spike_index_list
+    else:
+        excluded_spike_index_list.extend(truncated_spike_index_list)
 
     # ------------------------------------------------------------------------
     # -- make the spike windows from the good_spike_index_list
@@ -92,7 +95,7 @@ def determine_excluded_spikes(signal, spike_index_list, window_size,
             # spike too close to start of signal or end of signal 
             truncated_spike_index_set.add(si)
 
-    gsil = sorted(list(good_spike_index_set))
-    esil = sorted(list(excluded_spike_index_set))
-    tsil = sorted(list(truncated_spike_index_set))
+    gsil = list(good_spike_index_set)
+    esil = list(excluded_spike_index_set)
+    tsil = list(truncated_spike_index_set)
     return (gsil, esil, tsil)

@@ -14,6 +14,8 @@ class ControlPanel(wx.Panel):
         post_window_ctrl = NamedFloatCtrl(self, name='Window Postpadding (ms)')
         exclude_overlappers_checkbox = wx.CheckBox(self, 
                 label='Exclude windows that overlap.')
+        truncation_info = wx.StaticText(self, label=
+               '    * Note: spike windows overlapping ends\nof trace are always excluded.')
 
         self.Bind(wx.EVT_CHECKBOX, self._spike_centered, 
                 spike_centered_checkbox)
@@ -28,6 +30,8 @@ class ControlPanel(wx.Panel):
         sizer.Add(post_window_ctrl,             proportion=0, flag=flag, 
                 border=border)
         sizer.Add(exclude_overlappers_checkbox, proportion=0, flag=flag, 
+                border=border)
+        sizer.Add(truncation_info, proportion=0, flag=flag, 
                 border=border)
         self.SetSizer(sizer)
 

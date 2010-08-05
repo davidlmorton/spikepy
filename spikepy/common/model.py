@@ -61,9 +61,9 @@ class Model(object):
         stage_name, method_name, method_parameters = message.data
         for trial in self.trials.values():
             stage_data = getattr(trial, stage_name.lower().replace(' ','_'))
+            stage_data.reset_results()
             stage_data.method   = method_name
             stage_data.settings = copy.deepcopy(method_parameters)
-            stage_data.reset_results()
         trace_type = stage_name.split()[0] # removes ' filter' from name
         startWorker(self._filter_consumer, self._filter_worker,
                         wargs=(stage_name, method_name, method_parameters, 
@@ -94,9 +94,9 @@ class Model(object):
     def _detection(self, message):
         stage_name, method_name, method_parameters = message.data
         for trial in self.trials.values():
+            trial.detection.reset_results()
             trial.detection.method   = method_name
             trial.detection.settings = copy.deepcopy(method_parameters)
-            trial.detection.reset_results()
 
         startWorker(self._detection_consumer, self._detection_worker,
                         wargs=(method_name, method_parameters),
@@ -122,9 +122,9 @@ class Model(object):
     def _extraction(self, message):
         stage_name, method_name, method_parameters = message.data
         for trial in self.trials.values():
+            trial.extraction.reset_results()
             trial.extraction.method   = method_name
             trial.extraction.settings = copy.deepcopy(method_parameters)
-            trial.extraction.reset_results()
         startWorker(self._extraction_consumer, self._extraction_worker,
                         wargs=(method_name, method_parameters),
                         cargs=(stage_name,))
@@ -151,9 +151,9 @@ class Model(object):
     def _clustering(self, message):
         stage_name, method_name, method_parameters = message.data
         for trial in self.trials.values():
+            trial.clustering.reset_results()
             trial.clustering.method   = method_name
             trial.clustering.settings = copy.deepcopy(method_parameters)
-            trial.clustering.reset_results()
         startWorker(self._clustering_consumer, self._clustering_worker,
                         wargs=(method_name, method_parameters),
                         cargs=(stage_name,))

@@ -73,7 +73,6 @@ class Trial(object):
             for prereq in stage.prereqs:
                 if prereq.results is None:
                     can_run = False
-                    break
             if can_run:
                 can_run_list.append(stage.name)
         return can_run_list
@@ -106,7 +105,9 @@ class StageData(object):
 
     def reset_results(self, message=None):
         if self.results is not None:
-            self.results = None
+            self.results  = None
+            self.settings = None
+            self.method   = None
             for dependent in self.dependents:
                 dependent.reset_results()
 

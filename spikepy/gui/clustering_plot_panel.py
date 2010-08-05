@@ -67,7 +67,7 @@ class ClusteringPlotPanel(MultiPlotPanel):
             figure.clear()
             
             self._plot_rasters(trial,   figure, fullpath, 
-                               num_cluster_combinations)
+                               num_cluster_combinations, num_clusters)
             self._plot_clusters(trial,  figure, fullpath, 
                                 num_cluster_combinations)
             self._plot_distances(trial, figure, fullpath, 
@@ -75,7 +75,7 @@ class ClusteringPlotPanel(MultiPlotPanel):
 
             self.draw_canvas(fullpath)
 
-    def _plot_rasters(self, trial, figure, fullpath, ncc):
+    def _plot_rasters(self, trial, figure, fullpath, ncc, num_clusters):
         raster_axes = figure.add_subplot(ncc+2, 1, 1)
 
         times = trial.times
@@ -87,14 +87,19 @@ class ClusteringPlotPanel(MultiPlotPanel):
                                  label=pt.DETECTION_TRACE_GRAPH_LABEL,
                                  alpha=0.4)
 
-        '''
+        
         times = trial.clustering.results
+        ylim = raster_axes.get_ylim()
+        spike_y_list = numpy.linspace(ylim[1], ylim[0], num_clusters+2)[1:-1]
+
         keys = sorted(times.keys())
-        for key in keys:
-            spike_ys = [key for i in xrange(len(times[key]))]
+        for key, spike_y in zip(keys, spike_y_list):
+            spike_ys = [spike_y for i in xrange(len(times[key]))]
             spike_xs = times[key]
-            raster_axes.plot(spike_xs, spike_ys, linewidth=0, marker='|')
-            '''
+            raster_axes.plot(spike_xs, spike_ys, linewidth=0, marker='|',
+                             markersize=lfs.SPIKE_RASTER_HEIGHT,
+                             color=lfs.SPIKE_RASTER_COLOR)
+            
 
         
     def _plot_clusters(self, trial, figure, fullpath, ncc):
