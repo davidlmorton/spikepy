@@ -43,27 +43,32 @@ class Controller(object):
         methods_used, settings = message.data
         # find out if we should enable/disable run buttons.
         stage_run_state = {}
-        num_trials = len(self.model.trials.keys())
-        initial_state = num_trials > 0 
-        for stage_name in methods_used.keys():
-            stage_run_state[stage_name] = initial_state
 
+        num_trials = len(self.model.trials.keys())
+        for stage_name in methods_used.keys():
+            stage_run_state[stage_name] = False
+        if num_trials < 1:
+            pub.sendMessage(topic='SET_RUN_STATE',data=stage_run_state)
+            return
+
+        # all stage states are False at this point.
         for trial in self.model.trials.values():
+            print 'blah'
             tmethods_used = trial.methods_used
             tsettings     = trial.settings
-            for stage_name in tmethods_used.keys():
+            for stage_name in methods_used.keys():
                 tmu = tmethods_used[stage_name]
                 mu  = methods_used[stage_name]
                 ts = tsettings[stage_name]
                 s  = settings[stage_name]
-                stage_in_initial_state = tmu is None
                 if tmu is not None and tmu == mu:
                     novelty = ts != s
                 else:
                     novelty = True
                 # novelty in any file = able to run for all files.
-                stage_run_state[stage_name] = (stage_run_state[stage_name] or
-                                               novelty)
+                print stage_name, novelty
+                if novelty:
+                    stage_run_state[stage_name] = True
 
         # ensure EVERY trial is ready for this stage.
         for trial in self.model.trials.values():
@@ -76,8 +81,8 @@ class Controller(object):
         # check that the settings are valid
         for stage_name in methods_used.keys():
             settings_valid = settings[stage_name] is not None
-            stage_run_state[stage_name] = (stage_run_state[stage_name] and 
-                                           settings_valid)
+            if not settings_valid:
+                stage_run_state[stage_name] = False
 
         pub.sendMessage(topic='SET_RUN_STATE',data=stage_run_state)
 
