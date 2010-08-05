@@ -31,11 +31,55 @@ class Controller(object):
         pub.subscribe(self._open_file, topic="OPEN_FILE")
         pub.subscribe(self._file_selection_changed, 
                       topic='FILE_SELECTION_CHANGED')
+        pub.subscribe(self._calculate_stage_run_state,
+                      topic='CALCULATE_STAGE_RUN_STATE')
         pub.subscribe(self._file_closed, topic='FILE_CLOSED')
         pub.subscribe(self._save_session, topic='SAVE_SESSION')
         pub.subscribe(self._load_session, topic='LOAD_SESSION')
         pub.subscribe(self._close_application,  topic="CLOSE_APPLICATION")
         pub.subscribe(self._print_messages, topic='')
+
+    def _calculate_stage_run_state(self, message):
+        methods_used, settings = message.data
+        # find out if we should enable/disable run buttons.
+        stage_run_state = {}
+        num_trials = len(self.model.trials.keys())
+        initial_state = num_trials > 0 
+        for stage_name in methods_used.keys():
+            stage_run_state[stage_name] = initial_state
+
+        for trial in self.model.trials.values():
+            tmethods_used = trial.methods_used
+            tsettings     = trial.settings
+            for stage_name in tmethods_used.keys():
+                tmu = tmethods_used[stage_name]
+                mu  = methods_used[stage_name]
+                ts = tsettings[stage_name]
+                s  = settings[stage_name]
+                stage_in_initial_state = tmu is None
+                if tmu is not None and tmu == mu:
+                    novelty = ts != s
+                else:
+                    novelty = True
+                # novelty in any file = able to run for all files.
+                stage_run_state[stage_name] = (stage_run_state[stage_name] or
+                                               novelty)
+
+        # ensure EVERY trial is ready for this stage.
+        for trial in self.model.trials.values():
+            can_run_list = trial.get_stages_that_are_ready_to_run()
+            print can_run_list
+            for stage_name in methods_used.keys():
+                if stage_name not in can_run_list:
+                    stage_run_state[stage_name] = False
+
+        # check that the settings are valid
+        for stage_name in methods_used.keys():
+            settings_valid = settings[stage_name] is not None
+            stage_run_state[stage_name] = (stage_run_state[stage_name] and 
+                                           settings_valid)
+
+        pub.sendMessage(topic='SET_RUN_STATE',data=stage_run_state)
 
     def _save_session(self, message):
         save_path = message.data

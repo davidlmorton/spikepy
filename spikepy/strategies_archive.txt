@@ -1,87 +1,21 @@
 {
     "__comment": "DO NOT EDIT THIS DOCUMENT (BAD THINGS WILL HAPPEN)", 
-    "Test(test)": {
-        "methods_used": {
-            "spike_detection": "Voltage Threshold", 
-            "detection_filter": "Infinite Impulse Response", 
-            "extraction_filter": "Infinite Impulse Response", 
-            "extraction": "Waveform"
-        }, 
-        "settings": {
-            "spike_detection": {
-                "max_spike_duration": 2.0, 
-                "using_sd_units": true, 
-                "threshold_2": 4.0, 
-                "refractory_time": 0.0, 
-                "threshold_1": 4.0
-            }, 
-            "detection_filter": {
-                "critical_freq": 300.0, 
-                "kind": "High Pass", 
-                "order": 3, 
-                "function_name": "Butterworth"
-            }, 
-            "extraction_filter": {
-                "critical_freq": 300.0, 
-                "kind": "High Pass", 
-                "order": 3, 
-                "function_name": "Butterworth"
-            }, 
-            "extraction": {
-                "post_padding": 1.5, 
-                "exclude_overlappers": false, 
-                "pre_padding": 1.5
-            }
-        }
-    }, 
-    "Test(one_low)": {
-        "methods_used": {
-            "spike_detection": "Voltage Threshold", 
-            "detection_filter": "Infinite Impulse Response", 
-            "extraction_filter": "Infinite Impulse Response", 
-            "extraction": "Waveform"
-        }, 
-        "settings": {
-            "spike_detection": {
-                "max_spike_duration": 2.0, 
-                "using_sd_units": true, 
-                "threshold_2": 4.0, 
-                "refractory_time": 0.0, 
-                "threshold_1": 4.0
-            }, 
-            "detection_filter": {
-                "critical_freq": 299.0, 
-                "kind": "Low Pass", 
-                "order": 2, 
-                "function_name": "Bessel"
-            }, 
-            "extraction_filter": {
-                "critical_freq": 300.0, 
-                "kind": "High Pass", 
-                "order": 3, 
-                "function_name": "Butterworth"
-            }, 
-            "extraction": {
-                "post_padding": 1.5, 
-                "exclude_overlappers": false, 
-                "pre_padding": 1.5
-            }
-        }
-    }, 
     "Test(custom)": {
         "methods_used": {
+            "clustering": "K-means", 
             "spike_detection": "Voltage Threshold", 
             "detection_filter": "Infinite Impulse Response", 
             "extraction_filter": "Infinite Impulse Response", 
             "extraction": "Waveform"
         }, 
         "settings": {
+            "clustering": {}, 
             "spike_detection": {
                 "max_spike_duration": 2.0, 
                 "refractory_time": 0.0, 
                 "using_sd_units": true, 
-                "threshold_2": 3.2000000000000002, 
-                "threshold_1": 3.2000000000000002
+                "threshold_2": 4.0, 
+                "threshold_1": 4.0
             }, 
             "detection_filter": {
                 "critical_freq": 300.0, 
@@ -90,7 +24,7 @@
                 "function_name": "Butterworth"
             }, 
             "extraction_filter": {
-                "critical_freq": 300.0, 
+                "critical_freq": 302.0, 
                 "kind": "High Pass", 
                 "order": 3, 
                 "function_name": "Butterworth"
@@ -102,48 +36,16 @@
             }
         }
     }, 
-    "Custom(custom)": {
+    "Test(test)": {
         "methods_used": {
-            "spike_detection": "Voltage Threshold", 
-            "detection_filter": "Finite Impulse Response", 
-            "extraction_filter": "Finite Impulse Response", 
-            "extraction": "Waveform"
-        }, 
-        "settings": {
-            "spike_detection": {
-                "max_spike_duration": 2.0, 
-                "refractory_time": 0.0, 
-                "using_sd_units": true, 
-                "threshold_2": 3.2000000000000002, 
-                "threshold_1": 3.2000000000000002
-            }, 
-            "detection_filter": {
-                "critical_freq": 300.0, 
-                "taps": 101, 
-                "window_name": "hamming", 
-                "kind": "High Pass"
-            }, 
-            "extraction_filter": {
-                "critical_freq": 300.0, 
-                "taps": 101, 
-                "window_name": "hamming", 
-                "kind": "High Pass"
-            }, 
-            "extraction": {
-                "post_padding": 3.5, 
-                "exclude_overlappers": false, 
-                "pre_padding": 1.5
-            }
-        }
-    }, 
-    "Test(dev1)": {
-        "methods_used": {
+            "clustering": "K-means", 
             "spike_detection": "Voltage Threshold", 
             "detection_filter": "Infinite Impulse Response", 
             "extraction_filter": "Infinite Impulse Response", 
             "extraction": "Waveform"
         }, 
         "settings": {
+            "clustering": {}, 
             "spike_detection": {
                 "max_spike_duration": 2.0, 
                 "using_sd_units": true, 
@@ -164,9 +66,9 @@
                 "function_name": "Butterworth"
             }, 
             "extraction": {
-                "post_padding": 2.0, 
+                "post_padding": 1.5, 
                 "exclude_overlappers": false, 
-                "pre_padding": 2.0
+                "pre_padding": 1.5
             }
         }
     }

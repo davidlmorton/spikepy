@@ -70,13 +70,20 @@ class StrategyPane(ScrolledPanel):
         self.Bind(wx.EVT_CHOICEBOOK_PAGE_CHANGED, self._page_changed)
         pub.subscribe(self._results_notebook_page_changing, 
                       topic='RESULTS_NOTEBOOK_PAGE_CHANGING')
+        pub.subscribe(self._set_run_state, topic='SET_RUN_STATE')
         self.stages = [detection_filter_panel,
                        detection_panel,
                        extraction_filter_panel,
                        extraction_panel,
-                       clustering_panel][:-1]
+                       clustering_panel]
         self.strategy_manager = StrategyManager(self)
     
+    def _set_run_state(self, message=None):
+        stage_run_state = message.data
+        for stage in self.stages:
+            stage_name = stage.stage_name.lower().replace(' ','_')
+            stage.run_button.Enable(stage_run_state[stage_name])
+            
     def _results_notebook_page_changing(self, message=None):
         old_page_num, new_page_num = message.data
         self.stage_choicebook.SetSelection(new_page_num)

@@ -26,8 +26,20 @@ class StrategyManager(object):
                                 self.strategy_chooser.choice) 
         pub.subscribe(self.save_all_strategies, topic='SAVE_ALL_STRATEGIES')
         pub.subscribe(self._set_strategy, topic='SET_STRATEGY')
+        pub.subscribe(self._recalc_run_state, topic='FILE_OPENED')
+        pub.subscribe(self._recalc_run_state, topic='TRIAL_DETECTION_FILTERED')
+        pub.subscribe(self._recalc_run_state, topic='TRIAL_EXTRACTION_FILTERED')
+        pub.subscribe(self._recalc_run_state, topic='TRIAL_DETECTIONED')
+        pub.subscribe(self._recalc_run_state, topic='TRIAL_EXTRACTIONED')
+        pub.subscribe(self._recalc_run_state, topic='TRIAL_CLUSTERINGED')
         self.strategy_pane.Bind(wx.EVT_BUTTON, self.save_button_pressed, 
                                 self.save_button)
+        self._last_current_strategy = None
+        self._should_calculate_stage_run_state = False
+
+    def _recalc_run_state(self, message=None):
+        print 'message_recieved'
+        self._should_calculate_stage_run_state = True
 
     @property
     def strategy_names(self):
@@ -105,6 +117,15 @@ class StrategyManager(object):
 
             button_state = pt.CUSTOM_LC in current_strategy_name.lower()
             self.strategy_pane.save_button.Enable(button_state)
+            if (current_strategy != self._last_current_strategy or
+                    self._should_calculate_stage_run_state):
+                name = current_strategy_name
+                methods_used = current_strategy[name]['methods_used']
+                settings     = current_strategy[name]['settings']
+                pub.sendMessage(topic='CALCULATE_STAGE_RUN_STATE', 
+                                data=(methods_used, settings))
+                self._should_calculate_stage_run_state = False
+            self._last_current_strategy = current_strategy
 
     def save_button_pressed(self, event=None):
         current_strategy = self.get_current_strategy() 
@@ -203,7 +224,7 @@ class StrategyManager(object):
                 _settings = None
 
             stage_name = stage.stage_name.lower().replace(' ', '_')
-            settings[stage_name]     = _settings
+            settings[stage_name] = _settings
         return settings
 
     def get_current_strategy(self):

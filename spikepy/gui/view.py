@@ -75,12 +75,14 @@ class MyFrame(wx.Frame):
         self.menubar = SpikepyMenuBar(self)
         self.SetMenuBar(self.menubar)
 
-        pub.subscribe(self._close_application,  topic="CLOSE_APPLICATION")
         pub.subscribe(self._save_perspective,   topic="SAVE_PERSPECTIVE")
         pub.subscribe(self._load_perspective,   topic="LOAD_PERSPECTIVE")
         
         self.perspectives = read_in_perspectives()
         self.menubar._update_perspectives(self.perspectives)
+
+    def _close_application(self, event=None):
+        pub.sendMessage(topic='CLOSE_APPLICATION')
 
     def _save_perspective(self, message):
         dlg = wx.TextEntryDialog(self, pt.ENTER_NEW_WORKSPACE,
@@ -105,13 +107,6 @@ class MyFrame(wx.Frame):
         perspective = self.perspectives[perspective_name]
         perspective = update_with_current_names(perspective, self._mgr)
         self._mgr.LoadPerspective(perspective)
-
-    def _close_application(self, message):
-        pub.sendMessage(topic='SAVE_ALL_STRATEGIES')
-        pub.unsubAll()
-        # deinitialize the frame manager
-        self._mgr.UnInit()
-        self.Destroy()
 
 
 def read_in_perspectives():
