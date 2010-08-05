@@ -55,8 +55,20 @@ class ExtrasPanel(ScrolledPanel):
         print kernel_axes.__class__
 
         #---- Windowing function stuff ----
+        windowing_axis = figure.add_subplot(2, 2, 3)
+        window_resolution = 100
+        window_names = ["boxcar", "blackman", "hamming", "hanning", "bartlett",
+                        "parzen", "bohman", "blackmanharris", "nuttall", 
+                        "barthann"]
+        windows = {}
+        for name in window_names:
+            scisig_function = getattr(scisig.signaltools, name)
+            window_function = scisig_function(window_resolution)
+            windows[name] = window_function    
 
-        
+        for name, window in windows.items():
+            windowing_axis.plot(window, label=name)
+        windowing_axis.legend(loc="lower right")        
 
         frequencies, frequency_responses = scisig.freqz(kernel)
         freq_response_axis = figure.add_subplot(2, 2, 2)
