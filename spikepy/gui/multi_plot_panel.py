@@ -31,7 +31,6 @@ class MultiPlotPanel(ScrolledPanel):
         self._plot_panels['DEFAULT'].Show(True)
         self.SetupScrolling()
 
-        self.Bind(wx.EVT_CONTEXT_MENU, self._toggle_toolbar)
         pub.subscribe(self._show_plot, topic='SHOW_PLOT')
         pub.subscribe(self._remove_plot, topic='REMOVE_PLOT')
 
@@ -71,14 +70,6 @@ class MultiPlotPanel(ScrolledPanel):
         self._show_plot(new_panel_key='DEFAULT')
         self._plot_panels[removed_panel_key].Destroy()
         del self._plot_panels[removed_panel_key]
-
-    def _toggle_toolbar(self, event):
-        for plot_panel in self._plot_panels.values():
-            plot_panel.toggle_toolbar()
-        if self._toolbar_visible: 
-            self._toolbar_visible = False
-        else: 
-            self._toolbar_visible = True
 
     def _show_plot(self, message=None, new_panel_key=None):
         if new_panel_key is None:

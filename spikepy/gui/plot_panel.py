@@ -122,6 +122,7 @@ class PlotPanel (wx.Panel):
         else:
             self.hide_toolbar()
 
+        self.Bind(wx.EVT_CONTEXT_MENU, self.toggle_toolbar)
         pub.subscribe(self._toggle_toolbar, topic="TOGGLE_TOOLBAR")
         pub.subscribe(self._show_toolbar,   topic="SHOW_TOOLBAR")
         pub.subscribe(self._hide_toolbar,   topic="HIDE_TOOLBAR")
@@ -161,7 +162,7 @@ class PlotPanel (wx.Panel):
             self is message.data):
             self.toggle_toolbar()
 
-    def toggle_toolbar(self):
+    def toggle_toolbar(self, event=None):
         '''
         Toggle the visible state of the toolbar.
         '''

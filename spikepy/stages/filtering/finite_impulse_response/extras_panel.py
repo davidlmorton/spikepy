@@ -1,6 +1,8 @@
 
 import wx
 
+import scipy.signal as signal
+
 from spikepy.gui.plot_panel import PlotPanel
 from spikepy.gui.look_and_feel_settings import lfs
 from .simple_fir import make_fir_filter
@@ -33,10 +35,12 @@ class ExtrasPanel(ScrolledPanel):
 
         kernel = make_fir_filter(sampling_freq, critical_freq, kernel_window, 
                                  taps, kind, **kwargs)
+        frequencies, frequency_responses = signal.freqz(kernel)
 
         axes = figure.add_subplot(1, 1, 1)
 
-        axes.plot([1,2,3])
+        axes.plot(frequencies, frequency_responses)
+        axes.plot(traces[0])
         plot_panel.canvas.draw()
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)

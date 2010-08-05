@@ -12,9 +12,9 @@
             "clustering": {}, 
             "spike_detection": {
                 "max_spike_duration": 2.0, 
-                "refractory_time": 0.0, 
                 "using_sd_units": true, 
                 "threshold_2": 4.0, 
+                "refractory_time": 0.0, 
                 "threshold_1": 4.0
             }, 
             "detection_filter": {
@@ -58,6 +58,42 @@
                 "kind": "High Pass", 
                 "order": 3, 
                 "function_name": "Butterworth"
+            }, 
+            "extraction_filter": {
+                "critical_freq": 300.0, 
+                "kind": "High Pass", 
+                "order": 3, 
+                "function_name": "Butterworth"
+            }, 
+            "extraction": {
+                "post_padding": 1.5, 
+                "exclude_overlappers": false, 
+                "pre_padding": 1.5
+            }
+        }
+    }, 
+    "Custom(custom)": {
+        "methods_used": {
+            "clustering": "K-means", 
+            "spike_detection": "Voltage Threshold", 
+            "detection_filter": "Finite Impulse Response", 
+            "extraction_filter": "Infinite Impulse Response", 
+            "extraction": "Waveform"
+        }, 
+        "settings": {
+            "clustering": {}, 
+            "spike_detection": {
+                "max_spike_duration": 2.0, 
+                "refractory_time": 0.0, 
+                "using_sd_units": true, 
+                "threshold_2": 4.0, 
+                "threshold_1": 4.0
+            }, 
+            "detection_filter": {
+                "critical_freq": 300.0, 
+                "taps": 101, 
+                "window_name": "hamming", 
+                "kind": "High Pass"
             }, 
             "extraction_filter": {
                 "critical_freq": 300.0, 
