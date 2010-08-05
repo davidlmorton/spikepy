@@ -34,6 +34,7 @@ class Controller(object):
         pub.subscribe(self._file_closed, topic='FILE_CLOSED')
         pub.subscribe(self._save_session, topic='SAVE_SESSION')
         pub.subscribe(self._load_session, topic='LOAD_SESSION')
+        pub.subscribe(self._close_application,  topic="CLOSE_APPLICATION")
         pub.subscribe(self._print_messages, topic='')
 
     def _save_session(self, message):
@@ -49,6 +50,15 @@ class Controller(object):
         startWorker(self._load_session_consumer, self._load_session_worker, 
                     wargs=(session_fullpath,), cargs=(session_filename, 
                                                       session_name))
+
+    def _close_application(self, message):
+        pub.sendMessage(topic='SAVE_ALL_STRATEGIES')
+        pub.unsubAll()
+        # deinitialize the frame manager
+        self.view.frame._mgr.UnInit()
+        self.view.frame.Destroy()
+        self.model._processing_pool.close()
+
 
     def _load_session_worker(self, session_fullpath):
         try:

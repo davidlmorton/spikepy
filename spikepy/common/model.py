@@ -8,12 +8,18 @@ from wx.lib.pubsub import Publisher as pub
 from wx.lib.delayedresult import startWorker
 
 from .open_data_file import open_data_file
+from .utils import pool_process
 from ..stages import filtering, detection, extraction, clustering
 from .trial import format_traces
 
 class Model(object):
     def __init__(self):
         self.trials = {}
+
+        if wx.Platform != '__WXMAC__':
+            self._processing_pool = Pool()
+        else:
+            self._processing_pool = None
 
     def setup_subscriptions(self):
         pub.subscribe(self._open_data_file,        "OPEN_DATA_FILE")
@@ -33,19 +39,9 @@ class Model(object):
             pub.sendMessage(topic='FILE_ALREADY_OPENED',data=fullpath)
 
     def _open_file_worker(self, fullpath):
-        try:
-            if wx.Platform == '__WXMAC__':
-                trial = open_data_file(fullpath)
-            else:
-                processing_pool = Pool()
-                result = processing_pool.apply_async(open_data_file, 
-                                                     args=(fullpath,))
-                trial = result.get()
-                processing_pool.close()
-            self.trials[fullpath] = trial
-        except:
-            traceback.print_exc()
-            sys.exit(1)
+        trial = pool_process(self._processing_pool, open_data_file, 
+                             args=(fullpath,))
+        self.trials[fullpath] = trial
         return fullpath
 
     def _open_file_consumer(self, delayed_result):
@@ -76,28 +72,16 @@ class Model(object):
 
     def _filter_worker(self, stage_name, method_name, 
                              method_parameters, trace_type):
-        try:
-            for trial in self.trials.values():
-                raw_traces = trial.raw_traces
-                filtered_traces = []
-                method = filtering.get_method(method_name)
-                method_parameters['sampling_freq'] = trial.sampling_freq
-                if wx.Platform == '__WXMAC__':
-                    filtered_traces = method.run(raw_traces, 
-                                                 **method_parameters)
-                else:
-                    processing_pool = Pool()
-                    result = processing_pool.apply_async(method.run, 
-                                                         args=(raw_traces,),
-                                                         kwds=method_parameters)
-                    filtered_traces = result.get()
-                    processing_pool.close()
-
-                stage_data = getattr(trial, stage_name.lower().replace(' ','_'))
-                stage_data.results = format_traces(filtered_traces)
-        except:
-            traceback.print_exc()
-            sys.exit(1)
+        for trial in self.trials.values():
+            raw_traces = trial.raw_traces
+            filtered_traces = []
+            method = filtering.get_method(method_name)
+            method_parameters['sampling_freq'] = trial.sampling_freq
+            filtered_traces = pool_process(self._processing_pool, method.run,
+                                           args=(raw_traces,),
+                                           kwargs=method_parameters)
+            stage_data = getattr(trial, stage_name.lower().replace(' ','_'))
+            stage_data.results = format_traces(filtered_traces)
 
     def _filter_consumer(self, delayed_result, trace_type, stage_name):
         for trial in self.trials.values():
@@ -119,25 +103,15 @@ class Model(object):
                         cargs=(stage_name,))
 
     def _detection_worker(self, method_name, method_parameters):
-        try:
-            for trial in self.trials.values():
-                filtered_traces = trial.detection_filter.results
-                method = detection.get_method(method_name)
-                method_parameters['sampling_freq'] = trial.sampling_freq
-                if wx.Platform == '__WXMAC__':
-                    results = method.run(filtered_traces, **method_parameters)
-                else: # osx doesn't do well with multiprocessing.
-                    processing_pool = Pool()
-                    result = processing_pool.apply_async(method.run, 
-                            args=(filtered_traces,),
-                            kwds=method_parameters)
-                    results = result.get()
-                    processing_pool.close()
-                if len(results[0]) > 0: # ensure at least one spike was found.
-                    trial.detection.results = results
-        except:
-            traceback.print_exc()
-            sys.exit(1)
+        for trial in self.trials.values():
+            filtered_traces = trial.detection_filter.results
+            method = detection.get_method(method_name)
+            method_parameters['sampling_freq'] = trial.sampling_freq
+            spikes = pool_process(self._processing_pool, method.run,
+                                  args=(filtered_traces,), 
+                                  kwargs=method_parameters)
+            if len(spikes[0]) > 0:
+                trial.detection.results = spikes
 
     def _detection_consumer(self, delayed_result, stage_name):
         for trial in self.trials.values():
@@ -156,27 +130,17 @@ class Model(object):
                         cargs=(stage_name,))
 
     def _extraction_worker(self, method_name, method_parameters):
-        try:
-            for trial in self.trials.values():
-                filtered_traces = trial.extraction_filter.results
-                method = extraction.get_method(method_name)
-                method_parameters['sampling_freq'] = trial.sampling_freq
-                method_parameters['spike_list'] = trial.detection.results[0]
-                if len(method_parameters['spike_list']) == 0:
-                    return # no spikes from detection = no extraction
-                if wx.Platform == '__WXMAC__':
-                    results = method.run(filtered_traces, **method_parameters)
-                else:
-                    processing_pool = Pool()
-                    result = processing_pool.apply_async(method.run, 
-                            args=(filtered_traces,),
-                            kwds=method_parameters)
-                    results = result.get()
-                    processing_pool.close()
-                trial.extraction.results = results
-        except:
-            traceback.print_exc()
-            sys.exit(1)
+        for trial in self.trials.values():
+            method_parameters['spike_list'] = trial.detection.results[0]
+            if len(method_parameters['spike_list']) == 0:
+                continue # no spikes from detection = no extraction
+            filtered_traces = trial.extraction_filter.results
+            method = extraction.get_method(method_name)
+            method_parameters['sampling_freq'] = trial.sampling_freq
+            trial.extraction.results = pool_process(self._processing_pool,
+                                                    method.run,
+                                                    args=(filtered_traces,),
+                                                    kwargs=method_parameters)
 
     def _extraction_consumer(self, delayed_result, stage_name):
         for trial in self.trials.values():
@@ -195,49 +159,40 @@ class Model(object):
                         cargs=(stage_name,))
 
     def _clustering_worker(self, method_name, method_parameters):
-        try:
-            # get all feature_sets from all trials in a single long list.
-            feature_set_list = []
-            feature_time_list = []
-            master_key_list = []
-            trial_keys = sorted(self.trials.keys())
-            for key in trial_keys:
-                features = self.trials[key].extraction.results['features']
-                feature_times = (self.trials[key].extraction.
-                                 results['feature_times'])
-                key_list = [key for i in xrange(len(features))]
-                feature_set_list.extend(features)
-                feature_time_list.extend(feature_times)
-                master_key_list.extend(key_list)
+        # get all feature_sets from all trials in a single long list.
+        feature_set_list = []
+        feature_time_list = []
+        master_key_list = []
+        trial_keys = sorted(self.trials.keys())
+        for key in trial_keys:
+            features = self.trials[key].extraction.results['features']
+            feature_times = (self.trials[key].extraction.
+                             results['feature_times'])
+            key_list = [key for i in xrange(len(features))]
+            feature_set_list.extend(features)
+            feature_time_list.extend(feature_times)
+            master_key_list.extend(key_list)
 
-            method = clustering.get_method(method_name)
-            if len(feature_set_list) == 0:
-                return # no spikes = no clustering
-            if True or wx.Platform == '__WXMAC__':
-                results = method.run(feature_set_list, **method_parameters)
-            else:
-                processing_pool = Pool()
-                result = processing_pool.apply_async(method.run, 
-                        args=(feature_set_list,),
-                        kwds=method_parameters)
-                results = result.get()
-                processing_pool.close()
+        method = clustering.get_method(method_name)
+        if len(feature_set_list) == 0:
+            return # no spikes = no clustering
 
-            # initialize clustering results to empty_list_dictionaries
-            cluster_identities = set(results)
-            for trial in self.trials.values():
-                empty_dict = {}
-                for ci in cluster_identities:
-                    empty_dict[ci] = []
-                trial.clustering.results = empty_dict 
-            # unpack results from run back into trial results.
-            for mkey, result, feature_time in \
-                    zip(master_key_list, results, feature_time_list):
-                trial_results = self.trials[mkey].clustering.results[result]
-                trial_results.append(feature_time)
-        except:
-            traceback.print_exc()
-            sys.exit(1)
+        results = pool_process(self._processing_pool, method.run,
+                               args=(feature_set_list,),
+                               kwargs=(method_parameters))
+
+        # initialize clustering results to empty_list_dictionaries
+        cluster_identities = set(results)
+        for trial in self.trials.values():
+            empty_dict = {}
+            for ci in cluster_identities:
+                empty_dict[ci] = []
+            trial.clustering.results = empty_dict 
+        # unpack results from run back into trial results.
+        for mkey, result, feature_time in \
+                zip(master_key_list, results, feature_time_list):
+            trial_results = self.trials[mkey].clustering.results[result]
+            trial_results.append(feature_time)
 
     def _clustering_consumer(self, delayed_result, stage_name):
         for trial in self.trials.values():
