@@ -13,6 +13,19 @@ from . import program_text as pt
 gui_folder  = os.path.split(__file__)[0]
 icon_folder = os.path.join(gui_folder, 'icons')
 
+def adjust_axes_edges(axes, top=None, bottom=None, left=None, right=None):
+    'Moves given edge of axes by a fraction of the figure size.'
+    box = axes.get_position()
+    if top is not None:
+        box.p1 = (box.p1[0], box.p1[1]+top)
+    if bottom is not None:
+        box.p0 = (box.p0[0], box.p0[1]+bottom)
+    if left is not None:
+        box.p0 = (box.p0[0]+left, box.p0[1])
+    if right is not None:
+        box.p1 = (box.p1[0]+right, box.p1[1])
+    axes.set_position(box)
+    
 def recursive_layout(panel):
     if panel is not None:
         panel.Layout()

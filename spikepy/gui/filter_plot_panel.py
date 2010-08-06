@@ -6,7 +6,7 @@ import numpy
 
 from .multi_plot_panel import MultiPlotPanel
 from .plot_panel import PlotPanel
-from .utils import rgb_to_matplotlib_color
+from .utils import adjust_axes_edges
 from .look_and_feel_settings import lfs
 from . import program_text as pt
 
@@ -128,10 +128,7 @@ class FilterPlotPanel(MultiPlotPanel):
         title = os.path.split(fullpath)[1]
         psd_axes.set_title(title)
 
-        # move psd plot's bottom edge up a bit
-        box = psd_axes.get_position()
-        box.p0 = (box.p0[0], box.p0[1]+bottom)
-        psd_axes.set_position(box)
+        adjust_axes_edges(psd_axes, bottom=bottom)
 
     def _plot_filtered_traces(self, trial, figure, fullpath):
         stage_data = getattr(trial, self.name.lower()+'_filter')

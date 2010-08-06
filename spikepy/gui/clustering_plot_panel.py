@@ -1,4 +1,5 @@
 from collections import defaultdict
+import os
 
 from wx.lib.pubsub import Publisher as pub
 import wx
@@ -9,6 +10,7 @@ from .multi_plot_panel import MultiPlotPanel
 from .plot_panel import PlotPanel
 from .look_and_feel_settings import lfs
 from . import program_text as pt
+from .utils import adjust_axes_edges
 
 class ClusteringPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
@@ -85,34 +87,62 @@ class ClusteringPlotPanel(MultiPlotPanel):
         bottom = lfs.PLOT_BOTTOM_BORDER / canvas_size[1]
         figure.subplots_adjust(hspace=0.025, left=left, right=right, 
                                bottom=bottom, top=top)
+        self.bottom = bottom
+        self.top    = top
         
 
     def _plot_rasters(self, trial, figure, fullpath, ncc, num_clusters):
         raster_axes = figure.add_subplot(ncc+2, 1, 1)
+        raster_yaxis = raster_axes.get_yaxis()
+        raster_yaxis.set_ticks_position('left')
+        trace_axes = figure.add_axes(raster_axes.get_position(), 
+                                      axisbg=(1.0,1.0,1.0,0.0),
+                                      sharex=raster_axes)
+        filename = os.path.split(fullpath)[1]
+        trace_axes.set_title(filename)
+        trace_yaxis = trace_axes.get_yaxis()
+        trace_yaxis.set_ticks_position('right')
 
         times = trial.times
         traces = trial.detection_filter.results
         std = numpy.std(traces)
-        for i, trace in enumerate(traces):
-            raster_axes.plot(times, trace-i*20*std, color=lfs.PLOT_COLOR_2, 
+        trace_ticks = []
+        trace_offsets = [-i*20*std for i in xrange(len(traces))]
+        for trace, trace_offset in zip(traces, trace_offsets):
+            trace_axes.plot(times, trace+trace_offset, color=lfs.PLOT_COLOR_2, 
                                  linewidth=lfs.PLOT_LINEWIDTH_2, 
                                  label=pt.DETECTION_TRACE_GRAPH_LABEL,
                                  alpha=0.4)
+            trace_ticks.append(numpy.average(trace+trace_offset))
+        trace_axes.set_yticks(trace_ticks)
+        trace_axes.set_yticklabels(['Trace #%d' % i 
+                                    for i in xrange(len(traces))])
+        right = 0.065
+        left  = 0.01 
+        adjust_axes_edges(trace_axes, bottom=self.bottom, 
+                          right=-right, left=left)
 
         
         times = trial.clustering.results
-        ylim = raster_axes.get_ylim()
-        spike_y_list = numpy.linspace(ylim[1], ylim[0], num_clusters+2)[1:-1]
 
         keys = sorted(times.keys())
+        spike_y_list = [-key for key in keys]
         for key, spike_y in zip(keys, spike_y_list):
-            spike_ys = [spike_y for i in xrange(len(times[key]))]
             spike_xs = times[key]
+            spike_ys = [spike_y for i in xrange(len(spike_xs))]
             raster_axes.plot(spike_xs, spike_ys, linewidth=0, marker='|',
                              markersize=lfs.SPIKE_RASTER_HEIGHT,
                              markeredgewidth=lfs.SPIKE_RASTER_WIDTH,
                              color=lfs.SPIKE_RASTER_COLOR)
-            
+        raster_axes.set_ylim(min(spike_y_list)-1, max(spike_y_list)+1)
+        # label raster_axes y ticks
+        raster_axes.set_yticks(spike_y_list)
+        raster_axes.set_yticklabels(['Cluster #%d' % abs(spike_y) 
+                                              for spike_y in spike_y_list])
+    
+        adjust_axes_edges(raster_axes, bottom=self.bottom, 
+                          right=-right, left=left)
+        raster_axes.set_xlabel(pt.PLOT_TIME)
 
         
     def _plot_clusters(self, trial, figure, fullpath, ncc):
@@ -120,11 +150,17 @@ class ClusteringPlotPanel(MultiPlotPanel):
         
         average_axes = figure.add_subplot(ncc+2, 2, 3)
         for cluster_num, average in averages.items():
-            average_axes.plot(average, label='Cluster %d' % cluster_num)
+            average_axes.plot(trial.times[:len(average)], average,
+                              label='Cluster %d' % cluster_num)
+            average_axes.set_ylabel('Spike Averages')
+            average_axes.set_xlabel(pt.PLOT_TIME)
 
-        std_axes = figure.add_subplot(ncc+2, 2, 4)
+        std_axes = figure.add_subplot(ncc+2, 2, 4, sharex=average_axes)
         for cluster_num, std in stds.items():
-            std_axes.plot(std, label='Cluster %d' % cluster_num)
+            std_axes.plot(trial.times[:len(std)], std, 
+                          label='Cluster %d' % cluster_num)
+            std_axes.set_ylabel("Spike STDs")
+            std_axes.set_xlabel(pt.PLOT_TIME)
 
 
     def _get_averages_and_stds(self, trial):

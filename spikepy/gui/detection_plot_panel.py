@@ -7,7 +7,7 @@ from scipy import signal as scisig
 
 from .multi_plot_panel import MultiPlotPanel
 from .plot_panel import PlotPanel
-from .utils import rgb_to_matplotlib_color
+from .utils import rgb_to_matplotlib_color, adjust_axes_edges
 from .look_and_feel_settings import lfs
 from . import program_text as pt
 
@@ -112,10 +112,7 @@ class DetectionPlotPanel(MultiPlotPanel):
         spike_axes = self._spike_axes[fullpath]
         self.setup_spike_axes_labels(spike_axes, fullpath)
         
-        # move rate plot's bottom edge up a bit
-        box = spike_axes.get_position()
-        box.p0 = (box.p0[0], box.p0[1]+bottom)
-        spike_axes.set_position(box)
+        adjust_axes_edges(spike_axes, bottom=bottom)
 
     def setup_spike_axes_labels(self, spike_axes, fullpath):
         spike_axes.set_xlabel(pt.PLOT_TIME)
