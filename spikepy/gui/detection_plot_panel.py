@@ -172,6 +172,7 @@ class DetectionPlotPanel(MultiPlotPanel):
                                  marker='|',
                                  markersize=lfs.SPIKE_RASTER_HEIGHT*
                                             raster_height_factor,
+                                 markeredgewidth=lfs.SPIKE_RASTER_WIDTH,
                                  label=pt.SPIKES_GRAPH_LABEL)
 
         # --- plot spike rate ---
@@ -211,6 +212,7 @@ class DetectionPlotPanel(MultiPlotPanel):
                                 color=lfs.SPIKE_RASTER_COLOR,
                                 linewidth=0.0,
                                 marker='|',
+                                markeredgewidth=lfs.SPIKE_RASTER_WIDTH,
                                 markersize=lfs.SPIKE_RASTER_HEIGHT*
                                             raster_height_factor)
 

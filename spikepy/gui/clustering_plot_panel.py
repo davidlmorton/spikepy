@@ -98,6 +98,7 @@ class ClusteringPlotPanel(MultiPlotPanel):
             spike_xs = times[key]
             raster_axes.plot(spike_xs, spike_ys, linewidth=0, marker='|',
                              markersize=lfs.SPIKE_RASTER_HEIGHT,
+                             markeredgewidth=lfs.SPIKE_RASTER_WIDTH,
                              color=lfs.SPIKE_RASTER_COLOR)
             
 
