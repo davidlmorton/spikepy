@@ -61,7 +61,7 @@ class NamedSpinCtrl(wx.Panel):
         self.SetSizer(sizer)
 
     def SetRange(self, range_tuple):
-        self.spin_ctrl.SetRange(range_tuple)
+        self.spin_ctrl.SetRange(*range_tuple)
 
     def GetValue(self):
         return self.spin_ctrl.GetValue()

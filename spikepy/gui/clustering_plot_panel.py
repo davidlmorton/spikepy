@@ -62,9 +62,10 @@ class ClusteringPlotPanel(MultiPlotPanel):
             num_clusters = len(trial.clustering.results.keys())
             num_cluster_combinations = nchoosek(num_clusters, 2)
             self._plot_panels[fullpath].set_minsize(self._figsize[0], 
-                                        self._figsize[1]*(num_clusters+2))
+                              self._figsize[1]*(num_cluster_combinations+2))
             figure = self._plot_panels[fullpath].figure
             figure.clear()
+            self._adjust_subplots(self._plot_panels[fullpath])
             
             self._plot_rasters(trial,   figure, fullpath, 
                                num_cluster_combinations, num_clusters)
@@ -74,6 +75,17 @@ class ClusteringPlotPanel(MultiPlotPanel):
                                  num_cluster_combinations)
 
             self.draw_canvas(fullpath)
+
+    def _adjust_subplots(self, plot_panel):
+        canvas_size = plot_panel._original_min_size
+        figure = plot_panel.figure
+        left   = lfs.PLOT_LEFT_BORDER / canvas_size[0]
+        right  = 1.0 - lfs.PLOT_RIGHT_BORDER / canvas_size[0]
+        top    = 1.0 - lfs.PLOT_TOP_BORDER / canvas_size[1]
+        bottom = lfs.PLOT_BOTTOM_BORDER / canvas_size[1]
+        figure.subplots_adjust(hspace=0.025, left=left, right=right, 
+                               bottom=bottom, top=top)
+        
 
     def _plot_rasters(self, trial, figure, fullpath, ncc, num_clusters):
         raster_axes = figure.add_subplot(ncc+2, 1, 1)

@@ -37,6 +37,7 @@ class CustomToolbar(Toolbar):
                            longHelpString=pt.SHRINK_FIGURE_CANVAS)
         wx.EVT_TOOL(self, self.SHRINK_CANVAS_ID, self._shrink_canvas)
         self.EnableTool(self.SHRINK_CANVAS_ID, False)
+        self.DeleteToolByPos(6)
 
     def _enlarge_canvas(self, event=None):
         plot_panel = self.plot_panel

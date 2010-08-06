@@ -29,10 +29,15 @@ class MultiPlotPanel(ScrolledPanel):
         self.SetSizer(sizer)
         self.add_plot('DEFAULT')
         self._plot_panels['DEFAULT'].Show(True)
-        self.SetupScrolling()
+        self.SetupScrolling(scrollToTop=False)
 
         pub.subscribe(self._show_plot, topic='SHOW_PLOT')
         pub.subscribe(self._remove_plot, topic='REMOVE_PLOT')
+
+    def OnChildFocus(self, event=None):
+        """Overwrites ScrolledPanel's OnChildFocus to NOT scroll the
+            child into view."""
+        pass
 
     def add_plot(self, key, **kwargs):
         ''' 

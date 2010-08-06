@@ -11,7 +11,7 @@ if __name__ == '__main__':
         from spikepy.gui.controller import Controller
         controller = Controller()
         controller.setup_subscriptions()
-        splash_screen.Destroy()
+        wx.CallLater(1000, splash_screen.Destroy)
     from spikepy.gui.utils import get_bitmap_icon
 
     app = wx.App()
