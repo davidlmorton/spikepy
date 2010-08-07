@@ -21,7 +21,7 @@ class LookAndFeelSettings(object):
         self.STRATEGY_WAIT_TIME = 350 # in ms
 
         self.FILE_LISTCTRL_STYLE = wx.LC_REPORT|wx.LC_VRULES
-        self.FILE_LISTCTRL_MIN_SIZE = numpy.array((200, 250))
+        self.FILE_LISTCTRL_MIN_SIZE = numpy.array((200, 50))
         
         self.PLOT_FACECOLOR = rgb_to_matplotlib_color(255, 255, 255, 255)
         self.PLOT_LEFT_BORDER   = 90.0 # pixels
