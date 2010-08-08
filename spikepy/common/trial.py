@@ -66,6 +66,14 @@ class Trial(object):
             stage_data = getattr(self, message.data)
             stage_data.reset_results()
 
+    def get_stage_data(self, stage_name):
+        formatted_stage_name = stage_name.lower().replace(' ', '_')
+        if hasattr(self, formatted_stage_name):
+            return getattr(self, formatted_stage_name)
+        else:
+            raise RuntimeError('Trial does not have a stage by the name of %s' %
+                                formatted_stage_name)
+
     def get_stages_that_are_ready_to_run(self):
         can_run_list = []
         for stage in self.stages:
@@ -98,17 +106,17 @@ class StageData(object):
         self.method     = None
         self.results    = None
 
-        self.reset_results()
+        self.reinitialize()
 
     def set_prereqs(self, prereqs):
         self.prereqs = prereqs
 
-    def reset_results(self, message=None):
+    def reinitialize(self):
         if self.results is not None:
             self.results  = None
             self.settings = None
             self.method   = None
             for dependent in self.dependents:
-                dependent.reset_results()
+                dependent.reinitialize()
 
 

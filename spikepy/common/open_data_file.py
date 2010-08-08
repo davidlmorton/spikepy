@@ -38,5 +38,8 @@ def open_data_file(fullpath, data_format='guess', **kwargs):
 
     
 def guess_data_format(filename):
+    """
+    Guess the name of the data format, given its filename.
+    """
     if filename.endswith('tet'): return 'wessel_lab_tetrode'
     return 'wessel_lab' #XXX obviously flesh this out.

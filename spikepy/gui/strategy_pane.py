@@ -263,7 +263,8 @@ class StagePanel(wx.Panel):
         self.run_button.SetLabel(pt.RUN_BUTTON_RUNNING_STATUS)
         self.run_button.Disable()
         wx.Yield() # about to let scipy hog cpu, so process all wx events.
-        topic = self.stage_name.split()[-1].upper()
+        action = self.stage_name.split()[-1].upper()
+        topic = '%s_ALL_TRIALS' % action
         pub.sendMessage(topic=topic, data=(self.stage_name, 
                                               self._method_name_chosen,
                                               settings))

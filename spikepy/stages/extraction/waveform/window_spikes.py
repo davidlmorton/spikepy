@@ -71,7 +71,6 @@ def determine_excluded_spikes(signal, spike_index_list, window_size,
     """
     determine which (if any) indexes will be excluded due to overlapping
     """
-    print spike_index_list
     good_spike_index_set      = set()
     excluded_spike_index_set  = set()
     truncated_spike_index_set = set()

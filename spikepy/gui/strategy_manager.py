@@ -38,7 +38,6 @@ class StrategyManager(object):
         self._should_calculate_stage_run_state = False
 
     def _recalc_run_state(self, message=None):
-        print 'message_recieved'
         self._should_calculate_stage_run_state = True
 
     @property

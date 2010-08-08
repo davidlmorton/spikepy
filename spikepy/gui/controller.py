@@ -62,19 +62,15 @@ class Controller(object):
                 s  = settings[stage_name]
                 if tmu is not None and tmu == mu:
                     novelty = (ts != s)
-                    print novelty
                 else:
-                    print tmu, mu
                     novelty = True
                 # novelty in any file = able to run for all files.
-                print stage_name, novelty
                 if novelty:
                     stage_run_state[stage_name] = True
 
         # ensure EVERY trial is ready for this stage.
         for trial in self.model.trials.values():
             can_run_list = trial.get_stages_that_are_ready_to_run()
-            print can_run_list
             for stage_name in methods_used.keys():
                 if stage_name not in can_run_list:
                     stage_run_state[stage_name] = False
@@ -107,7 +103,8 @@ class Controller(object):
         # deinitialize the frame manager
         self.view.frame._mgr.UnInit()
         self.view.frame.Destroy()
-        self.model._processing_pool.close()
+        if wx.Platform != '__WXMAC__':
+            self.model._processing_pool.close()
 
 
     def _load_session_worker(self, session_fullpath):
@@ -115,11 +112,10 @@ class Controller(object):
             if wx.Platform == '__WXMAC__':
                 trials = load_pickle(session_fullpath)
             else:
-                processing_pool = Pool()
+                processing_pool = self.model._processing_pool
                 result = processing_pool.apply_async(load_pickle, 
                                                      args=(session_fullpath,))
                 trials = result.get()
-                processing_pool.close()
         except:
             traceback.print_exc()
             sys.exit(1)
