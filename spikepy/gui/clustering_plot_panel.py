@@ -31,6 +31,7 @@ class ClusteringPlotPanel(MultiPlotPanel):
         pub.subscribe(self._trial_altered, topic='TRIAL_CLUSTERINGED')
 
         self._trials = {}
+        self._fig_cleared = True
 
     def _remove_trial(self, message=None):
         fullpath = message.data
@@ -68,7 +69,8 @@ class ClusteringPlotPanel(MultiPlotPanel):
             figheight = self._figsize[1]*(num_cluster_combinations+2)
             figure = self._plot_panels[fullpath].figure
 
-            if old_minsize[1] != figheight:
+            if old_minsize[1] != figheight or self._fig_cleared:
+                self._fig_cleared = False
                 self._plot_panels[fullpath].set_minsize(figwidth, 
                                                         figheight)
                 figure.clear()
@@ -85,6 +87,12 @@ class ClusteringPlotPanel(MultiPlotPanel):
                                  num_cluster_combinations)
 
             self.draw_canvas(fullpath)
+        else:
+            if not self._fig_cleared:
+                figure = self._plot_panels[fullpath].figure
+                figure.clear()
+                self._fig_cleared = True
+                self.draw_canvas(fullpath)
 
     def _setup_axes(self, trial, figure, fullpath, ncc, num_clusters):
         # --- RASTER AND TRACE AXES ---

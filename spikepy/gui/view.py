@@ -29,41 +29,29 @@ class MyFrame(wx.Frame):
         if size is None: size = lfs.MAIN_FRAME_SIZE
         wx.Frame.__init__(self, parent, title=title, size=size, style=style)
 
-        self._mgr = wx.aui.AuiManager(self)
-
         # --- STRATEGY PANE ---
-        self.strategy_pane = strategy_pane  = StrategyPane(self)        
-        strategy_pane_info = wx.aui.AuiPaneInfo()
-        strategy_pane_info.Right()
-        strategy_pane_info.CloseButton(   visible=False)
-        strategy_pane_info.MinimizeButton(visible=False)
-        strategy_pane_info.MaximizeButton(visible=False)
-        strategy_pane_info.MinSize(lfs.STRATEGY_PANE_MIN_SIZE)
-        strategy_pane_info.FloatingSize(lfs.STRATEGY_PANE_MIN_SIZE)
-        strategy_pane_info.Caption(pt.STRATEGY)
+        vsplit = wx.SplitterWindow(self, style=wx.SP_3D)
+        hsplit = wx.SplitterWindow(vsplit, style=wx.SP_3D)
 
-        # --- FILE LIST PANE ---
-        self.file_list = file_list = FileListCtrl(self, 
-                style=lfs.FILE_LISTCTRL_STYLE)
-        file_list_pane_info = wx.aui.AuiPaneInfo()
-        file_list_pane_info.Left()
-        file_list_pane_info.CloseButton(   visible=False)
-        file_list_pane_info.MinimizeButton(visible=False)
-        file_list_pane_info.MaximizeButton(visible=False)
-        file_list_pane_info.MinSize(lfs.FILE_LISTCTRL_MIN_SIZE)
-        file_list_pane_info.FloatingSize(lfs.FILE_LISTCTRL_MIN_SIZE)
-        file_list_pane_info.Caption(pt.FILE_LISTCTRL_TITLE)
-        
-        # ---  RESULTS PANE ---
-        self.results_notebook = results_notebook = ResultsNotebook(self)
 
-        # add the panes to the manager
-        self._mgr.AddPane(file_list, info=file_list_pane_info)
-        self._mgr.AddPane(strategy_pane, info=strategy_pane_info)
-        self._mgr.AddPane(results_notebook, wx.CENTER)
+        strategy_holder = BorderPanel(hsplit, style=wx.BORDER_SUNKEN)
+        self.strategy_pane = StrategyPane(strategy_holder)
+        strategy_holder.add_content(self.strategy_pane, 2)
 
-        # tell the manager to 'commit' all the changes just made
-        self._mgr.Update()
+        file_list_holder = BorderPanel(hsplit, style=wx.BORDER_SUNKEN)
+        self.file_list = FileListCtrl(hsplit, style=lfs.FILE_LISTCTRL_STYLE)
+        file_list_holder.add_content(self.file_list, 2)
+
+        self.results_notebook = results_notebook = ResultsNotebook(
+                                                    vsplit)
+
+        vsplit.SplitVertically(hsplit, self.results_notebook, 400)
+        hsplit.SplitHorizontally(file_list_holder, strategy_holder, 200)
+
+        hsplit.SetMinimumPaneSize(lfs.FILE_LISTCTRL_MIN_SIZE[1])
+        vsplit.SetMinimumPaneSize(lfs.STRATEGY_PANE_MIN_SIZE[0])
+        hsplit.SetSashPosition(lfs.FILE_LISTCTRL_MIN_SIZE[1])
+        vsplit.SetSashPosition(lfs.STRATEGY_PANE_MIN_SIZE[0])
 
         self.Bind(wx.EVT_CLOSE, self._close_application)
 
@@ -75,66 +63,15 @@ class MyFrame(wx.Frame):
         self.menubar = SpikepyMenuBar(self)
         self.SetMenuBar(self.menubar)
 
-        pub.subscribe(self._save_perspective,   topic="SAVE_PERSPECTIVE")
-        pub.subscribe(self._load_perspective,   topic="LOAD_PERSPECTIVE")
-        
-        self.perspectives = read_in_perspectives()
-        self.menubar._update_perspectives(self.perspectives)
-
     def _close_application(self, event=None):
         pub.sendMessage(topic='CLOSE_APPLICATION')
 
-    def _save_perspective(self, message):
-        dlg = wx.TextEntryDialog(self, pt.ENTER_NEW_WORKSPACE,
-                                 caption=pt.NEW_WORKSPACE_DLG_CAPTION)
-        if dlg.ShowModal() != wx.ID_OK:
-            return
-        
-        perspective_data = self._mgr.SavePerspective()
-        perspective_name = dlg.GetValue()
-        dlg.Destroy()
-        self.perspectives[perspective_name] = perspective_data
-        self.menubar._update_perspectives(self.perspectives)
+class BorderPanel(wx.Panel):
+    def __init__(self, *args, **kwargs):
+        wx.Panel.__init__(self, *args, **kwargs)
+        sizer = wx.BoxSizer(orient=wx.VERTICAL)
+        self.SetSizer(sizer)
 
-        #TODO add warning if overwriting file
-        perspectives_file = open(self.perspectives_file_path, 'w')
-
-        cPickle.dump(self.perspectives, perspectives_file, protocol=-1)
-        perspectives_file.close()
-        
-    def _load_perspective(self, message):
-        perspective_name = message.data
-        perspective = self.perspectives[perspective_name]
-        perspective = update_with_current_names(perspective, self._mgr)
-        self._mgr.LoadPerspective(perspective)
-
-
-def read_in_perspectives():
-    # find and load perspectives
-    spikepy_location = spikepy.__file__
-    spikepy_directory = os.path.split(spikepy_location)[0]
-    perspectives_file_path = os.path.join(spikepy_directory, 
-                                          "perspectives",
-                                          "perspectives.cPickle")
-    with open(perspectives_file_path, 'r') as perspectives_file:
-        perspectives = cPickle.load(perspectives_file)
-    return perspectives
-
-
-def update_with_current_names(perspective, mgr):
-    # get names from this instance and replace them in the perspective
-    old_perspective = mgr.SavePerspective()
-    old_names = get_perspective_names(old_perspective)
-    new_names = get_perspective_names(perspective)
-    for old, new in zip(old_names, new_names):
-        perspective = perspective.replace(new, old)
-    return perspective
-    
-
-def get_perspective_names(perspective_string):
-    tokens = perspective_string.split(';')
-    names = []
-    for token in tokens:
-        if 'name=' in token:
-            names.append(token.split('name=')[-1])
-    return names
+    def add_content(self, content, border):
+        sizer = self.GetSizer()
+        sizer.Add(content, proportion=1, flag=wx.EXPAND|wx.ALL, border=border)

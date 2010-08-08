@@ -21,7 +21,7 @@ class LookAndFeelSettings(object):
         self.STRATEGY_WAIT_TIME = 350 # in ms
 
         self.FILE_LISTCTRL_STYLE = wx.LC_REPORT|wx.LC_VRULES
-        self.FILE_LISTCTRL_MIN_SIZE = numpy.array((200, 50))
+        self.FILE_LISTCTRL_MIN_SIZE = numpy.array((200, 150))
         
         self.PLOT_FACECOLOR = rgb_to_matplotlib_color(255, 255, 255, 255)
         self.PLOT_LEFT_BORDER   = 90.0 # pixels
@@ -45,7 +45,7 @@ class LookAndFeelSettings(object):
 
         self.PYSHELL_DIALOG_SIZE = (500, 400)
 
-        self.CONTROL_PANEL_BORDER = 1
+        self.CONTROL_PANEL_BORDER = 0
         self._base_dpi = 85.0
         
     def get_size_ratio(self):
@@ -105,9 +105,9 @@ class LookAndFeelSettings(object):
     @property
     def CHOICE_BORDER(self):
         if wx.Platform == '__WXMAC__':
-            return 2
+            return 0
         else:
-            return 1
+            return 0
 
     @property
     def MAIN_FRAME_SIZE(self):

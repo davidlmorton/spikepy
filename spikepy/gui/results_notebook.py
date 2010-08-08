@@ -76,10 +76,8 @@ class ResultsPanel(wx.Panel):
                 flag=wx.ALL, border=4)
         
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        sizer.Add(top_sizer, proportion=0, 
-                flag=wx.ALL|wx.EXPAND, border=0)
-        sizer.Add(self.plot_panel, proportion=1, 
-                flag=wx.ALL|wx.EXPAND, border=10)
+        sizer.Add(top_sizer, proportion=0, flag=wx.EXPAND)
+        sizer.Add(self.plot_panel, proportion=1, flag=wx.EXPAND)
         self.SetSizer(sizer)
 
         self.Bind(wx.EVT_BUTTON, self._show_method_extras)

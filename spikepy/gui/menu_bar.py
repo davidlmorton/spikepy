@@ -43,9 +43,6 @@ class SpikepyMenuBar(wx.MenuBar):
         
         # --- VIEW ---
         view_menu = wx.Menu()
-        self.workspaces_submenu = wx.Menu()
-        self._update_perspectives()
-        view_menu.AppendMenu(WORKSPACES, pt.WORKSPACES, self.workspaces_submenu)
         view_menu.Append(SHOW_TOOLBARS, text=pt.SHOW_TOOLBARS_MENU, 
                          kind=wx.ITEM_CHECK)
         
@@ -69,9 +66,6 @@ class SpikepyMenuBar(wx.MenuBar):
         frame.Bind(wx.EVT_MENU, self._show_preferences, id=PREFERENCES)
         # View
         frame.Bind(wx.EVT_MENU, self._show_toolbars,    id=SHOW_TOOLBARS)
-        frame.Bind(wx.EVT_MENU, self._save_perspective, id=SAVE_PERSPECTIVE)
-        frame.Bind(wx.EVT_MENU, self._go_to_workspaces_manager, 
-                                                        id=WORKSPACES_MANAGER)
         # Help
         frame.Bind(wx.EVT_MENU, self._python_shell,     id=SHELL)
         frame.Bind(wx.EVT_MENU, self._about_box,        id=ABOUT)
@@ -79,9 +73,6 @@ class SpikepyMenuBar(wx.MenuBar):
         self.frame = frame
 
         self._toolbars_shown = False
-
-    def _go_to_workspaces_manager(self):
-        pass
 
     def _show_preferences(self, event=None):
         preferences_frame = PreferencesFrame(self)
@@ -137,15 +128,6 @@ class SpikepyMenuBar(wx.MenuBar):
                                        text=pt.SAVE_WORKSPACE)
         self.workspaces_submenu.Append(WORKSPACES_MANAGER,
                                        text=pt.WORKSPACES_MANAGER)
-    
-    def _load_perspective(self, event=None):
-        chosen_item_id = event.GetId()
-        chosen_item = self.workspaces_submenu.FindItemById(chosen_item_id)
-        chosen_item_name = chosen_item.GetText()
-        pub.sendMessage(topic='LOAD_PERSPECTIVE', data=chosen_item_name)
-    
-    def _save_perspective(self, event=None):
-        pub.sendMessage(topic='SAVE_PERSPECTIVE', data=None)
     
     def _open_file(self, event):
         pub.sendMessage(topic='OPEN_FILE', data=None)

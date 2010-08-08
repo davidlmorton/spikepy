@@ -101,7 +101,6 @@ class Controller(object):
         pub.sendMessage(topic='SAVE_ALL_STRATEGIES')
         pub.unsubAll()
         # deinitialize the frame manager
-        self.view.frame._mgr.UnInit()
         self.view.frame.Destroy()
         if wx.Platform != '__WXMAC__':
             self.model._processing_pool.close()

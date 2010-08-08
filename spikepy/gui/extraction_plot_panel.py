@@ -1,3 +1,4 @@
+import os
 
 from wx.lib.pubsub import Publisher as pub
 import wx
@@ -6,6 +7,7 @@ from .multi_plot_panel import MultiPlotPanel
 from .plot_panel import PlotPanel
 from .look_and_feel_settings import lfs
 from . import program_text as pt
+from .utils import adjust_axes_edges
 
 class ExtractionPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
@@ -67,13 +69,15 @@ class ExtractionPlotPanel(MultiPlotPanel):
 
     def _create_axes(self, trial, figure, fullpath):
         axes = self._feature_axes[fullpath] = figure.add_subplot(1,1,1)
-        axes.set_ylabel(pt.FEATURE_AMPLITUDE)
-        axes.set_xlabel(pt.FEATURE_INDEX)
 
     def _plot_features(self, trial, figure, fullpath):
         axes = self._feature_axes[fullpath]
-        while axes.lines:
-            del(axes.lines[0])     
+        axes.clear()
+        filename = os.path.split(fullpath)[1]
+        axes.set_title(filename)
+        axes.set_ylabel(pt.FEATURE_AMPLITUDE)
+        axes.set_xlabel(pt.FEATURE_INDEX)
+        adjust_axes_edges(axes, left=0.04)
 
         if trial.extraction.results is not None:
             features = trial.extraction.results['features']
@@ -87,6 +91,19 @@ class ExtractionPlotPanel(MultiPlotPanel):
             axes.plot(feature, linewidth=lfs.PLOT_LINEWIDTH_4,
                                marker='.', color="k", alpha=.2)
         axes.set_xlim((0,len(features[0])-1))
-        axes.set_title(pt.EXTRACTED_FEATURE_SETS + ': %d\n' % len(features) +
-                       pt.EXCLUDED_FEATURE_SETS + 
-                       ': %d' % num_excluded_features)
+
+        # EXTRACTED FEATURE INFO
+        center = 0.70
+        axes.text(center, 0.95, pt.FEATURE_SETS, 
+                  verticalalignment='center',
+                  horizontalalignment='center',
+                  transform=axes.transAxes)
+        axes.text(center-0.01, 0.91, "%s%d" % (pt.FOUND, len(features)),
+                  verticalalignment='center',
+                  horizontalalignment='right',
+                  transform=axes.transAxes)
+        axes.text(center+0.01, 0.91, "%s%d" % (pt.EXCLUDED, 
+                                               num_excluded_features),
+                  verticalalignment='center',
+                  horizontalalignment='left',
+                  transform=axes.transAxes)
