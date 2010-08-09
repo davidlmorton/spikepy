@@ -8,7 +8,22 @@ def spectral_inversion(kernel):
 
 def make_fir_filter(sampling_freq, critical_freq, kernel_window, taps, kind, 
                     **kwargs):
-
+    """
+    Create a finite impulse response filter kernel.
+    Inputs:
+        sampling_freq    : the sampling frequency in hz of the signal that the
+                           filter will be used on
+        critical_freq    : a single number frequency for high or low pass 
+                           filters, or a tuple of two frequencies for bandpass 
+                           filters
+        kernel_window    : the name of the windowing function to use
+        taps             : the number of sample points to use for filtering 
+                           (this is sometimes called the order)
+        kind             : the kind of passband to use (i.e. 'high', 'low', or 
+                           'band')
+    Returns:
+        kernel           : the filter kernel
+    """
     nyquist_freq = sampling_freq/2
     critical_freq = numpy.array(critical_freq, dtype=numpy.float64)
     normalized_critical_freq = critical_freq / nyquist_freq
@@ -17,6 +32,7 @@ def make_fir_filter(sampling_freq, critical_freq, kernel_window, taps, kind,
         taps += 1
 
     if kind.lower() in ['low', 'low pass', 'low_pass']:
+        print normalized_critical_freq
         kernel = scisig.firwin(taps, normalized_critical_freq, 
                                window=kernel_window, **kwargs)
     elif kind.lower() in ['high', 'high pass', 'high_pass']:
@@ -54,7 +70,7 @@ def fir_filter(signal, sampling_freq, critical_freq, kernel_window='hamming',
         taps            : the number of taps in the kernel (an integer)
         kind            : the kind of pass filtering to perform 
                           -- ('high', 'low', 'band')
-        **kwargs        : keyword arguments passed on to scipy.firwin.
+        **kwargs        : keyword arguments passed on to scipy.signal.firwin.
     Returns:
         filtered_signal     : an n element sequence
     """

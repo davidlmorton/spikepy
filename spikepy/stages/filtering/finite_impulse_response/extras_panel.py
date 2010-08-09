@@ -37,6 +37,9 @@ class ExtrasPanel(ScrolledPanel):
         #---- Kernel Stuff ----
         kernel = make_fir_filter(sampling_freq, critical_freq, kernel_window, 
                                  taps, kind, **kwargs)
+        print kernel_window
+        print taps
+        print kind
         hamming_kernel = make_fir_filter(sampling_freq, critical_freq, 
                                  "hamming", taps, kind, **kwargs)
         boxcar_kernel = make_fir_filter(sampling_freq, critical_freq, "boxcar", 
@@ -82,9 +85,11 @@ class ExtrasPanel(ScrolledPanel):
         windowing_axis.legend(loc="lower right")        
 
         # ---- Frequency response stuff ----
-        frequencies, frequency_responses = scisig.freqz(kernel)
+        frequencies, freq_responses = scisig.freqz(kernel)
+        
         freq_response_axis = figure.add_subplot(2, 2, 2)
-        freq_response_axis.plot(frequencies, frequency_responses)
+        log10_freq_responses = scisig.log10 (abs(freq_responses))
+        freq_response_axis.plot(frequencies, log10_freq_responses)
 
         plot_panel.canvas.draw()
 
@@ -104,7 +109,7 @@ class ExtrasPanel(ScrolledPanel):
 
     def _replot_windowing_functions(self, event=None):
         '''
-        Clear the axis used for the plotting windowing functions and replot the
+        Clear the axis used for plotting the windowing functions and replot the
         windowing functions that are checked.
         '''
         self.windowing_axis.clear()

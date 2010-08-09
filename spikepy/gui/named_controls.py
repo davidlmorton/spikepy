@@ -39,7 +39,7 @@ class NamedChoiceCtrl(wx.Panel):
         return self.choice.GetItems()
 
 class NamedSpinCtrl(wx.Panel):
-    def __init__(self, parent, name="", **kwargs):
+    def __init__(self, parent, name="", min=0, max=100, **kwargs):
         wx.Panel.__init__(self, parent)
 
         self.name = wx.StaticText(self, label=name)
@@ -47,7 +47,8 @@ class NamedSpinCtrl(wx.Panel):
             kwargs['style'] = kwargs['style']|wx.SP_ARROW_KEYS
         else:
             kwargs['style'] = wx.SP_ARROW_KEYS
-        self.spin_ctrl = wx.SpinCtrl(self, size=(50,-1), **kwargs)
+        self.spin_ctrl = wx.SpinCtrl(self, size=(50,-1), min=0, max=max, 
+                                     **kwargs)
         
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         flag = wx.ALIGN_CENTER_VERTICAL|wx.ALL
@@ -59,6 +60,33 @@ class NamedSpinCtrl(wx.Panel):
                   flag=flag|wx.ALIGN_LEFT, border=border)
 
         self.SetSizer(sizer)
+        self.Bind(wx.EVT_SPINCTRL, self._pre_check_value)
+        self.Bind(wx.EVT_TEXT, self._pre_check_value)
+        self.min = min
+
+    def _pre_check_value(self, event=None):
+        '''
+        Check (with a delay) if the inputted value is less than the minimum 
+        and if so, set the value to the minimum.
+        '''
+        value = self.spin_ctrl.GetValue()
+        
+        wx.CallLater(10, self._check_and_color)
+        wx.CallLater(1000, self._check_value)
+
+    def _check_and_color(self):
+        value = self.spin_ctrl.GetValue()
+        print value
+        if value < self.min:
+            self.spin_ctrl.SetBackgroundColour('pink')
+        else:
+            self.spin_ctrl.SetBackgroundColour('white')
+
+    def _check_value(self):
+        value = self.spin_ctrl.GetValue()
+        if value < self.min:
+            self.spin_ctrl.SetValue(self.min)
+            self.spin_ctrl.SetBackgroundColour('white')
 
     def SetRange(self, range_tuple):
         self.spin_ctrl.SetRange(*range_tuple)

@@ -22,8 +22,8 @@
                 "threshold_1": 4.0
             }, 
             "detection_filter": {
-                "critical_freq": 300.0, 
-                "kind": "High Pass", 
+                "critical_freq": 1500.0, 
+                "kind": "Low Pass", 
                 "order": 3, 
                 "function_name": "Butterworth"
             }, 
@@ -34,7 +34,7 @@
                 "function_name": "Butterworth"
             }, 
             "extraction": {
-                "post_padding": 3.25, 
+                "post_padding": 1.5, 
                 "exclude_overlappers": false, 
                 "pre_padding": 1.5
             }
@@ -81,14 +81,14 @@
             "clustering": "K-means", 
             "spike_detection": "Voltage Threshold", 
             "detection_filter": "Finite Impulse Response", 
-            "extraction_filter": "Finite Impulse Response", 
+            "extraction_filter": "Infinite Impulse Response", 
             "extraction": "Waveform"
         }, 
         "settings": {
             "clustering": {
                 "threshold": 1e-08, 
                 "iterations": 30, 
-                "number_of_clusters": 3
+                "number_of_clusters": 2
             }, 
             "spike_detection": {
                 "max_spike_duration": 2.0, 
@@ -98,19 +98,19 @@
                 "threshold_1": 4.0
             }, 
             "detection_filter": {
-                "critical_freq": 300.0, 
+                "critical_freq": 1500.0, 
                 "taps": 101, 
                 "window_name": "hamming", 
-                "kind": "High Pass"
+                "kind": "Low Pass"
             }, 
             "extraction_filter": {
                 "critical_freq": 300.0, 
-                "taps": 101, 
-                "window_name": "hamming", 
-                "kind": "High Pass"
+                "kind": "High Pass", 
+                "order": 3, 
+                "function_name": "Butterworth"
             }, 
             "extraction": {
-                "post_padding": 3.25, 
+                "post_padding": 1.5, 
                 "exclude_overlappers": false, 
                 "pre_padding": 1.5
             }
