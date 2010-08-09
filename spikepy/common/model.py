@@ -8,7 +8,7 @@ from wx.lib.pubsub import Publisher as pub
 from wx.lib.delayedresult import startWorker
 
 from .open_data_file import open_data_file
-from .utils import pool_process
+from .utils import pool_process, upsample_trace_list
 from ..stages import filtering, detection, extraction, clustering
 from .trial import format_traces
 
@@ -154,13 +154,6 @@ class Model(object):
                         data=trial)
         pub.sendMessage(topic='RUNNING_COMPLETED')
 
-    def _detection_all_trials(self, message):
-        for fullpath in self.trials.keys():
-            self._detection(fullpath, *message.data)
-
-    def _detection_trial(self, message):
-        self._detection(*message.data)
-
     # ---- DETECTION ----
     def _detection(self, trial, stage_name, method_name, method_parameters):
         """
@@ -191,17 +184,21 @@ class Model(object):
                         cargs=(trial,))
 
     def _detection_worker(self, trial, method_name, method_parameters):
-        filtered_traces = trial.detection_filter.results
+        new_sample_rate = 30000
+        filtered_traces = pool_process(self._processing_pool, 
+                                       upsample_trace_list,
+                                       args=(trial.detection_filter.results,
+                                             trial.sampling_freq,
+                                             new_sample_rate))
         method = detection.get_method(method_name)
-        # XXX
-        method_parameters['sampling_freq'] = trial.sampling_freq
         spikes = pool_process(self._processing_pool, method.run,
-                              args=(filtered_traces,), 
+                              args=(filtered_traces, new_sample_rate), 
                               kwargs=method_parameters)
         return spikes
 
     def _detection_consumer(self, delayed_result, trial):
         spikes = delayed_result.get()
+        print spikes
         # XXX carefully consider what to do if no spikes were detected.
         if len(spikes[0]) > 0:
             trial.detection.results = spikes
@@ -241,12 +238,16 @@ class Model(object):
         method_parameters['spike_list'] = trial.detection.results[0]
         if len(method_parameters['spike_list']) == 0:
             return None # no spikes from detection = no extraction
-        filtered_traces = trial.extraction_filter.results
+        new_sample_rate = 30000
+        filtered_traces = pool_process(self._processing_pool, 
+                                       upsample_trace_list,
+                                       args=(trial.extraction_filter.results,
+                                             trial.sampling_freq,
+                                             new_sample_rate))
         method = extraction.get_method(method_name)
-        method_parameters['sampling_freq'] = trial.sampling_freq
         features_dict = pool_process(self._processing_pool,
                                      method.run,
-                                     args=(filtered_traces,),
+                                     args=(filtered_traces, new_sample_rate),
                                      kwargs=method_parameters)
         return features_dict
 

@@ -47,6 +47,12 @@ class ResultsNotebook(wx.Notebook):
         pub.subscribe(self._change_page, 
                       topic='STRATEGY_CHOICEBOOK_PAGE_CHANGED')
 
+        self.results_panels = {'detection_filter':detection_filter_panel,
+                               'detection':detection_panel,
+                               'extraction_filter':extraction_filter_panel,
+                               'extraction':extraction_panel,
+                               'clustering':clustering_panel}
+
     def _page_changed(self, event=None):
         old_page_num  = event.GetOldSelection()
         new_page_num  = event.GetSelection()

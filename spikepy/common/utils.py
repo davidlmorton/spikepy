@@ -1,5 +1,7 @@
 import traceback
 
+from scipy.signal import resample
+
 def pool_process(pool, function, args=tuple(), kwargs=dict()):
     if pool is not None:
         try:
@@ -11,4 +13,10 @@ def pool_process(pool, function, args=tuple(), kwargs=dict()):
     else:
         result = function(*args, **kwargs)
     return result
+
+def upsample_trace_list(trace_list, prev_sample_rate, desired_sample_rate):
+    rate_factor = desired_sample_rate/float(prev_sample_rate)
+    return [resample(trace, len(trace)*rate_factor, window='hamming')
+            for trace in trace_list]
+
 

@@ -64,8 +64,7 @@ def two_threshold_spike_find(input_array, threshold_1, threshold_2=None,
         all_spikes = list(s1)
     else:
         s2 = spike_find(input_array, t2, max_spike_width)
-        all_spikes = list(s1) + list(s2)
-
+        all_spikes = sorted(list(s1) + list(s2))
 
     # enforce refractory period
     if len(all_spikes) > 1:
@@ -75,5 +74,4 @@ def two_threshold_spike_find(input_array, threshold_1, threshold_2=None,
                     kept_spikes.append(spike)
     else:
         kept_spikes = all_spikes
-        
     return numpy.array(kept_spikes)
