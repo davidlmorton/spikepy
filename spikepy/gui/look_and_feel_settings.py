@@ -86,8 +86,7 @@ class LookAndFeelSettings(object):
 
     @property
     def PLOT_FIGSIZE(self):
-        size_left = self.MAIN_FRAME_SIZE - (self.STRATEGY_PANE_MIN_SIZE +
-                                            self.FILE_LISTCTRL_MIN_SIZE)
+        size_left = self.MAIN_FRAME_SIZE - self.STRATEGY_PANE_MIN_SIZE
         x_left = size_left[0]
         x_left_in_inches = x_left/self.PLOT_DPI
         width_to_height = 3.14
@@ -105,9 +104,9 @@ class LookAndFeelSettings(object):
     @property
     def CHOICE_BORDER(self):
         if wx.Platform == '__WXMAC__':
-            return 0
+            return 2
         else:
-            return 0
+            return 1
 
     @property
     def MAIN_FRAME_SIZE(self):

@@ -29,9 +29,10 @@ def run(trace_list, sampling_freq, threshold_1=None,
         dt = (1.0/sampling_freq)*1000.0 # in ms
         spike_list = []
         for trace in trace_list:
-            result = two_threshold_spike_find(trace, threshold_1, threshold_2,
-                                              refractory_period,
-                                              max_spike_width)
+            result = two_threshold_spike_find(trace, threshold_1, 
+                                              threshold_2=threshold_2,
+                                            refractory_period=refractory_period,
+                                            max_spike_width=max_spike_width)
             result = numpy.array(result)*dt
             spike_list.append(result)
         return spike_list

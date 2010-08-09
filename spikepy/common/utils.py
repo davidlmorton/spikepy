@@ -12,4 +12,3 @@ def pool_process(pool, function, args=tuple(), kwargs=dict()):
         result = function(*args, **kwargs)
     return result
 
-

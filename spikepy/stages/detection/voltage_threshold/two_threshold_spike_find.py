@@ -1,57 +1,79 @@
-import copy
+import itertools
 
 import numpy
 
 from fast_thresh_detect import fast_thresh_detect
 
+def spike_find(input_array, t, max_spike_width):
+    '''
+    Find the spikes in the input_array.
+    Inputs:
+        input_array              : a numpy array (1-dimensional) holding 
+                                   floats.
+        t                        : threshold for spike detection
+        max_spike_width          : crossings further apart than this will 
+                                   disqualify the spike
+    Returns:
+        spikes                   : a numpy array (1-dimensional) holding
+                                   integers (spike index values)
+    '''
+    crossings = fast_thresh_detect(input_array, threshold=t)
+    spikes = []
+    if len(crossings) > 1:
+        if t > 0.0:
+            # find first positive crossing then pair up crossings
+            first_p = numpy.argwhere( input_array[crossings]<t )[0]
+            for p, n in itertools.izip( crossings[first_p::2], 
+                                        crossings[first_p+1::2] ):
+                if abs(p - n) <= max_spike_width:
+                    peak_index = numpy.argsort(input_array[p:n])[-1]+p
+                    spikes.append(peak_index)
+        else:
+            # find first negative crossing then pair up crossings
+            first_n = numpy.argwhere( input_array[crossings]>t )[0]
+            for n, p in itertools.izip( crossings[first_n::2], 
+                                        crossings[first_n+1::2] ):
+                if abs(p - n) <= max_spike_width:
+                    peak_index = numpy.argsort(input_array[n:p])[0]+n
+                    spikes.append(peak_index)
+    return numpy.array(spikes)
+    
 def two_threshold_spike_find(input_array, threshold_1, threshold_2=None, 
-                             refractory_period=0, max_spike_width=2):
-    spikes_1 = find_spike_occurances(input_array, threshold_1, 
-                                     refractory_period, max_spike_width)
-    if threshold_2 == threshold_1 or threshold_2 is None:
-        return spikes_1
+                             max_spike_width=2, refractory_period=0):
+    '''
+    Find spikes given two thresholds.
+    Inputs:
+        input_array              : a numpy array (1-dimensional) holding 
+                                   floats.
+        threshold_1              : a threshold for spike detection
+        --kwargs--
+        threshold_2              : a threshold for spike detection
+        max_spike_width          : crossings further apart than this will 
+                                   disqualify the spike
+        refractory_period        : after clumping, if spikes are closer 
+                                   than this, the second will be excluded.
+    Returns:
+        spikes                   : a numpy array (1-dimensional) holding
+                                   integers (spike index values)
+
+    '''
+    t1 = max(threshold_1, threshold_2)
+    t2 = min(threshold_1, threshold_2)
+    s1 = spike_find(input_array, t1, max_spike_width)
+    if t2 == t1 or t2 is None:
+        all_spikes = list(s1)
     else:
-        spikes_2 = find_spike_occurances(input_array, threshold_2, 
-                                     refractory_period, max_spike_width)
-        all_spikes = copy.deepcopy(spikes_1)
-        all_spikes.extend(spikes_2)
-        return get_spike_indexes(all_spikes, all_spikes, 
-                             max(max_spike_width, refractory_period), 
-                             return_loners=True)
-
-def find_spike_occurances(input_array, threshold, refractory_period, 
-                          max_spike_width):
-    p_crossings, n_crossings = fast_thresh_detect(input_array, threshold, 
-                                                  refractory_period)
-
-    n_crossings = numpy.array(n_crossings, dtype=numpy.int64)    
-    p_crossings = numpy.array(p_crossings, dtype=numpy.int64)    
-    return get_spike_indexes(p_crossings, n_crossings, max_spike_width)
+        s2 = spike_find(input_array, t2, max_spike_width)
+        all_spikes = list(s1) + list(s2)
 
 
-def get_spike_indexes(p_crossings, n_crossings, max_spike_width, return_loners=False):
-    spike_occurances = [get_spike_index(p, n_crossings, max_spike_width, return_loners)
-                        for p in p_crossings]
-    spike_occurances = list_strip(spike_occurances, None)
-    return spike_occurances
-
-def get_spike_index(p, ns, max_spike_width, return_loners):
-        abs_differences = numpy.abs(ns-p)
-        sorted_indexes  = numpy.argsort(abs_differences)
-        if return_loners: small_index = 1
-        else: small_index = 0
-        if abs_differences[sorted_indexes[small_index]] <= max_spike_width:
-            n_index = sorted_indexes[small_index]
-            spike_occurance = numpy.average([ns[n_index], p])
-            return spike_occurance #TODO should spike occurance be an integer?
-        if return_loners:
-            return p
-
-def list_strip(a_list, item):   
-    while True:
-        try:
-            a_list.remove(item)
-        except ValueError:
-            break
-    return a_list            
-
+    # enforce refractory period
+    if len(all_spikes) > 1:
+        kept_spikes = [all_spikes[0]]
+        for spike in all_spikes[1:]:
+             if abs(kept_spikes[-1]-spike) > refractory_period:
+                    kept_spikes.append(spike)
+    else:
+        kept_spikes = all_spikes
+        
+    return numpy.array(kept_spikes)
