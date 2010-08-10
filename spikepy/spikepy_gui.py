@@ -14,7 +14,7 @@ if __name__ == '__main__':
         wx.CallLater(1000, splash_screen.Destroy)
     from spikepy.gui.utils import get_bitmap_icon
 
-    app = wx.App()
+    app = wx.App(redirect=False)
     splash_screen = MySplashScreen(image=get_bitmap_icon('spikepy_splash'), 
                                    splash_style=wx.SPLASH_CENTRE_ON_SCREEN, 
                                    timeout=1000, 
