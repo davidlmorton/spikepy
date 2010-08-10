@@ -202,7 +202,6 @@ class Model(object):
 
     def _detection_consumer(self, delayed_result, trial):
         spikes = delayed_result.get()
-        print spikes
         # XXX carefully consider what to do if no spikes were detected.
         if len(spikes[0]) > 0:
             trial.detection.results = spikes

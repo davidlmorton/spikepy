@@ -55,6 +55,8 @@ class LookAndFeelSettings(object):
         self.CLUSTER_RIGHT_YLABEL = 25.0 # pixels
         self.CLUSTER_RASTER_RIGHT = prb-45.0 # pixels
         self.CLUSTER_RASTER_LEFT  = plb-45.0 # pixels
+        self.CLUSTER_STD_ALPHA    = 0.35 
+        self.CLUSTER_TRACE_ALPHA  = 0.14
 
         self.PYSHELL_DIALOG_SIZE = (500, 400)
 

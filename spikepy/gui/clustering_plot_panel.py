@@ -100,7 +100,7 @@ class ClusteringPlotPanel(MultiPlotPanel):
         raster_yaxis = raster_axes.get_yaxis()
         raster_yaxis.set_ticks_position('left')
         raster_axes.set_xlabel(pt.PLOT_TIME)
-        raster_axes.set_ylabel('Cluster ID')
+        raster_axes.set_ylabel(pt.CLUSTER_NUMBER)
         # trace_axes will be on top of raster_axes
         trace_axes = figure.add_axes(raster_axes.get_position(), 
                                      axisbg=(1.0, 1.0, 1.0, 0.0),
@@ -112,7 +112,7 @@ class ClusteringPlotPanel(MultiPlotPanel):
         plot_width = (canvas_size[0] - lfs.CLUSTER_RASTER_LEFT -
                                        lfs.CLUSTER_RASTER_RIGHT)
         text_loc_percent = 1.0 + lfs.CLUSTER_RIGHT_YLABEL/plot_width
-        trace_axes.text(text_loc_percent, 0.5, 'Trace Number',
+        trace_axes.text(text_loc_percent, 0.5, pt.TRACE_NUMBER,
                         verticalalignment='center',
                         horizontalalignment='left',
                         rotation='vertical',
@@ -131,11 +131,11 @@ class ClusteringPlotPanel(MultiPlotPanel):
 
         # --- AVG AND STD AXES ---
         average_axes = figure.add_subplot(ncc+2, 2, 3)
-        average_axes.set_ylabel('Spike Averages')
+        average_axes.set_ylabel(pt.AVERAGE_SPIKE_SHAPES)
         average_axes.set_xlabel(pt.PLOT_TIME)
         
         std_axes = figure.add_subplot(ncc+2, 2, 4, sharex=average_axes)
-        std_axes.set_ylabel("Spike STDs")
+        std_axes.set_ylabel(pt.SPIKE_STDS)
         std_axes.set_xlabel(pt.PLOT_TIME)
 
         self.average_axes = average_axes
@@ -145,13 +145,7 @@ class ClusteringPlotPanel(MultiPlotPanel):
         adjust_axes_edges(std_axes, canvas_size_in_pixels=canvas_size, 
                                     left=left)
 
-        
-    def _adjust_subplots(self, canvas_size, figure):
-        self.bottom = bottom
-        self.top    = top
-        
-    def _plot_rasters(self, trial, figure, fullpath, 
-                      ncc, num_clusters):
+    def _plot_rasters(self, trial, figure, fullpath, ncc, num_clusters):
         trace_axes = self.trace_axes
         raster_axes = self.raster_axes
 
@@ -164,7 +158,7 @@ class ClusteringPlotPanel(MultiPlotPanel):
         for trace, trace_offset in zip(traces, trace_offsets):
             trace_axes.plot(times, trace+trace_offset, color=lfs.PLOT_COLOR_2, 
                                  label=pt.DETECTION_TRACE_GRAPH_LABEL,
-                                 alpha=0.35)
+                                 alpha=lfs.CLUSTER_STD_ALPHA)
             trace_ticks.append(numpy.average(trace+trace_offset))
         old_ylim = trace_axes.get_ylim()
         ysize = max(old_ylim) - min(old_ylim) 
@@ -202,16 +196,16 @@ class ClusteringPlotPanel(MultiPlotPanel):
         
         for cluster_num, (average, stds) in averages_and_stds.items():
             line = self.average_axes.plot(trial.times[:len(average)], average,
-                              label='Cluster %d' % cluster_num)[0]
+                              label=pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)[0]
             color = line.get_color()
             self.average_axes.fill_between(trial.times[:len(average)], 
-                                                          average+stds,
-                                                          average-stds,
-                                                          color=color,
-                                                          alpha=0.14)
+                                                  average+stds,
+                                                  average-stds,
+                                                  color=color,
+                                                  alpha=lfs.CLUSTER_TRACE_ALPHA)
 
             self.std_axes.plot(trial.times[:len(stds)], stds, 
-                          label='Cluster %d' % cluster_num)
+                          label=pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)
 
 
     def _get_averages_and_stds(self, trial):

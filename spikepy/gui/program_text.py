@@ -103,3 +103,10 @@ NOT_CONTAIN = '* Names may not contain'
 NOT_ONE_OF = "* Method Set Name must not be one of: \n"
 STRATEGY_SAVE_AS = "Save as: "
 OK_TO_SAVE = 'Press OK to save.'
+
+# --- Clustering Results ---
+CLUSTER_NUMBER = "Cluster Number"
+TRACE_NUMBER = "Trace Number"
+AVERAGE_SPIKE_SHAPES = "Average Spike Shapes"
+SPIKE_STDS = "Spike STDs"
+SPECIFIC_CLUSTER_NUMBER = "Cluster %d" # % cluster_num
