@@ -21,10 +21,8 @@ class ExtractionPlotPanel(MultiPlotPanel):
                                               dpi=self._dpi)
         pub.subscribe(self._remove_trial,  topic="REMOVE_PLOT")
         pub.subscribe(self._trial_added,   topic='TRIAL_ADDED')
-        pub.subscribe(self._trial_altered, topic='TRIAL_EXTRACTIONED')
-        pub.subscribe(self._trial_altered, topic='TRIAL_EXTRACTION_FILTERED')
-        pub.subscribe(self._trial_altered, topic='TRIAL_DETECTIONED')
-        pub.subscribe(self._trial_altered, topic='TRIAL_DETECTION_FILTERED')
+        pub.subscribe(self._trial_altered, topic='TRIAL_FEATURE_EXTRACTED')
+        pub.subscribe(self._trial_altered, topic='STAGE_REINITIALIZED')
 
         self._trials       = {}
         self._feature_axes = {}
@@ -50,7 +48,9 @@ class ExtractionPlotPanel(MultiPlotPanel):
         self._replot_panels.add(fullpath)
 
     def _trial_altered(self, message=None):
-        trial = message.data
+        trial, stage_name = message.data
+        if stage_name != self.name:
+            return
         fullpath = trial.fullpath
         if fullpath == self._currently_shown:
             self.plot(fullpath)

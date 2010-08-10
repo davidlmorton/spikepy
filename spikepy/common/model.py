@@ -20,6 +20,12 @@ class Model(object):
             self._processing_pool = Pool()
         else:
             self._processing_pool = None
+        
+        self.handlers = {'detection_filter':self._filter,
+                         'detection':self._detection,
+                         'extraction_filter':self._filter,
+                         'extraction':self._extraction,
+                         'clustering':self._cluster_single}
 
     def setup_subscriptions(self):
         """
@@ -27,26 +33,26 @@ class Model(object):
         """
         pub.subscribe(self._open_data_file,   "OPEN_DATA_FILE")
         pub.subscribe(self._close_data_file,  "CLOSE_DATA_FILE")
-
-        pub.subscribe(self._carry_out_action, "FILTER_ALL_TRIALS")
-        pub.subscribe(self._carry_out_action, "DETECTION_ALL_TRIALS")
-        pub.subscribe(self._carry_out_action, "EXTRACTION_ALL_TRIALS")
-        pub.subscribe(self._cluster_all,      "CLUSTERING_ALL_TRIALS")
-
-        pub.subscribe(self._carry_out_action, "FILTER_TRIAL")
-        pub.subscribe(self._carry_out_action, "DETECTION_TRIAL")
-        pub.subscribe(self._carry_out_action, "EXTRACTION_TRIAL")
-        pub.subscribe(self._cluster_single,   "CLUSTERING_TRIAL")
+        pub.subscribe(self._carry_out_action, "CARRY_OUT_ACTION")
 
     def _carry_out_action(self, message):
-        action = message.topic[0].lower()
-        handler_name = '_%s' % action.split('_')[0]
-        handler = getattr(self, handler_name)
-        if 'all' in action:
-            for trial in self.trials.values():
-                handler(trial, *message.data)
+        """
+        Carry out an action such as filtering, detection, extraction or 
+        clustering.
+        """
+        stage_name = message.data['stage_name']
+        trial      = message.data['trial']
+        handler = self.handlers[stage_name]
+        if trial == 'all':
+            del message.data['trial']
+            # special case for clustering
+            if stage_name == 'clustering':
+                self._clustering(self.trials.values(), **message.data)
+            else:
+                for _trial in self.trials.values():
+                    handler(_trial, **message.data)
         else:
-            handler(*message.data)
+            handler(**message.data)
             
     # ---- OPEN FILE ----
     def _open_data_file(self, message):
@@ -102,7 +108,8 @@ class Model(object):
             pub.sendMessage(topic='FILE_CLOSED', data=fullpath)
 
     # ---- FILTER ----
-    def _filter(self, trial, stage_name, method_name, method_parameters):
+    def _filter(self, trial=None, stage_name=None, method_name=None, 
+                      settings=None):
         """
         Perform filtering on the raw_data of a Trial and store the results.
         Inputs:
@@ -110,8 +117,8 @@ class Model(object):
             stage_name      : a string (one of 'Detection Filter' or 
                                                'Extraction Filter')
             method_name     : a string
-            method_parameters   : a dictionary of keyword arguments that 
-                                  are required by the method.run() function.
+            settings        : a dictionary of keyword arguments that 
+                              are required by the method.run() function.
         Alters:
             self.trials[fullpath]    : stores results, method_used and settings
                                        in the appropriate StageData instance.
@@ -126,36 +133,33 @@ class Model(object):
         stage_data = trial.get_stage_data(stage_name)
         stage_data.reinitialize()
         stage_data.method   = method_name
-        stage_data.settings = copy.deepcopy(method_parameters)
+        stage_data.settings = copy.deepcopy(settings)
 
-        trace_type = stage_name.split()[0] # removes ' Filter' from name
         startWorker(self._filter_consumer, self._filter_worker,
                         wargs=(trial, stage_name, method_name, 
-                               method_parameters, trace_type),
-                        cargs=(trial, trace_type, stage_name))
+                               settings),
+                        cargs=(trial, stage_name))
 
-    def _filter_worker(self, trial, stage_name, method_name, 
-                             method_parameters, trace_type):
+    def _filter_worker(self, trial, stage_name, method_name, settings):
         raw_traces = trial.raw_traces
         filtered_traces = []
         method = filtering.get_method(method_name)
-        # XXX just pass sampling_freq as a standard argument
-        method_parameters['sampling_freq'] = trial.sampling_freq
         filtered_traces = pool_process(self._processing_pool, method.run,
-                                       args=(raw_traces,),
-                                       kwargs=method_parameters)
+                                       args=(raw_traces, trial.sampling_freq),
+                                       kwargs=settings)
         return filtered_traces
 
-    def _filter_consumer(self, delayed_result, trial,trace_type, stage_name):
+    def _filter_consumer(self, delayed_result, trial, stage_name):
         filtered_traces = delayed_result.get()
         stage_data = trial.get_stage_data(stage_name)
         stage_data.results = format_traces(filtered_traces)
-        pub.sendMessage(topic='TRIAL_%s_FILTERED' % trace_type.upper(),
-                        data=trial)
+        pub.sendMessage(topic='TRIAL_FILTERED',
+                        data=(trial, stage_name))
         pub.sendMessage(topic='RUNNING_COMPLETED')
 
     # ---- DETECTION ----
-    def _detection(self, trial, stage_name, method_name, method_parameters):
+    def _detection(self, trial=None, stage_name=None, method_name=None, 
+                         settings=None):
         """
         Perform spike detection on the detection filtered traces of a Trial 
             and store the results.
@@ -163,7 +167,7 @@ class Model(object):
             trial           : a Trial object
             stage_name      : a string (unused, kept to keep API consistent)
             method_name     : a string
-            method_parameters   : a dictionary of keyword arguments that 
+            settings   : a dictionary of keyword arguments that 
                                   are required by the method.run() function.
         Alters:
             self.trials[fullpath]   : stores results, method_used and settings
@@ -177,13 +181,13 @@ class Model(object):
         """
         trial.detection.reinitialize()
         trial.detection.method   = method_name
-        trial.detection.settings = copy.deepcopy(method_parameters)
+        trial.detection.settings = copy.deepcopy(settings)
 
         startWorker(self._detection_consumer, self._detection_worker,
-                        wargs=(trial, method_name, method_parameters),
+                        wargs=(trial, method_name, settings),
                         cargs=(trial,))
 
-    def _detection_worker(self, trial, method_name, method_parameters):
+    def _detection_worker(self, trial, method_name, settings):
         new_sample_rate = 30000
         filtered_traces = pool_process(self._processing_pool, 
                                        upsample_trace_list,
@@ -193,7 +197,7 @@ class Model(object):
         method = detection.get_method(method_name)
         spikes = pool_process(self._processing_pool, method.run,
                               args=(filtered_traces, new_sample_rate), 
-                              kwargs=method_parameters)
+                              kwargs=settings)
         return spikes
 
     def _detection_consumer(self, delayed_result, trial):
@@ -202,11 +206,12 @@ class Model(object):
         # XXX carefully consider what to do if no spikes were detected.
         if len(spikes[0]) > 0:
             trial.detection.results = spikes
-        pub.sendMessage(topic='TRIAL_DETECTIONED', data=trial)
+        pub.sendMessage(topic='TRIAL_SPIKE_DETECTED', data=(trial, 'detection'))
         pub.sendMessage(topic='RUNNING_COMPLETED')
 
     # ---- EXTRACTION ----
-    def _extraction(self, trial, stage_name, method_name, method_parameters):
+    def _extraction(self, trial=None, stage_name=None, method_name=None, 
+                          settings=None):
         """
         Perform feature extraction on the extraction filtered traces of a Trial 
             and store the results.
@@ -214,8 +219,8 @@ class Model(object):
             trial           : a Trial object
             stage_name      : a string (unused, kept to keep API consistent)
             method_name     : a string
-            method_parameters   : a dictionary of keyword arguments that 
-                                  are required by the method.run() function.
+            settings        : a dictionary of keyword arguments that 
+                              are required by the method.run() function.
         Alters:
             self.trials[fullpath]   : stores results, method_used and settings
                                       in the appropriate StageData instance.
@@ -228,15 +233,14 @@ class Model(object):
         """
         trial.extraction.reinitialize()
         trial.extraction.method   = method_name
-        trial.extraction.settings = copy.deepcopy(method_parameters)
+        trial.extraction.settings = copy.deepcopy(settings)
         startWorker(self._extraction_consumer, self._extraction_worker,
-                        wargs=(trial, method_name, method_parameters),
+                        wargs=(trial, method_name, settings),
                         cargs=(trial,))
 
-    def _extraction_worker(self, trial, method_name, method_parameters):
-        # XXX
-        method_parameters['spike_list'] = trial.detection.results[0]
-        if len(method_parameters['spike_list']) == 0:
+    def _extraction_worker(self, trial, method_name, settings):
+        spike_list = trial.detection.results[0]
+        if len(spike_list) == 0:
             return None # no spikes from detection = no extraction
         new_sample_rate = 30000
         filtered_traces = pool_process(self._processing_pool, 
@@ -247,26 +251,25 @@ class Model(object):
         method = extraction.get_method(method_name)
         features_dict = pool_process(self._processing_pool,
                                      method.run,
-                                     args=(filtered_traces, new_sample_rate),
-                                     kwargs=method_parameters)
+                                     args=(filtered_traces, 
+                                           new_sample_rate,
+                                           spike_list),
+                                     kwargs=settings)
         return features_dict
 
     def _extraction_consumer(self, delayed_result, trial):
         features_dict = delayed_result.get()
         trial.extraction.results = features_dict
-        pub.sendMessage(topic='TRIAL_EXTRACTIONED', data=trial)
+        pub.sendMessage(topic='TRIAL_FEATURE_EXTRACTED', data=(trial,
+                                                               'extraction'))
         pub.sendMessage(topic='RUNNING_COMPLETED')
 
-    def _cluster_all(self, message):
-        trial_list = self.trials.values()
-        self._clustering(trial_list, *message.data)
-
-    def _cluster_single(self, message):
-        pass
+    def _cluster_single(self, trial, **kwargs):
+        return self._clustering([trial], **kwargs)
 
     # ---- CLUSTERING ----
-    def _clustering(self, trial_list, stage_name, method_name, 
-                          method_parameters):
+    def _clustering(self, trial_list=[], stage_name=None, method_name=None, 
+                          settings=None):
         """
         Perform clustering on the extracted features of all Trials in 
             trial_list and store the results.
@@ -274,8 +277,8 @@ class Model(object):
             trial_list      : a list of Trial objects
             stage_name      : a string (unused, kept to keep API consistent)
             method_name     : a string
-            method_parameters   : a dictionary of keyword arguments that 
-                                  are required by the method.run() function.
+            settings        : a dictionary of keyword arguments that 
+                              are required by the method.run() function.
         Alters:
             self.trials[fullpath]   : stores results, method_used and settings
                                       in the appropriate StageData instance.
@@ -288,12 +291,12 @@ class Model(object):
         for trial in trial_list:
             trial.clustering.reinitialize()
             trial.clustering.method   = method_name
-            trial.clustering.settings = copy.deepcopy(method_parameters)
+            trial.clustering.settings = copy.deepcopy(settings)
         startWorker(self._clustering_consumer, self._clustering_worker,
-                        wargs=(trial_list, method_name, method_parameters),
+                        wargs=(trial_list, method_name, settings),
                         cargs=(trial_list,))
 
-    def _clustering_worker(self, trial_list, method_name, method_parameters):
+    def _clustering_worker(self, trial_list, method_name, settings):
         # get all feature_sets from all trials in a single long list.
         master_key_list   = []
         feature_set_list  = []
@@ -314,7 +317,7 @@ class Model(object):
 
         results = pool_process(self._processing_pool, method.run,
                                args=(feature_set_list,),
-                               kwargs=(method_parameters))
+                               kwargs=(settings))
 
         # initialize clustering results to empty_list_dictionaries
         cluster_identities = set(results)
@@ -331,5 +334,5 @@ class Model(object):
 
     def _clustering_consumer(self, delayed_result, trial_list):
         for trial in trial_list:
-            pub.sendMessage(topic='TRIAL_CLUSTERINGED', data=trial)
+            pub.sendMessage(topic='TRIAL_CLUSTERED', data=(trial,'clustering'))
         pub.sendMessage(topic='RUNNING_COMPLETED')

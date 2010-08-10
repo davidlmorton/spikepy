@@ -23,15 +23,30 @@ class StrategyPane(ScrolledPanel):
 
         # ===== PANELS =====
         detection_filter_panel = StagePanel(stage_choicebook, 
-                                             1, pt.DETECTION_FILTER, filtering)
+                                            stage_num=1,
+                                            display_name=pt.DETECTION_FILTER,
+                                            stage_name='detection_filter',
+                                            module=filtering)
         detection_panel = StagePanel(stage_choicebook, 
-                                             2, pt.DETECTION, detection)
-        extraction_filter_panel = StagePanel(stage_choicebook, 
-                                             3, pt.EXTRACTION_FILTER, filtering)
-        extraction_panel = StagePanel(stage_choicebook, 
-                                             4, pt.EXTRACTION, extraction)
+                                     stage_num=2,
+                                     display_name=pt.DETECTION,
+                                     stage_name='detection',
+                                     module=detection)
+        extraction_filter_panel = StagePanel(stage_choicebook,
+                                             stage_num=3,
+                                             display_name=pt.EXTRACTION_FILTER,
+                                             stage_name='extraction_filter',
+                                             module=filtering)
+        extraction_panel = StagePanel(stage_choicebook,
+                                      stage_num=4,
+                                      display_name=pt.EXTRACTION,
+                                      stage_name='extraction',
+                                      module=extraction)
         clustering_panel = StagePanel(stage_choicebook, 
-                                             5, pt.CLUSTERING, clustering)
+                                      stage_num=5,
+                                      display_name=pt.CLUSTERING,
+                                      stage_name='clustering',
+                                      module=clustering)
 
         # ===== CHOICEBOOK PAGES =====
         stage_choicebook.AddPage(detection_filter_panel, 
@@ -81,7 +96,7 @@ class StrategyPane(ScrolledPanel):
     def _set_run_state(self, message=None):
         stage_run_state = message.data
         for stage in self.stages:
-            stage_name = stage.stage_name.lower().replace(' ','_')
+            stage_name = stage.stage_name
             stage.run_button.Enable(stage_run_state[stage_name])
             
     def _results_notebook_page_changing(self, message=None):
@@ -178,10 +193,16 @@ class StrategySummary(wx.Panel):
         self.Layout()
 
 class StagePanel(wx.Panel):
-    def __init__(self, parent, stage_num, stage_name, stage_module, **kwargs):
+    def __init__(self, parent, stage_num=None, 
+                               display_name=None,
+                               stage_name=None, 
+                               module=None, 
+                               **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
         self.stage_num = stage_num
+        self.display_name = display_name
         self.stage_name = stage_name
+        stage_module = module
 
         # --- METHODS ---
         self.methods = {}
@@ -225,7 +246,7 @@ class StagePanel(wx.Panel):
     def _set_stage_parameters(self, message=None):
         kwargs = message.data
         stage_name = kwargs['stage_name']
-        if stage_name.lower() != self.stage_name.lower():
+        if stage_name != self.stage_name:
             print "not right panel. This panel is %s" % self.stage_name
             print "stage_name.lower is %s" % stage_name.lower()
             return # not the right stage_panel
@@ -263,63 +284,9 @@ class StagePanel(wx.Panel):
         self.run_button.SetLabel(pt.RUN_BUTTON_RUNNING_STATUS)
         self.run_button.Disable()
         wx.Yield() # about to let scipy hog cpu, so process all wx events.
-        action = self.stage_name.split()[-1].upper()
-        topic = '%s_ALL_TRIALS' % action
-        pub.sendMessage(topic=topic, data=(self.stage_name, 
-                                              self._method_name_chosen,
-                                              settings))
-
-class DetectionPanel(wx.Panel):
-    def __init__(self, parent, stage_num, stage_name, **kwargs):
-        wx.Panel.__init__(self, parent, **kwargs)
-
-        title_panel = TitlePanel(self, stage_num, stage_name)
-
-        sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        ea_flag = wx.EXPAND|wx.ALL
-        sizer.Add(title_panel, proportion=0, flag=ea_flag, border=5)
-
-        self.SetSizer(sizer)
-    
-
-class TitlePanel(wx.Panel):
-    def __init__(self, parent, stage_num, stage_name, **kwargs):
-        wx.Panel.__init__(self, parent, **kwargs)
-        stage_num_text = wx.StaticText(self, label="Stage\n%d" % stage_num,
-                                       style=wx.ALIGN_CENTER)
-        stage_num_font = stage_num_text.GetFont()
-        stage_num_font.SetWeight(wx.FONTWEIGHT_BOLD)
-        stage_num_text.SetFont(stage_num_font)
-        stage_name_text = wx.StaticText(self, label=stage_name)
-        
-        sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        sizer.Add(stage_num_text, proportion=0, flag=wx.EXPAND|wx.ALL, 
-                                                                    border=5)
-        sizer.Add(stage_name_text, proportion=0, 
-                  flag=wx.ALIGN_CENTER_VERTICAL)
-
-        self.SetSizer(sizer)
-
-class DescriptionPanel(wx.Panel):
-    def __init__(self, parent, description="Choose a filter method.", **kwargs):
-        wx.Panel.__init__(self, parent, **kwargs)
-        self.description = description
-        description_text = wx.StaticText(self, 
-                                    label="Description: %s" % self.description)
-        sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        sizer.Add(description_text, proportion=0)
-        
-        self.SetSizer(sizer)
-
-class ControlsPanel(wx.Panel):
-    def __init__(self, parent, **kwargs):
-        wx.Panel.__init__(self, parent, **kwargs)
-
-def make_dict_hashable(unhashable_dict):
-    for key in unhashable_dict.keys():
-        if (isinstance(unhashable_dict[key], dict) and 
-            not isinstance(unhashable_dict[key], HashableDict)):
-            unhashable_dict[key] = HashableDict(unhashable_dict[key])
-            make_dict_hashable(unhashable_dict[key])
-
+        data = {'trial':'all',
+                'stage_name':self.stage_name,
+                'method_name':self._method_name_chosen,
+                'settings':settings}
+        pub.sendMessage(topic='CARRY_OUT_ACTION', data=data)
 

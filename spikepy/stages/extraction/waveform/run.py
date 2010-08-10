@@ -4,13 +4,12 @@ import numpy
 
 from .window_spikes import window_spikes
 
-def run(trace_list, sampling_freq=None,
+def run(trace_list, sampling_freq,
                     spike_list=None,
                     pre_padding=None,
                     post_padding=None,
                     exclude_overlappers=None):
-    if (sampling_freq       is None or
-        spike_list          is None or
+    if (spike_list          is None or
         pre_padding         is None or
         post_padding        is None or
         exclude_overlappers is None):

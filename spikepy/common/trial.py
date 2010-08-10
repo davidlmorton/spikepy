@@ -2,6 +2,7 @@ import time
 import datetime
 import json
 
+import wx
 from wx.lib.pubsub import Publisher as pub
 import numpy
 
@@ -26,15 +27,15 @@ class Trial(object):
         else:
             self.times = None
 
-        self.clustering        = StageData(name='clustering',       
+        self.clustering        = StageData(self, name='clustering',       
                                            dependents=[])
-        self.extraction        = StageData(name='extraction',       
+        self.extraction        = StageData(self, name='extraction',       
                                            dependents=[self.clustering])
-        self.detection         = StageData(name='spike_detection',        
+        self.detection         = StageData(self, name='detection',        
                                            dependents=[self.extraction])
-        self.extraction_filter = StageData(name='extraction_filter',
+        self.extraction_filter = StageData(self, name='extraction_filter',
                                            dependents=[self.extraction])
-        self.detection_filter  = StageData(name='detection_filter', 
+        self.detection_filter  = StageData(self, name='detection_filter', 
                                            dependents=[self.detection])
 
         self.clustering.set_prereqs([self.extraction])
@@ -97,7 +98,8 @@ def format_traces(trace_list):
 
 
 class StageData(object):
-    def __init__(self, name, dependents=[], prereqs=[]):
+    def __init__(self, trial, name=None, dependents=[], prereqs=[]):
+        self.trial = trial
         self.name = name
         self.dependents = dependents
         self.prereqs = prereqs
@@ -110,9 +112,13 @@ class StageData(object):
 
     def set_prereqs(self, prereqs):
         self.prereqs = prereqs
-
+    
+    def publish_reinitialized(self):
+        pub.sendMessage(topic='STAGE_REINITIALIZED', 
+                        data=(self.trial, self.name))
     def reinitialize(self):
         if self.results is not None:
+            wx.CallLater(20, self.publish_reinitialized)
             self.results  = None
             self.settings = None
             self.method   = None

@@ -7,27 +7,28 @@ from .extraction_plot_panel import ExtractionPlotPanel
 from .clustering_plot_panel import ClusteringPlotPanel
 from .look_and_feel_settings import lfs
 from . import program_text as pt
-from ..stages import filtering, detection, extraction
+from ..stages import filtering, detection, extraction, clustering
 from .utils import SinglePanelFrame
 
-plot_panels = {"detection filter" : FilterPlotPanel,
+plot_panels = {"detection_filter" : FilterPlotPanel,
                "detection"        : DetectionPlotPanel,
-               "extraction filter": FilterPlotPanel,
+               "extraction_filter": FilterPlotPanel,
                "extraction"       : ExtractionPlotPanel,
                "clustering"       : ClusteringPlotPanel}
 
-stage_modules = {"detection filter"  : filtering,
+stage_modules = {"detection_filter"  : filtering,
                  "detection"         : detection,
-                 "extraction filter" : filtering,
-                 "extraction"        : extraction,}
+                 "extraction_filter" : filtering,
+                 "extraction"        : extraction,
+                 "clustering"        : clustering}
 
 class ResultsNotebook(wx.Notebook):
     def __init__(self, parent, **kwargs):
         wx.Notebook.__init__(self, parent, **kwargs)
         
-        detection_filter_panel = ResultsPanel(self,  "detection filter")
+        detection_filter_panel = ResultsPanel(self,  "detection_filter")
         detection_panel = ResultsPanel(self,         "detection")
-        extraction_filter_panel = ResultsPanel(self, "extraction filter")
+        extraction_filter_panel = ResultsPanel(self, "extraction_filter")
         extraction_panel = ResultsPanel(self,        "extraction")
         clustering_panel = ResultsPanel(self,        "clustering")
         
@@ -71,7 +72,7 @@ class ResultsPanel(wx.Panel):
         wx.Panel.__init__(self, parent, **kwargs)
         self.name = name
         cursor_position_bar = CursorPositionBar(self)
-        self.plot_panel = plot_panels[self.name](self, self.name.split()[0])
+        self.plot_panel = plot_panels[self.name](self, self.name)
 
         method_extras_button = wx.Button(self, label=pt.METHOD_EXTRAS)
 

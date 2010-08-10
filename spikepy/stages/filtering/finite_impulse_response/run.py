@@ -1,12 +1,11 @@
 from .simple_fir import fir_filter
 
-def run(trace_list, window_name=None, 
-               sampling_freq=None,
+def run(trace_list, sampling_freq, 
+               window_name=None, 
                critical_freq=None,
                taps=None,
                kind=None):
     if (window_name is None or
-        sampling_freq is None or
         critical_freq is None or
         taps is None or
         kind is None):

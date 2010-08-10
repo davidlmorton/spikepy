@@ -27,11 +27,10 @@ class StrategyManager(object):
         pub.subscribe(self.save_all_strategies, topic='SAVE_ALL_STRATEGIES')
         pub.subscribe(self._set_strategy, topic='SET_STRATEGY')
         pub.subscribe(self._recalc_run_state, topic='FILE_OPENED')
-        pub.subscribe(self._recalc_run_state, topic='TRIAL_DETECTION_FILTERED')
-        pub.subscribe(self._recalc_run_state, topic='TRIAL_EXTRACTION_FILTERED')
-        pub.subscribe(self._recalc_run_state, topic='TRIAL_DETECTIONED')
-        pub.subscribe(self._recalc_run_state, topic='TRIAL_EXTRACTIONED')
-        pub.subscribe(self._recalc_run_state, topic='TRIAL_CLUSTERINGED')
+        pub.subscribe(self._recalc_run_state, topic='TRIAL_FILTERED')
+        pub.subscribe(self._recalc_run_state, topic='TRIAL_SPIKE_DETECTED')
+        pub.subscribe(self._recalc_run_state, topic='TRIAL_FEATURE_EXTRACTED')
+        pub.subscribe(self._recalc_run_state, topic='TRIAL_CLUSTERED')
         self.strategy_pane.Bind(wx.EVT_BUTTON, self.save_button_pressed, 
                                 self.save_button)
         self._last_current_strategy = None

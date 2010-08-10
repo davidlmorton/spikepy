@@ -1,12 +1,11 @@
 from .simple_iir import butterworth, bessel
 
-def run(trace_list, function_name=None, 
-               sampling_freq=None,
+def run(trace_list, sampling_freq,
+               function_name=None, 
                critical_freq=None,
                order=None,
                kind=None):
     if (function_name is None or
-        sampling_freq is None or
         critical_freq is None or
         order is None or
         kind is None):

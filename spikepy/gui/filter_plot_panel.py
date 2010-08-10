@@ -22,13 +22,12 @@ class FilterPlotPanel(MultiPlotPanel):
                                               dpi=self._dpi)
         pub.subscribe(self._remove_trial,   topic="REMOVE_PLOT")
         pub.subscribe(self._trial_added,    topic='TRIAL_ADDED')
-        pub.subscribe(self._trial_filtered, topic='TRIAL_%s_FILTERED' 
-                                                   % name.upper())
+        pub.subscribe(self._trial_filtered, topic='TRIAL_FILTERED')
 
-        if name.lower() == 'detection':
+        if name == 'detection_filter':
             self.line_color = lfs.PLOT_COLOR_2
             self.line_width = lfs.PLOT_LINEWIDTH_2
-        if name.lower() == 'extraction':
+        if name == 'extraction_filter':
             self.line_color = lfs.PLOT_COLOR_3
             self.line_width = lfs.PLOT_LINEWIDTH_3
 
@@ -60,7 +59,9 @@ class FilterPlotPanel(MultiPlotPanel):
         self._replot_panels.add(fullpath)
 
     def _trial_filtered(self, message=None):
-        trial = message.data
+        trial, stage_name = message.data
+        if stage_name != self.name:
+            return
         fullpath = trial.fullpath
         if fullpath == self._currently_shown:
             self.plot(fullpath)
@@ -128,7 +129,7 @@ class FilterPlotPanel(MultiPlotPanel):
                                     bottom=bottom)
 
     def _plot_filtered_traces(self, trial, figure, fullpath):
-        stage_data = getattr(trial, self.name.lower()+'_filter')
+        stage_data = getattr(trial, self.name)
         if stage_data.results is not None:
             traces = stage_data.results
         else:

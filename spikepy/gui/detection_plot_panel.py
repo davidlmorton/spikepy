@@ -23,8 +23,9 @@ class DetectionPlotPanel(MultiPlotPanel):
                                               dpi=self._dpi)
         pub.subscribe(self._remove_trial,  topic="REMOVE_PLOT")
         pub.subscribe(self._trial_added,   topic='TRIAL_ADDED')
-        pub.subscribe(self._trial_altered, topic='TRIAL_DETECTIONED')
-        pub.subscribe(self._trial_altered, topic="TRIAL_DETECTION_FILTERED")
+        pub.subscribe(self._trial_altered, topic='TRIAL_SPIKE_DETECTED')
+        pub.subscribe(self._trial_filtered, topic='TRIAL_FILTERED')
+        pub.subscribe(self._trial_altered, topic="STAGE_REINITIALIZED")
 
         self._trials     = {}
         self._trace_axes = {}
@@ -55,9 +56,15 @@ class DetectionPlotPanel(MultiPlotPanel):
         self._create_axes(trial, figure, fullpath)
         self._replot_panels.add(fullpath)
         
+    def _trial_filtered(self, message=None):
+        trial, stage_name = message.data
+        if stage_name == 'detection_filter':
+            self._trial_altered(message=message, force=True)
 
-    def _trial_altered(self, message=None):
-        trial = message.data
+    def _trial_altered(self, message=None, force=False):
+        trial, stage_name = message.data
+        if stage_name != self.name and not force:
+            return
         fullpath = trial.fullpath
         if fullpath == self._currently_shown:
             self.plot(fullpath)
