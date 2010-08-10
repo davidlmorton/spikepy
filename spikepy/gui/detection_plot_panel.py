@@ -98,13 +98,8 @@ class DetectionPlotPanel(MultiPlotPanel):
         axes.set_xlabel(pt.PLOT_TIME)
 
         # lay out subplots
-        canvas_size = self._plot_panels[fullpath]._original_min_size
-        left   = lfs.PLOT_LEFT_BORDER / canvas_size[0]
-        right  = 1.0 - lfs.PLOT_RIGHT_BORDER / canvas_size[0]
-        top    = 1.0 - lfs.PLOT_TOP_BORDER / canvas_size[1]
-        bottom = lfs.PLOT_BOTTOM_BORDER / canvas_size[1]
-        figure.subplots_adjust(hspace=0.025, left=left, right=right, 
-                               bottom=bottom, top=top)
+        canvas_size = self._plot_panels[fullpath].GetMinSize()
+        lfs.default_adjust_subplots(figure, canvas_size)
 
         # --- add axis for spike plot ---
         self._spike_axes[fullpath] = figure.add_subplot(
@@ -112,7 +107,9 @@ class DetectionPlotPanel(MultiPlotPanel):
         spike_axes = self._spike_axes[fullpath]
         self.setup_spike_axes_labels(spike_axes, fullpath)
         
-        adjust_axes_edges(spike_axes, bottom=bottom)
+        bottom = lfs.AXES_BOTTOM
+        adjust_axes_edges(spike_axes, canvas_size_in_pixels=canvas_size,
+                                      bottom=bottom)
 
     def setup_spike_axes_labels(self, spike_axes, fullpath):
         spike_axes.set_xlabel(pt.PLOT_TIME)

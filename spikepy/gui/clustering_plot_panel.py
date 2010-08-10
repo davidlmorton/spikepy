@@ -74,9 +74,9 @@ class ClusteringPlotPanel(MultiPlotPanel):
                 self._plot_panels[fullpath].set_minsize(figwidth, 
                                                         figheight)
                 figure.clear()
-                self._adjust_subplots(self._plot_panels[fullpath].GetMinSize(),
-                                      figure)
-                self._setup_axes(trial, figure, fullpath, 
+                canvas_size = self._plot_panels[fullpath].GetMinSize()
+                lfs.default_adjust_subplots(figure, canvas_size)
+                self._setup_axes(trial, figure, fullpath, canvas_size, 
                                  num_cluster_combinations, num_clusters)
             
             self._plot_rasters(trial, figure, fullpath, 
@@ -94,7 +94,8 @@ class ClusteringPlotPanel(MultiPlotPanel):
                 self._fig_cleared = True
                 self.draw_canvas(fullpath)
 
-    def _setup_axes(self, trial, figure, fullpath, ncc, num_clusters):
+    def _setup_axes(self, trial, figure, fullpath, canvas_size,  
+                    ncc, num_clusters):
         # --- RASTER AND TRACE AXES ---
         raster_axes = figure.add_subplot(ncc+2, 1, 1)
         raster_yaxis = raster_axes.get_yaxis()
@@ -109,18 +110,22 @@ class ClusteringPlotPanel(MultiPlotPanel):
         trace_axes.set_title(filename)
         trace_yaxis = trace_axes.get_yaxis()
         trace_yaxis.set_ticks_position('right')
-        trace_axes.text(1.04, 0.5, 'Trace Number',
+        plot_width = (canvas_size[0] - lfs.CLUSTER_RASTER_LEFT -
+                                       lfs.CLUSTER_RASTER_RIGHT)
+        text_loc_percent = 1.0 + lfs.CLUSTER_RIGHT_YLABEL/plot_width
+        trace_axes.text(text_loc_percent, 0.5, 'Trace Number',
                         verticalalignment='center',
                         horizontalalignment='left',
                         rotation='vertical',
                         transform=trace_axes.transAxes,
                         clip_on=False)
 
-        right = -0.015
-        left  = -0.04 
+        bottom = lfs.AXES_BOTTOM 
+        right  = lfs.CLUSTER_RASTER_RIGHT
+        left   = lfs.CLUSTER_RASTER_LEFT 
         for axes in [trace_axes, raster_axes]:
-            adjust_axes_edges(axes, bottom=self.bottom, 
-                              right=right, left=left)
+            adjust_axes_edges(axes, canvas_size_in_pixels=canvas_size, 
+                                    bottom=bottom, right=right, left=left)
 
         self.trace_axes  = trace_axes
         self.raster_axes = raster_axes
@@ -137,18 +142,17 @@ class ClusteringPlotPanel(MultiPlotPanel):
         self.average_axes = average_axes
         self.std_axes     = std_axes
 
+        left   = lfs.AXES_LEFT 
+        adjust_axes_edges(std_axes, canvas_size_in_pixels=canvas_size, 
+                                    left=left)
+
         
     def _adjust_subplots(self, canvas_size, figure):
-        left   = lfs.PLOT_LEFT_BORDER / canvas_size[0]
-        right  = 1.0 - lfs.PLOT_RIGHT_BORDER / canvas_size[0]
-        top    = 1.0 - lfs.PLOT_TOP_BORDER / canvas_size[1]
-        bottom = lfs.PLOT_BOTTOM_BORDER / canvas_size[1]
-        figure.subplots_adjust(hspace=0.025, left=left, right=right, 
-                               bottom=bottom, top=top)
         self.bottom = bottom
         self.top    = top
         
-    def _plot_rasters(self, trial, figure, fullpath, ncc, num_clusters):
+    def _plot_rasters(self, trial, figure, fullpath, 
+                      ncc, num_clusters):
         trace_axes = self.trace_axes
         raster_axes = self.raster_axes
 
@@ -195,14 +199,19 @@ class ClusteringPlotPanel(MultiPlotPanel):
 
         
     def _plot_clusters(self, trial, figure, fullpath, ncc):
-        averages, stds = self._get_averages_and_stds(trial)
+        averages_and_stds = self._get_averages_and_stds(trial)
         
-        for cluster_num, average in averages.items():
-            self.average_axes.plot(trial.times[:len(average)], average,
-                              label='Cluster %d' % cluster_num)
+        for cluster_num, (average, stds) in averages_and_stds.items():
+            line = self.average_axes.plot(trial.times[:len(average)], average,
+                              label='Cluster %d' % cluster_num)[0]
+            color = line.get_color()
+            self.average_axes.fill_between(trial.times[:len(average)], 
+                                                          average+stds,
+                                                          average-stds,
+                                                          color=color,
+                                                          alpha=0.14)
 
-        for cluster_num, std in stds.items():
-            self.std_axes.plot(trial.times[:len(std)], std, 
+            self.std_axes.plot(trial.times[:len(stds)], stds, 
                           label='Cluster %d' % cluster_num)
 
 
@@ -215,13 +224,13 @@ class ClusteringPlotPanel(MultiPlotPanel):
             for time in time_list:
                 feature_list_index = feature_times.index(time) 
                 features[cluster_num].append(feature_list[feature_list_index])
-        stds = {}
-        averages = {}
+        return_dict = {}
         for key in features.keys():
             features[key] = numpy.array(features[key])
-            stds[key]     = numpy.std(features[key],     axis=0)
-            averages[key] = numpy.average(features[key], axis=0)
-        return averages, stds
+            stds     = numpy.std(features[key],     axis=0)
+            average  = numpy.average(features[key], axis=0)
+            return_dict[key] = (average, stds)
+        return return_dict
 
     def _plot_distances(self, trial, figure, fullpath, ncc):
         pass

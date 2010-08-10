@@ -24,10 +24,6 @@ class LookAndFeelSettings(object):
         self.FILE_LISTCTRL_MIN_SIZE = numpy.array((200, 150))
         
         self.PLOT_FACECOLOR = rgb_to_matplotlib_color(255, 255, 255, 255)
-        self.PLOT_LEFT_BORDER   = 90.0 # pixels
-        self.PLOT_RIGHT_BORDER  = 30.0 # pixels
-        self.PLOT_TOP_BORDER    = 40.0 # pixels
-        self.PLOT_BOTTOM_BORDER = 45.0 # pixels
         self.PLOT_LINEWIDTH_1 = 1.5
         self.PLOT_LINEWIDTH_2 = 2.5
         self.PLOT_LINEWIDTH_3 = 2.5
@@ -39,14 +35,30 @@ class LookAndFeelSettings(object):
         # amber/orange
         self.PLOT_COLOR_3 = rgb_to_matplotlib_color(255, 189, 63)
         self.SPIKE_RASTER_COLOR = rgb_to_matplotlib_color(0, 0, 0)
-        self.SPIKE_RASTER_ON_TRACES_POSITION = 'center' # 'top', 'bottom'
-        self.SPIKE_RASTER_ON_RATE_POSITION   = 'bottom'    # 'top', 'bottom'
+        self.SPIKE_RASTER_ON_TRACES_POSITION = 'center' # top, bottom, or center
+        self.SPIKE_RASTER_ON_RATE_POSITION   = 'bottom' # top, bottom, or center
         self.SPIKE_RASTER_WIDTH              = 1.5
+
+        # general plot values
+        self.NO_LABEL_AXES_LEFT   = -7.0 # pixels
+        self.NO_LABEL_AXES_BOTTOM = -7.0 # pixels
+        self.AXES_LEFT   = -75.0 # pixels
+        self.AXES_BOTTOM = -40.0 # pixels
+
+        self.PLOT_LEFT_BORDER  = plb = 90.0 # pixels
+        self.PLOT_RIGHT_BORDER = prb = 25.0 # pixels
+        self.PLOT_TOP_BORDER         = 35.0 # pixels
+        self.PLOT_BOTTOM_BORDER      = 35.0 # pixels
+        self.PLOT_DPI = 72.0
+
+        # cluster plot panel specifics
+        self.CLUSTER_RIGHT_YLABEL = 25.0 # pixels
+        self.CLUSTER_RASTER_RIGHT = prb-45.0 # pixels
+        self.CLUSTER_RASTER_LEFT  = plb-45.0 # pixels
 
         self.PYSHELL_DIALOG_SIZE = (500, 400)
 
         self.CONTROL_PANEL_BORDER = 0
-        self._base_dpi = 85.0
         
     def get_size_ratio(self):
         if self._have_size_ratio:
@@ -79,10 +91,6 @@ class LookAndFeelSettings(object):
     @property
     def PLOT_MIN_SIZE_Y(self):
         return self.get_results_frame_size()[1]*0.70
-
-    @property
-    def PLOT_DPI(self):
-        return self._base_dpi
 
     @property
     def PLOT_FIGSIZE(self):
@@ -123,5 +131,18 @@ class LookAndFeelSettings(object):
         # FIXME change this once we decide what we size we want for the 
         #       method extras frame
         return numpy.array(self.get_main_frame_size())
+
+    def default_adjust_subplots(self, figure, canvas_size_in_pixels):
+        '''
+        Adjust the figure's subplot parameters according to the defaults in
+        look and feel settings.
+        '''
+        left   = self.PLOT_LEFT_BORDER / canvas_size_in_pixels[0]
+        right  = 1.0 - self.PLOT_RIGHT_BORDER / canvas_size_in_pixels[0]
+        top    = 1.0 - self.PLOT_TOP_BORDER / canvas_size_in_pixels[1]
+        bottom = self.PLOT_BOTTOM_BORDER / canvas_size_in_pixels[1]
+        figure.subplots_adjust(hspace=0.03, wspace=0.03, 
+                               left=left, right=right, 
+                               bottom=bottom, top=top)
 
 lfs = LookAndFeelSettings()

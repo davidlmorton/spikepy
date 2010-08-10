@@ -13,18 +13,38 @@ from . import program_text as pt
 gui_folder  = os.path.split(__file__)[0]
 icon_folder = os.path.join(gui_folder, 'icons')
 
-def adjust_axes_edges(axes, top=None, bottom=None, left=None, right=None):
+
+def adjust_axes_edges(axes, canvas_size_in_pixels=None, 
+                            top=0.0, 
+                            bottom=0.0, 
+                            left=0.0, 
+                            right=0.0):
+    '''
+    Adjusts the axes edge positions relative to the center of the axes.
+    If canvas_size_in_pixels is provided and not None then adjustments
+        are in pixels, otherwise they are in percentage of the figure size.
+    Returns:
+        box         : the bbox for the axis after it has been adjusted.
+    '''
+    # adjust to percentages of canvas size.
+    if canvas_size_in_pixels is not None: 
+        left  /= canvas_size_in_pixels[0]
+        right /= canvas_size_in_pixels[0]
+        top    /= canvas_size_in_pixels[1]
+        bottom /= canvas_size_in_pixels[1]
+        
     'Moves given edge of axes by a fraction of the figure size.'
     box = axes.get_position()
     if top is not None:
         box.p1 = (box.p1[0], box.p1[1]+top)
     if bottom is not None:
-        box.p0 = (box.p0[0], box.p0[1]+bottom)
+        box.p0 = (box.p0[0], box.p0[1]-bottom)
     if left is not None:
-        box.p0 = (box.p0[0]+left, box.p0[1])
+        box.p0 = (box.p0[0]-left, box.p0[1])
     if right is not None:
         box.p1 = (box.p1[0]+right, box.p1[1])
     axes.set_position(box)
+    return box
     
 def recursive_layout(panel):
     if panel is not None:

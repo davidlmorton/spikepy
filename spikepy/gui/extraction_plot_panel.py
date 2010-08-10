@@ -69,7 +69,8 @@ class ExtractionPlotPanel(MultiPlotPanel):
 
     def _create_axes(self, trial, figure, fullpath):
         axes = self._feature_axes[fullpath] = figure.add_subplot(1,1,1)
-        adjust_axes_edges(axes, left=0.04)
+        canvas_size = self._plot_panels[fullpath].GetMinSize()
+        lfs.default_adjust_subplots(figure, canvas_size)
 
     def _plot_features(self, trial, figure, fullpath):
         axes = self._feature_axes[fullpath]

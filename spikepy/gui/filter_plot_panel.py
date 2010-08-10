@@ -107,13 +107,8 @@ class FilterPlotPanel(MultiPlotPanel):
         axes.set_xlabel(pt.PLOT_TIME)
 
         # lay out subplots
-        canvas_size = self._plot_panels[fullpath]._original_min_size
-        left   = lfs.PLOT_LEFT_BORDER / canvas_size[0]
-        right  = 1.0 - lfs.PLOT_RIGHT_BORDER / canvas_size[0]
-        top    = 1.0 - lfs.PLOT_TOP_BORDER / canvas_size[1]
-        bottom = lfs.PLOT_BOTTOM_BORDER / canvas_size[1]
-        figure.subplots_adjust(hspace=0.025, left=left, right=right, 
-                               bottom=bottom, top=top)
+        canvas_size = self._plot_panels[fullpath].GetMinSize()
+        lfs.default_adjust_subplots(figure, canvas_size)
 
         # --- add psd plot ---
         all_traces = numpy.hstack(traces)
@@ -128,7 +123,9 @@ class FilterPlotPanel(MultiPlotPanel):
         title = os.path.split(fullpath)[1]
         psd_axes.set_title(title)
 
-        adjust_axes_edges(psd_axes, bottom=bottom)
+        bottom = lfs.AXES_BOTTOM
+        adjust_axes_edges(psd_axes, canvas_size_in_pixels=canvas_size, 
+                                    bottom=bottom)
 
     def _plot_filtered_traces(self, trial, figure, fullpath):
         stage_data = getattr(trial, self.name.lower()+'_filter')
