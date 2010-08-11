@@ -38,9 +38,9 @@ TRIAL_NAME = "Trial Name"
 FILE_OPENING_STATUS = "**"
 OPEN_ANOTHER_FILE = "Open Another File..."
 OPEN_FILE = "Open File..."
-CLOSE_SELECTED_FILES = "Close Selected Files"
+CLOSE_SELECTED_FILES = "Close Marked Files"
 CLOSE_THIS_FILE = "Close This File"
-FULLPATH = 'Fullpath'
+RENAME_TRIAL = 'Rename This Trial'
 
 ALL_FILES = "All Files (*)"
 SESSION_FILES = "Session Files (*.ses)"

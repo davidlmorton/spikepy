@@ -48,9 +48,9 @@ class MyFrame(wx.Frame):
         vsplit.SplitVertically(hsplit, self.results_notebook, 400)
         hsplit.SplitHorizontally(file_list_holder, strategy_holder, 200)
 
-        hsplit.SetMinimumPaneSize(lfs.FILE_LISTCTRL_MIN_SIZE[1])
+        hsplit.SetMinimumPaneSize(lfs.STRATEGY_PANE_MIN_SIZE[1])
         vsplit.SetMinimumPaneSize(lfs.STRATEGY_PANE_MIN_SIZE[0])
-        hsplit.SetSashPosition(lfs.FILE_LISTCTRL_MIN_SIZE[1])
+        hsplit.SetSashPosition(lfs.FILE_LIST_START_HEIGHT)
         vsplit.SetSashPosition(lfs.STRATEGY_PANE_MIN_SIZE[0])
 
         self.Bind(wx.EVT_CLOSE, self._close_application)

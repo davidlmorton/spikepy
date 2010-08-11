@@ -3,6 +3,7 @@ import os
 import wx.grid as gridlib
 from wx.lib.pubsub import Publisher as pub
 from spikepy.gui import utils
+from .look_and_feel_settings import lfs
 import wx
 
 from . import program_text as pt
@@ -13,35 +14,31 @@ class FileGridCtrl(gridlib.Grid):
         gridlib.Grid.__init__(self, parent, **kwargs)
 
         self._num_empty_rows = 8
-        self.CreateGrid(self._num_empty_rows, 3)
+        self.CreateGrid(self._num_empty_rows, 2)
         # ---- col settings -----
         attr0 = gridlib.GridCellAttr()
-        attr0.SetReadOnly(True)
         #                    horizontal       vertical
         attr0.SetAlignment(wx.ALIGN_CENTER, wx.ALIGN_CENTER) 
+        font = attr0.GetFont()
+        font.SetPointSize(14)
+        attr0.SetFont(font)
         attr1 = gridlib.GridCellAttr()
-        attr1.SetReadOnly(False)
-        attr1.SetAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTER) 
-        attr2 = gridlib.GridCellAttr()
-        attr2.SetReadOnly(True)
-        attr2.SetAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTER) 
+        attr1.SetAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTER) 
         # set all cols to use this set of attributes
         self.SetColAttr(0, attr0)
         self.SetColAttr(1, attr1)
-        self.SetColAttr(2, attr2)
         # set the col labels
-        self.SetColLabelValue(0, " X ")
+        self.SetColLabelValue(0, '%s/%s' % (lfs.FILE_LIST_UNMARKED_STATUS,
+                                            lfs.FILE_LIST_MARKED_STATUS))
         self.SetColLabelValue(1, pt.TRIAL_NAME)
-        self.SetColLabelValue(2, pt.FULLPATH)
         # set the col widths
         self.SetColSize(0, 5)
-        self.AutoSizeColumn(0)
-        self.SetColSize(1, 80)
-        self.SetColSize(2, 150)
+        self._autosize_cols()
 
         self.Bind(gridlib.EVT_GRID_CELL_RIGHT_CLICK, self._on_right_click)
         self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self._on_left_click)
         self.Bind(gridlib.EVT_GRID_RANGE_SELECT, self._on_range_select)
+        self.Bind(wx.EVT_SIZE, self._ensure_fills_space)
 
         # set it up so that selections select the whole row
         self.SetSelectionMode(self.wxGridSelectRows)
@@ -54,7 +51,30 @@ class FileGridCtrl(gridlib.Grid):
         pub.subscribe(self._file_closed, topic='FILE_CLOSED')
         pub.subscribe(self._opening_data_file, topic='OPENING_DATA_FILE')
         self.EnableGridLines(False)
+        self.DisableDragRowSize()
         self._last_fullpath_selected = None
+        self.SetGridCursor(0, 4)
+        self._opened_files = set()
+        self._files = []
+
+    
+    def _autosize_cols(self):
+        self.AutoSizeColumns()
+        self._min_column_sizes=(self.GetColSize(0), self.GetColSize(1))
+        self._ensure_fills_space()
+
+    def _ensure_fills_space(self, event=None):
+        if event is not None:
+            event.Skip()
+        marked_col_size = self.GetColSize(0)
+        trial_name_col_size = self.GetColSize(1)
+        used_size = marked_col_size + trial_name_col_size
+        panel_width, panel_height = self.GetSize()
+        fill_size = trial_name_col_size + panel_width - used_size
+        self.SetColSize(1, max(fill_size, self._min_column_sizes[1]))
+
+    def MakeCellVisible(self):
+        pass # don't scroll to where the cursor is
 
     def _on_range_select(self, event):
         return # do not do event.Skip() thus not allowing range selection
@@ -62,21 +82,42 @@ class FileGridCtrl(gridlib.Grid):
     def _file_closed(self, message):
         fullpath = message.data
         num_rows = self.GetNumberRows()
-        for row in xrange(self._number_nonempty_rows):
-            if fullpath == self.GetCellValue(row, 2):
+        for row in xrange(self._num_nonempty_rows):
+            if fullpath == self._get_fullpath(row):
                 if row == self._left_clicked_row:
                     pub.sendMessage(topic='SHOW PLOT', data='DEFAULT')
                 self.DeleteRows(pos=row)
+                self.AppendRows()
+                self._num_empty_rows += 1
                 break
-        
+        self._opened_files.remove(fullpath)
+        self._files.remove(fullpath)
+
+    def _file_opened(self, message):
+        fullpath, display_name = message.data
+        self._opened_files.add(fullpath)
+        num_rows = self.GetNumberRows()
+        for row in xrange(self._num_nonempty_rows):
+            fullpath_from_row =  self._get_fullpath(row)
+            if fullpath == fullpath_from_row:
+                self.SetCellValue(row, 1, display_name) 
+                self._autosize_cols()
+                self._set_row_backround_color(row, 'white')
+                # if there are no other files opening.
+                if self._files == list(self._opened_files): 
+                    self._select_row(row)
+
     def _on_right_click(self, event):
         row = event.GetRow()
         self._row_right_clicked = row
         if not hasattr(self, '_cmid_open_file'):
             self._cmid_open_file  = wx.NewId()
+            self._cmid_rename_trial = wx.NewId()
             self._cmid_close_selected_files = wx.NewId()
             self._cmid_close_this_file = wx.NewId()
 
+            self.Bind(wx.EVT_MENU, self._rename_trial, 
+                                   id=self._cmid_rename_trial)
             self.Bind(wx.EVT_MENU, self._open_file,  id=self._cmid_open_file)
             self.Bind(wx.EVT_MENU, self._close_selected_files, 
                                    id=self._cmid_close_selected_files)
@@ -84,101 +125,155 @@ class FileGridCtrl(gridlib.Grid):
                                    id=self._cmid_close_this_file)
 
         cm = wx.Menu()
-        if self._number_nonempty_rows:
+        if self._num_nonempty_rows:
             row = event.GetRow()
-            fullpath = self.GetCellValue(row, 2)
+
+        if row < self._num_nonempty_rows:
+            trial_name = self._get_trial_name(row)
+            fullpath = self._get_fullpath(row)
+
+        # rename_trial item
+        if row >= self._num_nonempty_rows:
+            item = wx.MenuItem(cm, self._cmid_rename_trial, pt.RENAME_TRIAL)
+        else:
+            item = wx.MenuItem(cm, self._cmid_rename_trial, pt.RENAME_TRIAL+
+                               ' (%s)' % trial_name)
+        bmp = utils.get_bitmap_icon('text_signature')
+        item.SetBitmap(bmp)
+        cm.AppendItem(item)
+        if row >= self._num_nonempty_rows:
+            cm.Enable(self._cmid_rename_trial, False)
+
         # open file item
-        if self._number_nonempty_rows:
+        if self._num_nonempty_rows:
             item = wx.MenuItem(cm, self._cmid_open_file, pt.OPEN_ANOTHER_FILE)
         else:
             item = wx.MenuItem(cm, self._cmid_open_file, pt.OPEN_FILE)
         bmp = utils.get_bitmap_icon('folder')
         item.SetBitmap(bmp)
         cm.AppendItem(item)
+
         # close this file item
-        item = wx.MenuItem(cm, self._cmid_close_this_file, pt.CLOSE_THIS_FILE)
+        if row < self._num_nonempty_rows and fullpath in self._opened_files:
+            item = wx.MenuItem(cm, self._cmid_close_this_file, 
+                               pt.CLOSE_THIS_FILE+' (%s)' % trial_name)
+        else:
+            item = wx.MenuItem(cm, self._cmid_close_this_file, 
+                               pt.CLOSE_THIS_FILE)
         bmp = utils.get_bitmap_icon('action_stop')
         item.SetBitmap(bmp)
         cm.AppendItem(item)
-        if row >= self._number_nonempty_rows:
+        if (row >= self._num_nonempty_rows or
+            (row < self._num_nonempty_rows and  # file is being opened still
+             fullpath not in self._opened_files)):
             cm.Enable(self._cmid_close_this_file, False)
+
         # close selected files item
         item = wx.MenuItem(cm, self._cmid_close_selected_files, 
                                pt.CLOSE_SELECTED_FILES)
         bmp = utils.get_bitmap_icon('action_stop')
         item.SetBitmap(bmp)
         cm.AppendItem(item)
-        if not self.checked_rows:
+        if not self.marked_fullpaths:
             cm.Enable(self._cmid_close_selected_files, False)
 
         self.PopupMenu(cm)
         cm.Destroy()
 
+    def _rename_trial(self, event):
+        # FIXME flesh out
+        pass
+
     def _open_file(self, event):
         pub.sendMessage(topic='OPEN_FILE', data=self)
 
     def _close_selected_files(self, event=None):
-        while self.checked_rows:
-            row = self.checked_rows[0]
-            fullpath = self.GetCellValue(row, 2)
-            pub.sendMessage(topic='CLOSE_DATA_FILE', data=fullpath)
+        for fullpath in self.marked_fullpaths:
+            pub.sendMessage(topic='CLOSE_DATA_FILE', 
+                            data=fullpath)
 
     def _close_this_file(self, event=None):
         row = self._row_right_clicked
-        fullpath = self.GetCellValue(row, 2)
-        pub.sendMessage(topic='CLOSE_DATA_FILE', data=fullpath)
+        fullpath = self._get_fullpath(row)
+        pub.sendMessage(topic='CLOSE_DATA_FILE',
+                        data=fullpath)
 
-    @property
-    def _number_nonempty_rows(self):
-        return self.GetNumberRows() - self._num_empty_rows
-        
     def _opening_data_file(self, message):
         fullpath = message.data
         filename = os.path.split(fullpath)[1]
-        for row in xrange(self._number_nonempty_rows):
-            if fullpath == self.GetCellValue(row, 2):
+        self._files.append(fullpath)
+        for row in xrange(self._num_nonempty_rows):
+            if fullpath == self._get_fullpath(row):
                 return
-        self.SetCellValue(self._number_nonempty_rows, 1, 
-                          "%s%s   " % (pt.FILE_OPENING_STATUS, filename))
-        self.SetCellValue(self._number_nonempty_rows, 2, fullpath)
-        self.AutoSizeColumns()
-        if self._num_empty_rows:
+        new_row = self._num_nonempty_rows
+        self._set_trial_name(new_row, 
+                             filename)
+        self._set_row_backround_color(new_row, 'pink')
+        self._set_marked_status(new_row, False)
+        self._autosize_cols()
+        if self._num_empty_rows > 1:
             self._num_empty_rows -= 1
         else:
             self.AppendRows()
-            
-    def _file_opened(self, message):
-        fullpath, display_name = message.data
-        num_rows = self.GetNumberRows()
-        for row in xrange(self._number_nonempty_rows):
-            fullpath_from_row =  self.GetCellValue(row, 2)
-            if fullpath == fullpath_from_row:
-                self.SetCellValue(row, 1, '  '+display_name+'   ') 
-                self.AutoSizeColumns()
+
+    def _set_row_backround_color(self, row, color):
+        for col in xrange(self.GetNumberCols()):
+            self.SetCellBackgroundColour(row, col, color)
 
     @property
-    def checked_rows(self):
-        result = [row for row in xrange(self._number_nonempty_rows)
-                  if self.GetCellValue(row, 0) == 'X']
+    def _num_nonempty_rows(self):
+        return self.GetNumberRows() - self._num_empty_rows
+        
+
+    def _get_fullpath(self, row):
+        return self._files[row]
+
+    def _get_trial_name(self, row):
+        return self.GetCellValue(row, 1)
+
+    def _set_trial_name(self, row, name):
+        self.SetCellValue(row, 1, name)
+
+    def _get_marked_status(self, row):
+        cell_value = self.GetCellValue(row, 0)
+        if cell_value == lfs.FILE_LIST_UNMARKED_STATUS:
+            return False
+        else:
+            return True
+
+    def _set_marked_status(self, row, status):
+        if status:
+            self.SetCellValue(row, 0, lfs.FILE_LIST_MARKED_STATUS)
+        else:
+            self.SetCellValue(row, 0, lfs.FILE_LIST_UNMARKED_STATUS)
+
+            
+    @property
+    def marked_fullpaths(self):
+        result = [self._get_fullpath(row) 
+                  for row in xrange(self._num_nonempty_rows)
+                  if self._get_marked_status(row)]
         return result
 
     def _on_left_click(self, event):
         row = event.GetRow()
         col = event.GetCol()
         self._left_clicked_row = row
-        fullpath = self.GetCellValue(row, 2)
-        if row < self._number_nonempty_rows:
-            if col != 0: 
-                self.SelectRow(row)
-                wx.Yield()
-                if fullpath != self._last_fullpath_selected:
-                    pub.sendMessage(topic="FILE_SELECTION_CHANGED",
-                                    data=fullpath)
-                    self._last_fullpath_selected = fullpath
-            else:
-                checked = self.GetCellValue(row, col)
-                if checked == 'X':
-                    self.SetCellValue(row, col, ' ')
-                else:
-                    self.SetCellValue(row, col, 'X')
+        if (row < self._num_nonempty_rows and 
+                self._get_fullpath(row) in self._opened_files):
+            fullpath = self._get_fullpath(row)
+            if col == 0:
+                marked = self._get_marked_status(row)
+                self._set_marked_status(row, not marked)
+            else: 
+                self._select_row(row)
+
+    def _select_row(self, row):
+        fullpath = self._get_fullpath(row)
+        self.SelectRow(row)
+        wx.Yield()
+        if fullpath != self._last_fullpath_selected:
+            pub.sendMessage(topic="FILE_SELECTION_CHANGED",
+                            data=fullpath)
+            self._last_fullpath_selected = fullpath
 

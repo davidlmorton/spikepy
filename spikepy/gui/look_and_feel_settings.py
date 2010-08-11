@@ -15,14 +15,17 @@ class LookAndFeelSettings(object):
         self.METHOD_EXTRAS_FRAME_STYLE = wx.DEFAULT_FRAME_STYLE
         self._have_size_ratio = False
 
-        self.STRATEGY_PANE_MIN_SIZE = numpy.array((350, 500))
+        self.STRATEGY_PANE_MIN_SIZE = numpy.array((350, 150))
         self.STRATEGY_PANE_BORDER = 4
         self.STRATEGY_SUMMARY_BORDER = 3
         self.STRATEGY_WAIT_TIME = 350 # in ms
 
-        self.FILE_LISTCTRL_STYLE = wx.LC_REPORT|wx.LC_VRULES
-        self.FILE_LISTCTRL_MIN_SIZE = numpy.array((200, 150))
-        
+        self.FILE_LIST_START_HEIGHT = 150
+        self.FILE_LIST_MARKED_STATUS = u'\u2612'
+        self.FILE_LIST_UNMARKED_STATUS = u'\u2610'
+
+        self.TRIAL_NAME_COL_WIDTH = self.STRATEGY_PANE_MIN_SIZE[0]-50
+
         self.PLOT_FACECOLOR = rgb_to_matplotlib_color(255, 255, 255, 255)
         self.PLOT_LINEWIDTH_1 = 1.5
         self.PLOT_LINEWIDTH_2 = 2.5
@@ -78,7 +81,6 @@ class LookAndFeelSettings(object):
     def get_results_frame_size(self):
         # FIXME this assumes default layout.
         size = self.MAIN_FRAME_SIZE
-        size[0] -= self.FILE_LISTCTRL_MIN_SIZE[0]
         size[0] -= self.STRATEGY_PANE_MIN_SIZE[0]
         return size
         
@@ -86,14 +88,8 @@ class LookAndFeelSettings(object):
         size_ratio = self.get_size_ratio()
         return size_ratio*base_size
 
-    @property
-    def PLOT_MIN_SIZE_X(self):
-        return 0.84*self.get_results_frame_size()[0]
 
-    @property
-    def PLOT_MIN_SIZE_Y(self):
-        return self.get_results_frame_size()[1]*0.70
-
+        
     @property
     def PLOT_FIGSIZE(self):
         size_left = self.MAIN_FRAME_SIZE - self.STRATEGY_PANE_MIN_SIZE

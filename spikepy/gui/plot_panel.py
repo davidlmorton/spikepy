@@ -136,8 +136,7 @@ class PlotPanel (wx.Panel):
         toolbar_height = self.toolbar.GetSize()[1]
         min_size_x = dpi*figwidth
         min_size_y = dpi*figheight+toolbar_height
-        min_size = (max(lfs.PLOT_MIN_SIZE_X, min_size_x),
-                    max(lfs.PLOT_MIN_SIZE_Y, min_size_y))
+        min_size = (min_size_x, min_size_y)
         self.SetMinSize(min_size)
         self._original_min_size = min_size
         return min_size
