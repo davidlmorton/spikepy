@@ -35,7 +35,7 @@ ABOUT = "About"
 
 # ---- File Grid Text ----
 TRIAL_NAME = "Trial Name"
-FILE_OPENING_STATUS = "Opening %s"
+FILE_OPENING_STATUS = "**"
 OPEN_ANOTHER_FILE = "Open Another File..."
 OPEN_FILE = "Open File..."
 CLOSE_SELECTED_FILES = "Close Selected Files"

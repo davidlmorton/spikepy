@@ -39,7 +39,7 @@ class MyFrame(wx.Frame):
         strategy_holder.add_content(self.strategy_pane, 2)
 
         file_list_holder = BorderPanel(hsplit, style=wx.BORDER_SUNKEN)
-        self.file_list = FileGridCtrl(hsplit)
+        self.file_list = FileGridCtrl(file_list_holder)
         file_list_holder.add_content(self.file_list, 2)
 
         self.results_notebook = results_notebook = ResultsNotebook(
