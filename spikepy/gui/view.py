@@ -8,7 +8,7 @@ from wx.lib.pubsub import Publisher as pub
 import spikepy
 from .menu_bar import SpikepyMenuBar
 from .strategy_pane import StrategyPane
-from .file_list_ctrl import FileListCtrl
+from .file_grid_ctrl import FileGridCtrl
 from .results_notebook import ResultsNotebook
 from .look_and_feel_settings import lfs
 from . import program_text as pt
@@ -39,7 +39,7 @@ class MyFrame(wx.Frame):
         strategy_holder.add_content(self.strategy_pane, 2)
 
         file_list_holder = BorderPanel(hsplit, style=wx.BORDER_SUNKEN)
-        self.file_list = FileListCtrl(hsplit, style=lfs.FILE_LISTCTRL_STYLE)
+        self.file_list = FileGridCtrl(hsplit)
         file_list_holder.add_content(self.file_list, 2)
 
         self.results_notebook = results_notebook = ResultsNotebook(

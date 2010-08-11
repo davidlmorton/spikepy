@@ -2,6 +2,8 @@ import traceback
 import sys
 from multiprocessing import Pool
 import copy
+import os
+from collections import defaultdict
 
 import wx
 from wx.lib.pubsub import Publisher as pub
@@ -11,6 +13,19 @@ from .open_data_file import open_data_file
 from .utils import pool_process, upsample_trace_list
 from ..stages import filtering, detection, extraction, clustering
 from .trial import format_traces
+
+rename_counts = defaultdict(lambda :0)
+
+def get_unique_display_name(other_display_names, other_fullpaths, 
+                             display_name, fullpath):
+    other_filenames = [os.path.split(fullpath)[1] 
+                       for fullpath in other_fullpaths]
+    filename = os.path.split(fullpath)[1]
+    if filename not in other_filenames:
+        if filename not in other_display_names:
+            return filename
+    rename_counts[filename] += 1
+    return '%s(%d)' % (filename, rename_counts[filename]) 
 
 class Model(object):
     def __init__(self):
@@ -76,7 +91,9 @@ class Model(object):
             startWorker(self._open_file_consumer, self._open_file_worker, 
                         wargs=(fullpath,))
         else:
-            pub.sendMessage(topic='FILE_ALREADY_OPENED',data=fullpath)
+            display_name = self.trials[fullpath].display_name
+            pub.sendMessage(topic='FILE_ALREADY_OPENED',data=(fullpath, 
+                                                              display_name))
 
     def _open_file_worker(self, fullpath):
         trial = pool_process(self._processing_pool, open_data_file, 
@@ -85,10 +102,23 @@ class Model(object):
 
     def _open_file_consumer(self, delayed_result):
         trial = delayed_result.get()
+
+        # give new trial a unique display name.
+        other_display_names = []
+        other_fullpaths = []
+        for otrial in self.trials.values():
+            other_display_names.append(otrial.display_name)
+            other_fullpaths.append(otrial.fullpath)
         fullpath = trial.fullpath
+        trial.display_name = get_unique_display_name(other_display_names, 
+                                                     other_fullpaths, 
+                                                     trial.display_name, 
+                                                     fullpath)
+
         self.trials[fullpath] = trial
+        display_name = self.trials[fullpath].display_name
         pub.sendMessage(topic='TRIAL_ADDED', data=trial)
-        pub.sendMessage(topic='FILE_OPENED', data=fullpath)
+        pub.sendMessage(topic='FILE_OPENED', data=(fullpath, display_name))
 
     # ---- CLOSE FILE ----
     def _close_data_file(self, message):

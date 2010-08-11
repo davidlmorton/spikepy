@@ -33,14 +33,14 @@ HELP = "Help"
 PYTHON_SHELL_MENU = "Python shell"
 ABOUT = "About"
 
-# ---- File List Text ----
-FILE_NUM = "Num"
-FILENAME = "Filename"
-FILE_OPENING_STATUS = "Opening"
+# ---- File Grid Text ----
+TRIAL_NAME = "Trial Name"
+FILE_OPENING_STATUS = "Opening %s"
 OPEN_ANOTHER_FILE = "Open Another File..."
 OPEN_FILE = "Open File..."
-CLOSE_FILES = "Close Files"
-CLOSE_FILE = "Close File"
+CLOSE_SELECTED_FILES = "Close Selected Files"
+CLOSE_THIS_FILE = "Close This File"
+FULLPATH = 'Fullpath'
 
 ALL_FILES = "All Files (*)"
 SESSION_FILES = "Session Files (*.ses)"

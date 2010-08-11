@@ -1,13 +1,13 @@
 import time
 import datetime
 import json
+import os
 
 import wx
 from wx.lib.pubsub import Publisher as pub
 import numpy
 
 from spikepy.gui.strategy_manager import make_strategy
-
 
 class Trial(object):
     """This class represents an individual trial consisting of (potentially)
@@ -17,6 +17,8 @@ class Trial(object):
                        raw_traces=[], 
                        fullpath='FULLPATH NOT SET'):
         self.fullpath      = fullpath
+        filename = os.path.split(fullpath)[1]
+        self.display_name = filename
         self.raw_traces    = format_traces(raw_traces)
 
         self.sampling_freq = sampling_freq
@@ -47,6 +49,7 @@ class Trial(object):
                        self.extraction_filter,
                        self.extraction,
                        self.clustering]
+
 
     @property
     def methods_used(self):
