@@ -39,6 +39,7 @@ class FileGridCtrl(gridlib.Grid):
         self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self._on_left_click)
         self.Bind(gridlib.EVT_GRID_RANGE_SELECT, self._on_range_select)
         self.Bind(wx.EVT_SIZE, self._ensure_fills_space)
+        self.Bind(gridlib.EVT_GRID_CELL_LEFT_DCLICK, self._on_left_dclick)
 
         # set it up so that selections select the whole row
         self.SetSelectionMode(self.wxGridSelectRows)
@@ -57,7 +58,11 @@ class FileGridCtrl(gridlib.Grid):
         self._opened_files = set()
         self._files = []
 
-    
+    def _on_left_dclick(self, event=None):
+        print "double clicked"
+        if self.CanEnableCellControl():
+            self.EnableCellEditControl()
+
     def _autosize_cols(self):
         self.AutoSizeColumns()
         self._min_column_sizes=(self.GetColSize(0), self.GetColSize(1))
@@ -182,7 +187,15 @@ class FileGridCtrl(gridlib.Grid):
 
     def _rename_trial(self, event):
         # FIXME flesh out
-        pass
+        editor = gridlib.GridCellTextEditor()
+        row = self._row_right_clicked
+        print self.GetOrCreateCellAttr(row, 1).IsReadOnly()
+        self.SetCellEditor(row, 1, editor)
+        print self.CanEnableCellControl()
+        self.EnableCellEditControl()
+        #self.EnableEditing(True)
+        #self.ShowCellEditControl()
+        
 
     def _open_file(self, event):
         pub.sendMessage(topic='OPEN_FILE', data=self)
