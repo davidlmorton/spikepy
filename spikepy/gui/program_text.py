@@ -86,7 +86,7 @@ STRATEGY = "Strategy"
 STRATEGY_NAME = "Strategy Name:"
 FILE_LISTCTRL_TITLE = "Opened Files"
 
-METHOD_SET_NAME = 'Method Set Name:'
+METHODS_SET_NAME = 'Methods Set Name:'
 SETTINGS_NAME = 'Settings Name:'
 SAVE_STRATEGY_DIALOG_TITLE = 'Save Current Strategy'
 ALREADY_EXISTS_LINE = ' already exists, would you like to overwrite?'
@@ -95,14 +95,11 @@ CONFIRM_OVERWRITE = 'Confirm Overwrite'
 CUSTOM_LC = "custom"
 CUSTOM_SC = "Custom"
 AT_LEAST_ONE_CHARACTER = '* Name must be at least one character long.'
-QUOTES = 'quotes'
-APOSTROPHES = 'apostrophes'
-SPACES = 'spaces'
-PARENTHESES = 'parentheses'
-NOT_CONTAIN = '* Names may not contain'
-NOT_ONE_OF = "* Method Set Name must not be one of: \n"
+METHODS_SET_NAME_ALREADY_USED = 'Methods set name: %s already exists.'
+MAY_NOT_CONTAIN_CUSTOM = '* Name may not contain custom.'
 STRATEGY_SAVE_AS = "Save as: "
 OK_TO_SAVE = 'Press OK to save.'
+INVALID = '*Invalid*'
 
 # --- Clustering Results ---
 CLUSTER_NUMBER = "Cluster Number"

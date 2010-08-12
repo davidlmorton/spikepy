@@ -3,6 +3,7 @@ import string
 import wx
 
 from .look_and_feel_settings import lfs
+from .validators import FloatValidator
 
 class NamedChoiceCtrl(wx.Panel):
     def __init__(self, parent, name="", choices=[], bar_width=None, **kwargs):
@@ -101,35 +102,6 @@ class NamedSpinCtrl(wx.Panel):
     def SetValue(self, value):
         return self.spin_ctrl.SetValue(value)
 
-class FloatValidator(wx.PyValidator):
-    def __init__(self):
-        wx.PyValidator.__init__(self)
-        self.Bind(wx.EVT_CHAR, self._on_char)
-
-    def Clone(self):
-        return FloatValidator()
-
-    def Validate(self):
-        win = self.GetWindow()
-        val = win.GetValue()
-
-        try:
-            float(val)
-            win.SetBackgroundColour('white')
-            return True
-        except ValueError:
-            win.SetBackgroundColour('pink')
-            return False
-
-    def _on_char(self, event):
-        key = event.GetKeyCode()
-        if key < 256 and chr(key) in string.letters:
-            return # eat the event.
-        event.Skip()
-        wx.CallLater(10, self.Validate)
-
-        
-
 class NamedFloatCtrl(wx.Panel):
     def __init__(self, parent, name="", **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
@@ -159,11 +131,11 @@ class NamedFloatCtrl(wx.Panel):
         self.text_ctrl.SetValue(value)
 
 class NamedTextCtrl(wx.Panel):
-    def __init__(self, parent, name="", **kwargs):
+    def __init__(self, parent, name="", validator=None, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
 
         self.name = wx.StaticText(self, label=name)
-        self.text_ctrl = wx.TextCtrl(self, size=(50,-1))
+        self.text_ctrl = wx.TextCtrl(self, size=(50,-1), validator=validator)
         
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         flag = wx.ALIGN_CENTER_VERTICAL|wx.ALL

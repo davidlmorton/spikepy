@@ -51,6 +51,7 @@ class FileGridCtrl(gridlib.Grid):
         pub.subscribe(self._file_opened, topic='FILE_ALREADY_OPENED')
         pub.subscribe(self._file_closed, topic='FILE_CLOSED')
         pub.subscribe(self._opening_data_file, topic='OPENING_DATA_FILE')
+        pub.subscribe(self._trial_renamed, topic='TRIAL_RENAMED')
         self.EnableGridLines(False)
         self.DisableDragRowSize()
         self._last_fullpath_selected = None
@@ -58,10 +59,6 @@ class FileGridCtrl(gridlib.Grid):
         self._opened_files = set()
         self._files = []
 
-    def _on_left_dclick(self, event=None):
-        print "double clicked"
-        if self.CanEnableCellControl():
-            self.EnableCellEditControl()
 
     def _autosize_cols(self):
         self.AutoSizeColumns()
@@ -87,14 +84,12 @@ class FileGridCtrl(gridlib.Grid):
     def _file_closed(self, message):
         fullpath = message.data
         num_rows = self.GetNumberRows()
-        for row in xrange(self._num_nonempty_rows):
-            if fullpath == self._get_fullpath(row):
-                if row == self._left_clicked_row:
-                    pub.sendMessage(topic='SHOW PLOT', data='DEFAULT')
-                self.DeleteRows(pos=row)
-                self.AppendRows()
-                self._num_empty_rows += 1
-                break
+        row = self._get_row_from_fullpath(fullpath)
+        if row == self._left_clicked_row:
+            pub.sendMessage(topic='SHOW PLOT', data='DEFAULT')
+        self.DeleteRows(pos=row)
+        self.AppendRows()
+        self._num_empty_rows += 1
         self._opened_files.remove(fullpath)
         self._files.remove(fullpath)
 
@@ -102,15 +97,19 @@ class FileGridCtrl(gridlib.Grid):
         fullpath, display_name = message.data
         self._opened_files.add(fullpath)
         num_rows = self.GetNumberRows()
+        row = self._get_row_from_fullpath(fullpath)
+        self.SetCellValue(row, 1, display_name) 
+        self._autosize_cols()
+        self._set_row_backround_color(row, 'white')
+        # if there are no other files opening.
+        if self._files == list(self._opened_files): 
+            self._select_row(row)
+
+    def _get_row_from_fullpath(self, fullpath):
         for row in xrange(self._num_nonempty_rows):
             fullpath_from_row =  self._get_fullpath(row)
             if fullpath == fullpath_from_row:
-                self.SetCellValue(row, 1, display_name) 
-                self._autosize_cols()
-                self._set_row_backround_color(row, 'white')
-                # if there are no other files opening.
-                if self._files == list(self._opened_files): 
-                    self._select_row(row)
+                return row
 
     def _on_right_click(self, event):
         row = event.GetRow()
@@ -185,17 +184,20 @@ class FileGridCtrl(gridlib.Grid):
         self.PopupMenu(cm)
         cm.Destroy()
 
-    def _rename_trial(self, event):
-        # FIXME flesh out
-        editor = gridlib.GridCellTextEditor()
-        row = self._row_right_clicked
-        print self.GetOrCreateCellAttr(row, 1).IsReadOnly()
-        self.SetCellEditor(row, 1, editor)
-        print self.CanEnableCellControl()
-        self.EnableCellEditControl()
-        #self.EnableEditing(True)
-        #self.ShowCellEditControl()
-        
+    def _rename_trial(self, event=None):
+        if event is not None: # came in through menu
+            row = self._row_right_clicked
+        else:
+            row = self._row_left_dclicked
+        fullpath = self._get_fullpath(row)
+        pub.sendMessage(topic='OPEN_RENAME_TRIAL_DIALOG', data=fullpath)
+
+    def _trial_renamed(self, message):
+        trial = message.data
+        fullpath = trial.fullpath
+        name = trial.display_name
+        row = self._get_row_from_fullpath(fullpath)
+        self._set_trial_name(row, name)
 
     def _open_file(self, event):
         pub.sendMessage(topic='OPEN_FILE', data=self)
@@ -215,9 +217,8 @@ class FileGridCtrl(gridlib.Grid):
         fullpath = message.data
         filename = os.path.split(fullpath)[1]
         self._files.append(fullpath)
-        for row in xrange(self._num_nonempty_rows):
-            if fullpath == self._get_fullpath(row):
-                return
+        if self._get_row_from_fullpath(fullpath) is not None:
+            return
         new_row = self._num_nonempty_rows
         self._set_trial_name(new_row, 
                              filename)
@@ -280,6 +281,16 @@ class FileGridCtrl(gridlib.Grid):
                 self._set_marked_status(row, not marked)
             else: 
                 self._select_row(row)
+
+    def _on_left_dclick(self, event=None):
+        row = event.GetRow()
+        col = event.GetCol()
+        self._left_dclicked_row = row
+        if (row < self._num_nonempty_rows and 
+                self._get_fullpath(row) in self._opened_files):
+            fullpath = self._get_fullpath(row)
+            if col != 0:
+                self._rename_trial(row)
 
     def _select_row(self, row):
         fullpath = self._get_fullpath(row)

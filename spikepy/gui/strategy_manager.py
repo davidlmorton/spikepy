@@ -6,7 +6,9 @@ from wx.lib.pubsub import Publisher as pub
 from . import program_text as pt
 from .utils import strip_unicode
 from .look_and_feel_settings import lfs
-from .named_controls import NamedTextCtrl 
+from .save_strategy_dialog import SaveStrategyDialog
+from .strategy_utils import (make_strategy, make_methods_set_name, 
+                             make_settings_name, make_strategy_name)
 
 STRATEGIES_ARCHIVE_FILE= 'strategies_archive.txt'
 
@@ -53,7 +55,7 @@ class StrategyManager(object):
     def save_all_strategies(self, message=None):
         strategy_list = []
         for strategy_name in self.strategy_names:
-            methods_set_name = get_methods_set_name(strategy_name)
+            methods_set_name = make_methods_set_name(strategy_name)
             methods_dict  = self.methods[methods_set_name]
             settings_dict = self.settings[strategy_name]
             this_strategy_dict = make_strategy(strategy_name, 
@@ -75,7 +77,7 @@ class StrategyManager(object):
     def _strategy_choice_made(self, event=None):
         'Update The Strategy Pane based on the choice made.'
         strategy_name = self.strategy_chooser.GetStringSelection()
-        methods_set_name = get_methods_set_name(strategy_name)
+        methods_set_name = make_methods_set_name(strategy_name)
         methods_used = self.methods[methods_set_name]
         settings     = self.settings[strategy_name]
         self._set_strategy_pane(methods_used, settings)
@@ -142,7 +144,7 @@ class StrategyManager(object):
                         style=wx.YES_NO|wx.ICON_WARNING)
                 if confirm_dlg.ShowModal() == wx.ID_NO:
                     confirm_dlg.Destroy()
-                    self.save_strategy()
+                    self.save_button_pressed()
                     return
                 confirm_dlg.Destroy()
 
@@ -162,7 +164,7 @@ class StrategyManager(object):
         
     def _add_strategy(self, strategy):
         for strategy_name, value in strategy.items():
-            method_name = get_methods_set_name(strategy_name)
+            method_name = make_methods_set_name(strategy_name)
             method_dict = value['methods_used']
             self.methods[method_name]    = method_dict
 
@@ -173,7 +175,7 @@ class StrategyManager(object):
 
     def _remove_strategy(self, strategy):
         strategy_name = strategy.keys()[0]
-        method_name   = get_methods_set_name(strategy_name)
+        method_name   = make_methods_set_name(strategy_name)
         settings_name = strategy_name
         del self.methods[method_name]
         del self.settings[settings_name]
@@ -193,7 +195,7 @@ class StrategyManager(object):
             if settings == settings_dict:
                 # potential match
                 name = strategy_name
-                method_set_name = get_methods_set_name(name)
+                method_set_name = make_methods_set_name(name)
                 if self.methods[method_set_name] == methods_used:
                     return name
 
@@ -232,127 +234,3 @@ class StrategyManager(object):
         return make_strategy(strategy_name, methods_used, settings)
 
 
-def make_strategy(strategy_name, methods_used_dict, settings_dict):
-    return_dict = {}
-    return_dict[strategy_name] = {'methods_used':methods_used_dict, 
-                                      'settings':settings_dict}
-    return return_dict
-    
-def get_methods_set_name(strategy_name):
-    return strategy_name.split('(')[0]
-
-def get_settings_name(strategy_name):
-    return strategy_name.split('(')[1][:-1]
-
-def get_strategy_name(methods_set_name, settings_name):
-    pre  = methods_set_name
-    post = settings_name
-    if len(pre) >= 1:
-        new_name = pre[0].upper() + pre[1:].lower() + '(%s)' % post.lower()
-    else:
-        new_name = "*Invalid*"
-    return new_name
-
-class SaveStrategyDialog(wx.Dialog):
-    def __init__(self, parent, old_name, all_names, **kwargs):
-        wx.Dialog.__init__(self, parent, **kwargs)
-
-        self.all_names = all_names
-        self.old_name  = old_name
-        self.all_methods_set_names = list(set([str(get_methods_set_name(name))
-                                               for name in all_names]))
-        self.contraban_list = {'('         :pt.PARENTHESES, 
-                               ')'         :pt.PARENTHESES, 
-                               '"'         :pt.QUOTES, 
-                               "'"         :pt.APOSTROPHES, 
-                               pt.CUSTOM_LC:"'" + pt.CUSTOM_LC + "'",
-                               ' '         :pt.SPACES}
-        self.save_as_text = wx.StaticText(self, 
-                            label=pt.STRATEGY_SAVE_AS)
-        save_as_font = self.save_as_text.GetFont()
-        save_as_font.SetWeight(wx.FONTWEIGHT_BOLD)
-        save_as_font.SetPointSize(16)
-        self.save_as_text.SetFont(save_as_font)
-
-        methods_set_name = get_methods_set_name(old_name)
-        self.methods_set_textctrl = NamedTextCtrl(self, name=pt.METHOD_SET_NAME)
-        self.methods_set_textctrl.SetTextctrlSize((200,-1))
-        self.methods_set_textctrl.SetValue(methods_set_name)
-
-        settings_name   = get_settings_name(old_name)
-        self.settings_textctrl   = NamedTextCtrl(self, name=pt.SETTINGS_NAME)
-        self.settings_textctrl.SetTextctrlSize((200,-1))
-        self.settings_textctrl.SetValue(settings_name)
-
-        self.warning_text = wx.StaticText(self, label='')
-
-        self.ok_button = wx.Button(self, id=wx.ID_OK)
-        cancel_button  = wx.Button(self, id=wx.ID_CANCEL)
-
-        button_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        flag = wx.ALL|wx.EXPAND
-        border = 5
-        button_sizer.Add(cancel_button,  proportion=0, flag=flag, border=border)
-        button_sizer.Add(self.ok_button, proportion=0, flag=flag, border=border)
-
-        sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        flag = wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND
-        sizer.Add(self.save_as_text,        proportion=0, flag=flag, border=15)
-        sizer.Add(self.methods_set_textctrl, proportion=0, flag=flag, border=5)
-        sizer.Add(self.settings_textctrl,   proportion=0, flag=flag, border=5)
-        sizer.Add(button_sizer,             proportion=0, flag=wx.ALIGN_RIGHT)
-        sizer.Add(self.warning_text,        proportion=0, flag=flag, border=5)
-        self.SetSizerAndFit(sizer)
-        # add space for long warning text.
-        size = self.GetSize()
-        self.SetSize((size[0]+10, size[1]+100))
-
-        if not old_name.lower().startswith(pt.CUSTOM_LC):
-            self.methods_set_textctrl.Enable(False)
-
-        self.Bind(wx.EVT_TEXT, self._check_inputs, 
-                  self.methods_set_textctrl.text_ctrl)
-        self.Bind(wx.EVT_TEXT, self._check_inputs, 
-                  self.settings_textctrl.text_ctrl)
-        self._check_inputs()
-
-    def get_strategy_name(self):
-        methods_set_name = self.methods_set_textctrl.GetValue()
-        settings_name   = self.settings_textctrl.GetValue()
-        new_name = get_strategy_name(methods_set_name, settings_name)
-        return new_name
-
-    def _check_inputs(self, event=None):
-        methods_set_name = self.methods_set_textctrl.GetValue()
-        settings_name   = self.settings_textctrl.GetValue()
-        new_name = get_strategy_name(methods_set_name, settings_name)
-        self.save_as_text.SetLabel(pt.STRATEGY_SAVE_AS + 
-                                   new_name)
-        if len(methods_set_name) < 1 or len(settings_name) < 1:
-            self.warning_text.SetLabel(pt.AT_LEAST_ONE_CHARACTER)
-            self.ok_button.Enable(False)
-            return
-        for contraban, contraban_name in self.contraban_list.items():
-            if (contraban in methods_set_name.lower() or 
-                contraban in settings_name.lower()):
-                self.warning_text.SetLabel(pt.NOT_CONTAIN + 
-                                           ' %s.' % contraban_name)
-                self.ok_button.Enable(False)
-                return
-        if (pt.CUSTOM_LC in get_methods_set_name(self.old_name).lower() and 
-            get_methods_set_name(new_name) in self.all_methods_set_names):
-            count = 0
-            first_name = self.all_methods_set_names[0]
-            old_methods_set_names = first_name
-            for name in self.all_methods_set_names[1:]:
-                old_methods_set_names += ", %s" % name
-                count += 1
-                if not count % 5:
-                    old_methods_set_names += '\n'
-            self.warning_text.SetLabel(pt.NOT_ONE_OF + old_methods_set_names)
-            self.ok_button.Enable(False)
-            return
-        self.warning_text.SetLabel(pt.OK_TO_SAVE)
-        self.ok_button.Enable(True)
-
-        

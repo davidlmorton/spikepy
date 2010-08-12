@@ -12,6 +12,7 @@ from ..common.model import Model
 from .view import View
 from .utils import named_color, load_pickle
 from . import program_text as pt
+from .trial_rename_dialog import TrialRenameDialog
 from .pyshell import locals_dict
 
 
@@ -37,7 +38,25 @@ class Controller(object):
         pub.subscribe(self._save_session, topic='SAVE_SESSION')
         pub.subscribe(self._load_session, topic='LOAD_SESSION')
         pub.subscribe(self._close_application,  topic="CLOSE_APPLICATION")
+        pub.subscribe(self._open_rename_trial_dialog,
+                      topic='OPEN_RENAME_TRIAL_DIALOG')
         pub.subscribe(self._print_messages, topic='')
+
+    def _open_rename_trial_dialog(self, message):
+        fullpath = message.data
+        this_trial = self.model.trials[fullpath]
+        this_trial_name = this_trial.display_name
+        trial_names = [trial.display_name for trial in 
+                       self.model.trials.values()]
+        # other trial names
+        trial_names.remove(this_trial_name)
+        dlg = TrialRenameDialog(self.view.frame, this_trial_name, 
+                                fullpath, trial_names)
+        if dlg.ShowModal() == wx.ID_OK:
+            new_name = dlg._text_ctrl.GetValue()
+            if new_name != this_trial_name:
+                this_trial.rename(new_name)
+        dlg.Destroy()
 
     def _calculate_stage_run_state(self, message):
         methods_used, settings = message.data

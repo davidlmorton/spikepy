@@ -89,6 +89,11 @@ class Trial(object):
                 can_run_list.append(stage.name)
         return can_run_list
 
+    def rename(self, new_display_name):
+        print 'blah'
+        self.display_name = new_display_name
+        pub.sendMessage(topic='TRIAL_RENAMED', data=self)
+
 def zero_mean(trace_array):
     return trace_array - numpy.average(trace_array)
 
