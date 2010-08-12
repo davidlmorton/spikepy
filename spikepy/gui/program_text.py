@@ -22,12 +22,12 @@ FILE = "File"
 OPEN = "Open File..."
 LOAD_SESSION = "Load Session..."
 SAVE_SESSION = "Save Session..."
+EXPORT_MARKED_TRIALS = "Export marked trials..."
+EXPORT_ALL_TRIALS = "Export all trials..."
 EXIT = "Exit"
 EDIT = "Edit"
 PREFERENCES = "Preferences" 
 VIEW = "View"
-WORKSPACES = "Workspaces"
-SAVE_WORKSPACE = "Save current workspace..."
 SHOW_TOOLBARS_MENU = "Show toolbars on plots"
 HELP = "Help"
 PYTHON_SHELL_MENU = "Python shell"
@@ -42,6 +42,13 @@ CLOSE_SELECTED_FILES = "Close Marked Files"
 CLOSE_THIS_FILE = "Close This File"
 RENAME_TRIAL = 'Rename This Trial'
 
+# ---- Export Panel Text ----
+MAKE_THESE_SETTINGS_DEFAULT = "Make these settings default"
+RESTORE_DEFAULT_SETTINGS = "Restore default settings"
+EXPORT_TO_DIRECTORY = "Export to directory:"
+BROWSE = "Browse..."
+CHOOSE_EXPORT_DIRECTORY = "Choose export directory"
+
 ALL_FILES = "All Files (*)"
 SESSION_FILES = "Session Files (*.ses)"
 ENTER_NEW_WORKSPACE = "Enter a name for the new workspace:"
@@ -55,7 +62,8 @@ SPIKE_RATE_AXIS = "Estimated\nspike rate (Hz)"
 DETECTION_TRACE_GRAPH_LABEL = "Detection Filtered"
 SPIKES_GRAPH_LABEL = "Spikes"
 RAW = "Raw"
-PSD_AXIS = "PSD (dB/Hz)"
+PSD_Y_AXIS_LABEL = "PSD (dB/Hz)"
+TRIAL_NAME = 'Trial Name: '
 FILTERED_TRACE_GRAPH_LABEL = "Filtered"
 MISSING_PLOT_ERROR = "Plot associated with '%s' does not exist."
 ENLARGE_CANVAS = "Enlarge Canvas"
@@ -100,6 +108,13 @@ MAY_NOT_CONTAIN_CUSTOM = '* Name may not contain custom.'
 STRATEGY_SAVE_AS = "Save as: "
 OK_TO_SAVE = 'Press OK to save.'
 INVALID = '*Invalid*'
+
+# --- Trial Rename Dialog ---
+FULLPATH = 'Fullpath:'
+NAME_ALREADY_EXISTS = 'The name "%s" already exists.' # % new_name
+NAME_CANNOT_BEGIN_WITH = 'The name cannot begin with "."'
+
+
 
 # --- Clustering Results ---
 CLUSTER_NUMBER = "Cluster Number"

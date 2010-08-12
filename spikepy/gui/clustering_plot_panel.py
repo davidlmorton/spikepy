@@ -26,9 +26,11 @@ class ClusteringPlotPanel(MultiPlotPanel):
         pub.subscribe(self._trial_added,   topic='TRIAL_ADDED')
         pub.subscribe(self._trial_altered, topic='STAGE_REINITIALIZED')
         pub.subscribe(self._trial_altered, topic='TRIAL_CLUSTERED')
+        pub.subscribe(self._trial_renamed,  topic='TRIAL_RENAMED')
 
         self._trials = {}
         self._fig_cleared = True
+        self._trace_axes = defaultdict(lambda :None)
 
     def _remove_trial(self, message=None):
         fullpath = message.data
@@ -45,6 +47,15 @@ class ClusteringPlotPanel(MultiPlotPanel):
                                 edgecolor=self._facecolor,
                                 dpi=self._dpi)
         self._replot_panels.add(fullpath)
+
+    def _trial_renamed(self, message=None):
+        trial = message.data
+        fullpath = trial.fullpath
+        if self._trace_axes[fullpath] is not None:
+            new_name = trial.display_name
+            trace_axes = self._trace_axes[fullpath]
+            trace_axes.set_title(pt.TRIAL_NAME+new_name)
+            self.draw_canvas(fullpath)
 
     def _trial_altered(self, message=None):
         trial, stage_name = message.data
@@ -91,6 +102,7 @@ class ClusteringPlotPanel(MultiPlotPanel):
                 figure = self._plot_panels[fullpath].figure
                 figure.clear()
                 self._fig_cleared = True
+                self._trace_axes[fullpath] = None
                 self.draw_canvas(fullpath)
 
     def _setup_axes(self, trial, figure, fullpath, canvas_size,  
@@ -106,7 +118,10 @@ class ClusteringPlotPanel(MultiPlotPanel):
                                      axisbg=(1.0, 1.0, 1.0, 0.0),
                                      sharex=raster_axes)
         filename = os.path.split(fullpath)[1]
-        trace_axes.set_title(filename)
+        trial = self._trials[fullpath]
+        new_name = trial.display_name
+        trace_axes.set_title(pt.TRIAL_NAME+new_name)
+        self._trace_axes[fullpath] = trace_axes
         trace_yaxis = trace_axes.get_yaxis()
         trace_yaxis.set_ticks_position('right')
         plot_width = (canvas_size[0] - lfs.CLUSTER_RASTER_LEFT -

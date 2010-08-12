@@ -23,6 +23,7 @@ class FilterPlotPanel(MultiPlotPanel):
         pub.subscribe(self._remove_trial,   topic="REMOVE_PLOT")
         pub.subscribe(self._trial_added,    topic='TRIAL_ADDED')
         pub.subscribe(self._trial_filtered, topic='TRIAL_FILTERED')
+        pub.subscribe(self._trial_renamed,  topic='TRIAL_RENAMED')
 
         if name == 'detection_filter':
             self.line_color = lfs.PLOT_COLOR_2
@@ -57,6 +58,14 @@ class FilterPlotPanel(MultiPlotPanel):
                                 edgecolor=self._facecolor,
                                 dpi=self._dpi)
         self._replot_panels.add(fullpath)
+
+    def _trial_renamed(self, message=None):
+        trial = message.data
+        fullpath = trial.fullpath
+        new_name = trial.display_name
+        psd_axes = self._psd_axes[fullpath]
+        psd_axes.set_title(pt.TRIAL_NAME+new_name)
+        self.draw_canvas(fullpath)
 
     def _trial_filtered(self, message=None):
         trial, stage_name = message.data
@@ -120,9 +129,9 @@ class FilterPlotPanel(MultiPlotPanel):
                                  label=pt.RAW,
                                  linewidth=lfs.PLOT_LINEWIDTH_1, 
                                  color=lfs.PLOT_COLOR_1)
-        psd_axes.set_ylabel(pt.PSD_AXIS)
-        title = os.path.split(fullpath)[1]
-        psd_axes.set_title(title)
+        psd_axes.set_ylabel(pt.PSD_Y_AXIS_LABEL)
+        name = trial.display_name
+        psd_axes.set_title(pt.TRIAL_NAME+name)
 
         bottom = lfs.AXES_BOTTOM
         adjust_axes_edges(psd_axes, canvas_size_in_pixels=canvas_size, 
@@ -156,7 +165,7 @@ class FilterPlotPanel(MultiPlotPanel):
                                    label=pt.FILTERED_TRACE_GRAPH_LABEL, 
                                    linewidth=self.line_width, 
                                    color=self.line_color)
-        axes.set_ylabel(pt.PSD_AXIS)
+        axes.set_ylabel(pt.PSD_Y_AXIS_LABEL)
         axes.legend(loc='lower right')
 
 

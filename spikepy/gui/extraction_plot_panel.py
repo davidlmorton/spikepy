@@ -23,6 +23,7 @@ class ExtractionPlotPanel(MultiPlotPanel):
         pub.subscribe(self._trial_added,   topic='TRIAL_ADDED')
         pub.subscribe(self._trial_altered, topic='TRIAL_FEATURE_EXTRACTED')
         pub.subscribe(self._trial_altered, topic='STAGE_REINITIALIZED')
+        pub.subscribe(self._trial_renamed,  topic='TRIAL_RENAMED')
 
         self._trials       = {}
         self._feature_axes = {}
@@ -46,6 +47,14 @@ class ExtractionPlotPanel(MultiPlotPanel):
         figure = self._plot_panels[fullpath].figure
         self._create_axes(trial, figure, fullpath)
         self._replot_panels.add(fullpath)
+
+    def _trial_renamed(self, message=None):
+        trial = message.data
+        fullpath = trial.fullpath
+        new_name = trial.display_name
+        axes = self._feature_axes[fullpath]
+        axes.set_title(pt.TRIAL_NAME+new_name)
+        self.draw_canvas(fullpath)
 
     def _trial_altered(self, message=None):
         trial, stage_name = message.data
@@ -75,8 +84,9 @@ class ExtractionPlotPanel(MultiPlotPanel):
     def _plot_features(self, trial, figure, fullpath):
         axes = self._feature_axes[fullpath]
         axes.clear()
-        filename = os.path.split(fullpath)[1]
-        axes.set_title(filename)
+        trial = self._trials[fullpath]
+        new_name = trial.display_name
+        axes.set_title(pt.TRIAL_NAME+new_name)
         axes.set_ylabel(pt.FEATURE_AMPLITUDE)
         axes.set_xlabel(pt.FEATURE_INDEX)
 

@@ -17,12 +17,11 @@ PREFERENCES        = wx.NewId()
 DEFAULT            = wx.NewId()
 ABOUT              = wx.ID_ABOUT
 SHELL              = wx.NewId()
-WORKSPACES         = wx.NewId()
-WORKSPACES_MANAGER = wx.NewId()
 SHOW_TOOLBARS      = wx.NewId()
-SAVE_PERSPECTIVE   = wx.NewId()
 SAVE_SESSION       = wx.NewId()
 LOAD_SESSION       = wx.NewId()
+EXPORT_MARKED      = wx.NewId()
+EXPORT_ALL         = wx.NewId()
 
 class SpikepyMenuBar(wx.MenuBar):
     def __init__(self, frame, *args, **kwargs):
@@ -34,6 +33,9 @@ class SpikepyMenuBar(wx.MenuBar):
         file_menu.AppendSeparator()
         file_menu.Append(LOAD_SESSION, text=pt.LOAD_SESSION)
         file_menu.Append(SAVE_SESSION, text=pt.SAVE_SESSION)
+        file_menu.AppendSeparator()
+        file_menu.Append(EXPORT_MARKED, text=pt.EXPORT_MARKED_TRIALS)
+        file_menu.Append(EXPORT_ALL, text=pt.EXPORT_ALL_TRIALS)
         file_menu.AppendSeparator()
         file_menu.Append(EXIT, text=pt.EXIT)
         
@@ -61,6 +63,8 @@ class SpikepyMenuBar(wx.MenuBar):
         frame.Bind(wx.EVT_MENU, self._open_file,        id=OPEN)
         frame.Bind(wx.EVT_MENU, self._load_session,     id=LOAD_SESSION)
         frame.Bind(wx.EVT_MENU, self._save_session,     id=SAVE_SESSION)
+        frame.Bind(wx.EVT_MENU, self._export_marked,    id=EXPORT_MARKED)
+        frame.Bind(wx.EVT_MENU, self._export_all,       id=EXPORT_ALL)
         frame.Bind(wx.EVT_MENU, self._close_window,     id=EXIT)
         # Edit
         frame.Bind(wx.EVT_MENU, self._show_preferences, id=PREFERENCES)
@@ -73,6 +77,12 @@ class SpikepyMenuBar(wx.MenuBar):
         self.frame = frame
 
         self._toolbars_shown = False
+
+    def _export_marked(self, event=None):
+        pub.sendMessage(topic="EXPORT_TRIALS", data="marked")
+
+    def _export_all(self, event=None):
+        pub.sendMessage(topic="EXPORT_TRIALS", data="all")
 
     def _show_preferences(self, event=None):
         preferences_frame = PreferencesFrame(self)

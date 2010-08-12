@@ -2,6 +2,8 @@ import string
 
 import wx
 
+from . import program_text as pt
+
 class FloatValidator(wx.PyValidator):
     valid_characters = ".-%s%s" % (string.digits, chr(8))
     def __init__(self):
@@ -62,16 +64,30 @@ class FilenameValidator(CharacterSubsetValidator):
     def Clone(self):
         return FilenameValidator(self._valid_characters)
 
-    def Validate(self, dlg=None):
+    def Validate(self, dlg=None, can_exit=True):
         win = self.GetWindow()
-        val = win.GetValue()
-        if val.startswith('.'):
+        new_name = win.GetValue()
+        # ensure current name is not one of the other names.
+        has_error = False
+        all_other_trial_names = [otrial.display_name 
+                                 for otrial in dlg.all_other_trials]
+        if new_name in all_other_trial_names:
+            dlg.warning_text.SetLabel(pt.NAME_ALREADY_EXISTS % new_name)
+            has_error = True
+        if new_name.startswith('.'):
+            dlg.warning_text.SetLabel(pt.NAME_CANNOT_BEGIN_WITH)
+            has_error = True
+        if has_error:
             win.SetBackgroundColour('pink')
-            wx.CallLater(300, self._reset_background_color)
             return False
-        win.SetBackgroundColour('white')
-        dlg.EndModal(wx.ID_OK)
-        return True
+        else:
+            if can_exit:
+                dlg.EndModal(wx.ID_OK)
+                return True
+            else:
+                dlg.warning_text.SetLabel('')
+                win.SetBackgroundColour('white')
+                return True
 
     def _reset_background_color(self):
         win = self.GetWindow()

@@ -21,11 +21,12 @@ class DetectionPlotPanel(MultiPlotPanel):
                                               facecolor=self._facecolor,
                                               edgecolor=self._facecolor,
                                               dpi=self._dpi)
-        pub.subscribe(self._remove_trial,  topic="REMOVE_PLOT")
-        pub.subscribe(self._trial_added,   topic='TRIAL_ADDED')
-        pub.subscribe(self._trial_altered, topic='TRIAL_SPIKE_DETECTED')
+        pub.subscribe(self._remove_trial,   topic="REMOVE_PLOT")
+        pub.subscribe(self._trial_added,    topic='TRIAL_ADDED')
+        pub.subscribe(self._trial_altered,  topic='TRIAL_SPIKE_DETECTED')
         pub.subscribe(self._trial_filtered, topic='TRIAL_FILTERED')
-        pub.subscribe(self._trial_altered, topic="STAGE_REINITIALIZED")
+        pub.subscribe(self._trial_altered,  topic="STAGE_REINITIALIZED")
+        pub.subscribe(self._trial_renamed,  topic='TRIAL_RENAMED')
 
         self._trials     = {}
         self._trace_axes = {}
@@ -55,6 +56,14 @@ class DetectionPlotPanel(MultiPlotPanel):
         figure = self._plot_panels[fullpath].figure
         self._create_axes(trial, figure, fullpath)
         self._replot_panels.add(fullpath)
+    
+    def _trial_renamed(self, message=None):
+        trial = message.data
+        fullpath = trial.fullpath
+        new_name = trial.display_name
+        spike_axes = self._spike_axes[fullpath]
+        spike_axes.set_title(pt.TRIAL_NAME+new_name)
+        self.draw_canvas(fullpath)
         
     def _trial_filtered(self, message=None):
         trial, stage_name = message.data
@@ -121,8 +130,9 @@ class DetectionPlotPanel(MultiPlotPanel):
     def setup_spike_axes_labels(self, spike_axes, fullpath):
         spike_axes.set_xlabel(pt.PLOT_TIME)
         spike_axes.set_ylabel(pt.SPIKE_RATE_AXIS)
-        title = os.path.split(fullpath)[1]
-        spike_axes.set_title(title)
+        trial = self._trials[fullpath]
+        new_name = trial.display_name
+        spike_axes.set_title(pt.TRIAL_NAME+new_name)
 
     def _plot_filtered_traces(self, trial, figure, fullpath):
         if trial.detection_filter.results is not None:

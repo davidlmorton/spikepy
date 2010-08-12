@@ -131,11 +131,11 @@ class NamedFloatCtrl(wx.Panel):
         self.text_ctrl.SetValue(value)
 
 class NamedTextCtrl(wx.Panel):
-    def __init__(self, parent, name="", validator=None, **kwargs):
-        wx.Panel.__init__(self, parent, **kwargs)
+    def __init__(self, parent, name="", **kwargs):
+        wx.Panel.__init__(self, parent)
 
         self.name = wx.StaticText(self, label=name)
-        self.text_ctrl = wx.TextCtrl(self, size=(50,-1), validator=validator)
+        self.text_ctrl = wx.TextCtrl(self, size=(50,-1), **kwargs)
         
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         flag = wx.ALIGN_CENTER_VERTICAL|wx.ALL
