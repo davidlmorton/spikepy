@@ -3,6 +3,7 @@ import string
 import wx
 
 class FloatValidator(wx.PyValidator):
+    valid_characters = ".-%s%s" % (string.digits, chr(8))
     def __init__(self):
         wx.PyValidator.__init__(self)
         self.Bind(wx.EVT_CHAR, self._on_char)
@@ -26,7 +27,7 @@ class FloatValidator(wx.PyValidator):
         key = event.GetKeyCode()
         if key < 256:
             chr_key = chr(key)
-            if chr(key) not in valid_characters:
+            if chr(key) not in FloatValidator.valid_characters:
                 return
             if chr(key) in string.ascii_letters:
                 return

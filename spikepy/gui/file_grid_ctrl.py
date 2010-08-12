@@ -284,13 +284,15 @@ class FileGridCtrl(gridlib.Grid):
 
     def _on_left_dclick(self, event=None):
         row = event.GetRow()
+        print row
+        print self._files
         col = event.GetCol()
-        self._left_dclicked_row = row
+        self._row_left_dclicked = row
         if (row < self._num_nonempty_rows and 
                 self._get_fullpath(row) in self._opened_files):
             fullpath = self._get_fullpath(row)
             if col != 0:
-                self._rename_trial(row)
+                self._rename_trial()
 
     def _select_row(self, row):
         fullpath = self._get_fullpath(row)
