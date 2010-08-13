@@ -21,6 +21,8 @@ def run(trace_list, sampling_freq, threshold_1=None,
         else:
             std = 1
         threshold_1 *= std 
+        print threshold_1
+        print "----------------------------------------------------"
         threshold_2 *= std 
         
         # convert times to samples (times in ms)
