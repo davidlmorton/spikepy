@@ -53,11 +53,12 @@ def recursive_layout(panel):
 
 def named_color(name):
     '''return a color given its name, in normalized rgb format.'''
-    if -1 not in wx.NamedColor(name).Get():
-        color = [chanel/255. for chanel in wx.NamedColor(name).Get()]
+    prenormalized_color = wx.NamedColor(name).Get()
+    if -1 not in prenormalized_color:
+        color = [chanel/255. for chanel in prenormalized_color]
         return color
     else: 
-        raise ValueError, "color must be in wx.TheColourDatabase"
+        raise ValueError, "%s is not in wx.TheColourDatabase" % name
 
 def rgb_to_matplotlib_color(r, g, b, a=0):
     '''return a color given its rgb values, in normalized rgb format.'''
