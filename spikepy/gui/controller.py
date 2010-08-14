@@ -55,7 +55,10 @@ class Controller(object):
             fullpaths = file_grid_ctrl.marked_fullpaths
 
         dlg = ExportDialog(self.view.frame)
-        dlg.ShowModal()
+        if dlg.ShowModal() == wx.ID_OK:
+            settings = dlg.get_settings()
+            print settings
+        dlg.Destroy()
 
     def _open_rename_trial_dialog(self, message):
         fullpath = message.data

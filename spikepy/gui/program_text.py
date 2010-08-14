@@ -48,6 +48,17 @@ RESTORE_DEFAULT_SETTINGS = "Restore default settings"
 EXPORT_TO_DIRECTORY = "Export to directory:"
 BROWSE = "Browse..."
 CHOOSE_EXPORT_DIRECTORY = "Choose export directory"
+SELECT_STAGES = 'Select Stages'
+STORE_ARRAYS_AS = 'Store arrays as:'
+ROWS = 'Rows'
+COLUMNS = 'Columns'
+FILE_FORMAT = 'File format:'
+PLAIN_TEXT_SPACES = '*.dat  (space delimited plain text)'
+PLAIN_TEXT_TABS = '*.dat  (tab delimited plain text)'
+CSV = '*.csv  (comma delimited plain text)'
+MATLAB = '*.mat  (MATLAB(tm) format)'
+
+
 
 ALL_FILES = "All Files (*)"
 SESSION_FILES = "Session Files (*.ses)"
@@ -73,13 +84,13 @@ SHRINK_FIGURE_CANVAS = "Shrink Figure Canvas"
 DETECTION_FILTER = "Detection Filter"
 DETECTION = "Spike Detection"
 EXTRACTION_FILTER = "Extraction Filter"
-EXTRACTION = "Extraction"
+EXTRACTION = "Feature Extraction"
+CLUSTERING = "Clustering"
 FEATURE_AMPLITUDE = "Feature Amplitude"
 FEATURE_INDEX = "Feature Index"
 FEATURE_SETS = "Feature Sets"
 FOUND = 'Found: '
 EXCLUDED = "Excluded: "
-CLUSTERING = "Clustering"
 SHOW_CURSOR_POSITION = "Show cursor position"
 USE_SCIENTIFIC_NOTATION = "Use scientific notation"
 SETTINGS = "Settings"
