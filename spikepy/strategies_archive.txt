@@ -51,13 +51,13 @@
         "settings": {
             "detection": {
                 "max_spike_duration": 2.0, 
+                "refractory_time": 0.0, 
                 "using_sd_units": true, 
                 "threshold_2": 4.0, 
-                "refractory_time": 0.0, 
                 "threshold_1": 4.0
             }, 
             "extraction": {
-                "post_padding": 1.5, 
+                "post_padding": 3.25, 
                 "exclude_overlappers": false, 
                 "pre_padding": 1.5
             }, 
@@ -74,8 +74,8 @@
                 "function_name": "Butterworth"
             }, 
             "clustering": {
-                "threshold": 1.0000000000000001e-09, 
-                "iterations": 88, 
+                "threshold": 1e-08, 
+                "iterations": 30, 
                 "number_of_clusters": 2
             }
         }
@@ -131,9 +131,9 @@
         "settings": {
             "detection": {
                 "max_spike_duration": 2.0, 
-                "refractory_time": 0.0, 
                 "using_sd_units": true, 
                 "threshold_2": 4.0, 
+                "refractory_time": 0.0, 
                 "threshold_1": 4.0
             }, 
             "extraction": {

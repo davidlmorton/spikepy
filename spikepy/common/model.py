@@ -22,7 +22,6 @@ def get_unique_display_name(other_display_names, other_fullpaths,
                        for ofullpath in other_fullpaths]
     filename = os.path.split(fullpath)[1]
     if filename not in other_filenames:
-        print filename, other_display_names
         if filename not in other_display_names:
             return filename
     rename_counts[filename] += 1

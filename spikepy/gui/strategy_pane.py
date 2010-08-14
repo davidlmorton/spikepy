@@ -247,8 +247,10 @@ class StagePanel(wx.Panel):
         kwargs = message.data
         stage_name = kwargs['stage_name']
         if stage_name != self.stage_name:
-            print "not right panel. This panel is %s" % self.stage_name
-            print "stage_name.lower is %s" % stage_name.lower()
+            message = "Message sent to incorrect panel.\n"
+            message += "This panel is named: %s\n" % self.stage_name
+            message += "Intended panel is named: %s" % stage_name
+            raise RuntimeError(message)
             return # not the right stage_panel
         method_name = kwargs['method_name']
         parameters = {}

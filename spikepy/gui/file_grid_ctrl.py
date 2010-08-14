@@ -284,8 +284,6 @@ class FileGridCtrl(gridlib.Grid):
 
     def _on_left_dclick(self, event=None):
         row = event.GetRow()
-        print row
-        print self._files
         col = event.GetCol()
         self._row_left_dclicked = row
         if (row < self._num_nonempty_rows and 

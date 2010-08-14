@@ -90,7 +90,6 @@ class Trial(object):
         return can_run_list
 
     def rename(self, new_display_name):
-        print 'blah'
         self.display_name = new_display_name
         pub.sendMessage(topic='TRIAL_RENAMED', data=self)
 

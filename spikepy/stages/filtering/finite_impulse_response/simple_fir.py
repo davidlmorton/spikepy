@@ -32,7 +32,6 @@ def make_fir_filter(sampling_freq, critical_freq, kernel_window, taps, kind,
         taps += 1
 
     if kind.lower() in ['low', 'low pass', 'low_pass']:
-        print normalized_critical_freq
         kernel = scisig.firwin(taps, normalized_critical_freq, 
                                window=kernel_window, **kwargs)
     elif kind.lower() in ['high', 'high pass', 'high_pass']:

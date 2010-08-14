@@ -42,7 +42,7 @@ class Controller(object):
         pub.subscribe(self._open_rename_trial_dialog,
                       topic='OPEN_RENAME_TRIAL_DIALOG')
         pub.subscribe(self._export_trials,  topic="EXPORT_TRIALS")
-        pub.subscribe(self._print_messages, topic='')
+        #pub.subscribe(self._print_messages, topic='')
 
     def _export_trials(self, message):
         export_type = message.data

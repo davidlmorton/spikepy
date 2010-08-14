@@ -18,14 +18,12 @@ for file in files:
             name = module_name[5:]
         pub.sendMessage(topic=("REGISTERED_'%s'_TYPE" % name).upper(), 
                         data=name)
-        print "registered '%s' type" % name
         file_readers[name] = eval('%s.read_file' % module_name)
 
 def open_data_file(fullpath, data_format='guess', **kwargs):
     """
     Open a datafile given the filename and return a Trial object.
     """
-    print fullpath, data_format, kwargs
     if data_format == 'guess':
         data_format = guess_data_format(fullpath)
     read_in_file = file_readers[data_format]

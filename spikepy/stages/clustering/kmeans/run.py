@@ -10,7 +10,6 @@ def run(feature_set_list, iterations=None, threshold=None,
     if (iterations         is None or
         threshold          is None or
         number_of_clusters is None):
-        print "keyword arguments to run are NOT optional."
         raise RuntimeError("keyword arguments to run are NOT optional.")
     else:
         data = numpy.array(feature_set_list)

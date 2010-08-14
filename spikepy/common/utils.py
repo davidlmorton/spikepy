@@ -4,7 +4,7 @@ import sys
 from scipy.signal import resample
 
 def pool_process(pool, function, args=tuple(), kwargs=dict()):
-    if pool is not None and False:
+    if pool is not None:
         try:
             pool_result = pool.apply_async(function, args=args, kwds=kwargs)
             result = pool_result.get()

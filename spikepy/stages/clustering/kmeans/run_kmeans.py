@@ -1,5 +1,3 @@
-import time
-
 from scipy.cluster.vq import kmeans, vq
 import numpy
 
@@ -29,10 +27,5 @@ def run_kmeans(k, data, threshold=1.000000000001e-8, iterations=30):
     stds = numpy.std(data, axis=0)
     wdata = data / stds 
     
-    print '===== Running kmeans algorithm ======'
-    t1 = time.time()
     codebook, distortions = kmeans(wdata, k, iter=iterations, thresh=threshold)
-    t2 = time.time()
-    print 'k = %d ran in %f seconds with distortion = %f' % (k, t2-t1, 
-                                                             distortions)
     return codebook*stds, distortions
