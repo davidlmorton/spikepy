@@ -50,14 +50,20 @@ class Controller(object):
         if export_type == "all":
             trials = self.model.trials
             fullpaths = trials.keys()
+            trial_list = [self.model.trials[fullpath] for fullpath in fullpaths]
+            caption=pt.EXPORT_ALL
         else:
             file_grid_ctrl = self.view.frame.file_list
             fullpaths = file_grid_ctrl.marked_fullpaths
+            trial_list = [self.model.trials[fullpath] for fullpath in fullpaths]
+            caption=pt.EXPORT_MARKED
 
-        dlg = ExportDialog(self.view.frame)
+        dlg = ExportDialog(self.view.frame, title=caption)
         if dlg.ShowModal() == wx.ID_OK:
             settings = dlg.get_settings()
             print settings
+            for trial in trial_list:
+                trial.export(**settings)
         dlg.Destroy()
 
     def _open_rename_trial_dialog(self, message):

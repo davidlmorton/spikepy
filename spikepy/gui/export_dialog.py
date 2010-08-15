@@ -93,22 +93,35 @@ class ExportOptionsPanel(wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
 
-        choices = [pt.ROWS, pt.COLUMNS]
+        store_as_choices = [pt.ROWS, pt.COLUMNS]
         self.store_arrays_as = NamedChoiceCtrl(self, name=pt.STORE_ARRAYS_AS, 
-                                         choices=choices)
+                                         choices=store_as_choices)
 
-        choices = [pt.PLAIN_TEXT_SPACES, 
+        format_choices = [pt.PLAIN_TEXT_SPACES, 
                    pt.PLAIN_TEXT_TABS,
-                   pt.CSV, pt.MATLAB]
+                   pt.CSV, pt.MATLAB, pt.NUMPY_BINARY]
         self.file_format = NamedChoiceCtrl(self, name=pt.FILE_FORMAT, 
-                                      choices=choices)
+                                      choices=format_choices)
     
+        self.Bind(wx.EVT_CHOICE, self._on_format_choice_made, 
+                                 self.file_format.choice)
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.store_arrays_as, proportion=0, flag=wx.EXPAND|wx.ALL, 
-                                        border=3)
         sizer.Add(self.file_format,    proportion=0, flag=wx.EXPAND|wx.ALL, 
                                         border=3)
+        sizer.Add(self.store_arrays_as, proportion=0, flag=wx.EXPAND|wx.ALL, 
+                                        border=3)
         self.SetSizer(sizer)
+        self._on_format_choice_made(format=format_choices[0])
+
+    def _on_format_choice_made(self, event=None, format=None):
+        if format is None:
+            format = event.GetString()
+        if format == pt.MATLAB:
+            self.store_arrays_as.Enable(True)
+        else:
+            self.store_arrays_as.Enable(False)
+            self.store_arrays_as.SetStringSelection(pt.ROWS)
+        
 
 class ExportStagesPanel(wx.Panel):
     def __init__(self, parent, **kwargs):
@@ -136,7 +149,7 @@ class ExportStagesPanel(wx.Panel):
         self.stages = {'detection_filter':detection_filter_box,
                        'detection': detection_box,
                        'extraction_filter': extraction_filter_box,
-                       'extraction': extraction_filter_box,
+                       'extraction': extraction_box,
                        'clustering': clustering_box}
 
 class ButtonsPanel(wx.Panel):

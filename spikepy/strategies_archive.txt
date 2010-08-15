@@ -125,7 +125,7 @@
             "detection": "Voltage Threshold", 
             "extraction": "Waveform", 
             "detection_filter": "Finite Impulse Response", 
-            "extraction_filter": "Finite Impulse Response", 
+            "extraction_filter": "Infinite Impulse Response", 
             "clustering": "K-means"
         }, 
         "settings": {
@@ -138,7 +138,7 @@
             }, 
             "extraction": {
                 "post_padding": 1.5, 
-                "exclude_overlappers": true, 
+                "exclude_overlappers": false, 
                 "pre_padding": 1.5
             }, 
             "detection_filter": {
@@ -149,13 +149,13 @@
             }, 
             "extraction_filter": {
                 "critical_freq": 300.0, 
-                "taps": 101, 
-                "window_name": "hamming", 
-                "kind": "High Pass"
+                "kind": "High Pass", 
+                "order": 3, 
+                "function_name": "Butterworth"
             }, 
             "clustering": {
                 "threshold": 1e-08, 
-                "iterations": 31, 
+                "iterations": 30, 
                 "number_of_clusters": 2
             }
         }

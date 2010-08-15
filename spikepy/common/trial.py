@@ -8,6 +8,7 @@ from wx.lib.pubsub import Publisher as pub
 import numpy
 
 from spikepy.gui.strategy_manager import make_strategy
+import spikepy.gui.program_text as pt
 
 class Trial(object):
     """This class represents an individual trial consisting of (potentially)
@@ -71,6 +72,17 @@ class Trial(object):
             stage_data.reset_results()
 
     def get_stage_data(self, stage_name):
+        if stage_name == pt.DETECTION_FILTER:
+            return self.detection_filter
+        if stage_name == pt.DETECTION:
+            return self.detection
+        if stage_name == pt.EXTRACTION_FILTER:
+            return self.extraction_filter
+        if stage_name == pt.EXTRACTION:
+            return self.extraction
+        if stage_name == pt.CLUSTERING:
+            return self.clustering
+
         formatted_stage_name = stage_name.lower().replace(' ', '_')
         if hasattr(self, formatted_stage_name):
             return getattr(self, formatted_stage_name)
@@ -92,6 +104,57 @@ class Trial(object):
     def rename(self, new_display_name):
         self.display_name = new_display_name
         pub.sendMessage(topic='TRIAL_RENAMED', data=self)
+
+    def export(self, path=None, stages_selected=[], 
+                     store_arrays_as=None, file_format=None):
+        '''
+        Store the results of the stages in <stage_list> to files in <path>.
+        Inputs:
+            path            : The export directory (must exist)
+            stage_list      : A list of strings denoting the stages results to
+                              export.
+            rows_or_cols    : Should sequences be stored as rows or columns.
+            format          : The file format
+        Returns:
+            None
+        '''
+        fmt = '%1.10e'
+        for stage_name in stages_selected:
+            stage_data = self.get_stage_data(stage_name)
+            extention = get_format_extention(file_format)
+            filename = '%s-%s-results.%s' % (self.display_name, stage_name,
+                                             extention)
+            fullpath = os.path.join(path, filename)
+            # filtering
+            if 'filter' in stage_name:
+                if file_format == pt.PLAIN_TEXT_SPACES:
+                    delimiter = ' '
+                    numpy.savetxt(fullpath, stage_data.results, 
+                                  fmt=fmt, delimiter=delimiter)
+                elif file_format == pt.PLAIN_TEXT_TABS:
+                    delimiter = '\t'
+                    numpy.savetxt(fullpath, stage_data.results, 
+                                  fmt=fmt, delimiter=delimiter)
+                elif file_format == pt.CSV:
+                    delimiter = ','
+                    numpy.savetxt(fullpath, stage_data.results, 
+                                  fmt=fmt, delimiter=delimiter)
+                elif file_format == pt.NUMPY_BINARY:
+                    numpy.savez(fullpath, results=stage_data.results)
+                elif file_format == pt.MATLAB:
+                    pass
+        pass
+
+def get_format_extention(format):
+    if (format == pt.PLAIN_TEXT_SPACES or
+        format == pt.PLAIN_TEXT_TABS):
+        return 'txt'
+    if format == pt.CSV:
+        return 'csv'
+    if format == pt.MATLAB:
+        return 'mat'
+    if format == pt.NUMPY_BINARY:
+        return 'npz'
 
 def zero_mean(trace_array):
     return trace_array - numpy.average(trace_array)

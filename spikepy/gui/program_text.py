@@ -53,10 +53,13 @@ STORE_ARRAYS_AS = 'Store arrays as:'
 ROWS = 'Rows'
 COLUMNS = 'Columns'
 FILE_FORMAT = 'File format:'
-PLAIN_TEXT_SPACES = '*.dat  (space delimited plain text)'
-PLAIN_TEXT_TABS = '*.dat  (tab delimited plain text)'
+PLAIN_TEXT_SPACES = '*.txt  (space delimited plain text)'
+PLAIN_TEXT_TABS = '*.txt  (tab delimited plain text)'
 CSV = '*.csv  (comma delimited plain text)'
+NUMPY_BINARY = '*.npz  (Numpy binary)'
 MATLAB = '*.mat  (MATLAB(tm) format)'
+EXPORT_ALL = 'Export ALL trials'
+EXPORT_MARKED = 'Export MARKED trials'
 
 
 
@@ -81,11 +84,13 @@ ENLARGE_CANVAS = "Enlarge Canvas"
 ENLARGE_FIGURE_CANVAS = "Enlarge Figure Canvas"
 SHRINK_CANVAS = "Shrink Canvas"
 SHRINK_FIGURE_CANVAS = "Shrink Figure Canvas"
+# ---- stages ----
 DETECTION_FILTER = "Detection Filter"
 DETECTION = "Spike Detection"
 EXTRACTION_FILTER = "Extraction Filter"
 EXTRACTION = "Feature Extraction"
 CLUSTERING = "Clustering"
+
 FEATURE_AMPLITUDE = "Feature Amplitude"
 FEATURE_INDEX = "Feature Index"
 FEATURE_SETS = "Feature Sets"
