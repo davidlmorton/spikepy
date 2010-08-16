@@ -6,9 +6,20 @@ import os
 import wx
 from wx.lib.pubsub import Publisher as pub
 import numpy
+import scipy.io
 
 from spikepy.gui.strategy_manager import make_strategy
 import spikepy.gui.program_text as pt
+from spikepy.common.utils import save_list_txt
+
+text_delimiters = {pt.PLAIN_TEXT_TABS: '\t',
+                   pt.PLAIN_TEXT_SPACES: ' ',
+                   pt.CSV: ','}
+format_extentions = {pt.PLAIN_TEXT_SPACES:'txt',
+                     pt.PLAIN_TEXT_TABS:'txt',
+                     pt.CSV:'csv',
+                     pt.MATLAB:'mat',
+                     pt.NUMPY_BINARY:'npz'}
 
 class Trial(object):
     """This class represents an individual trial consisting of (potentially)
@@ -105,8 +116,7 @@ class Trial(object):
         self.display_name = new_display_name
         pub.sendMessage(topic='TRIAL_RENAMED', data=self)
 
-    def export(self, path=None, stages_selected=[], 
-                     store_arrays_as=None, file_format=None):
+    def export(self, path=None, stages_selected=[], file_format=None):
         '''
         Store the results of the stages in <stage_list> to files in <path>.
         Inputs:
@@ -118,43 +128,102 @@ class Trial(object):
         Returns:
             None
         '''
-        fmt = '%1.10e'
         for stage_name in stages_selected:
-            stage_data = self.get_stage_data(stage_name)
-            extention = get_format_extention(file_format)
-            filename = '%s-%s-results.%s' % (self.display_name, stage_name,
-                                             extention)
+            extention = format_extentions[file_format]
+            base_name = '%s-%s' % (self.display_name, stage_name)
+            filename = '%s.%s' % (base_name, extention)
             fullpath = os.path.join(path, filename)
-            # filtering
-            if 'filter' in stage_name:
-                if file_format == pt.PLAIN_TEXT_SPACES:
-                    delimiter = ' '
-                    numpy.savetxt(fullpath, stage_data.results, 
-                                  fmt=fmt, delimiter=delimiter)
-                elif file_format == pt.PLAIN_TEXT_TABS:
-                    delimiter = '\t'
-                    numpy.savetxt(fullpath, stage_data.results, 
-                                  fmt=fmt, delimiter=delimiter)
-                elif file_format == pt.CSV:
-                    delimiter = ','
-                    numpy.savetxt(fullpath, stage_data.results, 
-                                  fmt=fmt, delimiter=delimiter)
+            times = self.times
+            if 'raw_traces' == stage_name:
+                if (file_format == pt.PLAIN_TEXT_TABS or
+                    file_format == pt.PLAIN_TEXT_SPACES or
+                    file_format == pt.CSV ):
+                    results = [times]
+                    for trace in self.raw_traces:
+                        results.append(trace)
+                    delimiter = text_delimiters[file_format]
+                    save_list_txt(fullpath, results, 
+                                  delimiter=delimiter)
                 elif file_format == pt.NUMPY_BINARY:
-                    numpy.savez(fullpath, results=stage_data.results)
+                    numpy.savez(fullpath, times = times, 
+                                raw_traces=self.raw_traces)
                 elif file_format == pt.MATLAB:
-                    pass
-        pass
+                    results = {'times': times,
+                               'raw_traces': self.raw_traces}
+                    scipy.io.savemat(fullpath, results)
+                continue
+            stage_data = self.get_stage_data(stage_name)
+            # EXPORT FILTER STAGE
+            if 'filter' in stage_name:
+                if (file_format == pt.PLAIN_TEXT_TABS or
+                    file_format == pt.PLAIN_TEXT_SPACES or
+                    file_format == pt.CSV ):
+                    results = [times]
+                    for trace in stage_data.results:
+                        results.append(trace)
+                    delimiter = text_delimiters[file_format]
+                    save_list_txt(fullpath, results, 
+                                  delimiter=delimiter)
+                elif file_format == pt.NUMPY_BINARY:
+                    numpy.savez(fullpath, times=times,
+                                detection_filtered_traces=stage_data.results)
+                elif file_format == pt.MATLAB:
+                    results = {'times': times,
+                               'filtered_traces': stage_data.results}
+                    scipy.io.savemat(fullpath, results)
+            # EXPORT DETECTION STAGE
+            if stage_name == 'detection':
+                if (file_format == pt.PLAIN_TEXT_TABS or
+                    file_format == pt.PLAIN_TEXT_SPACES or
+                    file_format == pt.CSV ):
+                    delimiter = text_delimiters[file_format]
+                    save_list_txt(fullpath, stage_data.results, 
+                                  delimiter=delimiter)
+                elif file_format == pt.NUMPY_BINARY:
+                    numpy.savez(fullpath, 
+                                spikes_detected=stage_data.results)
+                elif file_format == pt.MATLAB:
+                    results = {'spikes_detected': stage_data.results}
+                    scipy.io.savemat(fullpath, results)
+            # EXPORT EXTRACTION STAGE
+            if stage_name == 'extraction':
+                features = numpy.array(stage_data.results['features'])
+                ft = numpy.array(stage_data.results['feature_times'])
+                feature_times = ft.reshape(1,-1)
+                if (file_format == pt.PLAIN_TEXT_TABS or
+                    file_format == pt.PLAIN_TEXT_SPACES or
+                    file_format == pt.CSV ):
+                    results = [ft]
+                    for feature_set in features:
+                        results.append(feature_set)
+                    delimiter = text_delimiters[file_format]
+                    save_list_txt(fullpath, results, 
+                                  delimiter=delimiter)
+                elif file_format == pt.NUMPY_BINARY:
+                    numpy.savez(fullpath, feature_sets=features,
+                                          feature_times=feature_times)
+                elif file_format == pt.MATLAB:
+                    results = {'feature_sets': features,
+                               'feature_times': feature_times}
+                    scipy.io.savemat(fullpath, results)
+            # EXPORT CLUSTERING STAGE
+            if stage_name == 'clustering':
+                clusters_keys = sorted(stage_data.results.keys())
+                results = [stage_data.results[key] for key in clusters_keys]
+                string_dict = {}
+                for key in clusters_keys:
+                    string_dict['cluster %d' % key] = stage_data.results[key]
+                if (file_format == pt.PLAIN_TEXT_TABS or
+                    file_format == pt.PLAIN_TEXT_SPACES or
+                    file_format == pt.CSV ):
+                    delimiter = text_delimiters[file_format]
+                    save_list_txt(fullpath, results, 
+                                  delimiter=delimiter)
+                elif file_format == pt.NUMPY_BINARY:
+                    numpy.savez(fullpath, **string_dict)
+                elif file_format == pt.MATLAB:
+                    scipy.io.savemat(fullpath, string_dict)
 
-def get_format_extention(format):
-    if (format == pt.PLAIN_TEXT_SPACES or
-        format == pt.PLAIN_TEXT_TABS):
-        return 'txt'
-    if format == pt.CSV:
-        return 'csv'
-    if format == pt.MATLAB:
-        return 'mat'
-    if format == pt.NUMPY_BINARY:
-        return 'npz'
 
 def zero_mean(trace_array):
     return trace_array - numpy.average(trace_array)

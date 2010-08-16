@@ -49,6 +49,7 @@ EXPORT_TO_DIRECTORY = "Export to directory:"
 BROWSE = "Browse..."
 CHOOSE_EXPORT_DIRECTORY = "Choose export directory"
 SELECT_STAGES = 'Select Stages'
+RAW_TRACES = 'Raw Traces'
 STORE_ARRAYS_AS = 'Store arrays as:'
 ROWS = 'Rows'
 COLUMNS = 'Columns'

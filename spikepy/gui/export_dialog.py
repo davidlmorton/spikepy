@@ -56,11 +56,9 @@ class ExportDialog(wx.Dialog):
             if stage_box.IsChecked():
                 stages_selected.append(stage_name)
         options_panel = self.options_panel
-        store_arrays_as = options_panel.store_arrays_as.GetStringSelection()
         file_format = options_panel.file_format.GetStringSelection()
         settings = {'path': path,
                     'stages_selected': stages_selected,
-                    'store_arrays_as': store_arrays_as,
                     'file_format': file_format}
         return settings
 
@@ -93,47 +91,31 @@ class ExportOptionsPanel(wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
 
-        store_as_choices = [pt.ROWS, pt.COLUMNS]
-        self.store_arrays_as = NamedChoiceCtrl(self, name=pt.STORE_ARRAYS_AS, 
-                                         choices=store_as_choices)
-
         format_choices = [pt.PLAIN_TEXT_SPACES, 
                    pt.PLAIN_TEXT_TABS,
                    pt.CSV, pt.MATLAB, pt.NUMPY_BINARY]
         self.file_format = NamedChoiceCtrl(self, name=pt.FILE_FORMAT, 
                                       choices=format_choices)
     
-        self.Bind(wx.EVT_CHOICE, self._on_format_choice_made, 
-                                 self.file_format.choice)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.file_format,    proportion=0, flag=wx.EXPAND|wx.ALL, 
                                         border=3)
-        sizer.Add(self.store_arrays_as, proportion=0, flag=wx.EXPAND|wx.ALL, 
-                                        border=3)
         self.SetSizer(sizer)
-        self._on_format_choice_made(format=format_choices[0])
 
-    def _on_format_choice_made(self, event=None, format=None):
-        if format is None:
-            format = event.GetString()
-        if format == pt.MATLAB:
-            self.store_arrays_as.Enable(True)
-        else:
-            self.store_arrays_as.Enable(False)
-            self.store_arrays_as.SetStringSelection(pt.ROWS)
-        
 
 class ExportStagesPanel(wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
 
+        raw_traces_box         = wx.CheckBox(self, label=pt.RAW_TRACES)
         detection_filter_box   = wx.CheckBox(self, label=pt.DETECTION_FILTER)
         detection_box          = wx.CheckBox(self, label=pt.DETECTION)
         extraction_filter_box  = wx.CheckBox(self, label=pt.EXTRACTION_FILTER)
         extraction_box         = wx.CheckBox(self, label=pt.EXTRACTION)
         clustering_box         = wx.CheckBox(self, label=pt.CLUSTERING)
 
-        self.element_list = [detection_filter_box, 
+        self.element_list = [raw_traces_box, 
+                             detection_filter_box, 
                              detection_box, 
                              extraction_filter_box, 
                              extraction_box, 
@@ -146,7 +128,8 @@ class ExportStagesPanel(wx.Panel):
             sizer.Add(element,  proportion=0, flag=flag, border=border)
         self.SetSizer(sizer)
 
-        self.stages = {'detection_filter':detection_filter_box,
+        self.stages = {'raw_traces': raw_traces_box,
+                       'detection_filter':detection_filter_box,
                        'detection': detection_box,
                        'extraction_filter': extraction_filter_box,
                        'extraction': extraction_box,
