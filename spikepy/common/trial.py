@@ -153,6 +153,8 @@ class Trial(object):
                     scipy.io.savemat(fullpath, results)
                 continue
             stage_data = self.get_stage_data(stage_name)
+            if stage_data.results is None:
+                continue # this stage hasn't been run.
             # EXPORT FILTER STAGE
             if 'filter' in stage_name:
                 if (file_format == pt.PLAIN_TEXT_TABS or

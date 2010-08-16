@@ -15,7 +15,7 @@ class LookAndFeelSettings(object):
         self.METHOD_EXTRAS_FRAME_STYLE = wx.DEFAULT_FRAME_STYLE
         self._have_size_ratio = False
 
-        self.STRATEGY_PANE_MIN_SIZE = numpy.array((350, 150))
+        self.STRATEGY_PANE_MIN_SIZE = numpy.array((380, 150))
         self.STRATEGY_PANE_BORDER = 4
         self.STRATEGY_SUMMARY_BORDER = 3
         self.STRATEGY_WAIT_TIME = 350 # in ms
