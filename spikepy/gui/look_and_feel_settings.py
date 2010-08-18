@@ -21,8 +21,13 @@ class LookAndFeelSettings(object):
         self.STRATEGY_WAIT_TIME = 350 # in ms
 
         self.FILE_LIST_START_HEIGHT = 150
-        self.FILE_LIST_MARKED_STATUS = u'\u2612'
-        self.FILE_LIST_UNMARKED_STATUS = u'\u2610'
+
+        if wx.Platform == '__WXMAC__':
+            self.FILE_LIST_MARKED_STATUS = u'\u26AB'
+            self.FILE_LIST_UNMARKED_STATUS = u'\u26AA'
+        else:
+            self.FILE_LIST_MARKED_STATUS = u'\u2612'
+            self.FILE_LIST_UNMARKED_STATUS = u'\u2610'
 
         self.TRIAL_NAME_COL_WIDTH = self.STRATEGY_PANE_MIN_SIZE[0]-50
 
