@@ -83,10 +83,7 @@ class FileGridCtrl(gridlib.Grid):
 
     def _file_closed(self, message):
         fullpath = message.data
-        num_rows = self.GetNumberRows()
         row = self._get_row_from_fullpath(fullpath)
-        if row == self._left_clicked_row:
-            pub.sendMessage(topic='SHOW PLOT', data='DEFAULT')
         self.DeleteRows(pos=row)
         self.AppendRows()
         self._num_empty_rows += 1
@@ -272,7 +269,6 @@ class FileGridCtrl(gridlib.Grid):
     def _on_left_click(self, event):
         row = event.GetRow()
         col = event.GetCol()
-        self._left_clicked_row = row
         if (row < self._num_nonempty_rows and 
                 self._get_fullpath(row) in self._opened_files):
             fullpath = self._get_fullpath(row)

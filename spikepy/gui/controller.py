@@ -204,6 +204,7 @@ class Controller(object):
                                                             trial.display_name))
             pub.sendMessage(topic='SET_STRATEGY', 
                             data=(trial.methods_used, trial.settings))
+
             
             
     def _print_messages(self, message):
