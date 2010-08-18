@@ -19,8 +19,7 @@ class FileGridCtrl(gridlib.Grid):
         attr0 = gridlib.GridCellAttr()
         #                    horizontal       vertical
         attr0.SetAlignment(wx.ALIGN_CENTER, wx.ALIGN_CENTER) 
-        font = self.GetDefaultCellFont()
-        font.SetPointSize(14)
+        font = wx.Font(14, wx.SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         attr0.SetFont(font)
         attr1 = gridlib.GridCellAttr()
         attr1.SetAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTER) 
