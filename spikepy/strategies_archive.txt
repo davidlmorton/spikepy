@@ -124,7 +124,7 @@
         "methods_used": {
             "detection": "Voltage Threshold", 
             "extraction": "Waveform", 
-            "detection_filter": "Infinite Impulse Response", 
+            "detection_filter": "None", 
             "extraction_filter": "None", 
             "clustering": "K-means"
         }, 
@@ -141,12 +141,7 @@
                 "exclude_overlappers": false, 
                 "pre_padding": 1.5
             }, 
-            "detection_filter": {
-                "critical_freq": 300.0, 
-                "kind": "High Pass", 
-                "order": 3, 
-                "function_name": "Butterworth"
-            }, 
+            "detection_filter": {}, 
             "extraction_filter": {}, 
             "clustering": {
                 "threshold": 1e-08, 

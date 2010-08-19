@@ -36,6 +36,8 @@ class LookAndFeelSettings(object):
         self.PLOT_LINEWIDTH_2 = 2.5
         self.PLOT_LINEWIDTH_3 = 2.5
         self.PLOT_LINEWIDTH_4 = 0.7 # for features
+        self.PLOT_STD_LINEWIDTH = 0.7
+        self.PLOT_STD_LINE_COLOR = rgb_to_matplotlib_color(0, 0, 0)
         self.PLOT_COLOR_1 = rgb_to_matplotlib_color(0, 0, 0)
         # a nice bluish color
         self.PLOT_COLOR_2 = rgb_to_matplotlib_color(69, 109, 255)

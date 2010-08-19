@@ -7,7 +7,7 @@ from scipy import signal as scisig
 
 from .multi_plot_panel import MultiPlotPanel
 from .plot_panel import PlotPanel
-from .utils import rgb_to_matplotlib_color, adjust_axes_edges
+from .utils import rgb_to_matplotlib_color, adjust_axes_edges, clear_axes
 from .look_and_feel_settings import lfs
 from . import program_text as pt
 
@@ -141,12 +141,28 @@ class DetectionPlotPanel(MultiPlotPanel):
             return
         times = trial.times
 
-        for trace, axes in zip(traces, self._trace_axes[fullpath]):
-            while axes.lines:
-                del(axes.lines[0])     
+        trace_axes = self._trace_axes[fullpath]
+        for trace, axes in zip(traces, trace_axes):
+            clear_tick_labels = axes is not trace_axes[-1]  
+            clear_axes(axes, clear_tick_labels=clear_tick_labels)
+
             axes.plot(times, trace, color=lfs.PLOT_COLOR_2, 
                              linewidth=lfs.PLOT_LINEWIDTH_2, 
                              label=pt.DETECTION_TRACE_GRAPH_LABEL)
+            ymax = numpy.max(numpy.abs(trace))
+            axes.set_ylim(ymin=-ymax*1.1, ymax=ymax*1.4)
+            std = numpy.std(trace)
+
+            for factor, linestyle in [(2,':'),(4,'-')]:
+                axes.axhline(std*factor, color=lfs.PLOT_STD_LINE_COLOR, 
+                                  linewidth=lfs.PLOT_STD_LINEWIDTH, 
+                                  label=r'$%d\sigma$' % factor,
+                                  linestyle=linestyle)
+                axes.axhline(-std*factor, color=lfs.PLOT_STD_LINE_COLOR, 
+                                  linewidth=lfs.PLOT_STD_LINEWIDTH, 
+                                  linestyle=linestyle)
+        axes.legend(loc='upper right', ncol=3, shadow=True, 
+                    bbox_to_anchor=[1.03,1.1])
 
     def _plot_spikes(self, trial, figure, fullpath):
         # remove old lines if present.

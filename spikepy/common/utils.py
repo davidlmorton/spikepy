@@ -29,7 +29,7 @@ def upsample_trace_list(trace_list, prev_sample_rate, desired_sample_rate):
         a list of resampled traces
     '''
     rate_factor = desired_sample_rate/float(prev_sample_rate)
-    return [resample(trace, len(trace)*rate_factor, window='hamming')
+    return [resample(trace, len(trace)*rate_factor)
             for trace in trace_list]
 
 def save_list_txt(filename, array_list, delimiter=' '):

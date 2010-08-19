@@ -74,6 +74,7 @@ PLOT_TIME = "Time (ms)"
 TIME_AXIS = "Time (ms fixme)"
 SPIKE_RATE_AXIS = "Estimated\nspike rate (Hz)"
 DETECTION_TRACE_GRAPH_LABEL = "Detection Filtered"
+STD_GRAPH_LABEL = 'Standard Deviation'
 SPIKES_GRAPH_LABEL = "Spikes"
 RAW = "Raw"
 PSD_Y_AXIS_LABEL = "PSD (dB/Hz)"

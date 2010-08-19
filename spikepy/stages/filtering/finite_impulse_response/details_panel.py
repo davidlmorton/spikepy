@@ -78,7 +78,8 @@ class DetailsPanel(ScrolledPanel):
             window_selecter_sizer.Add(window_checkboxes[name], flag=flag, 
             border=border)
 
-        windowing_axis.legend(loc="lower right")        
+        # FIXME plot something with a label first.
+        #windowing_axis.legend(loc="lower right")        
 
         # ---- Frequency response stuff ----
         frequencies, freq_responses = scisig.freqz(kernel)

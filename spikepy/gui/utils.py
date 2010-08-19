@@ -13,6 +13,18 @@ from . import program_text as pt
 gui_folder  = os.path.split(__file__)[0]
 icon_folder = os.path.join(gui_folder, 'icons')
 
+def clear_axes(axes, clear_tick_labels=False):
+    '''
+    Clear the axes but not the x or ylabels
+    '''
+    xlabel = axes.get_xlabel()
+    ylabel = axes.get_ylabel()
+    axes.clear()
+    axes.set_xlabel(xlabel)
+    axes.set_ylabel(ylabel)
+    if clear_tick_labels:
+        axes.set_xticklabels([''], visible=False)   
+        axes.set_yticklabels([''], visible=False)   
 
 def adjust_axes_edges(axes, canvas_size_in_pixels=None, 
                             top=0.0, 
