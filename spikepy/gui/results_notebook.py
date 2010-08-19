@@ -74,12 +74,12 @@ class ResultsPanel(wx.Panel):
         cursor_position_bar = CursorPositionBar(self)
         self.plot_panel = plot_panels[self.name](self, self.name)
 
-        method_extras_button = wx.Button(self, label=pt.METHOD_EXTRAS)
+        method_details_button = wx.Button(self, label=pt.METHOD_DETAILS)
 
         top_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         top_sizer.Add(cursor_position_bar, proportion=0, 
                 flag=wx.ALL|wx.EXPAND, border=0)
-        top_sizer.Add(method_extras_button, proportion=0, 
+        top_sizer.Add(method_details_button, proportion=0, 
                 flag=wx.ALL, border=4)
         
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
@@ -87,27 +87,30 @@ class ResultsPanel(wx.Panel):
         sizer.Add(self.plot_panel, proportion=1, flag=wx.EXPAND)
         self.SetSizer(sizer)
 
-        self.Bind(wx.EVT_BUTTON, self._show_method_extras)
+        self.Bind(wx.EVT_BUTTON, self._show_method_details)
 
     def _tell_report_coordinates(self, report_coordinates):
         for plot_panel in self.plot_panel._plot_panels.values():
             plot_panel._report_coordinates = report_coordinates
 
-    def _show_method_extras(self, event=None):
+    def _show_method_details(self, event=None):
         stage_name = self.name
         fullpath = self.plot_panel._currently_shown
+        if fullpath == 'DEFAULT':
+            return
         trial = self.plot_panel._trials[fullpath]
-        stage_data = getattr(trial, stage_name.lower().replace(' ', '_'))
+        stage_data = trial.get_stage_data(stage_name)
         method_name = stage_data.method
         stage_module = stage_modules[stage_name]
         method_index = stage_module.method_names.index(method_name)
         method_module = stage_module.method_modules[method_index]
-        title = pt.METHOD_EXTRAS_FRAME_TITLE % method_name
-        size = lfs.METHOD_EXTRAS_FRAME_SIZE
-        style = lfs.METHOD_EXTRAS_FRAME_STYLE
-        frame = SinglePanelFrame(self, title=title, size=size, style=style)
-        extras_panel = method_module.ExtrasPanel(frame, trial, stage_name)
-        frame.Show()
+        if hasattr(method_module, 'DetailsPanel'):
+            title = pt.METHOD_DETAILS_FRAME_TITLE % method_name
+            size = lfs.METHOD_DETAILS_FRAME_SIZE
+            style = lfs.METHOD_DETAILS_FRAME_STYLE
+            frame = SinglePanelFrame(self, title=title, size=size, style=style)
+            details_panel = method_module.DetailsPanel(frame, trial, stage_name)
+            frame.Show()
 
 
 class CursorPositionBar(wx.Panel):

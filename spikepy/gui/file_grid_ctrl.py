@@ -19,8 +19,13 @@ class FileGridCtrl(gridlib.Grid):
         attr0 = gridlib.GridCellAttr()
         #                    horizontal       vertical
         attr0.SetAlignment(wx.ALIGN_CENTER, wx.ALIGN_CENTER) 
-        font = wx.Font(18, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, 
-                       wx.FONTWEIGHT_NORMAL)
+        if wx.Platform == '__WXMAC__':
+            font_point_size = 20
+        else:
+            font_point_size = 15
+        font = wx.Font(font_point_size, wx.FONTFAMILY_SWISS, 
+                       wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+
         attr0.SetFont(font)
         attr1 = gridlib.GridCellAttr()
         attr1.SetAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTER) 
@@ -35,11 +40,10 @@ class FileGridCtrl(gridlib.Grid):
         self.SetColSize(0, 5)
         self._autosize_cols()
 
-        self.Bind(gridlib.EVT_GRID_CELL_RIGHT_CLICK, self._on_right_click)
         self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self._on_left_click)
-        self.Bind(gridlib.EVT_GRID_RANGE_SELECT, self._on_range_select)
-        self.Bind(wx.EVT_SIZE, self._ensure_fills_space)
         self.Bind(gridlib.EVT_GRID_CELL_LEFT_DCLICK, self._on_left_dclick)
+        self.Bind(gridlib.EVT_GRID_CELL_RIGHT_CLICK, self._on_right_click)
+        self.Bind(wx.EVT_SIZE, self._ensure_fills_space)
 
         # set it up so that selections select the whole row
         self.SetSelectionMode(self.wxGridSelectRows)
@@ -54,11 +58,11 @@ class FileGridCtrl(gridlib.Grid):
         pub.subscribe(self._trial_renamed, topic='TRIAL_RENAMED')
         self.EnableGridLines(False)
         self.DisableDragRowSize()
+        self.DisableDragColSize()
         self._last_fullpath_selected = None
         self.SetGridCursor(0, 4)
         self._opened_files = set()
         self._files = []
-
 
     def _autosize_cols(self):
         self.AutoSizeColumns()
@@ -77,9 +81,6 @@ class FileGridCtrl(gridlib.Grid):
 
     def MakeCellVisible(self):
         pass # don't scroll to where the cursor is
-
-    def _on_range_select(self, event):
-        return # do not do event.Skip() thus not allowing range selection
 
     def _file_closed(self, message):
         fullpath = message.data
@@ -149,7 +150,7 @@ class FileGridCtrl(gridlib.Grid):
         if self._num_nonempty_rows:
             item = wx.MenuItem(cm, self._cmid_open_file, pt.OPEN_ANOTHER_FILE)
         else:
-            item = wx.MenuItem(cm, self._cmid_open_file, pt.OPEN_FILE)
+            item = wx.MenuItem(cm, self._cmid_open_file, pt.OPEN)
         bmp = utils.get_bitmap_icon('folder')
         item.SetBitmap(bmp)
         cm.AppendItem(item)

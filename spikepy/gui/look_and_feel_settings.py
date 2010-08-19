@@ -12,7 +12,7 @@ class LookAndFeelSettings(object):
     def __init__(self):
         # MAIN_FRAME_SIZE is a property below
         self.MAIN_FRAME_STYLE = wx.DEFAULT_FRAME_STYLE
-        self.METHOD_EXTRAS_FRAME_STYLE = wx.DEFAULT_FRAME_STYLE
+        self.METHOD_DETAILS_FRAME_STYLE = wx.DEFAULT_FRAME_STYLE
         self._have_size_ratio = False
 
         self.STRATEGY_PANE_MIN_SIZE = numpy.array((380, 150))
@@ -23,10 +23,10 @@ class LookAndFeelSettings(object):
         self.FILE_LIST_START_HEIGHT = 150
 
         if wx.Platform == '__WXMAC__':
-            self.FILE_LIST_MARKED_STATUS = u'\u26AB'
+            self.FILE_LIST_MARKED_STATUS   = u'\u26AB'
             self.FILE_LIST_UNMARKED_STATUS = u'\u26AA'
         else:
-            self.FILE_LIST_MARKED_STATUS = u'\u2612'
+            self.FILE_LIST_MARKED_STATUS   = u'\u2612'
             self.FILE_LIST_UNMARKED_STATUS = u'\u2610'
 
         self.TRIAL_NAME_COL_WIDTH = self.STRATEGY_PANE_MIN_SIZE[0]-50
@@ -130,7 +130,7 @@ class LookAndFeelSettings(object):
         return numpy.array(self.get_main_frame_size())
 
     @property
-    def METHOD_EXTRAS_FRAME_SIZE(self):
+    def METHOD_DETAILS_FRAME_SIZE(self):
         # FIXME change this once we decide what we size we want for the 
         #       method extras frame
         return numpy.array(self.get_main_frame_size())

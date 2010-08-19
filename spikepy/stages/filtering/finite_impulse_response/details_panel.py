@@ -9,14 +9,14 @@ from spikepy.gui.look_and_feel_settings import lfs
 from .simple_fir import make_fir_filter
 from wx.lib.scrolledpanel import ScrolledPanel
 
-class ExtrasPanel(ScrolledPanel):
+class DetailsPanel(ScrolledPanel):
     def __init__(self, parent, trial, stage_name, **kwargs):
         ScrolledPanel.__init__(self, parent, **kwargs)
         self._dpi       = lfs.PLOT_DPI
         self._figsize   = lfs.PLOT_FIGSIZE
         self._facecolor = lfs.PLOT_FACECOLOR
 
-        stage_data = getattr(trial, stage_name.lower().replace(' ', '_'))
+        stage_data = trial.get_stage_data(stage_name)
         settings = stage_data.settings
         results = stage_data.results
         plot_panel = PlotPanel(self, figsize=self._figsize, 
@@ -37,9 +37,6 @@ class ExtrasPanel(ScrolledPanel):
         #---- Kernel Stuff ----
         kernel = make_fir_filter(sampling_freq, critical_freq, kernel_window, 
                                  taps, kind, **kwargs)
-        print kernel_window
-        print taps
-        print kind
         hamming_kernel = make_fir_filter(sampling_freq, critical_freq, 
                                  "hamming", taps, kind, **kwargs)
         boxcar_kernel = make_fir_filter(sampling_freq, critical_freq, "boxcar", 
@@ -56,7 +53,6 @@ class ExtrasPanel(ScrolledPanel):
         kernel_axes.plot(triang_kernel, label="triang")
         kernel_axes.plot(blackman_kernel, label="blackman")
         kernel_axes.legend(loc="upper right")
-        print kernel_axes.__class__
 
         # ---- Windowing function stuff ----
         window_selecter_sizer = wx.BoxSizer(orient=wx.VERTICAL)

@@ -19,7 +19,7 @@ ABOUT_SPIKEPY = ("Spikepy is a python-based spike sorting "
 
 # ---- Menu Bar Text ----            
 FILE = "File"
-OPEN = "Open File..."
+OPEN = "Open File(s)..."
 LOAD_SESSION = "Load Session..."
 SAVE_SESSION = "Save Session..."
 EXPORT_MARKED_TRIALS = "Export marked trials..."
@@ -37,7 +37,6 @@ ABOUT = "About"
 TRIAL_NAME = "Trial Name"
 FILE_OPENING_STATUS = "**"
 OPEN_ANOTHER_FILE = "Open Another File..."
-OPEN_FILE = "Open File..."
 CLOSE_SELECTED_FILES = "Close Marked Files"
 CLOSE_THIS_FILE = "Close This File"
 RENAME_TRIAL = 'Rename This Trial'
@@ -103,8 +102,8 @@ SETTINGS = "Settings"
 MISSING_IMAGE_ERROR = "Cannot find image named %s in icons folder."
 RUN = "Run"
 METHOD = "Method"
-METHOD_EXTRAS = "Method Extras"
-METHOD_EXTRAS_FRAME_TITLE = "Extras for %s" # % method_name
+METHOD_DETAILS = "Method Details"
+METHOD_DETAILS_FRAME_TITLE = "Details for %s" # % method_name
 RUN_BUTTON_RUNNING_STATUS = "Running"
 SAVE_STRATEGY = "Save Strategy..."
 STRATEGY = "Strategy"
