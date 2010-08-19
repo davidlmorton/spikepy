@@ -101,6 +101,8 @@ class ResultsPanel(wx.Panel):
         trial = self.plot_panel._trials[fullpath]
         stage_data = trial.get_stage_data(stage_name)
         method_name = stage_data.method
+        if method_name is None:
+            return
         stage_module = stage_modules[stage_name]
         method_index = stage_module.method_names.index(method_name)
         method_module = stage_module.method_modules[method_index]

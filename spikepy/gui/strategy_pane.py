@@ -97,7 +97,7 @@ class StrategyPane(ScrolledPanel):
         stage_run_state = message.data
         for stage in self.stages:
             stage_name = stage.stage_name
-            stage.run_button.Enable(stage_run_state[stage_name])
+            stage.run_all_button.Enable(stage_run_state[stage_name])
             
     def _results_notebook_page_changing(self, message=None):
         old_page_num, new_page_num = message.data
@@ -220,26 +220,28 @@ class StagePanel(wx.Panel):
                                  choices=self.method_names)
 
         # --- RUN BUTTON ---
-        self.run_button = wx.Button(self, label=pt.RUN)
-        self.run_button.Show(False)
+        self.run_all_button    = wx.Button(self, label=pt.RUN_ALL)
+        self.run_marked_button = wx.Button(self, label=pt.RUN_MARKED)
 
         # --- SIZER ---
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         ea_flag = wx.EXPAND|wx.ALL
         sizer.Add(self.method_chooser,          proportion=0, 
-                      flag=ea_flag,                        border=3)
+                      flag=ea_flag,              border=3)
         for method in self.methods.values():
             sizer.Add(method['control_panel'],  proportion=0,
-                      flag=ea_flag,                        border=6)
-        sizer.Add(self.run_button,              proportion=0, 
-                      flag=wx.ALL,                         border=1)
+                      flag=ea_flag,              border=6)
+        sizer.Add(self.run_marked_button,       proportion=0, 
+                      flag=wx.ALL,               border=1)
+        sizer.Add(self.run_all_button,          proportion=0, 
+                      flag=wx.ALL,               border=1)
         self.SetSizer(sizer)
         
         self.Bind(wx.EVT_CHOICE, self._method_choice_made,
                   self.method_chooser.choice)
-        self.Bind(wx.EVT_BUTTON, self._run, self.run_button)
+        self.Bind(wx.EVT_BUTTON, self._on_run_all, self.run_all_button)
+        self.Bind(wx.EVT_BUTTON, self._on_run_marked, self.run_marked_button)
         
-        pub.subscribe(self._running_completed, topic='RUNNING_COMPLETED')
         pub.subscribe(self._set_stage_parameters, topic='SET_PARAMETERS')
         self._method_choice_made(method_name=self.method_names[0])
 
@@ -261,10 +263,6 @@ class StagePanel(wx.Panel):
         self.methods[method_name]['control_panel'].set_parameters(**parameters)
         self._method_choice_made(method_name=method_name)
 
-    def _running_completed(self, message=None):
-        self.run_button.SetLabel(pt.RUN)
-        self.run_button.Enable()
-    
     def _method_choice_made(self, event=None, method_name=None):
         self.methods[self._method_name_chosen]['control_panel'].Show(False)
 
@@ -275,20 +273,25 @@ class StagePanel(wx.Panel):
             self._method_name_chosen = self.method_chooser.GetStringSelection()
 
         self.methods[self._method_name_chosen]['control_panel'].Show(True)
-        self.run_button.Show(True)
         self.Layout()
         pub.sendMessage(topic="UPDATE_STRATEGY_SUMMARY", 
                         data=(self.stage_num, self._method_name_chosen))
 
-    def _run(self, event=None):
+    def _on_run_marked(self, event=None):
+        self._run(run_all=False)
+
+    def _on_run_all(self, event=None):
+        self._run(run_all=True)
+
+    def _run(self, run_all=True):
         control_panel = self.methods[self._method_name_chosen]['control_panel']
         settings = control_panel.get_parameters()
-        self.run_button.SetLabel(pt.RUN_BUTTON_RUNNING_STATUS)
-        self.run_button.Disable()
         wx.Yield() # about to let scipy hog cpu, so process all wx events.
-        data = {'trial':'all',
-                'stage_name':self.stage_name,
+        data = {'stage_name' :self.stage_name,
                 'method_name':self._method_name_chosen,
-                'settings':settings}
-        pub.sendMessage(topic='CARRY_OUT_ACTION', data=data)
+                'settings'   :settings}
+        if run_all:
+            pub.sendMessage(topic='RUN_ALL', data=data)
+        else:
+            pub.sendMessage(topic='RUN_MARKED', data=data)
 

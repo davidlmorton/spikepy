@@ -153,7 +153,7 @@ class DetectionPlotPanel(MultiPlotPanel):
             axes.set_ylim(ymin=-ymax*1.1, ymax=ymax*1.4)
             std = numpy.std(trace)
 
-            for factor, linestyle in [(2,':'),(4,'-')]:
+            for factor, linestyle in [(2,'solid'),(4,'dashed')]:
                 axes.axhline(std*factor, color=lfs.PLOT_STD_LINE_COLOR, 
                                   linewidth=lfs.PLOT_STD_LINEWIDTH, 
                                   label=r'$%d\sigma$' % factor,

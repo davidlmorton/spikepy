@@ -42,7 +42,16 @@ class Controller(object):
         pub.subscribe(self._open_rename_trial_dialog,
                       topic='OPEN_RENAME_TRIAL_DIALOG')
         pub.subscribe(self._export_trials,  topic="EXPORT_TRIALS")
+        pub.subscribe(self._run_all,  topic="RUN_ALL")
+        pub.subscribe(self._run_marked,  topic="RUN_MARKED")
         #pub.subscribe(self._print_messages, topic='')
+
+    def _run_all(self, message):
+        message.data['trial'] = 'all' 
+        pub.sendMessage(topic='EXECUTE_STAGE', data=message.data) 
+
+    def _run_marked(self, message):
+        pass
 
     def _export_trials(self, message):
         export_type = message.data

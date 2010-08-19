@@ -48,26 +48,27 @@ class Model(object):
         """
         pub.subscribe(self._open_data_file,   "OPEN_DATA_FILE")
         pub.subscribe(self._close_data_file,  "CLOSE_DATA_FILE")
-        pub.subscribe(self._carry_out_action, "CARRY_OUT_ACTION")
+        pub.subscribe(self._execute_stage, "EXECUTE_STAGE")
 
-    def _carry_out_action(self, message):
+    def _execute_stage(self, message):
         """
         Carry out an action such as filtering, detection, extraction or 
         clustering.
         """
         stage_name = message.data['stage_name']
-        trial      = message.data['trial']
+        trial_list = message.data['trial']
+        del message.data['trial']
         handler = self.handlers[stage_name]
-        if trial == 'all':
-            del message.data['trial']
+        if trial_list == 'all':
             # special case for clustering
             if stage_name == 'clustering':
                 self._clustering(self.trials.values(), **message.data)
             else:
-                for _trial in self.trials.values():
-                    handler(_trial, **message.data)
+                for trial in self.trials.values():
+                    handler(trial, **message.data)
         else:
-            handler(**message.data)
+            for trial in trial_list:
+                handler(trial=trial, **message.data)
             
     # ---- OPEN FILE ----
     def _open_data_file(self, message):
