@@ -33,6 +33,7 @@ class StrategyManager(object):
         pub.subscribe(self._recalc_run_state, topic='TRIAL_SPIKE_DETECTED')
         pub.subscribe(self._recalc_run_state, topic='TRIAL_FEATURE_EXTRACTED')
         pub.subscribe(self._recalc_run_state, topic='TRIAL_CLUSTERED')
+        pub.subscribe(self._recalc_run_state, topic='TRIAL_MARKS_CHANGED')
         self.strategy_pane.Bind(wx.EVT_BUTTON, self.save_button_pressed, 
                                 self.save_button)
         self._last_current_strategy = None
@@ -122,7 +123,7 @@ class StrategyManager(object):
                 name = current_strategy_name
                 methods_used = current_strategy[name]['methods_used']
                 settings     = current_strategy[name]['settings']
-                pub.sendMessage(topic='CALCULATE_STAGE_RUN_STATE', 
+                pub.sendMessage(topic='CALCULATE_RUN_BUTTONS_STATE', 
                                 data=(methods_used, settings))
                 self._should_calculate_stage_run_state = False
             self._last_current_strategy = current_strategy

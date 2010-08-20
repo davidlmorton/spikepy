@@ -80,7 +80,7 @@ class ResultsPanel(wx.Panel):
         top_sizer.Add(cursor_position_bar, proportion=0, 
                 flag=wx.ALL|wx.EXPAND, border=0)
         top_sizer.Add(method_details_button, proportion=0, 
-                flag=wx.ALL, border=4)
+                flag=wx.ALL|wx.ALIGN_CENTER_VERTICAL, border=4)
         
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         sizer.Add(top_sizer, proportion=0, flag=wx.EXPAND)

@@ -76,7 +76,7 @@ class FileGridCtrl(gridlib.Grid):
         trial_name_col_size = self.GetColSize(1)
         used_size = marked_col_size + trial_name_col_size
         panel_width, panel_height = self.GetSize()
-        fill_size = trial_name_col_size + panel_width - used_size
+        fill_size = trial_name_col_size + panel_width - used_size - 30
         self.SetColSize(1, max(fill_size, self._min_column_sizes[1]))
 
     def MakeCellVisible(self):
@@ -134,6 +134,16 @@ class FileGridCtrl(gridlib.Grid):
             trial_name = self._get_trial_name(row)
             fullpath = self._get_fullpath(row)
 
+        # open file item
+        if self._num_nonempty_rows:
+            item = wx.MenuItem(cm, self._cmid_open_file, pt.OPEN_ANOTHER_FILE)
+        else:
+            item = wx.MenuItem(cm, self._cmid_open_file, pt.OPEN)
+        bmp = utils.get_bitmap_icon('folder')
+        item.SetBitmap(bmp)
+        cm.AppendItem(item)
+
+
         # rename_trial item
         if row >= self._num_nonempty_rows:
             item = wx.MenuItem(cm, self._cmid_rename_trial, pt.RENAME_TRIAL)
@@ -145,15 +155,6 @@ class FileGridCtrl(gridlib.Grid):
         cm.AppendItem(item)
         if row >= self._num_nonempty_rows:
             cm.Enable(self._cmid_rename_trial, False)
-
-        # open file item
-        if self._num_nonempty_rows:
-            item = wx.MenuItem(cm, self._cmid_open_file, pt.OPEN_ANOTHER_FILE)
-        else:
-            item = wx.MenuItem(cm, self._cmid_open_file, pt.OPEN)
-        bmp = utils.get_bitmap_icon('folder')
-        item.SetBitmap(bmp)
-        cm.AppendItem(item)
 
         # close this file item
         if row < self._num_nonempty_rows and fullpath in self._opened_files:
@@ -258,6 +259,7 @@ class FileGridCtrl(gridlib.Grid):
             self.SetCellValue(row, 0, lfs.FILE_LIST_MARKED_STATUS)
         else:
             self.SetCellValue(row, 0, lfs.FILE_LIST_UNMARKED_STATUS)
+        pub.sendMessage(topic='TRIAL_MARKS_CHANGED', data=None)
 
             
     @property

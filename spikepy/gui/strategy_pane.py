@@ -85,7 +85,8 @@ class StrategyPane(ScrolledPanel):
         self.Bind(wx.EVT_CHOICEBOOK_PAGE_CHANGED, self._page_changed)
         pub.subscribe(self._results_notebook_page_changing, 
                       topic='RESULTS_NOTEBOOK_PAGE_CHANGING')
-        pub.subscribe(self._set_run_state, topic='SET_RUN_STATE')
+        pub.subscribe(self._set_run_buttons_state, 
+                      topic='SET_RUN_BUTTONS_STATE')
         self.stages = [detection_filter_panel,
                        detection_panel,
                        extraction_filter_panel,
@@ -93,11 +94,12 @@ class StrategyPane(ScrolledPanel):
                        clustering_panel]
         self.strategy_manager = StrategyManager(self)
     
-    def _set_run_state(self, message=None):
-        stage_run_state = message.data
+    def _set_run_buttons_state(self, message=None):
+        run_all_states, run_marked_states = message.data
         for stage in self.stages:
             stage_name = stage.stage_name
-            stage.run_all_button.Enable(stage_run_state[stage_name])
+            stage.run_all_button.Enable(run_all_states[stage_name])
+            stage.run_marked_button.Enable(run_marked_states[stage_name])
             
     def _results_notebook_page_changing(self, message=None):
         old_page_num, new_page_num = message.data
@@ -220,8 +222,14 @@ class StagePanel(wx.Panel):
                                  choices=self.method_names)
 
         # --- RUN BUTTON ---
+        button_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         self.run_all_button    = wx.Button(self, label=pt.RUN_ALL)
         self.run_marked_button = wx.Button(self, label=pt.RUN_MARKED)
+        button_sizer.Add(self.run_marked_button,  proportion=0, 
+                      flag=wx.ALL,                 border=3)
+        button_sizer.Add(wx.StaticText(self),     proportion=1)
+        button_sizer.Add(self.run_all_button,     proportion=0, 
+                      flag=wx.ALL,  border=3)
 
         # --- SIZER ---
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
@@ -231,10 +239,8 @@ class StagePanel(wx.Panel):
         for method in self.methods.values():
             sizer.Add(method['control_panel'],  proportion=0,
                       flag=ea_flag,              border=6)
-        sizer.Add(self.run_marked_button,       proportion=0, 
-                      flag=wx.ALL,               border=1)
-        sizer.Add(self.run_all_button,          proportion=0, 
-                      flag=wx.ALL,               border=1)
+        sizer.Add(button_sizer,                 proportion=0,
+                      flag=ea_flag,               border=1)
         self.SetSizer(sizer)
         
         self.Bind(wx.EVT_CHOICE, self._method_choice_made,

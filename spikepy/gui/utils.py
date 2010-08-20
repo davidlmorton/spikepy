@@ -8,8 +8,6 @@ import cPickle
 import wx
 from wx.lib.pubsub import Publisher as pub
 
-from . import program_text as pt
-
 gui_folder  = os.path.split(__file__)[0]
 icon_folder = os.path.join(gui_folder, 'icons')
 
@@ -83,7 +81,7 @@ def get_bitmap_icon(name):
         if os.path.splitext(file)[0].lower() == name.lower():
             image = wx.Image(os.path.join(icon_folder, file))
             return image.ConvertToBitmap()
-    raise RuntimeError(pt.MISSING_IMAGE_ERROR % name)
+    raise RuntimeError("Cannot find image named %s in icons folder." % name)
 
 class HashableDict(dict):
     def __init__(self, *args, **kwargs):

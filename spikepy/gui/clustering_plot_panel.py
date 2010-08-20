@@ -210,16 +210,17 @@ class ClusteringPlotPanel(MultiPlotPanel):
         averages_and_stds = self._get_averages_and_stds(trial)
         
         for cluster_num, (average, stds) in averages_and_stds.items():
-            line = self.average_axes.plot(trial.times[:len(average)], average,
+            times = numpy.arange(0,len(average))*(trial.dt/3.0)
+            line = self.average_axes.plot(times, average,
                               label=pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)[0]
             color = line.get_color()
-            self.average_axes.fill_between(trial.times[:len(average)], 
+            self.average_axes.fill_between(times, 
                                                   average+stds,
                                                   average-stds,
                                                   color=color,
                                                   alpha=lfs.CLUSTER_TRACE_ALPHA)
 
-            self.std_axes.plot(trial.times[:len(stds)], stds, 
+            self.std_axes.plot(times, stds, 
                           label=pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)
 
 

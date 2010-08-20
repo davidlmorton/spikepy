@@ -33,8 +33,8 @@ class Controller(object):
         pub.subscribe(self._open_file, topic="OPEN_FILE")
         pub.subscribe(self._file_selection_changed, 
                       topic='FILE_SELECTION_CHANGED')
-        pub.subscribe(self._calculate_stage_run_state,
-                      topic='CALCULATE_STAGE_RUN_STATE')
+        pub.subscribe(self._calculate_run_buttons_state,
+                      topic='CALCULATE_RUN_BUTTONS_STATE')
         pub.subscribe(self._file_closed, topic='FILE_CLOSED')
         pub.subscribe(self._save_session, topic='SAVE_SESSION')
         pub.subscribe(self._load_session, topic='LOAD_SESSION')
@@ -51,7 +51,8 @@ class Controller(object):
         pub.sendMessage(topic='EXECUTE_STAGE', data=message.data) 
 
     def _run_marked(self, message):
-        pass
+        message.data['trial'] = self.get_marked_trials()
+        pub.sendMessage(topic='EXECUTE_STAGE', data=message.data) 
 
     def _export_trials(self, message):
         export_type = message.data
@@ -90,20 +91,36 @@ class Controller(object):
                 this_trial.rename(new_name)
         dlg.Destroy()
 
-    def _calculate_stage_run_state(self, message):
+    def get_marked_trials(self):
+        file_grid_ctrl = self.view.frame.file_list
+        fullpaths = file_grid_ctrl.marked_fullpaths
+        return [self.model.trials[fullpath] for fullpath in fullpaths]
+
+    def _calculate_run_buttons_state(self, message):
         methods_used, settings = message.data
+        trial_list = self.model.trials.values()
+        run_all_button_states = self._get_stage_run_states(methods_used, 
+                                                           settings, 
+                                                           trial_list)
+        trial_list = self.get_marked_trials()
+        run_marked_button_states = self._get_stage_run_states(methods_used, 
+                                                              settings, 
+                                                              trial_list)
+        pub.sendMessage(topic='SET_RUN_BUTTONS_STATE', 
+                        data=(run_all_button_states, run_marked_button_states))
+
+    def _get_stage_run_states(self, methods_used, settings, trial_list):
         # find out if we should enable/disable run buttons.
         stage_run_state = {}
 
-        num_trials = len(self.model.trials.keys())
+        num_trials = len(trial_list)
         for stage_name in methods_used.keys():
             stage_run_state[stage_name] = False
         if num_trials < 1:
-            pub.sendMessage(topic='SET_RUN_STATE',data=stage_run_state)
-            return
+            return stage_run_state
 
         # all stage states are False at this point.
-        for trial in self.model.trials.values():
+        for trial in trial_list:
             tmethods_used = trial.methods_used
             tsettings     = trial.settings
             for stage_name in methods_used.keys():
@@ -120,7 +137,7 @@ class Controller(object):
                     stage_run_state[stage_name] = True
 
         # ensure EVERY trial is ready for this stage.
-        for trial in self.model.trials.values():
+        for trial in trial_list:
             can_run_list = trial.get_stages_that_are_ready_to_run()
             for stage_name in methods_used.keys():
                 if stage_name not in can_run_list:
@@ -132,7 +149,7 @@ class Controller(object):
             if not settings_valid:
                 stage_run_state[stage_name] = False
 
-        pub.sendMessage(topic='SET_RUN_STATE',data=stage_run_state)
+        return stage_run_state
 
     def _save_session(self, message):
         save_path = message.data
