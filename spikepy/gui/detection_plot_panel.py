@@ -129,7 +129,7 @@ class DetectionPlotPanel(MultiPlotPanel):
 
     def setup_spike_axes_labels(self, spike_axes, fullpath):
         spike_axes.set_xlabel(pt.PLOT_TIME)
-        spike_axes.set_ylabel(pt.SPIKE_RATE_AXIS)
+        spike_axes.set_ylabel(pt.SPIKE_RATE_AXIS, multialignment='center')
         trial = self._trials[fullpath]
         new_name = trial.display_name
         spike_axes.set_title(pt.TRIAL_NAME+new_name)
