@@ -93,7 +93,11 @@ class LookAndFeelSettings(object):
         
     def get_main_frame_size(self):
         size_ratio = self.get_size_ratio()
-        return size_ratio*base_size
+        if size_ratio < 1.0:
+            factor = 1.0
+        else:
+            factor = 0.8
+        return size_ratio*base_size*factor
 
 
         

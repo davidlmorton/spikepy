@@ -161,8 +161,12 @@ class DetectionPlotPanel(MultiPlotPanel):
                 axes.axhline(-std*factor, color=lfs.PLOT_STD_LINE_COLOR, 
                                   linewidth=lfs.PLOT_STD_LINEWIDTH, 
                                   linestyle=linestyle)
-        axes.legend(loc='upper right', ncol=3, shadow=True, 
-                    bbox_to_anchor=[1.03,1.1])
+        try:
+            axes.legend(loc='upper right', ncol=3, shadow=True, 
+                        bbox_to_anchor=[1.03,1.1])
+        except: #old versions of matplotlib don't have bbox_to_anchor
+            axes.legend(loc='upper right', ncol=3)
+            
 
     def _plot_spikes(self, trial, figure, fullpath):
         # remove old lines if present.

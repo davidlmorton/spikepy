@@ -12,7 +12,6 @@ if __name__ == '__main__':
         controller = Controller()
         controller.setup_subscriptions()
         wx.CallLater(1000, splash_screen.Destroy)
-        controller.view.frame.Raise()
     from spikepy.gui.utils import get_bitmap_icon
 
     app = wx.App(redirect=False)
