@@ -94,7 +94,6 @@ class FileGridCtrl(gridlib.Grid):
     def _file_opened(self, message):
         fullpath, display_name = message.data
         self._opened_files.add(fullpath)
-        num_rows = self.GetNumberRows()
         row = self._get_row_from_fullpath(fullpath)
         self.SetCellValue(row, 1, display_name) 
         self._autosize_cols()
@@ -102,6 +101,7 @@ class FileGridCtrl(gridlib.Grid):
         # if there are no other files opening.
         if self._files == list(self._opened_files): 
             self._select_row(row)
+        wx.Yield()
 
     def _get_row_from_fullpath(self, fullpath):
         for row in xrange(self._num_nonempty_rows):
@@ -215,9 +215,9 @@ class FileGridCtrl(gridlib.Grid):
     def _opening_data_file(self, message):
         fullpath = message.data
         filename = os.path.split(fullpath)[1]
-        self._files.append(fullpath)
         if self._get_row_from_fullpath(fullpath) is not None:
             return
+        self._files.append(fullpath)
         new_row = self._num_nonempty_rows
         self._set_trial_name(new_row, 
                              filename)

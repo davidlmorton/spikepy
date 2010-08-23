@@ -82,7 +82,7 @@ class LookAndFeelSettings(object):
             y_ratio = display_size[1]/float(base_size[1])
             # default is to open using ~80% of the screen.
             self._have_size_ratio = True
-            self._size_ratio = min(x_ratio, y_ratio)*0.8
+            self._size_ratio = min(x_ratio, y_ratio)
             return self._size_ratio
 
     def get_results_frame_size(self):
