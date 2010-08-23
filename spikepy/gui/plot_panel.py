@@ -23,6 +23,12 @@ class CustomToolbar(Toolbar):
 
         self.plot_panel = plot_panel
 
+        self.PRINT_ID = wx.NewId()
+        self.AddSimpleTool(self.PRINT_ID, get_bitmap_icon('printer'),
+                           shortHelpString="Print",
+                           longHelpString="PRINT")
+        wx.EVT_TOOL(self, self.PRINT_ID, self._print)
+
         self.ENLARGE_CANVAS_ID = wx.NewId()
         self.AddSimpleTool(self.ENLARGE_CANVAS_ID, 
                            get_bitmap_icon('arrow_out'),
@@ -38,6 +44,14 @@ class CustomToolbar(Toolbar):
         wx.EVT_TOOL(self, self.SHRINK_CANVAS_ID, self._shrink_canvas)
         self.EnableTool(self.SHRINK_CANVAS_ID, False)
         self.DeleteToolByPos(6)
+
+    def _print(self, event=None):
+        dlg = wx.PrintDialog(self)
+        #printout = 
+        if dlg.ShowModal() == wx.ID_OK:
+            printer = dlg.GetDC()
+            printer.Print(self, printout)
+        dlg.Destroy()
 
     def _enlarge_canvas(self, event=None):
         plot_panel = self.plot_panel

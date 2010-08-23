@@ -216,18 +216,15 @@ class DetectionPlotPanel(MultiPlotPanel):
         #spike_rate = get_spike_rate(accepted_spike_list, width, 
         #                            trial.sampling_freq, 
         #                            len(trial.detection_filter.results[0]))
-        bin_width = 200.0
-        spikes, bins = bin_spikes(accepted_spike_list, trial.times[-1], 
-                                  bin_width=bin_width)
+
+        bin_width = 100.0
+        spikes, bin_points = bin_spikes(accepted_spike_list, trial.times[-1], 
+                                        bin_width=bin_width, 
+                                        bin_alignment='middle')
 
             
-        #spike_axes.plot(times, spike_rate, color=lfs.PLOT_COLOR_2, 
-        #                            linewidth=lfs.PLOT_LINEWIDTH_2)
-        for bin, spike_count in zip(bins, spikes):
-            spike_axes.bar(bin, spike_count*1000.0/bin_width, width=bin_width, 
-                           color=lfs.PLOT_COLOR_2_light, 
-                           edgecolor=lfs.PLOT_COLOR_2,
-                           linewidth=lfs.PLOT_LINEWIDTH_2)
+        spike_axes.plot(bin_points, spikes*1000.0/bin_width, 
+                        color=lfs.PLOT_COLOR_2, linewidth=lfs.PLOT_LINEWIDTH_2)
 
         raster_height_factor = 2.0
         raster_pos = lfs.SPIKE_RASTER_ON_RATE_POSITION
@@ -285,9 +282,22 @@ def gaussian(x, width):
     return peak * numpy.exp(exponent)
 
 
-def bin_spikes(spike_list, total_time, bin_width=50.0):
-    high_end = bin_width
+def bin_spikes(spike_list, total_time, bin_width=50.0, bin_alignment="middle"):
+    """
+    A function to return a list of bins and a list of the number of spikes in 
+        each bin.
+    Inputs:
+        spike_list        : the list of times at which spikes were detected
+        total_time        : the length (of time) of the trace from which the 
+                            spikes were detected
+        bin_width         : how much time one bin should correspond to
+        bin_alignment     : the location of a bin that the bin time corresponds 
+                            to ('beginning', 'middle', or 'end')
 
+    Returns:
+        spikes            : an array of the number of spikes in each bin
+        bin_points        : an array of bin times
+    """
     low  = 0.0
     high = 0.0
     def is_between(value):
@@ -305,5 +315,7 @@ def bin_spikes(spike_list, total_time, bin_width=50.0):
     high = total_time
     spike_count = len(filter(is_between, spike_list))
     spikes.append(spike_count)
-    return spikes, bins
+    bin_shift_dict = {"beginning": 0.0, "middle": 0.5, "end": 1.0}
+    bin_points = bins + bin_width*bin_shift_dict[bin_alignment]
+    return numpy.array(spikes), bin_points
     
