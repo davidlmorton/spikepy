@@ -14,6 +14,34 @@ from .utils import get_bitmap_icon
 from . import program_text as pt
 from .look_and_feel_settings import lfs
 
+class PlotPanelPrintout(wx.Printout):
+    # pep-8 is broken in this class because the wx print framework requires 
+    #     specific method names in Printout subclasses
+    def __init__(self, canvas):
+        wx.Printout.__init__(self)
+        self.canvas = canvas
+        
+    def OnPrintPage(self, page):
+        dc = self.GetDC()
+        canvas = self.canvas
+
+        canvas_width, canvas_height = canvas.GetSize()
+        horizontal_margins = 50
+        vertical_margins = 50
+
+        (dc_width, dc_height) = dc.GetSizeTuple()
+
+        width_scale = (float(dc_width) - 2*horizontal_margins)/canvas_width
+        height_scale = (float(dc_height) - 2*vertical_margins)/canvas_height
+
+        good_scale = min(width_scale, height_scale)
+
+        x_pos = (dc_width - canvas_width*good_scale)/2
+        y_pos = (dc_height - canvas_height*good_scale)/2
+        
+
+        self.canvas.draw(drawDC=dc)
+
 class CustomToolbar(Toolbar):
     """
     A toolbar which has a button to enlarge the canvas, and shrink it.
@@ -25,9 +53,15 @@ class CustomToolbar(Toolbar):
 
         self.PRINT_ID = wx.NewId()
         self.AddSimpleTool(self.PRINT_ID, get_bitmap_icon('printer'),
-                           shortHelpString="Print",
+                           shortHelpString="Matplotlib Print",
                            longHelpString="PRINT")
-        wx.EVT_TOOL(self, self.PRINT_ID, self._print)
+        wx.EVT_TOOL(self, self.PRINT_ID, self.mpl_print)
+
+        self.PRINT_ID2 = wx.NewId()
+        self.AddSimpleTool(self.PRINT_ID2, get_bitmap_icon('printer'),
+                           shortHelpString="wx Print",
+                           longHelpString="PRINT")
+        wx.EVT_TOOL(self, self.PRINT_ID2, self._print_preview)
 
         self.ENLARGE_CANVAS_ID = wx.NewId()
         self.AddSimpleTool(self.ENLARGE_CANVAS_ID, 
@@ -45,9 +79,28 @@ class CustomToolbar(Toolbar):
         self.EnableTool(self.SHRINK_CANVAS_ID, False)
         self.DeleteToolByPos(6)
 
+        # ---- Configure Printing ----
+
+        self.print_data = wx.PrintData()
+        self.print_data.SetPaperId(wx.PAPER_LETTER)
+        self.print_data.SetPrintMode(wx.PRINT_MODE_PRINTER)
+
+    def _print_preview(self, event=None):
+        data = self.print_data
+        printout = PlotPanelPrintout(self.canvas)
+        self.preview = wx.PrintPreview(printout, None, data)
+        preview_frame = wx.PreviewFrame(self.preview, None, "some text")
+        preview_frame.Initialize()
+        preview_frame.Show(True)
+
+    def mpl_print_preview(self, event=None):
+        self.canvas.Printer_Preview(event=event)
+
+    def mpl_print(self, event=None):
+        self.canvas.Printer_Setup(event=event)
+
     def _print(self, event=None):
         dlg = wx.PrintDialog(self)
-        #printout = 
         if dlg.ShowModal() == wx.ID_OK:
             printer = dlg.GetDC()
             printer.Print(self, printout)
