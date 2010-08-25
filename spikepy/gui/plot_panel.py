@@ -10,40 +10,9 @@ import wx
 from wx.lib.scrolledpanel import ScrolledPanel
 from wx.lib.pubsub import Publisher as pub
 
-from .utils import get_bitmap_icon
+from .utils import get_bitmap_icon, PlotPanelPrintout
 from . import program_text as pt
 from .look_and_feel_settings import lfs
-
-class PlotPanelPrintout(wx.Printout):
-    # pep-8 is broken in this class because the wx print framework requires 
-    #     overwriting specific methods in Printout subclasses
-    def __init__(self, canvas):
-        wx.Printout.__init__(self)
-        self.canvas = canvas
-        
-    def OnPrintPage(self, page):
-        dc = self.GetDC()
-        canvas = self.canvas
-
-        canvas_width, canvas_height = canvas.GetSize()
-        horizontal_margins = canvas_width / 17.0
-        vertical_margins = canvas_width / 17.0
-
-        (dc_width, dc_height) = dc.GetSizeTuple()
-
-        width_scale = (float(dc_width) - 2*horizontal_margins)/canvas_width
-        height_scale = (float(dc_height) - 2*vertical_margins)/canvas_height
-
-        good_scale = min(width_scale, height_scale)
-
-        x_pos = (dc_width - canvas_width*good_scale)/2
-        y_pos = (dc_height - canvas_height*good_scale)/2
-
-        dc.SetUserScale(good_scale, good_scale)
-        dc.SetDeviceOrigin(int(x_pos), int(y_pos))
-        
-
-        self.canvas.draw(drawDC=dc)
 
 class CustomToolbar(Toolbar):
     """
@@ -62,9 +31,15 @@ class CustomToolbar(Toolbar):
 
         self.PRINT_ID2 = wx.NewId()
         self.AddSimpleTool(self.PRINT_ID2, get_bitmap_icon('printer'),
-                           shortHelpString="wx Print",
+                           shortHelpString="Page setup",
                            longHelpString="PRINT")
         wx.EVT_TOOL(self, self.PRINT_ID2, self._page_setup)
+
+        self.PRINT_ID3 = wx.NewId()
+        self.AddSimpleTool(self.PRINT_ID3, get_bitmap_icon('printer'),
+                           shortHelpString="print preview",
+                           longHelpString="PRINT")
+        wx.EVT_TOOL(self, self.PRINT_ID3, self._print_preview)
 
         self.ENLARGE_CANVAS_ID = wx.NewId()
         self.AddSimpleTool(self.ENLARGE_CANVAS_ID, 

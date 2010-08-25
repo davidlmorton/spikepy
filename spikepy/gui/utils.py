@@ -126,3 +126,35 @@ class SinglePanelFrame(wx.Frame):
     def _close_frame(self, message=None):
         self.MakeModal(False)
         self.Destroy()
+
+class PlotPanelPrintout(wx.Printout):
+    # pep-8 is broken in this class because the wx print framework requires 
+    #     overwriting specific methods in Printout subclasses
+    def __init__(self, canvas):
+        wx.Printout.__init__(self)
+        self.canvas = canvas
+        
+    def OnPrintPage(self, page):
+        dc = self.GetDC()
+        canvas = self.canvas
+
+        canvas_width, canvas_height = canvas.GetSize()
+        horizontal_margins = canvas_width / 17.0
+        vertical_margins = canvas_width / 17.0
+
+        (dc_width, dc_height) = dc.GetSizeTuple()
+
+        width_scale = (float(dc_width) - 2*horizontal_margins)/canvas_width
+        height_scale = (float(dc_height) - 2*vertical_margins)/canvas_height
+
+        good_scale = min(width_scale, height_scale)
+
+        x_pos = (dc_width - canvas_width*good_scale)/2
+        y_pos = (dc_height - canvas_height*good_scale)/2
+
+        dc.SetUserScale(good_scale, good_scale)
+        dc.SetDeviceOrigin(int(x_pos), int(y_pos))
+        
+
+        self.canvas.draw(drawDC=dc)
+

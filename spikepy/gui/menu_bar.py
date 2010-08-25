@@ -5,7 +5,7 @@ import wx.aui
 from wx.lib.pubsub import Publisher as pub
 from wx.lib.wordwrap import wordwrap
 
-from .utils import get_bitmap_icon
+from .utils import get_bitmap_icon, PlotPanelPrintout
 from .pyshell import PyShellDialog
 from .look_and_feel_settings import lfs
 from . import program_text as pt
@@ -22,6 +22,10 @@ SAVE_SESSION       = wx.NewId()
 LOAD_SESSION       = wx.NewId()
 EXPORT_MARKED      = wx.NewId()
 EXPORT_ALL         = wx.NewId()
+PRINT_SUBMENU      = wx.NewId()
+PRINT              = wx.NewId()
+PRINT_PREVIEW      = wx.NewId()
+PAGE_SETUP         = wx.NewId()
 
 class SpikepyMenuBar(wx.MenuBar):
     def __init__(self, frame, *args, **kwargs):
@@ -31,13 +35,18 @@ class SpikepyMenuBar(wx.MenuBar):
         file_menu = wx.Menu()
         file_menu.Append(OPEN, text=pt.OPEN)
         file_menu.AppendSeparator()
-        file_menu.Append(LOAD_SESSION, text=pt.LOAD_SESSION)
-        file_menu.Append(SAVE_SESSION, text=pt.SAVE_SESSION)
+        file_menu.Append(LOAD_SESSION,      text=pt.LOAD_SESSION)
+        file_menu.Append(SAVE_SESSION,      text=pt.SAVE_SESSION)
         file_menu.AppendSeparator()
-        file_menu.Append(EXPORT_MARKED, text=pt.EXPORT_MARKED_TRIALS)
-        file_menu.Append(EXPORT_ALL, text=pt.EXPORT_ALL_TRIALS)
+        file_menu.Append(EXPORT_MARKED,     text=pt.EXPORT_MARKED_TRIALS)
+        file_menu.Append(EXPORT_ALL,        text=pt.EXPORT_ALL_TRIALS)
+        print_menu = wx.Menu()
+        print_menu.Append(PRINT,            text=pt.PRINT)
+        print_menu.Append(PRINT_PREVIEW,    text=pt.PRINT_PREVIEW)
+        print_menu.Append(PAGE_SETUP,       text=pt.PAGE_SETUP)
+        file_menu.AppendSubMenu(print_menu,      pt.PRINT_SUBMENU)
         file_menu.AppendSeparator()
-        file_menu.Append(EXIT, text=pt.EXIT)
+        file_menu.Append(EXIT,              text=pt.EXIT)
         
         # --- EDIT ---
         edit_menu = wx.Menu()
@@ -65,6 +74,9 @@ class SpikepyMenuBar(wx.MenuBar):
         frame.Bind(wx.EVT_MENU, self._save_session,     id=SAVE_SESSION)
         frame.Bind(wx.EVT_MENU, self._export_marked,    id=EXPORT_MARKED)
         frame.Bind(wx.EVT_MENU, self._export_all,       id=EXPORT_ALL)
+        frame.Bind(wx.EVT_MENU, self._print,            id=PRINT)
+        frame.Bind(wx.EVT_MENU, self._print_preview,    id=PRINT_PREVIEW)
+        frame.Bind(wx.EVT_MENU, self._page_setup,       id=PAGE_SETUP)
         frame.Bind(wx.EVT_MENU, self._close_window,     id=EXIT)
         # Edit
         frame.Bind(wx.EVT_MENU, self._show_preferences, id=PREFERENCES)
@@ -77,6 +89,18 @@ class SpikepyMenuBar(wx.MenuBar):
         self.frame = frame
 
         self._toolbars_shown = False
+
+    def _print(self, event=None):
+        pub.sendMessage(topic="PRINT", data=None)
+        pass
+
+    def _print_preview(self, event=None):
+        pub.sendMessage(topic="PRINT_PREVIEW", data=None)
+        pass
+
+    def _page_setup(self, event=None):
+        pub.sendMessage(topic="PAGE_SETUP", data=None)
+        pass
 
     def _export_marked(self, event=None):
         pub.sendMessage(topic="EXPORT_TRIALS", data="marked")
