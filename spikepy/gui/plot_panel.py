@@ -16,7 +16,7 @@ from .look_and_feel_settings import lfs
 
 class PlotPanelPrintout(wx.Printout):
     # pep-8 is broken in this class because the wx print framework requires 
-    #     specific method names in Printout subclasses
+    #     overwriting specific methods in Printout subclasses
     def __init__(self, canvas):
         wx.Printout.__init__(self)
         self.canvas = canvas
@@ -26,8 +26,8 @@ class PlotPanelPrintout(wx.Printout):
         canvas = self.canvas
 
         canvas_width, canvas_height = canvas.GetSize()
-        horizontal_margins = 50
-        vertical_margins = 50
+        horizontal_margins = canvas_width / 17.0
+        vertical_margins = canvas_width / 17.0
 
         (dc_width, dc_height) = dc.GetSizeTuple()
 
@@ -38,6 +38,9 @@ class PlotPanelPrintout(wx.Printout):
 
         x_pos = (dc_width - canvas_width*good_scale)/2
         y_pos = (dc_height - canvas_height*good_scale)/2
+
+        dc.SetUserScale(good_scale, good_scale)
+        dc.SetDeviceOrigin(int(x_pos), int(y_pos))
         
 
         self.canvas.draw(drawDC=dc)
@@ -53,15 +56,15 @@ class CustomToolbar(Toolbar):
 
         self.PRINT_ID = wx.NewId()
         self.AddSimpleTool(self.PRINT_ID, get_bitmap_icon('printer'),
-                           shortHelpString="Matplotlib Print",
+                           shortHelpString="Print",
                            longHelpString="PRINT")
-        wx.EVT_TOOL(self, self.PRINT_ID, self.mpl_print)
+        wx.EVT_TOOL(self, self.PRINT_ID, self._print)
 
         self.PRINT_ID2 = wx.NewId()
         self.AddSimpleTool(self.PRINT_ID2, get_bitmap_icon('printer'),
                            shortHelpString="wx Print",
                            longHelpString="PRINT")
-        wx.EVT_TOOL(self, self.PRINT_ID2, self._print_preview)
+        wx.EVT_TOOL(self, self.PRINT_ID2, self._page_setup)
 
         self.ENLARGE_CANVAS_ID = wx.NewId()
         self.AddSimpleTool(self.ENLARGE_CANVAS_ID, 
@@ -93,18 +96,29 @@ class CustomToolbar(Toolbar):
         preview_frame.Initialize()
         preview_frame.Show(True)
 
-    def mpl_print_preview(self, event=None):
-        self.canvas.Printer_Preview(event=event)
-
-    def mpl_print(self, event=None):
-        self.canvas.Printer_Setup(event=event)
+    def _page_setup(self, event=None):
+        page_setup_data = wx.PageSetupDialogData(self.print_data)
+        page_setup_data.CalculatePaperSizeFromId()
+        dlg = wx.PageSetupDialog(self, page_setup_data)
+        dlg.ShowModal()
+        self.print_data = wx.PrintData(dlg.GetPageSetupData().GetPrintData())
+        dlg.Destroy()
 
     def _print(self, event=None):
         dlg = wx.PrintDialog(self)
+        printout = PlotPanelPrintout(self.canvas)
+        print_dialog_data = wx.PrintDialogData(self.print_data)
+        printer = wx.Printer(print_dialog_data)
         if dlg.ShowModal() == wx.ID_OK:
-            printer = dlg.GetDC()
             printer.Print(self, printout)
         dlg.Destroy()
+    
+    ######### Delete this block once matplotlib printing is abandoned ##
+    #def mpl_print_preview(self, event=None):
+    #    self.canvas.Printer_Preview(event=event)
+    #
+    #def mpl_print(self, event=None):
+    #    self.canvas.Printer_Setup(event=event)
 
     def _enlarge_canvas(self, event=None):
         plot_panel = self.plot_panel
