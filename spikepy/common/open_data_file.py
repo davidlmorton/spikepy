@@ -32,7 +32,7 @@ def open_data_file(fullpath, data_format='guess', **kwargs):
     trial = Trial(sampling_freq=sampling_freq,
                   raw_traces=voltage_traces,
                   fullpath=fullpath)
-    return trial
+    return [trial]
 
     
 def guess_data_format(filename):

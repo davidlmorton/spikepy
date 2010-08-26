@@ -37,74 +37,74 @@ class FilterPlotPanel(MultiPlotPanel):
         self._psd_axes = {}
 
     def _remove_trial(self, message=None):
-        fullpath = message.data
-        del self._trials[fullpath]
-        if fullpath in self._trace_axes.keys():
-            del self._trace_axes[fullpath]
-        if fullpath in self._psd_axes.keys():
-            del self._psd_axes[fullpath]
+        trial_id = message.data
+        del self._trials[trial_id]
+        if trial_id in self._trace_axes.keys():
+            del self._trace_axes[trial_id]
+        if trial_id in self._psd_axes.keys():
+            del self._psd_axes[trial_id]
 
     def _trial_added(self, message=None, trial=None):
         if message is not None:
             trial = message.data
 
-        fullpath = trial.fullpath
-        self._trials[fullpath] = trial
+        trial_id = trial.trial_id
+        self._trials[trial_id] = trial
         num_traces = len(trial.raw_traces)
         # make room for multiple traces and a psd plot.
         figsize = (self._figsize[0], self._figsize[1]*(num_traces+1))
-        self.add_plot(fullpath, figsize=figsize, 
+        self.add_plot(trial_id, figsize=figsize, 
                                 facecolor=self._facecolor,
                                 edgecolor=self._facecolor,
                                 dpi=self._dpi)
-        self._replot_panels.add(fullpath)
+        self._replot_panels.add(trial_id)
 
     def _trial_renamed(self, message=None):
         trial = message.data
-        fullpath = trial.fullpath
+        trial_id = trial.trial_id
         new_name = trial.display_name
-        psd_axes = self._psd_axes[fullpath]
+        psd_axes = self._psd_axes[trial_id]
         psd_axes.set_title(pt.TRIAL_NAME+new_name)
-        self.draw_canvas(fullpath)
+        self.draw_canvas(trial_id)
 
     def _trial_filtered(self, message=None):
         trial, stage_name = message.data
         if stage_name != self.name:
             return
-        fullpath = trial.fullpath
-        if fullpath == self._currently_shown:
-            self.plot(fullpath)
-            if fullpath in self._replot_panels:
-                self._replot_panels.remove(fullpath)
+        trial_id = trial.trial_id
+        if trial_id == self._currently_shown:
+            self.plot(trial_id)
+            if trial_id in self._replot_panels:
+                self._replot_panels.remove(trial_id)
         else:
-            self._replot_panels.add(fullpath)
+            self._replot_panels.add(trial_id)
 
-    def plot(self, fullpath):
-        trial = self._trials[fullpath]
-        figure = self._plot_panels[fullpath].figure
+    def plot(self, trial_id):
+        trial = self._trials[trial_id]
+        figure = self._plot_panels[trial_id].figure
 
-        if fullpath not in self._trace_axes.keys():
-            self._plot_raw_traces(trial, figure, fullpath)
-        self._plot_filtered_traces(trial, figure, fullpath)
+        if trial_id not in self._trace_axes.keys():
+            self._plot_raw_traces(trial, figure, trial_id)
+        self._plot_filtered_traces(trial, figure, trial_id)
 
-        self.draw_canvas(fullpath)
+        self.draw_canvas(trial_id)
 
-    def _plot_raw_traces(self, trial, figure, fullpath):
+    def _plot_raw_traces(self, trial, figure, trial_id):
         traces = trial.raw_traces
         times  = trial.times
 
         for i, trace in enumerate(traces):
             if i==0:
-                self._trace_axes[fullpath] = [
+                self._trace_axes[trial_id] = [
                         figure.add_subplot(len(traces)+1, 1, i+2)]
-                top_axes = self._trace_axes[fullpath][0]
+                top_axes = self._trace_axes[trial_id][0]
             else:
-                self._trace_axes[fullpath].append(
+                self._trace_axes[trial_id].append(
                         figure.add_subplot(len(traces)+1, 
                                            1, i+2,
                                            sharex=top_axes,
                                            sharey=top_axes))
-            axes = self._trace_axes[fullpath][-1]
+            axes = self._trace_axes[trial_id][-1]
             axes.plot(times, trace, color=lfs.PLOT_COLOR_1, 
                              linewidth=lfs.PLOT_LINEWIDTH_1, 
                              label=pt.RAW)
@@ -117,14 +117,14 @@ class FilterPlotPanel(MultiPlotPanel):
         axes.set_xlabel(pt.PLOT_TIME)
 
         # lay out subplots
-        canvas_size = self._plot_panels[fullpath].GetMinSize()
+        canvas_size = self._plot_panels[trial_id].GetMinSize()
         lfs.default_adjust_subplots(figure, canvas_size)
 
         # --- add psd plot ---
         all_traces = numpy.hstack(traces)
-        self._psd_axes[fullpath] = figure.add_subplot(
-                len(self._trace_axes[fullpath])+1, 1, 1)
-        psd_axes = self._psd_axes[fullpath]
+        self._psd_axes[trial_id] = figure.add_subplot(
+                len(self._trace_axes[trial_id])+1, 1, 1)
+        psd_axes = self._psd_axes[trial_id]
         psd_axes.psd(all_traces, Fs=trial.sampling_freq, NFFT=2**11,
                                  label=pt.RAW,
                                  linewidth=lfs.PLOT_LINEWIDTH_1, 
@@ -137,7 +137,7 @@ class FilterPlotPanel(MultiPlotPanel):
         adjust_axes_edges(psd_axes, canvas_size_in_pixels=canvas_size, 
                                     bottom=bottom)
 
-    def _plot_filtered_traces(self, trial, figure, fullpath):
+    def _plot_filtered_traces(self, trial, figure, trial_id):
         stage_data = getattr(trial, self.name)
         if stage_data.results is not None:
             traces = stage_data.results
@@ -145,7 +145,7 @@ class FilterPlotPanel(MultiPlotPanel):
             return # this trial has never been filtered.
         times = trial.times
 
-        for trace, axes in zip(traces, self._trace_axes[fullpath]):
+        for trace, axes in zip(traces, self._trace_axes[trial_id]):
             axes.set_autoscale_on(False)
             lines = axes.get_lines()
             if len(lines) == 2:
@@ -157,7 +157,7 @@ class FilterPlotPanel(MultiPlotPanel):
                                  label=pt.FILTERED_TRACE_GRAPH_LABEL)
 
         all_traces = numpy.hstack(traces)
-        axes = self._psd_axes[fullpath]
+        axes = self._psd_axes[trial_id]
         lines = axes.get_lines()
         if len(lines) == 2:
             del(axes.lines[1])

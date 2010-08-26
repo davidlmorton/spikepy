@@ -29,62 +29,62 @@ class ExtractionPlotPanel(MultiPlotPanel):
         self._feature_axes = {}
 
     def _remove_trial(self, message=None):
-        fullpath = message.data
-        del self._trials[fullpath]
-        if fullpath in self._feature_axes.keys():
-            del self._feature_axes[fullpath]
+        trial_id = message.data
+        del self._trials[trial_id]
+        if trial_id in self._feature_axes.keys():
+            del self._feature_axes[trial_id]
 
     def _trial_added(self, message=None, trial=None):
         if message is not None:
             trial = message.data
 
-        fullpath = trial.fullpath
-        self._trials[fullpath] = trial
-        self.add_plot(fullpath, figsize=self._figsize, 
+        trial_id = trial.trial_id
+        self._trials[trial_id] = trial
+        self.add_plot(trial_id, figsize=self._figsize, 
                                 facecolor=self._facecolor,
                                 edgecolor=self._facecolor,
                                 dpi=self._dpi)
-        figure = self._plot_panels[fullpath].figure
-        self._create_axes(trial, figure, fullpath)
-        self._replot_panels.add(fullpath)
+        figure = self._plot_panels[trial_id].figure
+        self._create_axes(trial, figure, trial_id)
+        self._replot_panels.add(trial_id)
 
     def _trial_renamed(self, message=None):
         trial = message.data
-        fullpath = trial.fullpath
+        trial_id = trial.trial_id
         new_name = trial.display_name
-        axes = self._feature_axes[fullpath]
+        axes = self._feature_axes[trial_id]
         axes.set_title(pt.TRIAL_NAME+new_name)
-        self.draw_canvas(fullpath)
+        self.draw_canvas(trial_id)
 
     def _trial_altered(self, message=None):
         trial, stage_name = message.data
         if stage_name != self.name:
             return
-        fullpath = trial.fullpath
-        if fullpath == self._currently_shown:
-            self.plot(fullpath)
-            if fullpath in self._replot_panels:
-                self._replot_panels.remove(fullpath)
+        trial_id = trial.trial_id
+        if trial_id == self._currently_shown:
+            self.plot(trial_id)
+            if trial_id in self._replot_panels:
+                self._replot_panels.remove(trial_id)
         else:
-            self._replot_panels.add(fullpath)
+            self._replot_panels.add(trial_id)
 
-    def plot(self, fullpath):
-        trial = self._trials[fullpath]
-        figure = self._plot_panels[fullpath].figure
+    def plot(self, trial_id):
+        trial = self._trials[trial_id]
+        figure = self._plot_panels[trial_id].figure
         
-        self._plot_features(trial, figure, fullpath)
+        self._plot_features(trial, figure, trial_id)
 
-        self.draw_canvas(fullpath)
+        self.draw_canvas(trial_id)
 
-    def _create_axes(self, trial, figure, fullpath):
-        axes = self._feature_axes[fullpath] = figure.add_subplot(1,1,1)
-        canvas_size = self._plot_panels[fullpath].GetMinSize()
+    def _create_axes(self, trial, figure, trial_id):
+        axes = self._feature_axes[trial_id] = figure.add_subplot(1,1,1)
+        canvas_size = self._plot_panels[trial_id].GetMinSize()
         lfs.default_adjust_subplots(figure, canvas_size)
 
-    def _plot_features(self, trial, figure, fullpath):
-        axes = self._feature_axes[fullpath]
+    def _plot_features(self, trial, figure, trial_id):
+        axes = self._feature_axes[trial_id]
         axes.clear()
-        trial = self._trials[fullpath]
+        trial = self._trials[trial_id]
         new_name = trial.display_name
         axes.set_title(pt.TRIAL_NAME+new_name)
         axes.set_ylabel(pt.FEATURE_AMPLITUDE)

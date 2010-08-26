@@ -14,25 +14,13 @@ from .utils import pool_process, upsample_trace_list
 from ..stages import filtering, detection, extraction, clustering
 from .trial import format_traces
 
-rename_counts = defaultdict(lambda :0)
-
-def get_unique_display_name(other_display_names, other_fullpaths, 
-                             display_name, fullpath):
-    other_filenames = [os.path.split(ofullpath)[1] 
-                       for ofullpath in other_fullpaths]
-    filename = os.path.split(fullpath)[1]
-    if filename not in other_filenames:
-        if filename not in other_display_names:
-            return filename
-    rename_counts[filename] += 1
-    return '%s(%d)' % (filename, rename_counts[filename]) 
-
 class Model(object):
     def __init__(self):
         self.trials = {}
 
         if wx.Platform != '__WXMAC__':
-            self._processing_pool = Pool()
+            #self._processing_pool = Pool()
+            self._processing_pool = None #XXX Til we understand pool better.
         else:
             self._processing_pool = None
         
@@ -41,14 +29,15 @@ class Model(object):
                          'extraction_filter':self._filter,
                          'extraction':self._extraction,
                          'clustering':self._cluster_single}
+        self._opening_files = []
 
     def setup_subscriptions(self):
         """
         Subscribe to relevant pubsub topics.
         """
-        pub.subscribe(self._open_data_file,   "OPEN_DATA_FILE")
-        pub.subscribe(self._close_data_file,  "CLOSE_DATA_FILE")
-        pub.subscribe(self._execute_stage, "EXECUTE_STAGE")
+        pub.subscribe(self._open_data_file, "OPEN_DATA_FILE")
+        pub.subscribe(self._close_trial,    "CLOSE_TRIAL")
+        pub.subscribe(self._execute_stage,  "EXECUTE_STAGE")
 
     def _execute_stage(self, message):
         """
@@ -77,66 +66,56 @@ class Model(object):
         Inputs:
             message     : message.data should be the fullpath to the file.
         Alters:
-            self.trials : a new entry with key=fullpath and value=Trial object
+            self.trials : a new entry with key=trial_id and value=Trial object
                           will be added to this dictionary.
         Publishes:
-            'FILE_ALREADY_OPENED'    : if the file has previously been opened
-                                       -- data = fullpath
             'TRIAL_ADDED'            : if the file was just opened successfully
                                        -- data = Trial object just created
             'FILE_OPENED'            : if the file was just opened successfully
                                        -- data = fullpath
+            'ALREADY_OPENING_FILE'   : if the file is still being opened
+                                       -- data = fullpath
         """
         fullpath = message.data
-        if fullpath not in self.trials.keys():
+        if fullpath not in self._opening_files:
+            self._opening_files.append(fullpath)
             startWorker(self._open_file_consumer, self._open_file_worker, 
-                        wargs=(fullpath,))
+                        wargs=(fullpath,), cargs=(fullpath,))
         else:
-            display_name = self.trials[fullpath].display_name
-            pub.sendMessage(topic='FILE_ALREADY_OPENED',data=(fullpath, 
-                                                              display_name))
+            pub.sendMessage(topic='ALREADY_OPENING_FILE', data=fullpath)
 
     def _open_file_worker(self, fullpath):
         trial = pool_process(self._processing_pool, open_data_file, 
                              args=(fullpath,))
         return trial
 
-    def _open_file_consumer(self, delayed_result):
-        trial = delayed_result.get()
+    def _open_file_consumer(self, delayed_result, fullpath):
 
-        # give new trial a unique display name.
-        other_display_names = []
-        other_fullpaths = []
-        for otrial in self.trials.values():
-            other_display_names.append(otrial.display_name)
-            other_fullpaths.append(otrial.fullpath)
-        fullpath = trial.fullpath
-        trial.display_name = get_unique_display_name(other_display_names, 
-                                                     other_fullpaths, 
-                                                     trial.display_name, 
-                                                     fullpath)
+        trial_list = delayed_result.get()
+        for trial in trial_list:
+            trial_id = trial.trial_id
+            self.trials[trial_id] = trial
+            pub.sendMessage(topic='TRIAL_ADDED', data=trial)
 
-        self.trials[fullpath] = trial
-        display_name = self.trials[fullpath].display_name
-        pub.sendMessage(topic='TRIAL_ADDED', data=trial)
-        pub.sendMessage(topic='FILE_OPENED', data=(fullpath, display_name))
+        self._opening_files.remove(fullpath)
+        pub.sendMessage(topic='FILE_OPENED', data=fullpath)
 
     # ---- CLOSE FILE ----
-    def _close_data_file(self, message):
+    def _close_trial(self, message):
         """
         Remove an existing Trial object.
         Inputs:
-            message     : message.data should be the fullpath to the file.
+            message     : message.data should be the trial_id of the trial.
         Alters:
-            self.trials : the entry with key=fullpath will be removed.
+            self.trials : the entry with key=trial_id will be removed.
         Publishes:
-            'FILE_CLOSED'            : if the file was just closed successfully
-                                       -- data = fullpath
+            'TRIAL_CLOSED'      : if the trial was just closed successfully
+                                  -- data = trial_id
         """
-        fullpath = message.data
-        if fullpath in self.trials.keys():
-            del self.trials[fullpath]
-            pub.sendMessage(topic='FILE_CLOSED', data=fullpath)
+        trial_id = message.data
+        if trial_id in self.trials.keys():
+            del self.trials[trial_id]
+            pub.sendMessage(topic='TRIAL_CLOSED', data=trial_id)
 
     # ---- FILTER ----
     def _filter(self, trial=None, stage_name=None, method_name=None, 
@@ -151,8 +130,8 @@ class Model(object):
             settings        : a dictionary of keyword arguments that 
                               are required by the method.run() function.
         Alters:
-            self.trials[fullpath]    : stores results, method_used and settings
-                                       in the appropriate StageData instance.
+            trial           : stores results, method_used and settings
+                              in the appropriate StageData instance.
         Publishes:
             'TRIAL_%s_FILTERED'    : if the trial was filtered successfully,
                                      the %s will be one of DETECTION or 
@@ -201,8 +180,8 @@ class Model(object):
             settings   : a dictionary of keyword arguments that 
                                   are required by the method.run() function.
         Alters:
-            self.trials[fullpath]   : stores results, method_used and settings
-                                      in the appropriate StageData instance.
+            trial           : stores results, method_used and settings
+                              in the appropriate StageData instance.
         Publishes:
             'TRIAL_DETECTIONED'     : if the trial was successfully spike 
                                       detected
@@ -252,8 +231,8 @@ class Model(object):
             settings        : a dictionary of keyword arguments that 
                               are required by the method.run() function.
         Alters:
-            self.trials[fullpath]   : stores results, method_used and settings
-                                      in the appropriate StageData instance.
+            trial           : stores results, method_used and settings
+                              in the appropriate StageData instance.
         Publishes:
             'TRIAL_DETECTIONED'     : if the trial was successfully feature
                                       extracted
@@ -310,8 +289,8 @@ class Model(object):
             settings        : a dictionary of keyword arguments that 
                               are required by the method.run() function.
         Alters:
-            self.trials[fullpath]   : stores results, method_used and settings
-                                      in the appropriate StageData instance.
+            trial_list      : stores results, method_used and settings
+                              in the appropriate StageData instance(s).
         Publishes:
             'TRIAL_CLUSTERINGED'    : if the trial was successfully clustered
                                      --data = trial
@@ -331,7 +310,7 @@ class Model(object):
         master_key_list   = []
         feature_set_list  = []
         feature_time_list = []
-        trial_keys = sorted([trial.fullpath for trial in trial_list])
+        trial_keys = sorted([trial.trial_id for trial in trial_list])
         for key in trial_keys:
             features = self.trials[key].extraction.results['features']
             feature_times = (self.trials[key].extraction.

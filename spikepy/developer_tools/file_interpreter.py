@@ -5,3 +5,7 @@ class FileInterpreter(object):
     _skips_registration = True
     _is_base_class = True
 
+    def make_trial_object(sampling_freq, raw_traces, fullpath):
+        return Trial(sampling_freq=sampling_freq, raw_traces=raw_traces,
+                     fullpath=fullpath)
+

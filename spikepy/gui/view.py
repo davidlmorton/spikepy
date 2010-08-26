@@ -8,7 +8,7 @@ from wx.lib.pubsub import Publisher as pub
 import spikepy
 from .menu_bar import SpikepyMenuBar
 from .strategy_pane import StrategyPane
-from .file_grid_ctrl import FileGridCtrl
+from .trial_grid_ctrl import TrialGridCtrl
 from .results_notebook import ResultsNotebook
 from .look_and_feel_settings import lfs
 from . import program_text as pt
@@ -38,15 +38,15 @@ class MyFrame(wx.Frame):
         self.strategy_pane = StrategyPane(strategy_holder)
         strategy_holder.add_content(self.strategy_pane, 2)
 
-        file_list_holder = BorderPanel(hsplit, style=wx.BORDER_SUNKEN)
-        self.file_list = FileGridCtrl(file_list_holder)
-        file_list_holder.add_content(self.file_list, 2)
+        trial_list_holder = BorderPanel(hsplit, style=wx.BORDER_SUNKEN)
+        self.trial_list = TrialGridCtrl(trial_list_holder)
+        trial_list_holder.add_content(self.trial_list, 2)
 
         self.results_notebook = results_notebook = ResultsNotebook(
                                                     vsplit)
 
         vsplit.SplitVertically(hsplit, self.results_notebook, 400)
-        hsplit.SplitHorizontally(file_list_holder, strategy_holder, 200)
+        hsplit.SplitHorizontally(trial_list_holder, strategy_holder, 200)
 
         hsplit.SetMinimumPaneSize(lfs.STRATEGY_PANE_MIN_SIZE[1])
         vsplit.SetMinimumPaneSize(lfs.STRATEGY_PANE_MIN_SIZE[0])

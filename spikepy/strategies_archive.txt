@@ -14,7 +14,7 @@
                 "using_sd_units": true, 
                 "threshold_2": -4.0, 
                 "refractory_time": 0.0, 
-                "threshold_1": 4.0
+                "threshold_1": 3.5
             }, 
             "extraction": {
                 "post_padding": 1.5, 

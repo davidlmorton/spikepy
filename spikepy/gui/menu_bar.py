@@ -164,7 +164,7 @@ class SpikepyMenuBar(wx.MenuBar):
                                        text=pt.WORKSPACES_MANAGER)
     
     def _open_file(self, event):
-        pub.sendMessage(topic='OPEN_FILE', data=None)
+        pub.sendMessage(topic='OPEN_OPEN_FILE_DIALOG', data=None)
 
     def _close_window(self, event):
         pub.sendMessage(topic='CLOSE_APPLICATION', data=None)

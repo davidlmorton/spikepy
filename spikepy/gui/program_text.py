@@ -43,8 +43,8 @@ ABOUT = "About"
 TRIAL_NAME = "Trial Name"
 FILE_OPENING_STATUS = "**"
 OPEN_ANOTHER_FILE = "Open Another File..."
-CLOSE_SELECTED_FILES = "Close Marked Files"
-CLOSE_THIS_FILE = "Close This File"
+CLOSE_MARKED_TRIALS = "Close Marked Trials"
+CLOSE_THIS_TRIAL = "Close This Trial"
 RENAME_TRIAL = 'Rename This Trial'
 
 # ---- Export Panel Text ----

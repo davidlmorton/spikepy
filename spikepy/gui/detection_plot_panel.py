@@ -33,37 +33,37 @@ class DetectionPlotPanel(MultiPlotPanel):
         self._spike_axes = {}
 
     def _remove_trial(self, message=None):
-        fullpath = message.data
-        del self._trials[fullpath]
-        if fullpath in self._trace_axes.keys():
-            del self._trace_axes[fullpath]
-        if fullpath in self._spike_axes.keys():
-            del self._spike_axes[fullpath]
+        trial_id = message.data
+        del self._trials[trial_id]
+        if trial_id in self._trace_axes.keys():
+            del self._trace_axes[trial_id]
+        if trial_id in self._spike_axes.keys():
+            del self._spike_axes[trial_id]
 
     def _trial_added(self, message=None, trial=None):
         if message is not None:
             trial = message.data
 
-        fullpath = trial.fullpath
-        self._trials[fullpath] = trial
+        trial_id = trial.trial_id
+        self._trials[trial_id] = trial
         num_traces = len(trial.raw_traces)
         # make room for multiple traces and a spike-rate plot.
         figsize = (self._figsize[0], self._figsize[1]*(num_traces+1))
-        self.add_plot(fullpath, figsize=figsize, 
+        self.add_plot(trial_id, figsize=figsize, 
                                 facecolor=self._facecolor,
                                 edgecolor=self._facecolor,
                                 dpi=self._dpi)
-        figure = self._plot_panels[fullpath].figure
-        self._create_axes(trial, figure, fullpath)
-        self._replot_panels.add(fullpath)
+        figure = self._plot_panels[trial_id].figure
+        self._create_axes(trial, figure, trial_id)
+        self._replot_panels.add(trial_id)
     
     def _trial_renamed(self, message=None):
         trial = message.data
-        fullpath = trial.fullpath
+        trial_id = trial.trial_id
         new_name = trial.display_name
-        spike_axes = self._spike_axes[fullpath]
+        spike_axes = self._spike_axes[trial_id]
         spike_axes.set_title(pt.TRIAL_NAME+new_name)
-        self.draw_canvas(fullpath)
+        self.draw_canvas(trial_id)
         
     def _trial_filtered(self, message=None):
         trial, stage_name = message.data
@@ -74,37 +74,37 @@ class DetectionPlotPanel(MultiPlotPanel):
         trial, stage_name = message.data
         if stage_name != self.name and not force:
             return
-        fullpath = trial.fullpath
-        if fullpath == self._currently_shown:
-            self.plot(fullpath)
-            if fullpath in self._replot_panels:
-                self._replot_panels.remove(fullpath)
+        trial_id = trial.trial_id
+        if trial_id == self._currently_shown:
+            self.plot(trial_id)
+            if trial_id in self._replot_panels:
+                self._replot_panels.remove(trial_id)
         else:
-            self._replot_panels.add(fullpath)
+            self._replot_panels.add(trial_id)
 
-    def plot(self, fullpath):
-        trial = self._trials[fullpath]
-        figure = self._plot_panels[fullpath].figure
+    def plot(self, trial_id):
+        trial = self._trials[trial_id]
+        figure = self._plot_panels[trial_id].figure
         
-        self._plot_filtered_traces(trial, figure, fullpath)
-        self._plot_spikes(trial, figure, fullpath)
+        self._plot_filtered_traces(trial, figure, trial_id)
+        self._plot_spikes(trial, figure, trial_id)
 
-        self.draw_canvas(fullpath)
+        self.draw_canvas(trial_id)
 
-    def _create_axes(self, trial, figure, fullpath):
+    def _create_axes(self, trial, figure, trial_id):
         traces = trial.raw_traces
         for i, trace in enumerate(traces):
             if i==0:
-                self._trace_axes[fullpath] = [
+                self._trace_axes[trial_id] = [
                         figure.add_subplot(len(traces)+1, 1, i+2)]
-                top_axes = self._trace_axes[fullpath][0]
+                top_axes = self._trace_axes[trial_id][0]
             else:
-                self._trace_axes[fullpath].append(
+                self._trace_axes[trial_id].append(
                         figure.add_subplot(len(traces)+1, 
                                            1, i+2,
                                            sharex=top_axes,
                                            sharey=top_axes))
-            axes = self._trace_axes[fullpath][-1]
+            axes = self._trace_axes[trial_id][-1]
             axes.set_ylabel('%s #%d' % (pt.TRACE, (i+1)))
             if i+1 < len(traces): #all but the last trace
                 # make the x/yticklabels dissapear
@@ -114,34 +114,34 @@ class DetectionPlotPanel(MultiPlotPanel):
         axes.set_xlabel(pt.PLOT_TIME)
 
         # lay out subplots
-        canvas_size = self._plot_panels[fullpath].GetMinSize()
+        canvas_size = self._plot_panels[trial_id].GetMinSize()
         lfs.default_adjust_subplots(figure, canvas_size)
 
         # --- add axis for spike plot ---
-        self._spike_axes[fullpath] = figure.add_subplot(
-                len(self._trace_axes[fullpath])+1, 1, 1)
-        spike_axes = self._spike_axes[fullpath]
-        self.setup_spike_axes_labels(spike_axes, fullpath)
+        self._spike_axes[trial_id] = figure.add_subplot(
+                len(self._trace_axes[trial_id])+1, 1, 1)
+        spike_axes = self._spike_axes[trial_id]
+        self.setup_spike_axes_labels(spike_axes, trial_id)
         
         bottom = lfs.AXES_BOTTOM
         adjust_axes_edges(spike_axes, canvas_size_in_pixels=canvas_size,
                                       bottom=bottom)
 
-    def setup_spike_axes_labels(self, spike_axes, fullpath):
+    def setup_spike_axes_labels(self, spike_axes, trial_id):
         spike_axes.set_xlabel(pt.PLOT_TIME)
         spike_axes.set_ylabel(pt.SPIKE_RATE_AXIS, multialignment='center')
-        trial = self._trials[fullpath]
+        trial = self._trials[trial_id]
         new_name = trial.display_name
         spike_axes.set_title(pt.TRIAL_NAME+new_name)
 
-    def _plot_filtered_traces(self, trial, figure, fullpath):
+    def _plot_filtered_traces(self, trial, figure, trial_id):
         if trial.detection_filter.results is not None:
             traces = trial.detection_filter.results
         else:
             return
         times = trial.times
 
-        trace_axes = self._trace_axes[fullpath]
+        trace_axes = self._trace_axes[trial_id]
         for trace, axes in zip(traces, trace_axes):
             clear_tick_labels = axes is not trace_axes[-1]  
             clear_axes(axes, clear_tick_labels=clear_tick_labels)
@@ -168,21 +168,21 @@ class DetectionPlotPanel(MultiPlotPanel):
             axes.legend(loc='upper right', ncol=3)
             
 
-    def _plot_spikes(self, trial, figure, fullpath):
+    def _plot_spikes(self, trial, figure, trial_id):
         # remove old lines if present.
-        spike_axes = self._spike_axes[fullpath]
+        spike_axes = self._spike_axes[trial_id]
         spike_axes.clear()
-        self.setup_spike_axes_labels(spike_axes, fullpath)
+        self.setup_spike_axes_labels(spike_axes, trial_id)
 
         if trial.detection.results is not None:
             spikes = trial.detection.results
         else:
-            while self._spike_axes[fullpath].lines:
-                del(self._spike_axes[fullpath].lines[0])
+            while self._spike_axes[trial_id].lines:
+                del(self._spike_axes[trial_id].lines[0])
             return # this trial has never been spike detected.
         times = trial.times
 
-        for spike_list, axes in zip(spikes, self._trace_axes[fullpath]):
+        for spike_list, axes in zip(spikes, self._trace_axes[trial_id]):
             axes.set_autoscale_on(False)
             lines = axes.get_lines()
             # check if raster is already plotted

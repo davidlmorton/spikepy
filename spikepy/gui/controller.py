@@ -30,12 +30,13 @@ class Controller(object):
 
 
     def setup_subscriptions(self):
-        pub.subscribe(self._open_file, topic="OPEN_FILE")
-        pub.subscribe(self._file_selection_changed, 
-                      topic='FILE_SELECTION_CHANGED')
+        pub.subscribe(self._open_open_file_dialog, 
+                      topic="OPEN_OPEN_FILE_DIALOG")
+        pub.subscribe(self._trial_selection_changed, 
+                      topic='TRIAL_SELECTION_CHANGED')
         pub.subscribe(self._calculate_run_buttons_state,
                       topic='CALCULATE_RUN_BUTTONS_STATE')
-        pub.subscribe(self._file_closed, topic='FILE_CLOSED')
+        pub.subscribe(self._trial_closed, topic='TRIAL_CLOSED')
         pub.subscribe(self._save_session, topic='SAVE_SESSION')
         pub.subscribe(self._load_session, topic='LOAD_SESSION')
         pub.subscribe(self._close_application,  topic="CLOSE_APPLICATION")
@@ -58,14 +59,10 @@ class Controller(object):
         export_type = message.data
         fullpaths = []
         if export_type == "all":
-            trials = self.model.trials
-            fullpaths = trials.keys()
-            trial_list = [self.model.trials[fullpath] for fullpath in fullpaths]
+            trial_list = self.model.trials.values()
             caption=pt.EXPORT_ALL
         else:
-            file_grid_ctrl = self.view.frame.file_list
-            fullpaths = file_grid_ctrl.marked_fullpaths
-            trial_list = [self.model.trials[fullpath] for fullpath in fullpaths]
+            trial_list = self.get_marked_trials()
             caption=pt.EXPORT_MARKED
 
         dlg = ExportDialog(self.view.frame, title=caption)
@@ -77,12 +74,13 @@ class Controller(object):
         dlg.Destroy()
 
     def _open_rename_trial_dialog(self, message):
-        fullpath = message.data
-        this_trial = self.model.trials[fullpath]
+        trial_id = message.data
+        this_trial = self.model.trials[trial_id]
         this_trial_name = this_trial.display_name
         other_trials = [trial for trial in 
                        self.model.trials.values()
                        if trial is not this_trial]
+        fullpath = this_trial.fullpath
         dlg = TrialRenameDialog(self.view.frame, this_trial_name, 
                                 fullpath, other_trials)
         if dlg.ShowModal() == wx.ID_OK:
@@ -92,9 +90,9 @@ class Controller(object):
         dlg.Destroy()
 
     def get_marked_trials(self):
-        file_grid_ctrl = self.view.frame.file_list
-        fullpaths = file_grid_ctrl.marked_fullpaths
-        return [self.model.trials[fullpath] for fullpath in fullpaths]
+        trial_grid_ctrl = self.view.frame.trial_list
+        trial_ids = trial_grid_ctrl.marked_trial_ids
+        return [self.model.trials[trial_id] for trial_id in trial_ids]
 
     def _calculate_run_buttons_state(self, message):
         methods_used, settings = message.data
@@ -170,7 +168,7 @@ class Controller(object):
         pub.unsubAll()
         # deinitialize the frame manager
         self.view.frame.Destroy()
-        if wx.Platform != '__WXMAC__':
+        if self.model._processing_pool is not None:
             self.model._processing_pool.close()
 
 
@@ -217,17 +215,17 @@ class Controller(object):
         data = message.data
         print topic,data
 
-    def _file_closed(self, message):
-        fullpath = message.data
-        pub.sendMessage(topic='REMOVE_PLOT', data=fullpath)
+    def _trial_closed(self, message):
+        trial_id = message.data
+        pub.sendMessage(topic='REMOVE_PLOT', data=trial_id)
 
 
-    def _file_selection_changed(self, message):
+    def _trial_selection_changed(self, message):
         # XXX will this do something more?
-        fullpath = message.data
-        pub.sendMessage(topic='SHOW_PLOT', data=fullpath)
+        trial_id = message.data
+        pub.sendMessage(topic='SHOW_PLOT', data=trial_id)
 
-    def _open_file(self, message):
+    def _open_open_file_dialog(self, message):
         frame = message.data
 
         paths = []

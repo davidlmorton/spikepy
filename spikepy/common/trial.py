@@ -2,6 +2,8 @@ import time
 import datetime
 import json
 import os
+import uuid
+from collections import defaultdict
 
 import wx
 from wx.lib.pubsub import Publisher as pub
@@ -21,6 +23,17 @@ format_extentions = {pt.PLAIN_TEXT_SPACES:'txt',
                      pt.MATLAB:'mat',
                      pt.NUMPY_BINARY:'npz'}
 
+display_name_count = defaultdict(lambda :0)
+
+def get_unique_display_name(proposed_display_name):
+    old_count = display_name_count[proposed_display_name]
+    display_name_count[proposed_display_name] += 1
+    if old_count != 0:
+        new_display_name = '%s(%d)' % (proposed_display_name, old_count)
+    else:
+        new_display_name = proposed_display_name
+    return new_display_name
+
 class Trial(object):
     """This class represents an individual trial consisting of (potentially)
     multiple electrodes recording simultaneously.
@@ -30,8 +43,9 @@ class Trial(object):
                        fullpath='FULLPATH NOT SET'):
         self.fullpath      = fullpath
         filename = os.path.split(fullpath)[1]
-        self.display_name = filename
+        self.display_name = get_unique_display_name(filename)
         self.raw_traces    = format_traces(raw_traces)
+        self._id = uuid.uuid4() 
 
         self.sampling_freq = sampling_freq
         self.dt            = (1.0/sampling_freq)*1000.0 # dt in ms
@@ -62,6 +76,9 @@ class Trial(object):
                        self.extraction,
                        self.clustering]
 
+    @property
+    def trial_id(self):
+        return self._id
 
     @property
     def methods_used(self):

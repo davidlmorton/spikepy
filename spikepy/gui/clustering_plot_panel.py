@@ -33,79 +33,79 @@ class ClusteringPlotPanel(MultiPlotPanel):
         self._trace_axes = defaultdict(lambda :None)
 
     def _remove_trial(self, message=None):
-        fullpath = message.data
-        del self._trials[fullpath]
+        trial_id = message.data
+        del self._trials[trial_id]
 
     def _trial_added(self, message=None, trial=None):
         if message is not None:
             trial = message.data
 
-        fullpath = trial.fullpath
-        self._trials[fullpath] = trial
-        self.add_plot(fullpath, figsize=self._figsize, 
+        trial_id = trial.trial_id
+        self._trials[trial_id] = trial
+        self.add_plot(trial_id, figsize=self._figsize, 
                                 facecolor=self._facecolor,
                                 edgecolor=self._facecolor,
                                 dpi=self._dpi)
-        self._replot_panels.add(fullpath)
+        self._replot_panels.add(trial_id)
 
     def _trial_renamed(self, message=None):
         trial = message.data
-        fullpath = trial.fullpath
-        if self._trace_axes[fullpath] is not None:
+        trial_id = trial.trial_id
+        if self._trace_axes[trial_id] is not None:
             new_name = trial.display_name
-            trace_axes = self._trace_axes[fullpath]
+            trace_axes = self._trace_axes[trial_id]
             trace_axes.set_title(pt.TRIAL_NAME+new_name)
-            self.draw_canvas(fullpath)
+            self.draw_canvas(trial_id)
 
     def _trial_altered(self, message=None):
         trial, stage_name = message.data
         if stage_name != self.name:
             return
-        fullpath = trial.fullpath
-        if fullpath == self._currently_shown:
-            self.plot(fullpath)
-            if fullpath in self._replot_panels:
-                self._replot_panels.remove(fullpath)
+        trial_id = trial.trial_id
+        if trial_id == self._currently_shown:
+            self.plot(trial_id)
+            if trial_id in self._replot_panels:
+                self._replot_panels.remove(trial_id)
         else:
-            self._replot_panels.add(fullpath)
+            self._replot_panels.add(trial_id)
 
-    def plot(self, fullpath):
-        trial = self._trials[fullpath]
+    def plot(self, trial_id):
+        trial = self._trials[trial_id]
         if trial.clustering.results is not None:
             num_clusters = len(trial.clustering.results.keys())
             num_cluster_combinations = nchoosek(num_clusters, 2)
-            old_minsize = self._plot_panels[fullpath].GetMinSize()
+            old_minsize = self._plot_panels[trial_id].GetMinSize()
             figwidth = self._figsize[0]
             figheight = self._figsize[1]*(num_cluster_combinations+2)
-            figure = self._plot_panels[fullpath].figure
+            figure = self._plot_panels[trial_id].figure
 
             if old_minsize[1] != figheight or self._fig_cleared:
                 self._fig_cleared = False
-                self._plot_panels[fullpath].set_minsize(figwidth, 
+                self._plot_panels[trial_id].set_minsize(figwidth, 
                                                         figheight)
                 figure.clear()
-                canvas_size = self._plot_panels[fullpath].GetMinSize()
+                canvas_size = self._plot_panels[trial_id].GetMinSize()
                 lfs.default_adjust_subplots(figure, canvas_size)
-                self._setup_axes(trial, figure, fullpath, canvas_size, 
+                self._setup_axes(trial, figure, trial_id, canvas_size, 
                                  num_cluster_combinations, num_clusters)
             
-            self._plot_rasters(trial, figure, fullpath, 
+            self._plot_rasters(trial, figure, trial_id, 
                                num_cluster_combinations, num_clusters)
-            self._plot_clusters(trial, figure, fullpath, 
+            self._plot_clusters(trial, figure, trial_id, 
                                 num_cluster_combinations)
-            self._plot_distances(trial, figure, fullpath, 
+            self._plot_distances(trial, figure, trial_id, 
                                  num_cluster_combinations)
 
-            self.draw_canvas(fullpath)
+            self.draw_canvas(trial_id)
         else:
             if not self._fig_cleared:
-                figure = self._plot_panels[fullpath].figure
+                figure = self._plot_panels[trial_id].figure
                 figure.clear()
                 self._fig_cleared = True
-                self._trace_axes[fullpath] = None
-                self.draw_canvas(fullpath)
+                self._trace_axes[trial_id] = None
+                self.draw_canvas(trial_id)
 
-    def _setup_axes(self, trial, figure, fullpath, canvas_size,  
+    def _setup_axes(self, trial, figure, trial_id, canvas_size,  
                     ncc, num_clusters):
         # --- RASTER AND TRACE AXES ---
         raster_axes = figure.add_subplot(ncc+2, 1, 1)
@@ -117,11 +117,10 @@ class ClusteringPlotPanel(MultiPlotPanel):
         trace_axes = figure.add_axes(raster_axes.get_position(), 
                                      axisbg=(1.0, 1.0, 1.0, 0.0),
                                      sharex=raster_axes)
-        filename = os.path.split(fullpath)[1]
-        trial = self._trials[fullpath]
+        trial = self._trials[trial_id]
         new_name = trial.display_name
         trace_axes.set_title(pt.TRIAL_NAME+new_name)
-        self._trace_axes[fullpath] = trace_axes
+        self._trace_axes[trial_id] = trace_axes
         trace_yaxis = trace_axes.get_yaxis()
         trace_yaxis.set_ticks_position('right')
         plot_width = (canvas_size[0] - lfs.CLUSTER_RASTER_LEFT -
@@ -160,7 +159,7 @@ class ClusteringPlotPanel(MultiPlotPanel):
         adjust_axes_edges(std_axes, canvas_size_in_pixels=canvas_size, 
                                     left=left)
 
-    def _plot_rasters(self, trial, figure, fullpath, ncc, num_clusters):
+    def _plot_rasters(self, trial, figure, trial_id, ncc, num_clusters):
         trace_axes = self.trace_axes
         raster_axes = self.raster_axes
 
@@ -206,7 +205,7 @@ class ClusteringPlotPanel(MultiPlotPanel):
             axes.set_ylim(final_ylim)
 
         
-    def _plot_clusters(self, trial, figure, fullpath, ncc):
+    def _plot_clusters(self, trial, figure, trial_id, ncc):
         averages_and_stds = self._get_averages_and_stds(trial)
         
         for cluster_num, (average, stds) in averages_and_stds.items():
@@ -241,7 +240,7 @@ class ClusteringPlotPanel(MultiPlotPanel):
             return_dict[key] = (average, stds)
         return return_dict
 
-    def _plot_distances(self, trial, figure, fullpath, ncc):
+    def _plot_distances(self, trial, figure, trial_id, ncc):
         pass
 
 
