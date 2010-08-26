@@ -1,12 +1,11 @@
 import unittest
 
 from spikepy.developer_tools.registering_class import (RegisteringClass, 
-                                                       _class_registry,
-                                                       _base_classes)
+                                                       _class_registry)
 
-def ira(cls, base_class_name): # is registered as
-    return cls in _class_registry[base_class_name]
-        
+def ira(cls, base_class): # is registered as
+    return cls in _class_registry[base_class]
+
 
 class RegistrationBasics(unittest.TestCase):
     # -- COMMON SETUP --
@@ -20,7 +19,7 @@ class RegistrationBasics(unittest.TestCase):
         _skips_registration = True
         _is_base_class = True
 
-    class SelfRegisteringBase(object):
+    class SelfRegisteringBase(AnotherBase):
         __metaclass__ = RegisteringClass
         _skips_registration = False
         _is_base_class = True
@@ -45,44 +44,42 @@ class RegistrationBasics(unittest.TestCase):
 
     # -- TESTS --
     def test_bases_registered_as_bases(self):
-        self.assertTrue('Base' in _class_registry.keys())
-        self.assertTrue(_base_classes['Base'] == self.Base)
-
-        self.assertTrue('AnotherBase' in _class_registry.keys())
-        self.assertTrue(_base_classes['AnotherBase'] == self.AnotherBase)
-
-        self.assertTrue('SelfRegisteringBase' in _class_registry.keys())
-        self.assertTrue(_base_classes['SelfRegisteringBase'] == 
-                        self.SelfRegisteringBase)
+        self.assertTrue(self.Base in _class_registry.keys())
+        self.assertTrue(self.AnotherBase in _class_registry.keys())
+        self.assertTrue(self.SelfRegisteringBase in _class_registry.keys())
 
     def test_bases_not_registered_as_themselves(self):
-        self.assertFalse(ira(self.Base, 'Base'))
-        self.assertFalse(ira(self.AnotherBase, 'AnotherBase'))
+        self.assertFalse(ira(self.Base, self.Base))
+        self.assertFalse(ira(self.AnotherBase, self.AnotherBase))
         # SelfRegisteringBase SHOULD register itself.
-        self.assertTrue(ira(self.SelfRegisteringBase, 'SelfRegisteringBase'))
+        self.assertTrue(ira(self.SelfRegisteringBase, self.SelfRegisteringBase))
 
     def test_subs_not_registered_as_bases(self):
-        self.assertFalse('Sub' in _base_classes.keys())
-        self.assertFalse('Sub2' in _base_classes.keys())
-        self.assertFalse('UnregisteredSub' in _base_classes.keys())
-        self.assertFalse('RegisteredSub' in _base_classes.keys())
-        self.assertFalse('AnotherSub' in _base_classes.keys())
+        self.assertFalse(self.Sub in _class_registry.keys())
+        self.assertFalse(self.Sub2 in _class_registry.keys())
+        self.assertFalse(self.UnregisteredSub in _class_registry.keys())
+        self.assertFalse(self.RegisteredSub in _class_registry.keys())
+        self.assertFalse(self.AnotherSub in _class_registry.keys())
 
     def test_subclassing(self):
-        self.assertTrue( ira(self.Sub, 'Base'))
-        self.assertFalse(ira(self.Sub, 'AnotherBase'))
+        self.assertTrue( ira(self.Sub, self.Base))
+        self.assertFalse(ira(self.Sub, self.AnotherBase))
 
-        self.assertTrue( ira(self.Sub2, 'Base'))
-        self.assertFalse(ira(self.Sub2, 'AnotherBase'))
+        self.assertTrue( ira(self.Sub2, self.Base))
+        self.assertFalse(ira(self.Sub2, self.AnotherBase))
 
-        self.assertFalse(ira(self.UnregisteredSub, 'Base'))
-        self.assertFalse(ira(self.UnregisteredSub, 'AnotherBase'))
+        self.assertFalse(ira(self.UnregisteredSub, self.Base))
+        self.assertFalse(ira(self.UnregisteredSub, self.AnotherBase))
 
-        self.assertTrue( ira(self.RegisteredSub, 'Base'))
-        self.assertFalse(ira(self.RegisteredSub, 'AnotherBase'))
+        self.assertTrue( ira(self.RegisteredSub, self.Base))
+        self.assertFalse(ira(self.RegisteredSub, self.AnotherBase))
 
-        self.assertTrue( ira(self.AnotherSub, 'AnotherBase'))
-        self.assertFalse(ira(self.AnotherSub, 'Base'))
+        self.assertTrue( ira(self.AnotherSub, self.AnotherBase))
+        self.assertFalse(ira(self.AnotherSub, self.Base))
+
+        self.assertTrue( ira(self.SelfRegisteringBase, self.AnotherBase))
+        self.assertFalse(ira(self.SelfRegisteringBase, self.Base))
+
 
     def test_namespace_cleanup(self):
         for cls in self.all_classes:
