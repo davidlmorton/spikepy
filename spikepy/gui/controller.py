@@ -9,6 +9,8 @@ from wx.lib.pubsub import Publisher as pub
 from wx.lib.delayedresult import startWorker
 
 from ..common.model import Model
+from ..common.trial import Trial
+from ..common.utils import pool_process
 from .view import View
 from .utils import named_color, load_pickle
 from . import program_text as pt
@@ -149,11 +151,22 @@ class Controller(object):
 
         return stage_run_state
 
+    def _close_application(self, message):
+        pub.sendMessage(topic='SAVE_ALL_STRATEGIES')
+        pub.unsubAll()
+        # deinitialize the frame manager
+        self.view.frame.Destroy()
+        if self.model._processing_pool is not None:
+            self.model._processing_pool.close()
+
     def _save_session(self, message):
         save_path = message.data
-        trials = self.model.trials
+        trials = self.model.trials.values()
+        save_filename = os.path.split(save_path)[1]
+        trial_archives = [trial.get_archive(archive_name=save_filename) 
+                          for trial in trials]
         with open(save_path, 'w') as ofile:
-            cPickle.dump(trials, ofile, protocol=-1)
+            cPickle.dump(trial_archives, ofile, protocol=-1)
         
     def _load_session(self, message):
         session_fullpath = message.data
@@ -163,52 +176,36 @@ class Controller(object):
                     wargs=(session_fullpath,), cargs=(session_filename, 
                                                       session_name))
 
-    def _close_application(self, message):
-        pub.sendMessage(topic='SAVE_ALL_STRATEGIES')
-        pub.unsubAll()
-        # deinitialize the frame manager
-        self.view.frame.Destroy()
-        if self.model._processing_pool is not None:
-            self.model._processing_pool.close()
-
-
     def _load_session_worker(self, session_fullpath):
-        try:
-            if wx.Platform == '__WXMAC__':
-                trials = load_pickle(session_fullpath)
-            else:
-                processing_pool = self.model._processing_pool
-                result = processing_pool.apply_async(load_pickle, 
-                                                     args=(session_fullpath,))
-                trials = result.get()
-        except:
-            traceback.print_exc()
-            sys.exit(1)
-        return trials
+        pool = self.model._processing_pool
+        trial_archives = pool_process(pool, load_pickle, 
+                                      args=(session_fullpath,))
+        return trial_archives
 
 
     def _load_session_consumer(self, delayed_result, session_filename, 
                                session_name):
         # change the fullpath so it corresponds to the session file
-        trials = delayed_result.get()
-        for trial in trials.values():
-            trial.fullpath = '%s--%s' % (session_name, trial.display_name)
-
-        # close opened files
-        for fullpath in self.model.trials.keys():
-            pub.sendMessage(topic='CLOSE_DATA_FILE', data=fullpath)
+        trial_archives = delayed_result.get()
+        trials = []
+        for archive in trial_archives:
+            trial = Trial(sampling_freq=archive['sampling_freq'],
+                          raw_traces=archive['raw_traces'], 
+                          fullpath=archive['fullpath'])
+            trials.append(trial)
+            for stage in trial.stages:
+                if stage.name in archive.keys():
+                    data_for_stage = archive[stage.name]
+                    trial.set_data_for_stage(stage.name, **data_for_stage)
 
         # simulate opening the files
-        for trial in trials.values():
-            self.model.trials[trial.fullpath] = trial
+        for trial in trials:
+            self.model.trials[trial.trial_id] = trial
             pub.sendMessage(topic='OPENING_DATA_FILE', data=trial.fullpath)
             pub.sendMessage(topic='TRIAL_ADDED',       data=trial)
-            pub.sendMessage(topic='FILE_OPENED',       data=(trial.fullpath,
-                                                            trial.display_name))
+            pub.sendMessage(topic='FILE_OPENED',       data=trial.fullpath)
             pub.sendMessage(topic='SET_STRATEGY', 
                             data=(trial.methods_used, trial.settings))
-
-            
             
     def _print_messages(self, message):
         topic = message.topic

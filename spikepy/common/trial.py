@@ -23,15 +23,14 @@ format_extentions = {pt.PLAIN_TEXT_SPACES:'txt',
                      pt.MATLAB:'mat',
                      pt.NUMPY_BINARY:'npz'}
 
-display_name_count = defaultdict(lambda :0)
+display_names = set()
 
 def get_unique_display_name(proposed_display_name):
-    old_count = display_name_count[proposed_display_name]
-    display_name_count[proposed_display_name] += 1
-    if old_count != 0:
-        new_display_name = '%s(%d)' % (proposed_display_name, old_count)
-    else:
-        new_display_name = proposed_display_name
+    count = 1
+    new_display_name = proposed_display_name
+    while new_display_name in display_names:
+        new_display_name = '%s(%d)' % (proposed_display_name, count)
+        count += 1
     return new_display_name
 
 class Trial(object):
@@ -44,6 +43,7 @@ class Trial(object):
         self.fullpath      = fullpath
         filename = os.path.split(fullpath)[1]
         self.display_name = get_unique_display_name(filename)
+        display_names.add(self.display_name)
         self.raw_traces    = format_traces(raw_traces)
         self._id = uuid.uuid4() 
 
@@ -94,10 +94,29 @@ class Trial(object):
             _settings[stage.name] = stage.settings
         return _settings
 
-    def reset_stage_results(self, message=None):
-        if message is not None:
-            stage_data = getattr(self, message.data)
-            stage_data.reset_results()
+    def get_archive(self, archive_name='archive'):
+        return_dict = {}
+        return_dict['raw_traces'] = self.raw_traces
+        # obscure the fullpath in archives for security reasons.
+        return_dict['fullpath'] = os.path.join(archive_name, self.display_name)
+        return_dict['sampling_freq'] = self.sampling_freq
+        for stage in self.stages:
+            return_dict[stage.name] = self.get_data_from_stage(stage.name)
+        return return_dict
+
+    def set_data_for_stage(self, stage_name, method=None, settings=None, 
+                                             results=None):
+        stage_data = self.get_stage_data(stage_name)
+        stage_data.method   = method
+        stage_data.settings = settings
+        stage_data.results  = results
+
+    def get_data_from_stage(self, stage_name):
+        stage_data = self.get_stage_data(stage_name)
+        return_dict = {'method': stage_data.method,
+                       'settings': stage_data.settings,
+                       'results': stage_data.results}
+        return return_dict
 
     def get_stage_data(self, stage_name):
         if stage_name == pt.DETECTION_FILTER:
@@ -130,7 +149,9 @@ class Trial(object):
         return can_run_list
 
     def rename(self, new_display_name):
+        display_names.remove(self.display_name)
         self.display_name = new_display_name
+        display_names.remove(new_display_name)
         pub.sendMessage(topic='TRIAL_RENAMED', data=self)
 
     def export(self, path=None, stages_selected=[], file_format=None):
@@ -274,12 +295,13 @@ class StageData(object):
     def publish_reinitialized(self):
         pub.sendMessage(topic='STAGE_REINITIALIZED', 
                         data=(self.trial, self.name))
+
     def reinitialize(self):
         if self.results is not None:
-            wx.CallLater(20, self.publish_reinitialized)
             self.results  = None
             self.settings = None
             self.method   = None
+            self.publish_reinitialized()
             for dependent in self.dependents:
                 dependent.reinitialize()
 

@@ -20,7 +20,6 @@ class RegistrationBasics(unittest.TestCase):
         _is_base_class = True
 
     class SelfRegisteringBase(AnotherBase):
-        __metaclass__ = RegisteringClass
         _skips_registration = False
         _is_base_class = True
 

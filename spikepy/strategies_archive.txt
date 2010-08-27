@@ -14,7 +14,7 @@
                 "using_sd_units": true, 
                 "threshold_2": -4.0, 
                 "refractory_time": 0.0, 
-                "threshold_1": 3.5
+                "threshold_1": 4.7999999999999998
             }, 
             "extraction": {
                 "post_padding": 1.5, 
@@ -22,7 +22,7 @@
                 "pre_padding": 1.5
             }, 
             "detection_filter": {
-                "critical_freq": 300.0, 
+                "critical_freq": 301.0, 
                 "taps": 101, 
                 "window_name": "hamming", 
                 "kind": "High Pass"
@@ -36,7 +36,7 @@
             "clustering": {
                 "threshold": 1e-08, 
                 "iterations": 30, 
-                "number_of_clusters": 2
+                "number_of_clusters": 3
             }
         }
     }, 

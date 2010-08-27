@@ -95,10 +95,10 @@ class ResultsPanel(wx.Panel):
 
     def _show_method_details(self, event=None):
         stage_name = self.name
-        fullpath = self.plot_panel._currently_shown
-        if fullpath == 'DEFAULT':
+        trial_id = self.plot_panel._currently_shown
+        if trial_id == 'DEFAULT':
             return
-        trial = self.plot_panel._trials[fullpath]
+        trial = self.plot_panel._trials[trial_id]
         stage_data = trial.get_stage_data(stage_name)
         method_name = stage_data.method
         if method_name is None:
