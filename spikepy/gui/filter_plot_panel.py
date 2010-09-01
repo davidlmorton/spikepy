@@ -5,7 +5,6 @@ import wx
 import numpy
 
 from .multi_plot_panel import MultiPlotPanel
-from .plot_panel import PlotPanel
 from .utils import adjust_axes_edges
 from .look_and_feel_settings import lfs
 from . import program_text as pt

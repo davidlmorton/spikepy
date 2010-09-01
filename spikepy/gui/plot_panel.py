@@ -56,44 +56,7 @@ class CustomToolbar(Toolbar):
         wx.EVT_TOOL(self, self.SHRINK_CANVAS_ID, self._shrink_canvas)
         self.EnableTool(self.SHRINK_CANVAS_ID, False)
         self.DeleteToolByPos(6)
-
-        # ---- Configure Printing ----
-
-        self.print_data = wx.PrintData()
-        self.print_data.SetPaperId(wx.PAPER_LETTER)
-        self.print_data.SetPrintMode(wx.PRINT_MODE_PRINTER)
-
-    def _print_preview(self, event=None):
-        data = self.print_data
-        printout = PlotPanelPrintout(self.canvas)
-        self.preview = wx.PrintPreview(printout, None, data)
-        preview_frame = wx.PreviewFrame(self.preview, None, "some text")
-        preview_frame.Initialize()
-        preview_frame.Show(True)
-
-    def _page_setup(self, event=None):
-        page_setup_data = wx.PageSetupDialogData(self.print_data)
-        page_setup_data.CalculatePaperSizeFromId()
-        dlg = wx.PageSetupDialog(self, page_setup_data)
-        dlg.ShowModal()
-        self.print_data = wx.PrintData(dlg.GetPageSetupData().GetPrintData())
-        dlg.Destroy()
-
-    def _print(self, event=None):
-        dlg = wx.PrintDialog(self)
-        printout = PlotPanelPrintout(self.canvas)
-        print_dialog_data = wx.PrintDialogData(self.print_data)
-        printer = wx.Printer(print_dialog_data)
-        if dlg.ShowModal() == wx.ID_OK:
-            printer.Print(self, printout)
-        dlg.Destroy()
-    
-    ######### Delete this block once matplotlib printing is abandoned ##
-    #def mpl_print_preview(self, event=None):
-    #    self.canvas.Printer_Preview(event=event)
-    #
-    #def mpl_print(self, event=None):
-    #    self.canvas.Printer_Setup(event=event)
+        self.canvas = canvas
 
     def _enlarge_canvas(self, event=None):
         plot_panel = self.plot_panel
@@ -124,6 +87,15 @@ class CustomToolbar(Toolbar):
         if hasattr(plot_panel.GetParent(), 'SetupScrolling'):
             plot_panel.GetParent().SetupScrolling()
         event.Skip()
+
+    def _print(self, event=None):
+        self.plot_panel.do_print()
+
+    def _print_preview(self, event=None):
+        pub.sendMessage(topic="PRINT_PREVIEW", data=self.canvas)
+
+    def _page_setup(self, event=None):
+        pub.sendMessage(topic="PAGE_SETUP", data=self.canvas)
 
 class PlotPanel (wx.Panel):
     def __init__(self, parent, toolbar_visible=False, **kwargs):
@@ -180,9 +152,71 @@ class PlotPanel (wx.Panel):
             self.hide_toolbar()
 
         self.Bind(wx.EVT_CONTEXT_MENU, self.toggle_toolbar)
+        
+        # ---- Setup Subscriptions
         pub.subscribe(self._toggle_toolbar, topic="TOGGLE_TOOLBAR")
         pub.subscribe(self._show_toolbar,   topic="SHOW_TOOLBAR")
         pub.subscribe(self._hide_toolbar,   topic="HIDE_TOOLBAR")
+
+        # ---- Configure Printing ----
+
+        self.print_data = wx.PrintData()
+        self.print_data.SetPaperId(wx.PAPER_LETTER)
+        self.print_data.SetPrintMode(wx.PRINT_MODE_PRINTER)
+        self.preview_frame_size = lfs.PRINT_PREVIEW_FRAME_SIZE
+        self.page_setup_data = wx.PageSetupDialogData()
+        self.preview_frame_pos = None
+
+    def do_print(self, data=None):
+        printout = PlotPanelPrintout(self.canvas)
+        print_dialog_data = wx.PrintDialogData(self.print_data)
+        printer = wx.Printer(print_dialog_data)
+        printer.Print(self, printout)
+        printout.Destroy()
+
+    def print_preview(self, event=None):
+        data = self.page_setup_data.GetPrintData()
+        if self.preview_frame_pos is not None:
+            pos = self.preview_frame_pos
+        else:
+            pos = wx.DefaultPosition
+        preview_printout = PlotPanelPrintout(self.canvas)
+        print_printout = PlotPanelPrintout(self.canvas)
+        self.preview = wx.PrintPreview(preview_printout, print_printout, data)
+        print self.preview.GetMaxPage()
+        preview_frame = wx.PreviewFrame(self.preview, None, pt.PRINT_PREVIEW, 
+                                        size=self.preview_frame_size, pos=pos)
+        preview_frame.Initialize()
+
+        page_setup_button = wx.Button(preview_frame, label=pt.PAGE_SETUP)
+        sizer = preview_frame.GetSizer()
+        sizer.Insert(1, page_setup_button, proportion=0)
+        preview_frame.Bind(wx.EVT_BUTTON, self._preview_page_setup, 
+                           page_setup_button)
+
+        preview_frame.Show(True)
+        self.preview_frame = preview_frame
+
+    def _preview_page_setup(self, event=None):
+        page_setup_data = wx.PageSetupDialogData(self.print_data)
+        page_setup_data.CalculatePaperSizeFromId() 
+        dlg = wx.PageSetupDialog(self, page_setup_data)
+        dlg.ShowModal()
+        self.page_setup_data = dlg.GetPageSetupData()
+        print self.print_data
+        dlg.Destroy()
+        self.preview_frame_size = self.preview_frame.GetSize()
+        self.preview_frame_pos = self.preview_frame.GetPosition()
+        self.preview_frame.Close()
+        self.print_preview()
+
+    def page_setup(self, event=None):
+        page_setup_data = wx.PageSetupDialogData(self.print_data)
+        page_setup_data.CalculatePaperSizeFromId()
+        dlg = wx.PageSetupDialog(self, page_setup_data)
+        dlg.ShowModal()
+        self.print_data = wx.PrintData(dlg.GetPageSetupData().GetPrintData())
+        dlg.Destroy()
 
     def set_minsize(self, figwidth, figheight):
         dpi = self.figure.get_dpi()

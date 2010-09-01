@@ -145,3 +145,8 @@ TRACE_NUMBER = "Trace Number"
 AVERAGE_SPIKE_SHAPES = "Average Spike Shapes"
 SPIKE_STDS = "Spike STDs"
 SPECIFIC_CLUSTER_NUMBER = "Cluster %d" # % cluster_num
+
+# --- Printing ---
+PRINT = "Print..."
+PRINT_PREVIEW = "Print Preview"
+PAGE_SETUP = "Page Setup..."

@@ -4,7 +4,6 @@ from wx.lib.pubsub import Publisher as pub
 import wx
 
 from .multi_plot_panel import MultiPlotPanel
-from .plot_panel import PlotPanel
 from .look_and_feel_settings import lfs
 from . import program_text as pt
 from .utils import adjust_axes_edges

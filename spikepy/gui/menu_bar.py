@@ -92,15 +92,12 @@ class SpikepyMenuBar(wx.MenuBar):
 
     def _print(self, event=None):
         pub.sendMessage(topic="PRINT", data=None)
-        pass
 
     def _print_preview(self, event=None):
         pub.sendMessage(topic="PRINT_PREVIEW", data=None)
-        pass
 
     def _page_setup(self, event=None):
         pub.sendMessage(topic="PAGE_SETUP", data=None)
-        pass
 
     def _export_marked(self, event=None):
         pub.sendMessage(topic="EXPORT_TRIALS", data="marked")

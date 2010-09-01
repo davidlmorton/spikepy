@@ -45,14 +45,40 @@ class ResultsNotebook(wx.Notebook):
                            'Clustering']
 
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self._page_changed)
+
+        # ---- Setup Subscriptions
         pub.subscribe(self._change_page, 
                       topic='STRATEGY_CHOICEBOOK_PAGE_CHANGED')
+        pub.subscribe(self._print,          topic="PRINT")
+        pub.subscribe(self._page_setup,     topic="PAGE_SETUP")
+        pub.subscribe(self._print_preview,  topic="PRINT_PREVIEW")
 
         self.results_panels = {'detection_filter':detection_filter_panel,
                                'detection':detection_panel,
                                'extraction_filter':extraction_filter_panel,
                                'extraction':extraction_panel,
                                'clustering':clustering_panel}
+
+    def get_currently_shown_plot_panel(self):
+        # the following code relies heavily on existing structure, maybe this
+        # isn't a good idea
+        current_multi_plot_panel = self.GetCurrentPage().plot_panel
+        plot_panels = current_multi_plot_panel._plot_panels
+        current_plot_panel_key = current_multi_plot_panel._currently_shown
+        return plot_panels[current_plot_panel_key]
+        
+
+    def _print(self, data=None):
+        current_plot_panel = self.get_currently_shown_plot_panel()
+        current_plot_panel.do_print()
+
+    def _print_preview(self, event=None):
+        current_plot_panel = self.get_currently_shown_plot_panel()
+        current_plot_panel.print_preview()
+    
+    def _page_setup(self, event=None):
+        current_plot_panel = self.get_currently_shown_plot_panel()
+        current_plot_panel.page_setup()
 
     def _page_changed(self, event=None):
         old_page_num  = event.GetOldSelection()

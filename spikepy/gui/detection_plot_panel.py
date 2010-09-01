@@ -6,7 +6,6 @@ import numpy
 from scipy import signal as scisig
 
 from .multi_plot_panel import MultiPlotPanel
-from .plot_panel import PlotPanel
 from .utils import rgb_to_matplotlib_color, adjust_axes_edges, clear_axes
 from .look_and_feel_settings import lfs
 from . import program_text as pt

@@ -21,7 +21,7 @@ class StrategyPane(ScrolledPanel):
         line = wx.StaticLine(self)
         stage_choicebook = wx.Choicebook(self, wx.ID_ANY)
 
-        # ===== PANELS =====
+        # ===== PANELS ====wx.EVT=
         detection_filter_panel = StagePanel(stage_choicebook, 
                                             stage_num=1,
                                             display_name=pt.DETECTION_FILTER,
@@ -221,7 +221,7 @@ class StagePanel(wx.Panel):
         self.method_chooser = NamedChoiceCtrl(self, name=pt.METHOD+":",
                                  choices=self.method_names)
 
-        # --- RUN BUTTON ---
+        # --- RUN BUTTONS ---
         button_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         self.run_all_button    = wx.Button(self, label=pt.RUN_ALL)
         self.run_marked_button = wx.Button(self, label=pt.RUN_MARKED)

@@ -21,6 +21,7 @@ class LookAndFeelSettings(object):
         self.STRATEGY_WAIT_TIME = 350 # in ms
 
         self.FILE_LIST_START_HEIGHT = 150
+        self.PRINT_PREVIEW_FRAME_SIZE = (690, 702)
 
         if wx.Platform == '__WXMAC__':
             self.FILE_LIST_MARKED_STATUS   = u'\u26AB'
