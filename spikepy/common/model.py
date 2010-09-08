@@ -8,6 +8,7 @@ from collections import defaultdict
 import wx
 from wx.lib.pubsub import Publisher as pub
 from wx.lib.delayedresult import startWorker
+import numpy
 
 from .open_data_file import open_data_file
 from .utils import pool_process, upsample_trace_list
@@ -268,6 +269,7 @@ class Model(object):
 
     def _extraction_consumer(self, delayed_result, trial):
         features_dict = delayed_result.get()
+        features_dict['features'] = numpy.array(features_dict['features'])
         trial.extraction.results = features_dict
         pub.sendMessage(topic='TRIAL_FEATURE_EXTRACTED', data=(trial,
                                                                'extraction'))

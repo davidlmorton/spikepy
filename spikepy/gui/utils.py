@@ -7,6 +7,9 @@ import cPickle
 
 import wx
 from wx.lib.pubsub import Publisher as pub
+import numpy
+from numpy.linalg import svd
+from matplotlib.ticker import MaxNLocator
 
 gui_folder  = os.path.split(__file__)[0]
 icon_folder = os.path.join(gui_folder, 'icons')
@@ -23,6 +26,22 @@ def clear_axes(axes, clear_tick_labels=False):
     if clear_tick_labels:
         axes.set_xticklabels([''], visible=False)   
         axes.set_yticklabels([''], visible=False)   
+
+def set_axes_num_ticks(axes, axis='both', num=5):
+    '''
+    Sets the number of labeled ticks on the specified axis of the axes.
+    Inputs:
+        axes        : a matplotlib Axes2D object
+        axis        : a string with either 'xaxis', 'yaxis', or 'both'
+        num         : the number of tickmarks you want on the specified axis.
+    Returns: None
+    '''
+    if axis == 'xaxis' or axis == 'both':
+        # NOTE the MaxNLocator sets the maximum number of *intervals*
+        #  so the max number of ticks will be one more.
+        axes.xaxis.set_major_locator(MaxNLocator(num-1))
+    if axis == 'yaxis' or axis == 'both':
+        axes.yaxis.set_major_locator(MaxNLocator(num-1))
 
 def adjust_axes_edges(axes, canvas_size_in_pixels=None, 
                             top=0.0, 
@@ -157,4 +176,40 @@ class PlotPanelPrintout(wx.Printout):
         
 
         self.canvas.draw(drawDC=dc)
+
+
+def pca(P):
+    """
+    Use singular value decomposition to determine the optimal
+    rotation of the basis to view data from.
+
+    Input:
+    P          : an m x n array of input data
+                (m trials, n measurements)
+                (m rows  , n columns)
+
+    Return value are
+    signals     : rotated view of the data.
+    pc          : each row is a principal component
+    var         : the variance associated with each pc
+                   this is the bias corrected variance using 
+                   m-1 instead of m.
+    """
+    # first we need to zero mean the data
+    m,n = P.shape
+    column_means = sum(P,0) / m
+    zmP = P - column_means
+
+    # generate the Y vector we will decompose
+    Y = zmP / numpy.sqrt(m-1)
+
+    # do the singular value decomposition
+    u,s,pc = svd(Y)
+    # find the variance along each principal axis
+    var = s**2
+
+    # The transformed data
+    signals = numpy.dot(pc,P.T).T
+
+    return signals, pc, var
 

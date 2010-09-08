@@ -2,11 +2,12 @@ import os
 
 from wx.lib.pubsub import Publisher as pub
 import wx
+import numpy
 
 from .multi_plot_panel import MultiPlotPanel
 from .look_and_feel_settings import lfs
 from . import program_text as pt
-from .utils import adjust_axes_edges
+from .utils import adjust_axes_edges, set_axes_num_ticks, pca
 
 class ExtractionPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
@@ -24,8 +25,9 @@ class ExtractionPlotPanel(MultiPlotPanel):
         pub.subscribe(self._trial_altered, topic='STAGE_REINITIALIZED')
         pub.subscribe(self._trial_renamed,  topic='TRIAL_RENAMED')
 
-        self._trials       = {}
-        self._feature_axes = {}
+        self._trials        = {}
+        self._feature_axes  = {}
+        self._pca_axes_list = {}
 
     def _remove_trial(self, message=None):
         trial_id = message.data
@@ -39,7 +41,8 @@ class ExtractionPlotPanel(MultiPlotPanel):
 
         trial_id = trial.trial_id
         self._trials[trial_id] = trial
-        self.add_plot(trial_id, figsize=self._figsize, 
+        figsize = (self._figsize[0], self._figsize[1]*2)
+        self.add_plot(trial_id, figsize=figsize, 
                                 facecolor=self._facecolor,
                                 edgecolor=self._facecolor,
                                 dpi=self._dpi)
@@ -72,13 +75,50 @@ class ExtractionPlotPanel(MultiPlotPanel):
         figure = self._plot_panels[trial_id].figure
         
         self._plot_features(trial, figure, trial_id)
+        self._plot_pcas(trial, figure, trial_id)
 
         self.draw_canvas(trial_id)
 
     def _create_axes(self, trial, figure, trial_id):
-        axes = self._feature_axes[trial_id] = figure.add_subplot(1,1,1)
+        fa = self._feature_axes[trial_id] = figure.add_subplot(2,1,1)
+        self._pca_axes_list[trial_id] = []
+        for i in [1,2,3]:
+            axes = figure.add_subplot(2,3,3+i)
+            self._pca_axes_list[trial_id].append(axes)
         canvas_size = self._plot_panels[trial_id].GetMinSize()
         lfs.default_adjust_subplots(figure, canvas_size)
+        adjust_axes_edges(fa, canvas_size, bottom=lfs.AXES_BOTTOM)
+        # give room for yticklabels on pca plots
+        adjust_axes_edges(self._pca_axes_list[trial_id][0], canvas_size,
+                          right=2*lfs.AXES_LEFT/3)
+        adjust_axes_edges(self._pca_axes_list[trial_id][1], canvas_size,
+                          left=lfs.AXES_LEFT/3)
+        adjust_axes_edges(self._pca_axes_list[trial_id][1], canvas_size,
+                          right=lfs.AXES_LEFT/3)
+        adjust_axes_edges(self._pca_axes_list[trial_id][2], canvas_size,
+                          left=2*lfs.AXES_LEFT/3)
+
+    def _plot_pcas(self, trial, figure, trial_id):
+
+        trial = self._trials[trial_id]
+        if trial.extraction.results is not None:
+            features = trial.extraction.results['features']
+        else:
+            return
+
+        rotated_features, pc, var = pca(features)
+        pct_var = [tvar/sum(var)*100.0 for tvar in var]
+        trf = rotated_features.T
+
+        pc_x = [2,3,3] # which pc is associated with what axis.
+        pc_y = [1,1,2]
+        for i, axes in enumerate(self._pca_axes_list[trial_id]):
+            axes.clear()
+            axes.set_ylabel(pt.PCA_LABEL % (pc_y[i], pct_var[pc_y[i]-1], '%'))
+            axes.set_xlabel(pt.PCA_LABEL % (pc_x[i], pct_var[pc_x[i]-1], '%'))
+            axes.plot(trf[pc_x[i]-1], trf[pc_y[i]-1], color='black', 
+                                      linewidth=0, marker='.')
+            set_axes_num_ticks(axes, axis='both', num=4)
 
     def _plot_features(self, trial, figure, trial_id):
         axes = self._feature_axes[trial_id]
@@ -99,7 +139,7 @@ class ExtractionPlotPanel(MultiPlotPanel):
         axes.set_autoscale_on(True)
         for feature in features:
             axes.plot(feature, linewidth=lfs.PLOT_LINEWIDTH_4,
-                               marker='.', color="k", alpha=.2)
+                               color="black", alpha=0.2)
         axes.set_xlim((0,len(features[0])-1))
 
         # EXTRACTED FEATURE INFO

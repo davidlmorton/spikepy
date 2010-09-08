@@ -101,6 +101,8 @@ CLUSTERING = "Clustering"
 FEATURE_AMPLITUDE = "Feature Amplitude"
 FEATURE_INDEX = "Feature Index"
 FEATURE_SETS = "Feature Sets"
+PCA_LABEL = 'Principal Component %d (%3.1f%s)' #%(component_num, 
+                                               #  percent_variance,'%')
 FOUND = 'Found: '
 EXCLUDED = "Excluded: "
 SHOW_CURSOR_POSITION = "Show Cursor Position"
