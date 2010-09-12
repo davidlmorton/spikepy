@@ -1,7 +1,7 @@
 import wx
 import numpy
 
-from .utils import rgb_to_matplotlib_color
+from .utils import normalize_rgb_color
 
 base_size = numpy.array((1440, 900)) 
 
@@ -32,20 +32,20 @@ class LookAndFeelSettings(object):
 
         self.TRIAL_NAME_COL_WIDTH = self.STRATEGY_PANE_MIN_SIZE[0]-50
 
-        self.PLOT_FACECOLOR = rgb_to_matplotlib_color(255, 255, 255, 255)
+        self.PLOT_FACECOLOR = normalize_rgb_color(255, 255, 255, 255)
         self.PLOT_LINEWIDTH_1 = 1.5
         self.PLOT_LINEWIDTH_2 = 2.5
         self.PLOT_LINEWIDTH_3 = 2.5
         self.PLOT_LINEWIDTH_4 = 0.7 # for features
         self.PLOT_STD_LINEWIDTH = 0.7
-        self.PLOT_STD_LINE_COLOR = rgb_to_matplotlib_color(0, 0, 0)
-        self.PLOT_COLOR_1 = rgb_to_matplotlib_color(0, 0, 0)
+        self.PLOT_STD_LINE_COLOR = normalize_rgb_color(0, 0, 0)
+        self.PLOT_COLOR_1 = normalize_rgb_color(0, 0, 0)
         # a nice bluish color
-        self.PLOT_COLOR_2 = rgb_to_matplotlib_color(69, 109, 255)
+        self.PLOT_COLOR_2 = normalize_rgb_color(69, 109, 255)
         self.PLOT_COLOR_2_light = '#87CEFF'
         # amber/orange
-        self.PLOT_COLOR_3 = rgb_to_matplotlib_color(255, 189, 63)
-        self.SPIKE_RASTER_COLOR = rgb_to_matplotlib_color(0, 0, 0)
+        self.PLOT_COLOR_3 = normalize_rgb_color(255, 189, 63)
+        self.SPIKE_RASTER_COLOR = normalize_rgb_color(0, 0, 0)
         self.SPIKE_RASTER_ON_TRACES_POSITION = 'center' # top, bottom, or center
         self.SPIKE_RASTER_ON_RATE_POSITION   = 'bottom' # top, bottom, or center
         self.SPIKE_RASTER_WIDTH              = 1.5
@@ -72,6 +72,9 @@ class LookAndFeelSettings(object):
         self.PYSHELL_DIALOG_SIZE = (500, 400)
 
         self.CONTROL_PANEL_BORDER = 0
+
+
+
         
     def get_size_ratio(self):
         if self._have_size_ratio:

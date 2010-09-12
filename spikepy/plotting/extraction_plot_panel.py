@@ -4,10 +4,11 @@ from wx.lib.pubsub import Publisher as pub
 import wx
 import numpy
 
-from .multi_plot_panel import MultiPlotPanel
-from .look_and_feel_settings import lfs
-from . import program_text as pt
-from .utils import adjust_axes_edges, set_axes_num_ticks, pca
+from spikepy.plotting.multi_plot_panel import MultiPlotPanel
+from spikepy.gui.look_and_feel_settings import lfs
+from spikepy.gui import program_text as pt
+from spikepy.plotting.utils import adjust_axes_edges, set_axes_num_ticks
+from spikepy.common.utils import pca
 
 class ExtractionPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):

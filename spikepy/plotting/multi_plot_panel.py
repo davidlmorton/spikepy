@@ -1,9 +1,9 @@
 import wx
-from .plot_panel import PlotPanel
+from spikepy.plotting.plot_panel import PlotPanel
 from wx.lib.pubsub import Publisher as pub
 from wx.lib.scrolledpanel import ScrolledPanel
 
-from . import program_text as pt
+from spikepy.gui import program_text as pt
 
 class MultiPlotPanel(ScrolledPanel):
     def __init__(self, parent, toolbar_visible=False, **kwargs):

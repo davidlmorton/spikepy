@@ -1,14 +1,14 @@
 import wx
 from wx.lib.pubsub import Publisher as pub
 
-from .filter_plot_panel import FilterPlotPanel
-from .detection_plot_panel import DetectionPlotPanel
-from .extraction_plot_panel import ExtractionPlotPanel
-from .clustering_plot_panel import ClusteringPlotPanel
-from .look_and_feel_settings import lfs
-from . import program_text as pt
-from ..stages import filtering, detection, extraction, clustering
-from .utils import SinglePanelFrame
+from spikepy.plotting.filter_plot_panel import FilterPlotPanel
+from spikepy.plotting.detection_plot_panel import DetectionPlotPanel
+from spikepy.plotting.extraction_plot_panel import ExtractionPlotPanel
+from spikepy.plotting.clustering_plot_panel import ClusteringPlotPanel
+from spikepy.gui.look_and_feel_settings import lfs
+from spikepy.gui import program_text as pt
+from spikepy.stages import filtering, detection, extraction, clustering
+from spikepy.gui.utils import SinglePanelFrame
 
 plot_panels = {"detection_filter" : FilterPlotPanel,
                "detection"        : DetectionPlotPanel,

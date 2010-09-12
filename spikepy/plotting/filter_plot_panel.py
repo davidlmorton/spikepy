@@ -4,10 +4,10 @@ from wx.lib.pubsub import Publisher as pub
 import wx
 import numpy
 
-from .multi_plot_panel import MultiPlotPanel
-from .utils import adjust_axes_edges
-from .look_and_feel_settings import lfs
-from . import program_text as pt
+from spikepy.plotting.multi_plot_panel import MultiPlotPanel
+from spikepy.plotting.utils import adjust_axes_edges
+from spikepy.gui.look_and_feel_settings import lfs
+from spikepy.gui import program_text as pt
 
 class FilterPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):

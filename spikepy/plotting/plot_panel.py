@@ -10,9 +10,10 @@ import wx
 from wx.lib.scrolledpanel import ScrolledPanel
 from wx.lib.pubsub import Publisher as pub
 
-from .utils import get_bitmap_icon, PlotPanelPrintout
-from . import program_text as pt
-from .look_and_feel_settings import lfs
+from spikepy.gui.utils import get_bitmap_icon
+from spikepy.plotting.utils import PlotPanelPrintout
+from spikepy.gui import program_text as pt
+from spikepy.gui.look_and_feel_settings import lfs
 
 class CustomToolbar(Toolbar):
     """

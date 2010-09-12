@@ -6,10 +6,10 @@ import wx
 import numpy
 import scipy
 
-from .multi_plot_panel import MultiPlotPanel
-from .look_and_feel_settings import lfs
-from . import program_text as pt
-from .utils import adjust_axes_edges
+from spikepy.plotting.multi_plot_panel import MultiPlotPanel
+from spikepy.gui.look_and_feel_settings import lfs
+from spikepy.gui import program_text as pt
+from spikepy.plotting.utils import adjust_axes_edges
 
 class ClusteringPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):

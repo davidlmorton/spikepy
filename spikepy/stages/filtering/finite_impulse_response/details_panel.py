@@ -4,7 +4,7 @@ import wx
 import scipy.signal as scisig
 
 from spikepy.gui.named_controls import NamedChoiceCtrl
-from spikepy.gui.plot_panel import PlotPanel
+from spikepy.plotting.plot_panel import PlotPanel
 from spikepy.gui.look_and_feel_settings import lfs
 from .simple_fir import make_fir_filter
 from wx.lib.scrolledpanel import ScrolledPanel

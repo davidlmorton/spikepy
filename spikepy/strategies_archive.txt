@@ -18,7 +18,7 @@
             }, 
             "extraction": {
                 "post_padding": 1.5, 
-                "exclude_overlappers": true, 
+                "exclude_overlappers": false, 
                 "pre_padding": 1.5
             }, 
             "detection_filter": {
