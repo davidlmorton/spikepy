@@ -151,7 +151,6 @@ class Trial(object):
     def rename(self, new_display_name):
         display_names.remove(self.display_name)
         self.display_name = new_display_name
-        display_names.remove(new_display_name)
         pub.sendMessage(topic='TRIAL_RENAMED', data=self)
 
     def export(self, path=None, stages_selected=[], file_format=None):
