@@ -5,6 +5,7 @@ from spikepy.plotting.filter_plot_panel import FilterPlotPanel
 from spikepy.plotting.detection_plot_panel import DetectionPlotPanel
 from spikepy.plotting.extraction_plot_panel import ExtractionPlotPanel
 from spikepy.plotting.clustering_plot_panel import ClusteringPlotPanel
+from spikepy.plotting.summary_plot_panel import SummaryPlotPanel
 from spikepy.gui.look_and_feel_settings import lfs
 from spikepy.gui import program_text as pt
 from spikepy.stages import filtering, detection, extraction, clustering
@@ -14,13 +15,16 @@ plot_panels = {"detection_filter" : FilterPlotPanel,
                "detection"        : DetectionPlotPanel,
                "extraction_filter": FilterPlotPanel,
                "extraction"       : ExtractionPlotPanel,
-               "clustering"       : ClusteringPlotPanel}
+               "clustering"       : ClusteringPlotPanel,
+               "summary"          : SummaryPlotPanel}
 
+# FIXME only used by details panel, which needs to be delegated.
 stage_modules = {"detection_filter"  : filtering,
                  "detection"         : detection,
                  "extraction_filter" : filtering,
                  "extraction"        : extraction,
-                 "clustering"        : clustering}
+                 "clustering"        : clustering,
+                 "summary"           : clustering}
 
 class ResultsNotebook(wx.Notebook):
     def __init__(self, parent, **kwargs):
@@ -31,18 +35,14 @@ class ResultsNotebook(wx.Notebook):
         extraction_filter_panel = ResultsPanel(self, "extraction_filter")
         extraction_panel = ResultsPanel(self,        "extraction")
         clustering_panel = ResultsPanel(self,        "clustering")
+        summary_panel = ResultsPanel(self,           "summary")
         
         self.AddPage(detection_filter_panel,  pt.DETECTION_FILTER)
         self.AddPage(detection_panel,         pt.DETECTION)
         self.AddPage(extraction_filter_panel, pt.EXTRACTION_FILTER)
         self.AddPage(extraction_panel,        pt.EXTRACTION)
         self.AddPage(clustering_panel,        pt.CLUSTERING)
-
-        self.page_names = ['Detection Filter',
-                           'Detection', 
-                           'Extraction Filter',
-                           'Extraction',
-                           'Clustering']
+        self.AddPage(summary_panel,           pt.SUMMARY)
 
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self._page_changed)
 
@@ -53,11 +53,13 @@ class ResultsNotebook(wx.Notebook):
         pub.subscribe(self._page_setup,     topic="PAGE_SETUP")
         pub.subscribe(self._print_preview,  topic="PRINT_PREVIEW")
 
+        # this is here for debugging in the pyflake shell
         self.results_panels = {'detection_filter':detection_filter_panel,
                                'detection':detection_panel,
                                'extraction_filter':extraction_filter_panel,
                                'extraction':extraction_panel,
-                               'clustering':clustering_panel}
+                               'clustering':clustering_panel,
+                               'summary':summary_panel}
 
     def get_currently_shown_plot_panel(self):
         # the following code relies heavily on existing structure, maybe this
@@ -83,8 +85,6 @@ class ResultsNotebook(wx.Notebook):
     def _page_changed(self, event=None):
         old_page_num  = event.GetOldSelection()
         new_page_num  = event.GetSelection()
-        old_page_name = self.page_names[old_page_num]
-        new_page_name = self.page_names[new_page_num]
         pub.sendMessage(topic='RESULTS_NOTEBOOK_PAGE_CHANGING', 
                         data=(old_page_num, new_page_num))
         event.Skip()
@@ -120,6 +120,7 @@ class ResultsPanel(wx.Panel):
             plot_panel._report_coordinates = report_coordinates
 
     def _show_method_details(self, event=None):
+        # FIXME should be delegated via pubsub
         stage_name = self.name
         trial_id = self.plot_panel._currently_shown
         if trial_id == 'DEFAULT':

@@ -11,7 +11,7 @@ from spikepy.gui.look_and_feel_settings import lfs
 from spikepy.gui import program_text as pt
 from spikepy.plotting.utils import adjust_axes_edges
 
-class ClusteringPlotPanel(MultiPlotPanel):
+class SummaryPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
         self._dpi       = lfs.PLOT_DPI
         self._figsize   = lfs.PLOT_FIGSIZE
@@ -23,8 +23,8 @@ class ClusteringPlotPanel(MultiPlotPanel):
                                               dpi=self._dpi)
         pub.subscribe(self._remove_trial,  topic="REMOVE_PLOT")
         pub.subscribe(self._trial_added,   topic='TRIAL_ADDED')
-        pub.subscribe(self._trial_altered, topic='STAGE_REINITIALIZED')
         pub.subscribe(self._trial_altered, topic='TRIAL_CLUSTERED')
+        pub.subscribe(self._trial_altered, topic='STAGE_REINITIALIZED')
         pub.subscribe(self._trial_renamed,  topic='TRIAL_RENAMED')
 
         self._trials = {}
@@ -58,7 +58,7 @@ class ClusteringPlotPanel(MultiPlotPanel):
 
     def _trial_altered(self, message=None):
         trial, stage_name = message.data
-        if stage_name != self.name:
+        if stage_name != 'clustering':
             return
         trial_id = trial.trial_id
         if trial_id == self._currently_shown:
@@ -225,16 +225,8 @@ class ClusteringPlotPanel(MultiPlotPanel):
             self.std_axes.plot(times, stds, 
                           label=pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)
 
-
     def _get_averages_and_stds(self, trial):
-        times = trial.clustering.results
-        feature_list  = trial.extraction.results['features']
-        feature_times = trial.extraction.results['feature_times']
-        features = defaultdict(list)
-        for cluster_num, time_list in times.items():
-            for time in time_list:
-                feature_list_index = feature_times.index(time) 
-                features[cluster_num].append(feature_list[feature_list_index])
+        features = trial.get_clustered_features()
         return_dict = {}
         for key in features.keys():
             features[key] = numpy.array(features[key])

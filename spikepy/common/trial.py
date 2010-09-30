@@ -13,6 +13,7 @@ import scipy.io
 from spikepy.gui.strategy_manager import make_strategy
 import spikepy.gui.program_text as pt
 from spikepy.common.utils import save_list_txt
+from spikepy.common.utils import pca
 
 text_delimiters = {pt.PLAIN_TEXT_TABS: '\t',
                    pt.PLAIN_TEXT_SPACES: ' ',
@@ -147,6 +148,33 @@ class Trial(object):
             if can_run:
                 can_run_list.append(stage.name)
         return can_run_list
+
+    def get_pca_rotated_features(self):
+        if self.extraction.results is None:
+            raise RuntimeError('Trial with trial_id:%s does not have extraction results, so cannot find pca_rotated features.' % self.trial_id)
+        features = self.extraction.results['features']
+        rotated_features, pc, var = pca(features)
+        return rotated_features, pc, var
+
+    def get_clustered_features(self, pca_rotated=False):
+        if self.extraction.results is None or self.clustering.results is None:
+            raise RuntimeError('Trial with trial_id:%s does not have extraction or clustering results, so cannot find clustered features.' % self.trial_id)
+        times = self.clustering.results
+        if pca_rotated:
+            feature_list, pc, var = self.get_pca_rotated_features()
+        else:
+            feature_list = self.extraction.results['features']
+        feature_times = self.extraction.results['feature_times']
+        features = defaultdict(list)
+        for cluster_num, time_list in times.items():
+            for time in time_list:
+                feature_list_index = feature_times.index(time) 
+                features[cluster_num].append(feature_list[feature_list_index])
+            features[cluster_num] = numpy.array(features[cluster_num])
+        if pca_rotated:
+            return features, pc, var
+        else:
+            return features
 
     def rename(self, new_display_name):
         display_names.remove(self.display_name)

@@ -97,6 +97,7 @@ DETECTION = "Spike Detection"
 EXTRACTION_FILTER = "Extraction Filter"
 EXTRACTION = "Feature Extraction"
 CLUSTERING = "Clustering"
+SUMMARY = "Summary"
 
 FEATURE_AMPLITUDE = "Feature Amplitude"
 FEATURE_INDEX = "Feature Index"
@@ -145,6 +146,7 @@ NAME_CANNOT_BEGIN_WITH = 'The name cannot begin with "."'
 CLUSTER_NUMBER = "Cluster Number"
 TRACE_NUMBER = "Trace Number"
 AVERAGE_SPIKE_SHAPES = "Average Spike Shapes"
+AVERAGE_OF = "Average of %d" # % number_of_spikes_in_cluster
 SPIKE_STDS = "Spike STDs"
 SPECIFIC_CLUSTER_NUMBER = "Cluster %d" # % cluster_num
 

@@ -61,6 +61,7 @@ class LookAndFeelSettings(object):
         self.PLOT_TOP_BORDER         = 35.0 # pixels
         self.PLOT_BOTTOM_BORDER      = 35.0 # pixels
         self.PLOT_DPI = 72.0
+        self.COLOR_CYCLE = ['b','r','g','c','m','y','k']
 
         # cluster plot panel specifics
         self.CLUSTER_RIGHT_YLABEL = 25.0 # pixels
@@ -73,9 +74,11 @@ class LookAndFeelSettings(object):
 
         self.CONTROL_PANEL_BORDER = 0
 
-
-
         
+    def get_color_from_cycle(self, number):
+        len_color_cycle = len(self.COLOR_CYCLE)
+        return self.COLOR_CYCLE[number % len_color_cycle]
+
     def get_size_ratio(self):
         if self._have_size_ratio:
             return self._size_ratio

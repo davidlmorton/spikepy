@@ -107,7 +107,7 @@ class ExtractionPlotPanel(MultiPlotPanel):
         else:
             return
 
-        rotated_features, pc, var = pca(features)
+        rotated_features, pc, var = trial.get_pca_rotated_features()
         pct_var = [tvar/sum(var)*100.0 for tvar in var]
         trf = rotated_features.T
 

@@ -21,7 +21,7 @@ class StrategyPane(ScrolledPanel):
         line = wx.StaticLine(self)
         stage_choicebook = wx.Choicebook(self, wx.ID_ANY)
 
-        # ===== PANELS ====wx.EVT=
+        # ===== PANELS ====
         detection_filter_panel = StagePanel(stage_choicebook, 
                                             stage_num=1,
                                             display_name=pt.DETECTION_FILTER,
@@ -103,7 +103,8 @@ class StrategyPane(ScrolledPanel):
             
     def _results_notebook_page_changing(self, message=None):
         old_page_num, new_page_num = message.data
-        self.stage_choicebook.SetSelection(new_page_num)
+        if new_page_num < 5: # don't try to change if changing to summary
+            self.stage_choicebook.SetSelection(new_page_num)
 
     def _page_changed(self, event=None):
         if event is not None:
