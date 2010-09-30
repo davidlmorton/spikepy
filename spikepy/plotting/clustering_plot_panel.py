@@ -72,7 +72,11 @@ class ClusteringPlotPanel(MultiPlotPanel):
         trial = self._trials[trial_id]
         if trial.clustering.results is not None:
             num_clusters = len(trial.clustering.results.keys())
-            num_cluster_combinations = nchoosek(num_clusters, 2)
+            assert num_clusters > 0
+            if num_clusters > 1:
+                num_cluster_combinations = nchoosek(num_clusters, 2)
+            else:
+                num_cluster_combinations = 1
             old_minsize = self._plot_panels[trial_id].GetMinSize()
             figwidth = self._figsize[0]
             figheight = self._figsize[1]*(num_cluster_combinations+2)

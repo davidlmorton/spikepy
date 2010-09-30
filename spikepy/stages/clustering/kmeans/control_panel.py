@@ -28,7 +28,7 @@ class ControlPanel(wx.Panel):
         iterations.SetRange((10,10000))
         iterations.SetValue(30)
         threshold.SetValue(str(1.0e-8))
-        number_of_clusters.SetRange((2, 15))
+        number_of_clusters.SetRange((1, 15))
         number_of_clusters.SetValue(2)
 
     def set_parameters(self, iterations=30, threshold=str(1.0e-8), 
