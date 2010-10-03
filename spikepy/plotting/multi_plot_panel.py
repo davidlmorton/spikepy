@@ -1,9 +1,12 @@
+import weakref
+
 import wx
-from spikepy.plotting.plot_panel import PlotPanel
 from wx.lib.pubsub import Publisher as pub
 from wx.lib.scrolledpanel import ScrolledPanel
+from matplotlib.pyplot import close
 
 from spikepy.gui import program_text as pt
+from spikepy.plotting.plot_panel import PlotPanel
 
 class MultiPlotPanel(ScrolledPanel):
     def __init__(self, parent, toolbar_visible=False, **kwargs):
@@ -18,7 +21,7 @@ class MultiPlotPanel(ScrolledPanel):
         """
         ScrolledPanel.__init__(self, parent)
 
-        self._plot_panels = {}
+        self._plot_panels = weakref.WeakValueDictionary()
         kwargs['toolbar_visible'] = toolbar_visible
         self._plot_kwargs = kwargs
         self._currently_shown = 'DEFAULT'
@@ -54,6 +57,7 @@ class MultiPlotPanel(ScrolledPanel):
         self._plot_panels[key].Show(False)
         self.Layout()
 
+
     def plot(self, key):
         '''
         to be overwritten in subclass
@@ -74,8 +78,8 @@ class MultiPlotPanel(ScrolledPanel):
         removed_panel_key = message.data
         if removed_panel_key == self._currently_shown:
             self._show_plot(new_panel_key='DEFAULT')
+        close(self._plot_panels[removed_panel_key].figure)
         self._plot_panels[removed_panel_key].Destroy()
-        del self._plot_panels[removed_panel_key]
 
     def _show_plot(self, message=None, new_panel_key=None):
         if new_panel_key is None:

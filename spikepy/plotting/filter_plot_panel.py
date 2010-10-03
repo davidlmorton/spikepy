@@ -1,4 +1,5 @@
 import os
+import weakref
 
 from wx.lib.pubsub import Publisher as pub
 import wx
@@ -19,7 +20,6 @@ class FilterPlotPanel(MultiPlotPanel):
                                               facecolor=self._facecolor,
                                               edgecolor=self._facecolor,
                                               dpi=self._dpi)
-        pub.subscribe(self._remove_trial,   topic="REMOVE_PLOT")
         pub.subscribe(self._trial_added,    topic='TRIAL_ADDED')
         pub.subscribe(self._trial_filtered, topic='TRIAL_FILTERED')
         pub.subscribe(self._trial_renamed,  topic='TRIAL_RENAMED')
@@ -31,17 +31,9 @@ class FilterPlotPanel(MultiPlotPanel):
             self.line_color = lfs.PLOT_COLOR_3
             self.line_width = lfs.PLOT_LINEWIDTH_3
 
-        self._trials = {}
+        self._trials = weakref.WeakValueDictionary()
         self._trace_axes = {}
         self._psd_axes = {}
-
-    def _remove_trial(self, message=None):
-        trial_id = message.data
-        del self._trials[trial_id]
-        if trial_id in self._trace_axes.keys():
-            del self._trace_axes[trial_id]
-        if trial_id in self._psd_axes.keys():
-            del self._psd_axes[trial_id]
 
     def _trial_added(self, message=None, trial=None):
         if message is not None:
