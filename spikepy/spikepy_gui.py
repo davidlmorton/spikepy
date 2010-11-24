@@ -8,13 +8,15 @@ class MySplashScreen(wx.SplashScreen):
 
 if __name__ == '__main__':
     def startup():
+        ''' Run after splash screen has loaded '''
         from spikepy.gui.controller import Controller
         controller = Controller()
         controller.setup_subscriptions()
         wx.CallLater(1000, splash_screen.Destroy)
-    from spikepy.gui.utils import get_bitmap_icon
 
     app = wx.App(redirect=False)
+
+    from spikepy.gui.utils import get_bitmap_icon
     splash_screen = MySplashScreen(image=get_bitmap_icon('spikepy_splash'), 
                                    splash_style=wx.SPLASH_CENTRE_ON_SCREEN, 
                                    timeout=1000, 
