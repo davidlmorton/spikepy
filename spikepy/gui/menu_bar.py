@@ -5,7 +5,6 @@ import wx.aui
 from wx.lib.pubsub import Publisher as pub
 from wx.lib.wordwrap import wordwrap
 
-from spikepy.gui.utils import get_bitmap_icon
 from spikepy.plotting.utils import PlotPanelPrintout
 from spikepy.gui.pyshell import PyShellDialog
 from spikepy.gui.look_and_feel_settings import lfs
@@ -178,9 +177,6 @@ class SpikepyMenuBar(wx.MenuBar):
     def _about_box(self, event):
         # dialog box to open when "About" is clicked
         info = wx.AboutDialogInfo()
-        icon = wx.EmptyIcon() 
-        icon.CopyFromBitmap(get_bitmap_icon('spikepy_splash'))
-        info.Icon = icon
         info.Name = "Spikepy"
         info.Version = "0.0"
         line_width_in_pixels = 350

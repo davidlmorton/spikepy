@@ -10,7 +10,7 @@ import wx
 from wx.lib.scrolledpanel import ScrolledPanel
 from wx.lib.pubsub import Publisher as pub
 
-from spikepy.gui.utils import get_bitmap_icon
+from spikepy.gui.utils import get_bitmap_image
 from spikepy.plotting.utils import PlotPanelPrintout
 from spikepy.gui import program_text as pt
 from spikepy.gui.look_and_feel_settings import lfs
@@ -25,33 +25,33 @@ class CustomToolbar(Toolbar):
         self.plot_panel = plot_panel
 
         self.PRINT_ID = wx.NewId()
-        self.AddSimpleTool(self.PRINT_ID, get_bitmap_icon('printer'),
+        self.AddSimpleTool(self.PRINT_ID, get_bitmap_image('printer'),
                            shortHelpString="Print",
                            longHelpString="PRINT")
         wx.EVT_TOOL(self, self.PRINT_ID, self._print)
 
         self.PRINT_ID2 = wx.NewId()
-        self.AddSimpleTool(self.PRINT_ID2, get_bitmap_icon('printer'),
+        self.AddSimpleTool(self.PRINT_ID2, get_bitmap_image('printer'),
                            shortHelpString="Page setup",
                            longHelpString="PRINT")
         wx.EVT_TOOL(self, self.PRINT_ID2, self._page_setup)
 
         self.PRINT_ID3 = wx.NewId()
-        self.AddSimpleTool(self.PRINT_ID3, get_bitmap_icon('printer'),
+        self.AddSimpleTool(self.PRINT_ID3, get_bitmap_image('printer'),
                            shortHelpString="print preview",
                            longHelpString="PRINT")
         wx.EVT_TOOL(self, self.PRINT_ID3, self._print_preview)
 
         self.ENLARGE_CANVAS_ID = wx.NewId()
         self.AddSimpleTool(self.ENLARGE_CANVAS_ID, 
-                           get_bitmap_icon('arrow_out'),
+                           get_bitmap_image('arrow_out'),
                            shortHelpString=pt.ENLARGE_CANVAS,
                            longHelpString=pt.ENLARGE_FIGURE_CANVAS)
         wx.EVT_TOOL(self, self.ENLARGE_CANVAS_ID, self._enlarge_canvas)
 
         self.SHRINK_CANVAS_ID = wx.NewId()
         self.AddSimpleTool(self.SHRINK_CANVAS_ID, 
-                           get_bitmap_icon('arrow_in'),
+                           get_bitmap_image('arrow_in'),
                            shortHelpString=pt.SHRINK_CANVAS,
                            longHelpString=pt.SHRINK_FIGURE_CANVAS)
         wx.EVT_TOOL(self, self.SHRINK_CANVAS_ID, self._shrink_canvas)

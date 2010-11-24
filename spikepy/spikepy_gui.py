@@ -1,4 +1,5 @@
 import wx
+from gui import spikepy_splash_image as spi
 
 class MySplashScreen(wx.SplashScreen):
     def __init__(self, image=None, splash_style=None, timeout=None, 
@@ -16,8 +17,8 @@ if __name__ == '__main__':
 
     app = wx.App(redirect=False)
 
-    from spikepy.gui.utils import get_bitmap_icon
-    splash_screen = MySplashScreen(image=get_bitmap_icon('spikepy_splash'), 
+    image = spi.spikepy_splash.Image.ConvertToBitmap()
+    splash_screen = MySplashScreen(image=image, 
                                    splash_style=wx.SPLASH_CENTRE_ON_SCREEN, 
                                    timeout=1000, 
                                    parent=None)

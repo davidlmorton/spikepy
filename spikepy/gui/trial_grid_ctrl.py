@@ -199,8 +199,6 @@ class TrialGridCtrl(gridlib.Grid):
             item = wx.MenuItem(cm, self._cmid_open_file, pt.OPEN_ANOTHER_FILE)
         else:
             item = wx.MenuItem(cm, self._cmid_open_file, pt.OPEN)
-        bmp = utils.get_bitmap_icon('folder')
-        item.SetBitmap(bmp)
         cm.AppendItem(item)
 
         # rename_trial item
@@ -209,8 +207,6 @@ class TrialGridCtrl(gridlib.Grid):
         else:
             item = wx.MenuItem(cm, self._cmid_rename_trial, pt.RENAME_TRIAL+
                                ' (%s)' % trial_name)
-        bmp = utils.get_bitmap_icon('text_signature')
-        item.SetBitmap(bmp)
         cm.AppendItem(item)
         if row >= self._num_nonempty_rows:
             cm.Enable(self._cmid_rename_trial, False)
@@ -222,8 +218,6 @@ class TrialGridCtrl(gridlib.Grid):
         else:
             item = wx.MenuItem(cm, self._cmid_close_this_trial, 
                                pt.CLOSE_THIS_TRIAL)
-        bmp = utils.get_bitmap_icon('action_stop')
-        item.SetBitmap(bmp)
         cm.AppendItem(item)
         if row >= self._num_nonempty_rows:
             cm.Enable(self._cmid_close_this_trial, False)
@@ -231,8 +225,6 @@ class TrialGridCtrl(gridlib.Grid):
         # close marked trials item
         item = wx.MenuItem(cm, self._cmid_close_marked_trials, 
                                pt.CLOSE_MARKED_TRIALS)
-        bmp = utils.get_bitmap_icon('action_stop')
-        item.SetBitmap(bmp)
         cm.AppendItem(item)
         if not self.marked_trial_ids:
             cm.Enable(self._cmid_close_marked_trials, False)
