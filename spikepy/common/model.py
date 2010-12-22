@@ -86,9 +86,9 @@ class Model(object):
             pub.sendMessage(topic='ALREADY_OPENING_FILE', data=fullpath)
 
     def _open_file_worker(self, fullpath):
-        trial = pool_process(self._processing_pool, open_data_file, 
+        trial_list = pool_process(self._processing_pool, open_data_file, 
                              args=(fullpath,))
-        return trial
+        return trial_list
 
     def _open_file_consumer(self, delayed_result, fullpath):
 
@@ -97,7 +97,6 @@ class Model(object):
             trial_id = trial.trial_id
             self.trials[trial_id] = trial
             pub.sendMessage(topic='TRIAL_ADDED', data=trial)
-
         self._opening_files.remove(fullpath)
         pub.sendMessage(topic='FILE_OPENED', data=fullpath)
 

@@ -47,7 +47,7 @@ class Controller(object):
         pub.subscribe(self._export_trials,  topic="EXPORT_TRIALS")
         pub.subscribe(self._run_all,  topic="RUN_ALL")
         pub.subscribe(self._run_marked,  topic="RUN_MARKED")
-        #pub.subscribe(self._print_messages, topic='')
+        pub.subscribe(self._print_messages, topic='')
 
     def _run_all(self, message):
         message.data['trial'] = 'all' 
