@@ -13,7 +13,8 @@ class Wessel_LabView_text_tetrode(FileInterpreter):
         data = numpy.loadtxt(fullpath)
         raw_traces = data.T[:4]
         times = data.T[-1]
-        sampling_freq = int(len(times)/(times[-1]-times[0])*1000) # 1000 kHz->Hz
+        sampling_freq = int((len(times)-1)/
+                            (times[-1]-times[0])*1000) # 1000 kHz->Hz
 
         print "making trial objects"
         trials = [self.make_trial_object(sampling_freq, raw_traces, fullpath)]
