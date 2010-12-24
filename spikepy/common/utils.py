@@ -2,9 +2,36 @@ import traceback
 import csv
 import sys
 
+import wx
 import numpy
 from numpy.linalg import svd
 from scipy.signal import resample
+
+def get_local_data_dir(app_name=None):
+    # see if an App() instance is running.
+    app = wx.GetApp()
+    # creat an App() instance if we don't already have one.
+    created_app = False
+    if app is None:
+        app = wx.App()
+        created_app = True
+
+    old_app_name = app.GetAppName()
+    if app_name is None:
+        if created_app:
+            app.SetAppName('DEFAULT_APP_NAME')
+    else:
+        app.SetAppName(app_name)
+        
+    sp = wx.StandardPaths.Get()
+    user_data_dir = sp.GetUserDataDir()
+
+    # return app to former name
+    app.SetAppName(old_app_name)
+    if created_app:
+        app.Destroy()
+
+    return user_data_dir
 
 def pool_process(pool, function, args=tuple(), kwargs=dict()):
     if pool is not None:
