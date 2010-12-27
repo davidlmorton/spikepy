@@ -1,11 +1,36 @@
 import traceback
 import csv
 import sys
+import os
+import imp
 
 import wx
 import numpy
 from numpy.linalg import svd
 from scipy.signal import resample
+
+def load_plugins(name, base_path):
+    loaded_modules = []
+    if os.path.exists(base_path):
+        name_base = os.path.join(base_path, name)
+        if os.path.exists(name_base):
+            files = os.listdir(name_base)
+            for f in files:
+                if f.endswith('.py'):
+                    full_path = os.path.join(name_base, f)
+                    loaded_modules.append(imp.load_source(name, full_path))
+    return loaded_modules
+
+def load_app_and_user_plugins(**kwargs):
+    application_data_dir, user_data_dir = get_data_dirs(**kwargs)
+    application_file_interpreters = load_plugins('file_interpreters', 
+                                                 application_data_dir)
+    application_methods = load_plugins('methods', application_data_dir)
+
+    user_file_interpreters = load_plugins('file_interpreters', user_data_dir)
+    user_methods = load_plugins('methods', user_data_dir)
+    return (application_file_interpreters, application_methods, 
+            user_file_interpreters, user_methods)
 
 def get_data_dirs(app_name=None):
     '''
