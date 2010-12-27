@@ -7,7 +7,13 @@ import numpy
 from numpy.linalg import svd
 from scipy.signal import resample
 
-def get_local_data_dir(app_name=None):
+def get_data_dirs(app_name=None):
+    '''
+    This function returns the proper directory for storing application data.
+    If a wx.App() is running, it pulls info from it to determine the
+        proper directory for storing application data.
+    If a wx.App() is not runnining, it creates one temporarily.
+    '''
     # see if an App() instance is running.
     app = wx.GetApp()
     # creat an App() instance if we don't already have one.
@@ -24,6 +30,7 @@ def get_local_data_dir(app_name=None):
         app.SetAppName(app_name)
         
     sp = wx.StandardPaths.Get()
+    data_dir = sp.GetDataDir()
     user_data_dir = sp.GetUserDataDir()
 
     # return app to former name
@@ -31,7 +38,7 @@ def get_local_data_dir(app_name=None):
     if created_app:
         app.Destroy()
 
-    return user_data_dir
+    return data_dir, user_data_dir
 
 def pool_process(pool, function, args=tuple(), kwargs=dict()):
     if pool is not None:
