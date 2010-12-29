@@ -29,14 +29,14 @@
             }, 
             "extraction_filter": {
                 "critical_freq": 300.0, 
-                "kind": "High Pass", 
+                "kind": "Low Pass", 
                 "order": 3, 
-                "function_name": "Butterworth"
+                "function_name": "Bessel"
             }, 
             "clustering": {
                 "threshold": 1e-08, 
                 "iterations": 30, 
-                "number_of_clusters": 1
+                "number_of_clusters": 3
             }
         }
     }, 

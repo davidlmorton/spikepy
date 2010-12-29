@@ -117,6 +117,15 @@ class StrategyPane(ScrolledPanel):
         self.SetupScrolling()
         self.Layout()
 
+    def get_stage_from_display_name(self, display_name):
+        '''
+        Return the stage with the given display_name
+        '''
+        for stage in self.stages:
+            if stage.display_name == display_name:
+                return stage
+        return None
+
 
 class StrategySummary(wx.Panel):
     def __init__(self, parent, **kwargs):

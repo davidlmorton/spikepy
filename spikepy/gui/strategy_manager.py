@@ -89,7 +89,7 @@ class StrategyManager(object):
 
     def _set_strategy_pane(self, methods_used, settings):
         for stage in self.strategy_pane.stages:
-            stage_name = stage.stage_name.lower().replace(" ","_")
+            stage_name = stage.stage_name
             method_name = methods_used[stage_name]        
             if method_name is not None:
                 stage._method_choice_made(method_name=method_name)
@@ -210,7 +210,7 @@ class StrategyManager(object):
         methods_used = {}
         for stage in self.strategy_pane.stages:
             method_chosen = stage._method_name_chosen
-            stage_name = stage.stage_name.lower().replace(' ', '_')
+            stage_name = stage.stage_name
             methods_used[stage_name] = method_chosen
         return methods_used
 
@@ -224,7 +224,7 @@ class StrategyManager(object):
             except ValueError:
                 _settings = None
 
-            stage_name = stage.stage_name.lower().replace(' ', '_')
+            stage_name = stage.stage_name
             settings[stage_name] = _settings
         return settings
 

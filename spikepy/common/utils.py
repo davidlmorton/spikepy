@@ -9,20 +9,40 @@ import numpy
 from numpy.linalg import svd
 from scipy.signal import resample
 
-def load_plugins(name, base_path):
+loaded_plugins = 0
+
+def platform():
+    if sys.platform.startswith('win'):
+        return 'windows'
+    elif sys.platform.startswith('darwin'):
+        return 'mac'
+    return 'linux'
+
+def is_package():
+    return not sys.argv[0].endswith('.py')
+
+def get_python_setup():
+    if hasattr(sys, 'frozen'):
+        return 'frozen'
+    elif is_package():
+        return 'package'
+    return 'source'
+
+def load_plugins(plugin_dir):
     loaded_modules = []
-    if os.path.exists(base_path):
-        name_base = os.path.join(base_path, name)
-        if os.path.exists(name_base):
-            files = os.listdir(name_base)
-            for f in files:
-                if f.endswith('.py'):
-                    full_path = os.path.join(name_base, f)
-                    loaded_modules.append(imp.load_source(name, full_path))
+    if os.path.exists(plugin_dir):
+        files = os.listdir(plugin_dir)
+        for f in files:
+            if f.endswith('.py'):
+                full_path = os.path.join(plugin_dir, f)
+                name = 'loaded_plugin_%d' % loaded_plugins
+                loaded_plugins += 1
+                loaded_modules.append(imp.load_source(name, full_path))
     return loaded_modules
 
-def load_app_and_user_plugins(**kwargs):
-    application_data_dir, user_data_dir = get_data_dirs(**kwargs)
+def load_app_and_user_plugins(data_dirs=None, **kwargs):
+    if data_dirs is None:
+        data_dirs = get_data_dirs(**kwargs)
     application_file_interpreters = load_plugins('file_interpreters', 
                                                  application_data_dir)
     application_methods = load_plugins('methods', application_data_dir)
@@ -39,6 +59,9 @@ def get_data_dirs(app_name=None):
         proper directory for storing application data.
     If a wx.App() is not runnining, it creates one temporarily.
     '''
+    file_interpreters_dir = 'file_interpreters'
+    methods_dir = 'methods'
+    strategies_dir = 'strategies'
     # see if an App() instance is running.
     app = wx.GetApp()
     # creat an App() instance if we don't already have one.
@@ -58,12 +81,24 @@ def get_data_dirs(app_name=None):
     data_dir = sp.GetDataDir()
     user_data_dir = sp.GetUserDataDir()
 
+    data_dirs = {}
+    for base_name, base_dir in [('application', data_dir), 
+                                ('user', user_data_dir)]:
+        data_dirs[base_name] = {}
+        data_dirs[base_name]['configuration'] = base_dir
+        data_dirs[base_name]['strategies'] = os.path.join(base_dir,
+                                                        strategies_dir)
+        data_dirs[base_name]['file_interpreters'] = os.path.join(base_dir, 
+                                                    file_interpreters_dir)
+        data_dirs[base_name]['methods'] = os.path.join(base_dir, 
+                                                    methods_dir)
+
     # return app to former name
     app.SetAppName(old_app_name)
     if created_app:
         app.Destroy()
 
-    return data_dir, user_data_dir
+    return data_dirs
 
 def pool_process(pool, function, args=tuple(), kwargs=dict()):
     if pool is not None:
