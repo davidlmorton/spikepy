@@ -1,5 +1,3 @@
-from .look_and_feel_settings import lfs
-
 # To differentiate between the strings that only differ by case, consider 
 # ending variable with sc, uc, lc for start case, upper case, and lower case.
 
@@ -110,7 +108,7 @@ SHOW_CURSOR_POSITION = "Show Cursor Position"
 USE_SCIENTIFIC_NOTATION = "Use Scientific Notation"
 SETTINGS = "Settings"
 RUN_ALL = u'Run On All (\u2200)'
-RUN_MARKED = "Run On Marked (%s)" % lfs.FILE_LIST_MARKED_STATUS
+RUN_MARKED = "Run On Marked" 
 METHOD = "Method"
 METHOD_DETAILS = "Method Details"
 METHOD_DETAILS_FRAME_TITLE = "Details for %s" # % method_name
