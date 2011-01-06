@@ -1,20 +1,19 @@
 import json
-
-from . import program_text as pt
+import copy
 
 
 def make_methods_used_name(strategy_name):
     '''
     From a full strategy-name return just the method-used-name
     '''
-    return strategy_name.split('(')[0]
+    return strategy_name.split('(')[0].lower()
 
 
 def make_settings_name(strategy_name):
     '''
     From a full strategy-name return just the settings-name
     '''
-    return strategy_name.split('(')[1][:-1]
+    return strategy_name.split('(')[1][:-1].lower()
 
 
 def make_strategy_name(methods_used_name, settings_name):
@@ -114,5 +113,8 @@ class Strategy(object):
         return_strategy = cls()
         return_strategy.load(fullpath)
         return return_strategy
+
+    def copy(self):
+        return copy.deepcopy(self)
 
 
