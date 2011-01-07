@@ -148,6 +148,9 @@ class Trial(object):
                 can_run_list.append(stage.name)
         return can_run_list
 
+    def __hash__(self):
+        return hash(self.trial_id)
+
     def get_pca_rotated_features(self):
         if self.extraction.results is None:
             raise RuntimeError('Trial with trial_id:%s does not have extraction results, so cannot find pca_rotated features.' % self.trial_id)

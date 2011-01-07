@@ -373,6 +373,7 @@ class StagePanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self._on_run_marked, self.run_marked_button)
         
         pub.subscribe(self._set_stage_parameters, topic='SET_PARAMETERS')
+        pub.subscribe(self._enable_run_buttons, topic='ABLE_TO_RUN_AGAIN')
         self.method_choice_made(method_name=self.method_names[0])
 
     def _set_stage_parameters(self, message=None):
@@ -418,6 +419,8 @@ class StagePanel(wx.Panel):
         self._run(run_all=True)
 
     def _run(self, run_all=True):
+        self.run_all_button.Disable()
+        self.run_marked_button.Disable()
         control_panel = self.methods[self.method_name_chosen]['control_panel']
         settings = control_panel.get_parameters()
         wx.Yield() # about to let scipy hog cpu, so process all wx events.
@@ -428,4 +431,8 @@ class StagePanel(wx.Panel):
             pub.sendMessage(topic='RUN_ALL', data=data)
         else:
             pub.sendMessage(topic='RUN_MARKED', data=data)
+
+    def _enable_run_buttons(self, message=None):
+        self.run_all_button.Enable()
+        self.run_marked_button.Enable()
 

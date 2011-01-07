@@ -49,16 +49,24 @@ class Model(object):
         """
         stage_name = message.data['stage_name']
         trial_list = message.data['trial']
+ 
         del message.data['trial']
         handler = self.handlers[stage_name]
         if trial_list == 'all':
+            trial_list = self.trials.values()
+            if not self.run_manager.trials_available(trial_list):
+                return
             # special case for clustering
             if stage_name == 'clustering':
-                self._clustering(self.trials.values(), **message.data)
+                self._clustering(trial_list, **message.data)
             else:
-                for trial in self.trials.values():
+                for trial in trial_list:
                     handler(trial, **message.data)
         else:
+            if trial_list == []:
+                pub.sendMessage(topic="ABLE_TO_RUN_AGAIN")
+            if not self.run_manager.trials_available(trial_list):
+                return
             for trial in trial_list:
                 handler(trial=trial, **message.data)
             
@@ -148,7 +156,7 @@ class Model(object):
         stage_data.method   = method_name
         stage_data.settings = copy.deepcopy(settings)
 
-        pub.sendMessage(topic="PROCESS_STARTED")
+        pub.sendMessage(topic="PROCESS_STARTED", data=[trial])
         startWorker(self._filter_consumer, self._filter_worker,
                         wargs=(trial, stage_name, method_name, 
                                settings),
@@ -164,7 +172,7 @@ class Model(object):
         return filtered_traces
 
     def _filter_consumer(self, delayed_result, trial, stage_name):
-        pub.sendMessage(topic="PROCESS_ENDED")
+        pub.sendMessage(topic="PROCESS_ENDED", data=[trial])
         filtered_traces = delayed_result.get()
         stage_data = trial.get_stage_data(stage_name)
         stage_data.results = format_traces(filtered_traces)
@@ -198,7 +206,7 @@ class Model(object):
         trial.detection.method   = method_name
         trial.detection.settings = copy.deepcopy(settings)
 
-        pub.sendMessage(topic="PROCESS_STARTED")
+        pub.sendMessage(topic="PROCESS_STARTED", data=[trial])
         startWorker(self._detection_consumer, self._detection_worker,
                         wargs=(trial, method_name, settings),
                         cargs=(trial,))
@@ -217,7 +225,7 @@ class Model(object):
         return spikes
 
     def _detection_consumer(self, delayed_result, trial):
-        pub.sendMessage(topic="PROCESS_ENDED")
+        pub.sendMessage(topic="PROCESS_ENDED", data=[trial])
         spikes = delayed_result.get()
         # XXX carefully consider what to do if no spikes were detected.
         if len(spikes[0]) > 0:
@@ -250,7 +258,7 @@ class Model(object):
         trial.extraction.reinitialize()
         trial.extraction.method   = method_name
         trial.extraction.settings = copy.deepcopy(settings)
-        pub.sendMessage(topic="PROCESS_STARTED")
+        pub.sendMessage(topic="PROCESS_STARTED", data=[trial])
         startWorker(self._extraction_consumer, self._extraction_worker,
                         wargs=(trial, method_name, settings),
                         cargs=(trial,))
@@ -275,7 +283,7 @@ class Model(object):
         return features_dict
 
     def _extraction_consumer(self, delayed_result, trial):
-        pub.sendMessage(topic="PROCESS_ENDED")
+        pub.sendMessage(topic="PROCESS_ENDED", data=[trial])
         features_dict = delayed_result.get()
         features_dict['features'] = numpy.array(features_dict['features'])
         trial.extraction.results = features_dict
@@ -311,7 +319,7 @@ class Model(object):
             trial.clustering.reinitialize()
             trial.clustering.method   = method_name
             trial.clustering.settings = copy.deepcopy(settings)
-        pub.sendMessage(topic="PROCESS_STARTED")
+        pub.sendMessage(topic="PROCESS_STARTED", data=trial_list)
         startWorker(self._clustering_consumer, self._clustering_worker,
                         wargs=(trial_list, method_name, settings),
                         cargs=(trial_list,))
@@ -353,7 +361,7 @@ class Model(object):
             trial_results.append(feature_time)
 
     def _clustering_consumer(self, delayed_result, trial_list):
-        pub.sendMessage(topic="PROCESS_ENDED")
+        pub.sendMessage(topic="PROCESS_ENDED", data=trial_list)
         for trial in trial_list:
             pub.sendMessage(topic='TRIAL_CLUSTERED', data=(trial,'clustering'))
         pub.sendMessage(topic='RUNNING_COMPLETED')
