@@ -217,7 +217,7 @@ class Model(object):
         return spikes
 
     def _detection_consumer(self, delayed_result, trial):
-        pub.sendMessage(topic="PROCESS_STARTED")
+        pub.sendMessage(topic="PROCESS_ENDED")
         spikes = delayed_result.get()
         # XXX carefully consider what to do if no spikes were detected.
         if len(spikes[0]) > 0:
@@ -275,7 +275,7 @@ class Model(object):
         return features_dict
 
     def _extraction_consumer(self, delayed_result, trial):
-        pub.sendMessage(topic="PROCESS_STARTED")
+        pub.sendMessage(topic="PROCESS_ENDED")
         features_dict = delayed_result.get()
         features_dict['features'] = numpy.array(features_dict['features'])
         trial.extraction.results = features_dict
@@ -353,7 +353,7 @@ class Model(object):
             trial_results.append(feature_time)
 
     def _clustering_consumer(self, delayed_result, trial_list):
-        pub.sendMessage(topic="PROCESS_STARTED")
+        pub.sendMessage(topic="PROCESS_ENDED")
         for trial in trial_list:
             pub.sendMessage(topic='TRIAL_CLUSTERED', data=(trial,'clustering'))
         pub.sendMessage(topic='RUNNING_COMPLETED')
