@@ -57,11 +57,18 @@ class MyFrame(wx.Frame):
 
         # create status bar (I'm not sure if we'll use this or not)
         self.CreateStatusBar()
-        self.SetStatusText("We can put status updates here if we want")
+        self.SetStatusText(pt.STATUS_IDLE)
 
         # create menu bar
         self.menubar = SpikepyMenuBar(self)
         self.SetMenuBar(self.menubar)
+
+        pub.subscribe(self._update_status_bar, 
+                      topic='UPDATE_STATUS')
+
+    def _update_status_bar(self, message=None):
+        new_text = message.data
+        self.SetStatusText(new_text)
 
     def _close_application(self, event=None):
         pub.sendMessage(topic='CLOSE_APPLICATION')

@@ -14,10 +14,12 @@ from .open_data_file import open_data_file
 from .utils import pool_process, upsample_trace_list
 from ..stages import filtering, detection, extraction, clustering
 from .trial import format_traces
+from spikepy.common.run_manager import RunManager
 
 class Model(object):
     def __init__(self):
         self.trials = {}
+        self.run_manager = RunManager()
 
         if wx.Platform != '__WXMAC__':
             #self._processing_pool = Pool()
@@ -80,6 +82,7 @@ class Model(object):
         fullpath = message.data
         if fullpath not in self._opening_files:
             self._opening_files.append(fullpath)
+            pub.sendMessage(topic="FILE_OPENING_STARTED")
             startWorker(self._open_file_consumer, self._open_file_worker, 
                         wargs=(fullpath,), cargs=(fullpath,))
         else:
@@ -91,7 +94,7 @@ class Model(object):
         return trial_list
 
     def _open_file_consumer(self, delayed_result, fullpath):
-
+        pub.sendMessage(topic="FILE_OPENING_ENDED")
         trial_list = delayed_result.get()
         for trial in trial_list:
             trial_id = trial.trial_id
@@ -145,6 +148,7 @@ class Model(object):
         stage_data.method   = method_name
         stage_data.settings = copy.deepcopy(settings)
 
+        pub.sendMessage(topic="PROCESS_STARTED")
         startWorker(self._filter_consumer, self._filter_worker,
                         wargs=(trial, stage_name, method_name, 
                                settings),
@@ -160,6 +164,7 @@ class Model(object):
         return filtered_traces
 
     def _filter_consumer(self, delayed_result, trial, stage_name):
+        pub.sendMessage(topic="PROCESS_ENDED")
         filtered_traces = delayed_result.get()
         stage_data = trial.get_stage_data(stage_name)
         stage_data.results = format_traces(filtered_traces)
@@ -193,6 +198,7 @@ class Model(object):
         trial.detection.method   = method_name
         trial.detection.settings = copy.deepcopy(settings)
 
+        pub.sendMessage(topic="PROCESS_STARTED")
         startWorker(self._detection_consumer, self._detection_worker,
                         wargs=(trial, method_name, settings),
                         cargs=(trial,))
@@ -211,6 +217,7 @@ class Model(object):
         return spikes
 
     def _detection_consumer(self, delayed_result, trial):
+        pub.sendMessage(topic="PROCESS_STARTED")
         spikes = delayed_result.get()
         # XXX carefully consider what to do if no spikes were detected.
         if len(spikes[0]) > 0:
@@ -243,6 +250,7 @@ class Model(object):
         trial.extraction.reinitialize()
         trial.extraction.method   = method_name
         trial.extraction.settings = copy.deepcopy(settings)
+        pub.sendMessage(topic="PROCESS_STARTED")
         startWorker(self._extraction_consumer, self._extraction_worker,
                         wargs=(trial, method_name, settings),
                         cargs=(trial,))
@@ -267,6 +275,7 @@ class Model(object):
         return features_dict
 
     def _extraction_consumer(self, delayed_result, trial):
+        pub.sendMessage(topic="PROCESS_STARTED")
         features_dict = delayed_result.get()
         features_dict['features'] = numpy.array(features_dict['features'])
         trial.extraction.results = features_dict
@@ -302,6 +311,7 @@ class Model(object):
             trial.clustering.reinitialize()
             trial.clustering.method   = method_name
             trial.clustering.settings = copy.deepcopy(settings)
+        pub.sendMessage(topic="PROCESS_STARTED")
         startWorker(self._clustering_consumer, self._clustering_worker,
                         wargs=(trial_list, method_name, settings),
                         cargs=(trial_list,))
@@ -343,6 +353,7 @@ class Model(object):
             trial_results.append(feature_time)
 
     def _clustering_consumer(self, delayed_result, trial_list):
+        pub.sendMessage(topic="PROCESS_STARTED")
         for trial in trial_list:
             pub.sendMessage(topic='TRIAL_CLUSTERED', data=(trial,'clustering'))
         pub.sendMessage(topic='RUNNING_COMPLETED')
