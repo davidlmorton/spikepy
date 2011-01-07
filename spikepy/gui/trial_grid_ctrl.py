@@ -6,7 +6,7 @@ from spikepy.gui import utils
 from .look_and_feel_settings import lfs
 import wx
 
-from . import program_text as pt
+from spikepy.common import program_text as pt
 
 class TrialGridCtrl(gridlib.Grid):
     def __init__(self, parent, **kwargs):

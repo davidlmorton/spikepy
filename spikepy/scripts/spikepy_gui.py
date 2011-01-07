@@ -1,5 +1,5 @@
 import wx
-from spikepy.gui import spikepy_splash_image as spi
+from spikepy.gui.images import spikepy_splash_image as spi
 
 class MySplashScreen(wx.SplashScreen):
     def __init__(self, image=None, splash_style=None, timeout=None, 

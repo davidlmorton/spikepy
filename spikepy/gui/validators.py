@@ -2,7 +2,7 @@ import string
 
 import wx
 
-from . import program_text as pt
+from spikepy.common import program_text as pt
 
 class FloatValidator(wx.PyValidator):
     valid_characters = ".-%s%s" % (string.digits, chr(8))

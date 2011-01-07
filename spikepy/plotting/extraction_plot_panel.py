@@ -6,7 +6,7 @@ import numpy
 
 from spikepy.plotting.multi_plot_panel import MultiPlotPanel
 from spikepy.gui.look_and_feel_settings import lfs
-from spikepy.gui import program_text as pt
+from spikepy.common import program_text as pt
 from spikepy.plotting.utils import adjust_axes_edges, set_axes_num_ticks
 from spikepy.common.utils import pca
 

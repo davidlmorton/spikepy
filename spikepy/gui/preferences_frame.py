@@ -1,7 +1,7 @@
 import wx
 
 from .look_and_feel_settings import lfs
-from . import program_text as pt
+from spikepy.common import program_text as pt
 
 class PreferencesFrame(wx.Frame):
     def __init__(self, parent, id=wx.ID_ANY, title=pt.PREFERENCES_FRAME_TITLE,

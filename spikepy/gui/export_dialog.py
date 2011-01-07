@@ -4,10 +4,8 @@ import string
 
 import wx
 
-from .strategy_utils import (make_methods_set_name, make_settings_name, 
-                             make_strategy_name)
 from validators import CharacterSubsetValidator
-from . import program_text as pt
+from spikepy.common import program_text as pt
 from .named_controls import NamedTextCtrl, NamedChoiceCtrl 
 
 valid_strategy_characters = ('-_.,%s%s' % 

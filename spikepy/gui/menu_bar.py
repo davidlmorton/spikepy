@@ -8,7 +8,7 @@ from wx.lib.wordwrap import wordwrap
 from spikepy.plotting.utils import PlotPanelPrintout
 from spikepy.gui.pyshell import PyShellDialog
 from spikepy.gui.look_and_feel_settings import lfs
-from spikepy.gui import program_text as pt
+from spikepy.common import program_text as pt
 from spikepy.gui.preferences_frame import PreferencesFrame
 
 OPEN               = wx.ID_OPEN

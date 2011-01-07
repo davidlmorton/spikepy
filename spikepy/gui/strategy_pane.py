@@ -5,12 +5,13 @@ from wx.lib.scrolledpanel import ScrolledPanel
 from wx.lib.buttons import GenButton
 
 from .named_controls import NamedChoiceCtrl
-from .utils import recursive_layout
+from .utils import recursive_layout, strip_unicode
 from ..stages import filtering, detection, extraction, clustering
 from .look_and_feel_settings import lfs
 from spikepy.common import program_text as pt
 from spikepy.common.strategy_manager import StrategyManager
 from spikepy.common.strategy import Strategy
+from spikepy.gui.save_strategy_dialog import SaveStrategyDialog
 
 
 def add_settings(stage_name):
@@ -103,9 +104,24 @@ class StrategyPane(ScrolledPanel):
         self._temp_strategies = {}
 
         self.Bind(wx.EVT_IDLE, self._sync)
+        self.Bind(wx.EVT_BUTTON, self._save_button_pressed, self.save_button)
         self.Bind(wx.EVT_CHOICEBOOK_PAGE_CHANGED, self._page_changed)
         self.Bind(wx.EVT_CHOICE, self._strategy_choice_made, 
                                  self.strategy_chooser.choice) 
+
+    def _save_button_pressed(self, event=None):
+        current_strategy = self.get_current_strategy()
+        all_names = self.strategy_manager.strategies.keys()
+        all_names.extend(self._temp_strategies.keys())
+        dlg = SaveStrategyDialog(self, current_strategy.name,
+                                 all_names)
+        if dlg.ShowModal() == wx.ID_OK:
+            new_name = dlg.get_strategy_name()
+            del self._temp_strategies[current_strategy.name]
+            current_strategy.name = new_name
+            self.strategy_manager.add_strategy(current_strategy)
+            self._update_strategy_choices()
+        dlg.Destroy()
 
     # --- SYNC ---
     def _toggle_should_sync(self):

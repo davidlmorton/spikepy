@@ -8,7 +8,7 @@ import numpy
 from spikepy.plotting.multi_plot_panel import MultiPlotPanel
 from spikepy.plotting.utils import adjust_axes_edges
 from spikepy.gui.look_and_feel_settings import lfs
-from spikepy.gui import program_text as pt
+from spikepy.common import program_text as pt
 
 class FilterPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):

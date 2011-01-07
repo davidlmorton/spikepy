@@ -10,8 +10,7 @@ from wx.lib.pubsub import Publisher as pub
 import numpy
 import scipy.io
 
-from spikepy.gui.strategy_manager import make_strategy
-import spikepy.gui.program_text as pt
+from spikepy.common import program_text as pt
 from spikepy.common.utils import save_list_txt
 from spikepy.common.utils import pca
 

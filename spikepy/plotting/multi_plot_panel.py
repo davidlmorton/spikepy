@@ -5,7 +5,7 @@ from wx.lib.pubsub import Publisher as pub
 from wx.lib.scrolledpanel import ScrolledPanel
 from matplotlib.pyplot import close
 
-from spikepy.gui import program_text as pt
+from spikepy.common import program_text as pt
 from spikepy.plotting.plot_panel import PlotPanel
 
 class MultiPlotPanel(ScrolledPanel):

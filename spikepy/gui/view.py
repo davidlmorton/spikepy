@@ -11,7 +11,7 @@ from .strategy_pane import StrategyPane
 from .trial_grid_ctrl import TrialGridCtrl
 from .results_notebook import ResultsNotebook
 from .look_and_feel_settings import lfs
-from . import program_text as pt
+from spikepy.common import program_text as pt
 
 class View(object):
     def __init__(self, *args, **kwargs):

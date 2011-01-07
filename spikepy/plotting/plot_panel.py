@@ -12,7 +12,7 @@ from wx.lib.pubsub import Publisher as pub
 
 from spikepy.gui.utils import get_bitmap_image
 from spikepy.plotting.utils import PlotPanelPrintout
-from spikepy.gui import program_text as pt
+from spikepy.common import program_text as pt
 from spikepy.gui.look_and_feel_settings import lfs
 
 class CustomToolbar(Toolbar):

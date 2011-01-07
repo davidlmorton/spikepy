@@ -13,7 +13,7 @@ from ..common.trial import Trial
 from ..common.utils import pool_process
 from .view import View
 from .utils import named_color, load_pickle
-from . import program_text as pt
+from spikepy.common import program_text as pt
 from .trial_rename_dialog import TrialRenameDialog
 from .pyshell import locals_dict
 from .export_dialog import ExportDialog

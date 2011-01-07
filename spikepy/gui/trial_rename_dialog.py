@@ -2,7 +2,7 @@ import string
 
 import wx
 from .validators import FilenameValidator
-from . import program_text as pt
+from spikepy.common import program_text as pt
 from .named_controls import NamedTextCtrl 
 
 valid_filename_characters = ('-_.,)(%s%s' % 
