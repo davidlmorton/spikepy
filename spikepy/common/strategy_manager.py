@@ -1,14 +1,42 @@
+import os
+
 import wx
 from wx.lib.pubsub import Publisher as pub
 
 from . import program_text as pt
 from strategy import (make_strategy_name, make_methods_used_name, 
                       make_settings_name)
+from spikepy.common import utils
+from spikepy.common.strategy import Strategy
 
 
 class StrategyManager(object):
     def __init__(self):
         self.strategies = {} # strategies under management
+        self.load_builtin_strategies()
+        self.load_application_strategies()
+        self.load_user_strategies()
+
+    # --- LOAD STRATEGIES ---
+    def load_builtin_strategies(self):
+        pass
+
+    def load_application_strategies(self):
+        strategy_path = utils.get_data_dirs()['application']['strategies']
+        self.load_strategies(strategy_path)
+        
+    def load_user_strategies(self):
+        strategy_path = utils.get_data_dirs()['user']['strategies']
+        self.load_strategies(strategy_path)
+
+    def load_strategies(self, path):
+        if os.path.exists(path):
+            files = os.listdir(path)
+            for f in files:
+                if f.endswith('.strategy'):
+                    fullpath = os.path.join(path, f)
+                    strategy = Strategy.from_file(fullpath)
+                    self.add_strategy(strategy)
 
     # --- ADD AND REMOVE STRATEGIES ---
     def add_strategy(self, strategy):

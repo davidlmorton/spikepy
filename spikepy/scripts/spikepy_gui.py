@@ -13,9 +13,11 @@ if __name__ == '__main__':
         from spikepy.gui.controller import Controller
         controller = Controller()
         controller.setup_subscriptions()
+        controller.setup_user_directories()
         wx.CallLater(1000, splash_screen.Destroy)
 
     app = wx.App(redirect=False)
+    app.SetAppName("spikepy")
 
     image = spi.spikepy_splash.Image.ConvertToBitmap()
     splash_screen = MySplashScreen(image=image, 

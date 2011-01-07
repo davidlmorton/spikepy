@@ -10,7 +10,7 @@ from wx.lib.delayedresult import startWorker
 
 from ..common.model import Model
 from ..common.trial import Trial
-from ..common.utils import pool_process
+from ..common.utils import pool_process, get_data_dirs
 from .view import View
 from .utils import named_color, load_pickle
 from spikepy.common import program_text as pt
@@ -48,6 +48,12 @@ class Controller(object):
         pub.subscribe(self._run_all,  topic="RUN_ALL")
         pub.subscribe(self._run_marked,  topic="RUN_MARKED")
         pub.subscribe(self._print_messages, topic='')
+
+    def setup_user_directories(self):
+        data_dirs = get_data_dirs()
+        for directory in data_dirs['user'].values():
+            if not os.path.exists(directory):
+                os.makedirs(directory)
 
     def _run_all(self, message):
         message.data['trial'] = 'all' 
