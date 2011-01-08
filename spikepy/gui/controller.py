@@ -47,7 +47,12 @@ class Controller(object):
         pub.subscribe(self._export_trials,  topic="EXPORT_TRIALS")
         pub.subscribe(self._run_all,  topic="RUN_ALL")
         pub.subscribe(self._run_marked,  topic="RUN_MARKED")
-        pub.subscribe(self._print_messages, topic='')
+
+    def start_debug_subscriptions(self):
+        pub.subscribe(self._print_messages) # subscribes to all topics
+
+    def stop_debug_subscriptions(self):
+        pub.unsubscribe(self._print_messages) # unsubscribes from all
 
     def setup_user_directories(self):
         data_dirs = get_data_dirs()
