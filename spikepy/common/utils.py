@@ -28,6 +28,11 @@ def get_python_setup():
         return 'package'
     return 'source'
 
+def get_base_path():
+    path = __file__
+    common_path = os.path.split(path)[0]
+    return os.path.split(common_path)[0]
+
 def load_plugins(plugin_dir):
     loaded_modules = []
     if os.path.exists(plugin_dir):

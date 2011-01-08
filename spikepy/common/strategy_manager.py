@@ -19,7 +19,10 @@ class StrategyManager(object):
 
     # --- LOAD STRATEGIES ---
     def load_builtin_strategies(self):
-        pass
+        base_path = utils.get_base_path()
+        print base_path
+        strategy_path = os.path.join(base_path, 'builtins', 'strategies')
+        self.load_strategies(strategy_path)
 
     def load_application_strategies(self):
         strategy_path = utils.get_data_dirs()['application']['strategies']
@@ -54,7 +57,10 @@ class StrategyManager(object):
         # -- check methods_used_name --
         if proposed_methods_used_name != pt.CUSTOM_LC:
             if proposed_methods_used_name != strategy.methods_used_name:
-                strategy.methods_used_name = proposed_methods_used_name
+                raise RuntimeError("Adding '%s': Methods-used already named '%s' NOT '%s'" % 
+                                   (strategy.name,
+                                    proposed_methods_used_name,
+                                    strategy.methods_used_name))
         else:
             forbidden_methods_used_names = [s.methods_used_name
                                             for s in self.strategies.values()]
@@ -66,7 +72,10 @@ class StrategyManager(object):
         # -- check settings_name --
         if proposed_settings_name != pt.CUSTOM_LC:
             if proposed_settings_name != strategy.settings_name:
-                strategy.settings_name = proposed_settings_name
+                raise RuntimeError("Adding '%s': Settings already named '%s' NOT '%s'" % 
+                                   (strategy.name,
+                                    proposed_settings_name,
+                                    strategy.settings_name))
         else:
             forbidden_settings_names = [s.settings_name
                                         for s in self.strategies.values()
