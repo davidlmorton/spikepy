@@ -93,6 +93,8 @@ class StrategyPane(ScrolledPanel):
                                 
         pub.subscribe(self._results_notebook_page_changing, 
                       topic='RESULTS_NOTEBOOK_PAGE_CHANGING')
+        pub.subscribe(self._set_run_buttons_state,
+                      topic='SET_RUN_BUTTONS_STATE')
 
         self.stage_panels = [detection_filter_panel,
                              detection_panel,
@@ -150,6 +152,10 @@ class StrategyPane(ScrolledPanel):
 
             # -- ensure that the save button is in the correct state
             self.save_button.Enable(button_state)
+
+            # -- set the run buttons state 
+            data = (current_strategy.methods_used, current_strategy.settings)
+            pub.sendMessage(topic='CALCULATE_RUN_BUTTONS_STATE', data=data)
 
     def _update_strategy_choices(self):
         old_items = self.strategy_chooser.GetItems()
@@ -240,6 +246,14 @@ class StrategyPane(ScrolledPanel):
                 return stage
         return None
 
+    def _set_run_buttons_state(self, message):
+        run_state = message.data
+        for stage_panel in self.stage_panels:
+            stage_name = stage_panel.stage_name
+            ra_state = run_state['all'][stage_name]
+            rm_state = run_state['marked'][stage_name]
+            stage_panel.run_all_button.Enable(ra_state)
+            stage_panel.run_marked_button.Enable(rm_state)
 
 class StrategySummary(wx.Panel):
     def __init__(self, parent, **kwargs):
@@ -373,7 +387,6 @@ class StagePanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self._on_run_marked, self.run_marked_button)
         
         pub.subscribe(self._set_stage_parameters, topic='SET_PARAMETERS')
-        pub.subscribe(self._enable_run_buttons, topic='ABLE_TO_RUN_AGAIN')
         self.method_choice_made(method_name=self.method_names[0])
 
     def _set_stage_parameters(self, message=None):
@@ -419,8 +432,6 @@ class StagePanel(wx.Panel):
         self._run(run_all=True)
 
     def _run(self, run_all=True):
-        self.run_all_button.Disable()
-        self.run_marked_button.Disable()
         control_panel = self.methods[self.method_name_chosen]['control_panel']
         settings = control_panel.get_parameters()
         wx.Yield() # about to let scipy hog cpu, so process all wx events.
@@ -431,8 +442,4 @@ class StagePanel(wx.Panel):
             pub.sendMessage(topic='RUN_ALL', data=data)
         else:
             pub.sendMessage(topic='RUN_MARKED', data=data)
-
-    def _enable_run_buttons(self, message=None):
-        self.run_all_button.Enable()
-        self.run_marked_button.Enable()
 

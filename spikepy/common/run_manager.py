@@ -16,6 +16,40 @@ class RunManager(object):
         pub.subscribe(self._file_opening_started, "FILE_OPENING_STARTED")
         pub.subscribe(self._file_opening_ended, "FILE_OPENING_ENDED")
 
+    def get_stage_run_states(self, methods_used, settings, trial_list):
+        stage_run_state = {}
+
+        num_trials = len(trial_list)
+        # initialize to False
+        for stage_name in methods_used.keys():
+            stage_run_state[stage_name] = False
+        if num_trials < 1 or not self.trials_available(trial_list):
+            return stage_run_state
+
+        # all stage states are False at this point.
+        for trial in trial_list:
+            for stage_name, method_used in methods_used.items():
+                novelty = trial.would_be_novel(stage_name, method_used, 
+                                               settings[stage_name])
+                # novelty in any file = able to run for all files.
+                if novelty:
+                    stage_run_state[stage_name] = True
+
+        # ensure EVERY trial is ready for this stage.
+        for trial in trial_list:
+            readyness = trial.get_readyness()
+            for stage_name in methods_used.keys():
+                if not readyness[stage_name]:
+                    stage_run_state[stage_name] = False
+
+        # check that the settings are valid
+        for stage_name in methods_used.keys():
+            settings_valid = settings[stage_name] is not None
+            if not settings_valid:
+                stage_run_state[stage_name] = False
+
+        return stage_run_state
+
     def trials_available(self, trial_list):
         if set(trial_list).intersection(self.locked_trials):
             return False
@@ -38,7 +72,6 @@ class RunManager(object):
             pub.sendMessage(topic="UPDATE_STATUS", 
                             data=pt.STATUS_RUNNING % self.num_processes)
         else:
-            pub.sendMessage(topic="ABLE_TO_RUN_AGAIN")
             pub.sendMessage(topic="UPDATE_STATUS",
                             data=pt.STATUS_IDLE)
         wx.Yield()

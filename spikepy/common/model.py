@@ -48,25 +48,15 @@ class Model(object):
         clustering.
         """
         stage_name = message.data['stage_name']
-        trial_list = message.data['trial']
+        trial_list = message.data['trial_list']
  
-        del message.data['trial']
+        del message.data['trial_list']
         handler = self.handlers[stage_name]
-        if trial_list == 'all':
-            trial_list = self.trials.values()
-            if not self.run_manager.trials_available(trial_list):
-                return
-            # special case for clustering
-            if stage_name == 'clustering':
-                self._clustering(trial_list, **message.data)
-            else:
-                for trial in trial_list:
-                    handler(trial, **message.data)
+
+        # special case for clustering
+        if stage_name == 'clustering':
+            self._clustering(trial_list, **message.data)
         else:
-            if trial_list == []:
-                pub.sendMessage(topic="ABLE_TO_RUN_AGAIN")
-            if not self.run_manager.trials_available(trial_list):
-                return
             for trial in trial_list:
                 handler(trial=trial, **message.data)
             

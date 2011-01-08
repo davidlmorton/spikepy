@@ -55,12 +55,20 @@ class Controller(object):
             if not os.path.exists(directory):
                 os.makedirs(directory)
 
+    def get_marked_trials(self):
+        trial_grid_ctrl = self.view.frame.trial_list
+        trial_ids = trial_grid_ctrl.marked_trial_ids
+        return [self.model.trials[trial_id] for trial_id in trial_ids]
+
+    def get_all_trials(self):
+        return self.model.trials.values()
+
     def _run_all(self, message):
-        message.data['trial'] = 'all' 
+        message.data['trial_list'] = self.get_all_trials()
         pub.sendMessage(topic='EXECUTE_STAGE', data=message.data) 
 
     def _run_marked(self, message):
-        message.data['trial'] = self.get_marked_trials()
+        message.data['trial_list'] = self.get_marked_trials()
         pub.sendMessage(topic='EXECUTE_STAGE', data=message.data) 
 
     def _export_trials(self, message):
@@ -97,65 +105,17 @@ class Controller(object):
                 this_trial.rename(new_name)
         dlg.Destroy()
 
-    def get_marked_trials(self):
-        trial_grid_ctrl = self.view.frame.trial_list
-        trial_ids = trial_grid_ctrl.marked_trial_ids
-        return [self.model.trials[trial_id] for trial_id in trial_ids]
-
     def _calculate_run_buttons_state(self, message):
         methods_used, settings = message.data
-        trial_list = self.model.trials.values()
-        run_all_button_states = self._get_stage_run_states(methods_used, 
-                                                           settings, 
-                                                           trial_list)
-        trial_list = self.get_marked_trials()
-        run_marked_button_states = self._get_stage_run_states(methods_used, 
-                                                              settings, 
-                                                              trial_list)
-        pub.sendMessage(topic='SET_RUN_BUTTONS_STATE', 
-                        data=(run_all_button_states, run_marked_button_states))
 
-    def _get_stage_run_states(self, methods_used, settings, trial_list):
-        # find out if we should enable/disable run buttons.
-        stage_run_state = {}
+        checker = self.model.run_manager.get_stage_run_states
+        all_trials = self.get_all_trials()
+        marked_trials = self.get_marked_trials()
+        run_state = {}
+        for trials, key in zip([all_trials, marked_trials], ['all', 'marked']):
+            run_state[key] = checker(methods_used, settings, trials)
 
-        num_trials = len(trial_list)
-        for stage_name in methods_used.keys():
-            stage_run_state[stage_name] = False
-        if num_trials < 1:
-            return stage_run_state
-
-        # all stage states are False at this point.
-        for trial in trial_list:
-            tmethods_used = trial.methods_used
-            tsettings     = trial.settings
-            for stage_name in methods_used.keys():
-                tmu = tmethods_used[stage_name]
-                mu  = methods_used[stage_name]
-                ts = tsettings[stage_name]
-                s  = settings[stage_name]
-                if tmu is not None and tmu == mu:
-                    novelty = (ts != s)
-                else:
-                    novelty = True
-                # novelty in any file = able to run for all files.
-                if novelty:
-                    stage_run_state[stage_name] = True
-
-        # ensure EVERY trial is ready for this stage.
-        for trial in trial_list:
-            can_run_list = trial.get_stages_that_are_ready_to_run()
-            for stage_name in methods_used.keys():
-                if stage_name not in can_run_list:
-                    stage_run_state[stage_name] = False
-
-        # check that the settings are valid
-        for stage_name in methods_used.keys():
-            settings_valid = settings[stage_name] is not None
-            if not settings_valid:
-                stage_run_state[stage_name] = False
-
-        return stage_run_state
+        pub.sendMessage(topic='SET_RUN_BUTTONS_STATE', data=run_state)
 
     def _close_application(self, message):
         pub.sendMessage(topic='SAVE_ALL_STRATEGIES')

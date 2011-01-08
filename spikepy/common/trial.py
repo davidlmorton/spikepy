@@ -137,16 +137,28 @@ class Trial(object):
             raise RuntimeError('Trial does not have a stage by the name of %s' %
                                 formatted_stage_name)
 
-    def get_stages_that_are_ready_to_run(self):
-        can_run_list = []
+    def get_readyness(self):
+        '''
+        Return a dictionary with keys=stage names and
+            values=True->stage prereqs met
+                  =False->one or more prereqs unmet
+        '''
+        readyness = {}
         for stage in self.stages:
             can_run = True
             for prereq in stage.prereqs:
                 if prereq.results is None:
                     can_run = False
-            if can_run:
-                can_run_list.append(stage.name)
-        return can_run_list
+            readyness[stage.name] = can_run
+        return readyness
+
+    def would_be_novel(self, stage_name, method_name, settings_dict):
+        '''
+        Would running a given stage yield novel results?
+        '''
+        stage_data = self.get_data_from_stage(stage_name)
+        return not (method_name == stage_data['method'] and 
+                    settings_dict == stage_data['settings'])
 
     def __hash__(self):
         return hash(self.trial_id)
