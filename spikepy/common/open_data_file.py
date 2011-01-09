@@ -3,14 +3,7 @@ import os
 from wx.lib.pubsub import Publisher as pub
 
 from .trial import Trial
-from spikepy.developer_tools.registering_class import _class_registry
-from spikepy.developer_tools.file_interpreter import FileInterpreter
-
-
-def get_all_file_interpreters():
-    file_interpreter_classes = _class_registry[FileInterpreter]
-    file_interpreters = [f() for f in file_interpreter_classes]
-    return file_interpreters
+from spikepy.common.plugin_utils import get_all_file_interpreters
 
 
 def open_data_file(fullpath, file_interpreter_name=None):

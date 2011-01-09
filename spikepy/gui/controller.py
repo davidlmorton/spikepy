@@ -10,7 +10,7 @@ from wx.lib.delayedresult import startWorker
 
 from ..common.model import Model
 from ..common.trial import Trial
-from ..common.utils import pool_process, get_data_dirs
+from spikepy.common.utils import pool_process
 from .view import View
 from .utils import named_color, load_pickle
 from spikepy.common import program_text as pt
@@ -29,6 +29,7 @@ class Controller(object):
         locals_dict['model']      = self.model
         locals_dict['view']       = self.view
         locals_dict['controller'] = self
+        self.setup_subscriptions()
 
 
     def setup_subscriptions(self):
@@ -53,12 +54,6 @@ class Controller(object):
 
     def stop_debug_subscriptions(self):
         pub.unsubscribe(self._print_messages) # unsubscribes from all
-
-    def setup_user_directories(self):
-        data_dirs = get_data_dirs()
-        for directory in data_dirs['user'].values():
-            if not os.path.exists(directory):
-                os.makedirs(directory)
 
     def get_marked_trials(self):
         trial_grid_ctrl = self.view.frame.trial_list

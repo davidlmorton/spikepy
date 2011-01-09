@@ -12,8 +12,6 @@ if __name__ == '__main__':
         ''' Run after splash screen has loaded '''
         from spikepy.gui.controller import Controller
         controller = Controller()
-        controller.setup_subscriptions()
-        controller.setup_user_directories()
         wx.CallLater(1000, splash_screen.Destroy)
 
     app = wx.App(redirect=False)

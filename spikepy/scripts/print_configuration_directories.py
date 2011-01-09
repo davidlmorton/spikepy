@@ -1,11 +1,11 @@
 import wx
 
-from spikepy.common import utils
+from spikepy.common import path_utils
 
 print "\nSpikepy configuration directories on platform: %s (%s)" % (wx.Platform, 
-                                                        utils.platform())
+                                                        path_utils.platform())
 
-data_dirs = utils.get_data_dirs(app_name='spikepy')
+data_dirs = path_utils.get_data_dirs(app_name='spikepy')
 
 for level in data_dirs.keys():
     print "\n\t--%s--" % (level[0].upper() + level[1:].lower())

@@ -6,7 +6,7 @@ from wx.lib.pubsub import Publisher as pub
 from . import program_text as pt
 from strategy import (make_strategy_name, make_methods_used_name, 
                       make_settings_name)
-from spikepy.common import utils
+from spikepy.common.path_utils import get_data_dirs
 from spikepy.common.strategy import Strategy
 
 
@@ -16,7 +16,7 @@ class StrategyManager(object):
 
         # load strategies (first builtins, then application, then user)
         for level in ['builtins', 'application', 'user']:
-            strategy_path = utils.get_data_dirs()[level]['strategies']
+            strategy_path = get_data_dirs()[level]['strategies']
             self.load_strategies(strategy_path)
 
     def load_strategies(self, path):
