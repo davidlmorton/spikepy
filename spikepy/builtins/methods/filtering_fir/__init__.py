@@ -11,7 +11,7 @@ class FilteringFIR(FilteringMethod):
         self.description = 'Sinc type filters with a windowing function.'
 
     def make_control_panel(self, parent, **kwargs):
-        return ControlPanel(parent **kwargs)
+        return ControlPanel(parent, **kwargs)
 
     def run(self, signal_list, sampling_freq, **kwargs):
         return runner(signal_list, sampling_freq, **kwargs)

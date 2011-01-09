@@ -8,23 +8,36 @@ import wx
 from spikepy.developer_tools.registering_class import _class_registry
 from spikepy.developer_tools.file_interpreter import FileInterpreter
 from spikepy.developer_tools.filtering_method import FilteringMethod
+from spikepy.developer_tools.detection_method import DetectionMethod
+from spikepy.developer_tools.extraction_method import ExtractionMethod
+from spikepy.developer_tools.clustering_method import ClusteringMethod
 from spikepy.common.path_utils import get_data_dirs
+
+base_classes = {'detection_filter':  FilteringMethod,
+                'detection':         DetectionMethod,
+                'extraction_filter': FilteringMethod,
+                'extraction':        ExtractionMethod,
+                'clustering':        ClusteringMethod}
+
+def get_methods_for_stage(stage_name):
+    '''
+    Return a list of method objects, given the stage_name.
+    '''
+    return_methods = []
+    base_class = base_classes[stage_name]
+    for method_class in _class_registry[base_class]:
+        method = method_class()
+        return_methods.append(method)
+    return return_methods
 
 def get_method(stage_name, method_name):
     '''
     Return a method object, given the stage_name and method_name.
     '''
-    base_classes = {'detection_filter':FilteringMethod,
-                    'detection':None,
-                    'extraction_filter':FilteringMethod,
-                    'extraction':None,
-                    'clustering':None}
-
-    for method_class in _class_registry[base_classes[stage_name]]:
-        method = method_class()
+    for method in get_methods_for_stage(stage_name):
         if method.name == method_name:
             return method
-    raise RuntimeError("Couldn't find method named '%s' from stage '%s'" %
+    raise runtimeerror("couldn't find method named '%s' from stage '%s'" %
                         (method_name, stage_name))
 
 def get_all_file_interpreters():
@@ -32,13 +45,14 @@ def get_all_file_interpreters():
     file_interpreters = [f() for f in file_interpreter_classes]
     return file_interpreters
 
-def should_load(entry):
-    if entry.startswith('.'):
+def should_load(fullpath):
+    filename = os.path.split(fullpath)[1]
+    if filename.startswith('.'):
         return False
-    if entry.endswith('.py'):
+    if filename.endswith('.py'):
         return True
-    if os.path.isdir(entry):
-        module_init = os.path.join(entry, '__init__.py')
+    if os.path.isdir(fullpath):
+        module_init = os.path.join(fullpath, '__init__.py')
         return os.path.exists(module_init)
     return False
 

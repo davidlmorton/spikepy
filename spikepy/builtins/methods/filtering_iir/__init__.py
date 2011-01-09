@@ -11,7 +11,7 @@ class FilteringIIR(FilteringMethod):
         self.description = 'Butterworth and bessel filters.  Can be high/low/band pass types.'
 
     def make_control_panel(self, parent, **kwargs):
-        return ControlPanel(parent **kwargs)
+        return ControlPanel(parent, **kwargs)
 
     def run(self, signal_list, sampling_freq, **kwargs):
         return runner(signal_list, sampling_freq, **kwargs)

@@ -6,12 +6,12 @@ from wx.lib.buttons import GenButton
 
 from .named_controls import NamedChoiceCtrl
 from .utils import recursive_layout, strip_unicode
-from ..stages import filtering, detection, extraction, clustering
 from .look_and_feel_settings import lfs
 from spikepy.common import program_text as pt
 from spikepy.common.strategy_manager import StrategyManager
 from spikepy.common.strategy import Strategy
 from spikepy.gui.save_strategy_dialog import SaveStrategyDialog
+from spikepy.common import plugin_utils
 
 
 def add_settings(stage_name):
@@ -32,28 +32,23 @@ class StrategyPane(ScrolledPanel):
         detection_filter_panel = StagePanel(stage_choicebook, 
                                             stage_num=1,
                                             display_name=pt.DETECTION_FILTER,
-                                            stage_name='detection_filter',
-                                            module=filtering)
+                                            stage_name='detection_filter')
         detection_panel = StagePanel(stage_choicebook, 
                                      stage_num=2,
                                      display_name=pt.DETECTION,
-                                     stage_name='detection',
-                                     module=detection)
+                                     stage_name='detection')
         extraction_filter_panel = StagePanel(stage_choicebook,
                                              stage_num=3,
                                              display_name=pt.EXTRACTION_FILTER,
-                                             stage_name='extraction_filter',
-                                             module=filtering)
+                                             stage_name='extraction_filter')
         extraction_panel = StagePanel(stage_choicebook,
                                       stage_num=4,
                                       display_name=pt.EXTRACTION,
-                                      stage_name='extraction',
-                                      module=extraction)
+                                      stage_name='extraction')
         clustering_panel = StagePanel(stage_choicebook, 
                                       stage_num=5,
                                       display_name=pt.CLUSTERING,
-                                      stage_name='clustering',
-                                      module=clustering)
+                                      stage_name='clustering')
 
         # ==== CHOICEBOOK PAGES ====
         stage_choicebook.AddPage(detection_filter_panel, 
@@ -336,25 +331,18 @@ class StagePanel(wx.Panel):
     def __init__(self, parent, stage_num=None, 
                                display_name=None,
                                stage_name=None, 
-                               module=None, 
                                **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
         self.stage_num = stage_num
         self.display_name = display_name
         self.stage_name = stage_name
-        stage_module = module
 
         # --- METHODS ---
-        self.methods = {}
-        self.method_names = stage_module.method_names
-        for method_module, method_name in zip(stage_module.method_modules, 
-                                              self.method_names):
-            self.methods[method_name] = {}
-            self.methods[method_name]['control_panel'] = \
-                    method_module.ControlPanel(self, style=wx.BORDER_SUNKEN)
-            self.methods[method_name]['control_panel'].Show(False)
-            self.methods[method_name]['description'] = method_module.description
-        self._method_name_chosen = self.method_names[0]
+        self.methods = self.load_methods()
+
+        self.method_names = sorted(self.methods.keys())
+        if self.method_names:
+            self._method_name_chosen = self.method_names[0]
 
         self.method_chooser = NamedChoiceCtrl(self, name=pt.METHOD+":",
                                  choices=self.method_names)
@@ -388,6 +376,16 @@ class StagePanel(wx.Panel):
         
         pub.subscribe(self._set_stage_parameters, topic='SET_PARAMETERS')
         self.method_choice_made(method_name=self.method_names[0])
+
+    def load_methods(self):
+        methods = {}
+        for method in plugin_utils.get_methods_for_stage(self.stage_name):
+            methods[method.name] = {}
+            methods[method.name]['control_panel'] =\
+                    method.make_control_panel(self, style=wx.BORDER_SUNKEN)
+            methods[method.name]['control_panel'].Show(False)
+            methods[method.name]['description'] = method.description
+        return methods
 
     def _set_stage_parameters(self, message=None):
         kwargs = message.data
