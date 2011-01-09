@@ -13,24 +13,11 @@ from spikepy.common.strategy import Strategy
 class StrategyManager(object):
     def __init__(self):
         self.strategies = {} # strategies under management
-        self.load_builtin_strategies()
-        self.load_application_strategies()
-        self.load_user_strategies()
 
-    # --- LOAD STRATEGIES ---
-    def load_builtin_strategies(self):
-        base_path = utils.get_base_path()
-        print base_path
-        strategy_path = os.path.join(base_path, 'builtins', 'strategies')
-        self.load_strategies(strategy_path)
-
-    def load_application_strategies(self):
-        strategy_path = utils.get_data_dirs()['application']['strategies']
-        self.load_strategies(strategy_path)
-        
-    def load_user_strategies(self):
-        strategy_path = utils.get_data_dirs()['user']['strategies']
-        self.load_strategies(strategy_path)
+        # load strategies (first builtins, then application, then user)
+        for level in ['builtins', 'application', 'user']:
+            strategy_path = utils.get_data_dirs()[level]['strategies']
+            self.load_strategies(strategy_path)
 
     def load_strategies(self, path):
         if os.path.exists(path):

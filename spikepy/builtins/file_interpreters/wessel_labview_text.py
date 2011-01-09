@@ -5,7 +5,9 @@ from spikepy.developer_tools.file_interpreter import FileInterpreter
 class Wessel_LabView_text(FileInterpreter):
     def __init__(self):
         self.name = 'Wessel LabView plain text'
-        self.extention = 'wpt'
+        self.extentions = ['.wpt', '']
+        # higher priority means will be used in ambiguous cases
+        self.priority = 10 
         self.description = '''A plain text file containing one trial.  Data are organized in columns.  Columns: 0=data(mV) 1=pulse_1 2=pulse_2 3=time(ms).'''
 
     def read_data_file(self, fullpath):

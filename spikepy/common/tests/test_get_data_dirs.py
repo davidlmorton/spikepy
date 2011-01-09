@@ -20,9 +20,9 @@ def destroy_app():
 class GetLocalDataDir(unittest.TestCase):
     def data_dirs_correct_structure(self, data_dirs):
         data_dirs_keys = data_dirs.keys()
-        for level in ['application', 'user']:
+        for level in ['application', 'user', 'builtins']:
+            print level, data_dirs_keys
             self.assertTrue(level in data_dirs_keys)
-        self.assertTrue(data_dirs.keys()==['application', 'user'])
         for value in data_dirs.values():
             value_keys = value.keys()
             for kind in ['configuration', 'file_interpreters', 'methods', 

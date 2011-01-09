@@ -7,11 +7,8 @@ print "\nSpikepy configuration directories on platform: %s (%s)" % (wx.Platform,
 
 data_dirs = utils.get_data_dirs(app_name='spikepy')
 
-print "\n\t--Application-level--"
-for key, value in data_dirs['application'].items():
-    print "\t\t%s: %s" % (key, value)
+for level in data_dirs.keys():
+    print "\n\t--%s--" % (level[0].upper() + level[1:].lower())
+    for key, value in data_dirs[level].items():
+        print "\t\t%s: %s" % (key, value)
     
-print "\n\t--User-level--"
-for key, value in data_dirs['user'].items():
-    print "\t\t%s: %s" % (key, value)
-

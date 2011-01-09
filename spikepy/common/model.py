@@ -12,6 +12,7 @@ import numpy
 
 from .open_data_file import open_data_file
 from .utils import pool_process, upsample_trace_list
+from spikepy.common import utils
 from ..stages import filtering, detection, extraction, clustering
 from .trial import format_traces
 from spikepy.common.run_manager import RunManager
@@ -20,6 +21,7 @@ class Model(object):
     def __init__(self):
         self.trials = {}
         self.run_manager = RunManager()
+        self.plugin_modules = utils.load_all_plugins()
 
         if wx.Platform != '__WXMAC__':
             #self._processing_pool = Pool()

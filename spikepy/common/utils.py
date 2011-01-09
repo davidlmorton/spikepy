@@ -3,13 +3,14 @@ import csv
 import sys
 import os
 import imp
+import uuid
+from collections import defaultdict
 
 import wx
 import numpy
 from numpy.linalg import svd
 from scipy.signal import resample
 
-loaded_plugins = 0
 
 def platform():
     if sys.platform.startswith('win'):
@@ -34,28 +35,31 @@ def get_base_path():
     return os.path.split(common_path)[0]
 
 def load_plugins(plugin_dir):
-    loaded_modules = []
+    loaded_modules = {}
     if os.path.exists(plugin_dir):
         files = os.listdir(plugin_dir)
         for f in files:
             if f.endswith('.py'):
+                name = (str(uuid.uuid4())).replace('-','_') 
                 full_path = os.path.join(plugin_dir, f)
-                name = 'loaded_plugin_%d' % loaded_plugins
-                loaded_plugins += 1
-                loaded_modules.append(imp.load_source(name, full_path))
+                key = os.path.splitext(f)[0]
+                key_name = key + '_name'
+
+                loaded_modules[key]=imp.load_source(name, full_path)
+                loaded_modules[key_name]=name
     return loaded_modules
 
-def load_app_and_user_plugins(data_dirs=None, **kwargs):
+def load_all_plugins(data_dirs=None, **kwargs):
     if data_dirs is None:
         data_dirs = get_data_dirs(**kwargs)
-    application_file_interpreters = load_plugins('file_interpreters', 
-                                                 application_data_dir)
-    application_methods = load_plugins('methods', application_data_dir)
 
-    user_file_interpreters = load_plugins('file_interpreters', user_data_dir)
-    user_methods = load_plugins('methods', user_data_dir)
-    return (application_file_interpreters, application_methods, 
-            user_file_interpreters, user_methods)
+    loaded_modules = defaultdict(dict)
+    for level in data_dirs.keys():
+        for plugin_type in ['file_interpreters', 'methods']:
+            plugin_dir = data_dirs[level][plugin_type]
+            loaded_modules[level][plugin_type] = load_plugins(plugin_dir)
+
+    return loaded_modules
 
 def get_data_dirs(app_name=None):
     '''
@@ -85,9 +89,11 @@ def get_data_dirs(app_name=None):
     sp = wx.StandardPaths.Get()
     data_dir = sp.GetDataDir()
     user_data_dir = sp.GetUserDataDir()
+    builtins_data_dir = os.path.join(get_base_path(), 'builtins')
 
     data_dirs = {}
     for base_name, base_dir in [('application', data_dir), 
+                                ('builtins', builtins_data_dir),
                                 ('user', user_data_dir)]:
         data_dirs[base_name] = {}
         data_dirs[base_name]['configuration'] = base_dir
