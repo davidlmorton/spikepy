@@ -16,7 +16,8 @@ class RunManager(object):
         pub.subscribe(self._file_opening_started, "FILE_OPENING_STARTED")
         pub.subscribe(self._file_opening_ended, "FILE_OPENING_ENDED")
 
-    def get_stage_run_states(self, methods_used, settings, trial_list):
+    def get_stage_run_states(self, methods_used, settings, trial_list,
+                                   force_novelty=False):
         stage_run_state = {}
 
         num_trials = len(trial_list)
@@ -26,14 +27,20 @@ class RunManager(object):
         if num_trials < 1 or not self.trials_available(trial_list):
             return stage_run_state
 
-        # all stage states are False at this point.
-        for trial in trial_list:
+        if force_novelty:
+            # ensure that novel results would result.
+            # all stage states are False at this point.
+            for trial in trial_list:
+                for stage_name, method_used in methods_used.items():
+                    novelty = trial.would_be_novel(stage_name, method_used, 
+                                                   settings[stage_name])
+                    # novelty in any file = able to run for all files.
+                    if novelty:
+                        stage_run_state[stage_name] = True
+        else:
             for stage_name, method_used in methods_used.items():
-                novelty = trial.would_be_novel(stage_name, method_used, 
-                                               settings[stage_name])
-                # novelty in any file = able to run for all files.
-                if novelty:
-                    stage_run_state[stage_name] = True
+                stage_run_state[stage_name] = True
+            
 
         # ensure EVERY trial is ready for this stage.
         for trial in trial_list:

@@ -89,7 +89,6 @@ class Controller(object):
         dlg = ExportDialog(self.view.frame, title=caption)
         if dlg.ShowModal() == wx.ID_OK:
             settings = dlg.get_settings()
-            print settings
             for trial in trial_list:
                 trial.export(**settings)
         dlg.Destroy()

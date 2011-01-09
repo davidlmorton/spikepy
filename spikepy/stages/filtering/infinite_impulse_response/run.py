@@ -16,7 +16,7 @@ def run(trace_list, sampling_freq,
         if function_name.lower() == 'butterworth':
             filter_function = butterworth
         elif function_name.lower() == 'bessel':
-            filter_function = butterworth
+            filter_function = bessel
         else:
             raise RuntimeError('Function name cannot be:"%s", must be one of "butterworth" or "bessel"' % function_name.lower())
         filtered_trace_list = []

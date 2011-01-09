@@ -34,19 +34,34 @@ def get_base_path():
     common_path = os.path.split(path)[0]
     return os.path.split(common_path)[0]
 
+def should_load(entry):
+    if entry.startswith('.'):
+        return False
+    if entry.endswith('.py'):
+        return True
+    if os.path.isdir(entry):
+        module_init = os.path.join(entry,'__init__.py')
+        return os.path.exists(module_init)
+    return False
+
 def load_plugins(plugin_dir):
     loaded_modules = {}
     if os.path.exists(plugin_dir):
-        files = os.listdir(plugin_dir)
-        for f in files:
-            if f.endswith('.py'):
-                name = (str(uuid.uuid4())).replace('-','_') 
-                full_path = os.path.join(plugin_dir, f)
-                key = os.path.splitext(f)[0]
-                key_name = key + '_name'
-
-                loaded_modules[key]=imp.load_source(name, full_path)
-                loaded_modules[key_name]=name
+        entries = os.listdir(plugin_dir)
+        for e in entries:
+            fullpath_e = os.path.join(plugin_dir, e)
+            if should_load(fullpath_e):
+                unique_name = 'spikepy_' + (str(uuid.uuid4())).replace('-','_') 
+                module_name = os.path.splitext(e)[0]
+                fm_results = None
+                try:
+                    fm_results = imp.find_module(module_name, [plugin_dir]) 
+                except ImportError:
+                    pass
+                if fm_results is not None:
+                    loaded_modules[module_name]=imp.load_module(unique_name,
+                                                                *fm_results)
+                    loaded_modules[module_name+'_name'] = unique_name
     return loaded_modules
 
 def load_all_plugins(data_dirs=None, **kwargs):
