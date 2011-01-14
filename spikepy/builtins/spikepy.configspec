@@ -1,0 +1,31 @@
+[gui]
+    [[strategy_pane]]
+        min_width=integer(min=300, max=800, default=None) # in pixels
+        border=integer(min=0, max=10, default=None) # in pixels
+        summary_border=integer(min=0, max=10, default=None) # in pixels
+        wait_time=float(min=50, max=10000, default=None) # in ms
+    [[trial_list]]
+        start_height=integer(min=100, max=400, default=None) # in pixels
+        marked_status=string(default=None)
+        unmarked_status=string(default=None)
+        marked_status_mac=string(default=None)
+        unmarked_status_mac=string(default=None)
+        column_width_compensation=integer(default=None)
+    [[plotting]]
+        raster_pos_traces=option('top', 'bottom', 'center', default=None)
+        raster_pos_rate=option('top', 'bottom', 'center', default=None)
+        raster_width=float(min=0.0, default=None) # width of spike raster ticks
+        dpi=float(min=10, max=150, default=None)
+        [[[spacing]]]
+            no_label_axes_left=integer(max=0, default=None)
+            no_label_axes_bottom=integer(max=0, default=None)
+            axes_left=integer(max=0, default=None)
+            axes_bottom=integer(max=0, default=None)
+            left_border=integer(min=0, default=None)
+            right_border=integer(min=0, default=None)
+            top_border=integer(min=0, default=None)
+            bottom_border=integer(min=0, default=None)
+    [[control_panel]]
+        border=integer(min=0, max=10, default=None)
+[backend]
+
