@@ -8,7 +8,6 @@ from spikepy.plotting.clustering_plot_panel import ClusteringPlotPanel
 from spikepy.plotting.summary_plot_panel import SummaryPlotPanel
 from spikepy.gui.look_and_feel_settings import lfs
 from spikepy.common import program_text as pt
-from spikepy.stages import filtering, detection, extraction, clustering
 from spikepy.gui.utils import SinglePanelFrame
 
 plot_panels = {"detection_filter" : FilterPlotPanel,
@@ -18,13 +17,6 @@ plot_panels = {"detection_filter" : FilterPlotPanel,
                "clustering"       : ClusteringPlotPanel,
                "summary"          : SummaryPlotPanel}
 
-# FIXME only used by details panel, which needs to be delegated.
-stage_modules = {"detection_filter"  : filtering,
-                 "detection"         : detection,
-                 "extraction_filter" : filtering,
-                 "extraction"        : extraction,
-                 "clustering"        : clustering,
-                 "summary"           : clustering}
 
 class ResultsNotebook(wx.Notebook):
     def __init__(self, parent, **kwargs):
@@ -120,27 +112,7 @@ class ResultsPanel(wx.Panel):
             plot_panel._report_coordinates = report_coordinates
 
     def _show_method_details(self, event=None):
-        # FIXME should be delegated via pubsub
-        stage_name = self.name
-        trial_id = self.plot_panel._currently_shown
-        if trial_id == 'DEFAULT':
-            return
-        trial = self.plot_panel._trials[trial_id]
-        stage_data = trial.get_stage_data(stage_name)
-        method_name = stage_data.method
-        if method_name is None:
-            return
-        stage_module = stage_modules[stage_name]
-        method_index = stage_module.method_names.index(method_name)
-        method_module = stage_module.method_modules[method_index]
-        if hasattr(method_module, 'DetailsPanel'):
-            title = pt.METHOD_DETAILS_FRAME_TITLE % method_name
-            size = lfs.METHOD_DETAILS_FRAME_SIZE
-            style = lfs.METHOD_DETAILS_FRAME_STYLE
-            frame = SinglePanelFrame(self, title=title, size=size, style=style)
-            details_panel = method_module.DetailsPanel(frame, trial, stage_name)
-            frame.Show()
-
+        pass
 
 class CursorPositionBar(wx.Panel):
     def __init__(self, parent, **kwargs):

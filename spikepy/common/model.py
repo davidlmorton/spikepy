@@ -163,7 +163,7 @@ class Model(object):
     def _filter_worker(self, trial, stage_name, method_name, settings):
         raw_traces = trial.raw_traces
         filtered_traces = []
-        method = get_method(stage_name, method_name)
+        method = plugin_utils.get_method(stage_name, method_name)
         filtered_traces = pool_process(self._processing_pool, method.run,
                                        args=(raw_traces, trial.sampling_freq),
                                        kwargs=settings)
@@ -216,7 +216,7 @@ class Model(object):
                                        args=(trial.detection_filter.results,
                                              trial.sampling_freq,
                                              new_sample_rate))
-        method = detection.get_method(method_name)
+        method = plugin_utils.get_method('detection', method_name)
         spikes = pool_process(self._processing_pool, method.run,
                               args=(filtered_traces, new_sample_rate), 
                               kwargs=settings)
@@ -271,7 +271,7 @@ class Model(object):
                                        args=(trial.extraction_filter.results,
                                              trial.sampling_freq,
                                              new_sample_rate))
-        method = extraction.get_method(method_name)
+        method = plugin_utils.get_method('extraction', method_name)
         features_dict = pool_process(self._processing_pool,
                                      method.run,
                                      args=(filtered_traces, 
@@ -337,7 +337,7 @@ class Model(object):
             feature_time_list.extend(feature_times)
             master_key_list.extend(key_list)
 
-        method = clustering.get_method(method_name)
+        method = plugin_utils.get_method('clustering', method_name)
         if len(feature_set_list) == 0:
             return None # no spikes = no clustering
 
