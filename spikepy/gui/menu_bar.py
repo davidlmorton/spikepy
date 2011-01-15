@@ -7,8 +7,8 @@ from wx.lib.wordwrap import wordwrap
 
 from spikepy.plotting.utils import PlotPanelPrintout
 from spikepy.gui.pyshell import PyShellDialog
-from spikepy.gui.look_and_feel_settings import lfs
 from spikepy.common import program_text as pt
+from spikepy.common.config_manager import config_manager as config
 from spikepy.gui.preferences_frame import PreferencesFrame
 
 OPEN               = wx.ID_OPEN
@@ -136,7 +136,7 @@ class SpikepyMenuBar(wx.MenuBar):
 
     def _python_shell(self, event=None):
         event.Skip()
-        dlg = PyShellDialog(self, size=lfs.PYSHELL_DIALOG_SIZE)
+        dlg = PyShellDialog(self, size=config.get_size('pyshell'))
         dlg.Show()
 
     def _update_perspectives(self, perspectives={}):
@@ -176,6 +176,7 @@ class SpikepyMenuBar(wx.MenuBar):
 
     def _about_box(self, event):
         # dialog box to open when "About" is clicked
+        # FIXME should be better!
         info = wx.AboutDialogInfo()
         info.Name = "Spikepy"
         info.Version = "0.0"

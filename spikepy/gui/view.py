@@ -10,7 +10,7 @@ from .menu_bar import SpikepyMenuBar
 from .strategy_pane import StrategyPane
 from .trial_grid_ctrl import TrialGridCtrl
 from .results_notebook import ResultsNotebook
-from .look_and_feel_settings import lfs
+from spikepy.common.config_manager import config_manager as config
 from spikepy.common import program_text as pt
 
 class View(object):
@@ -23,10 +23,11 @@ class MyFrame(wx.Frame):
     def __init__(self, parent, id=wx.ID_ANY, 
                  title=pt.MAIN_FRAME_TITLE,
                  size=None,
-                 style=lfs.MAIN_FRAME_STYLE):
+                 style=wx.DEFAULT_FRAME_STYLE):
         # MAIN_FRAME_SIZE needs the wx.App() instance so can't be put 
         #   in declaration
-        if size is None: size = lfs.MAIN_FRAME_SIZE
+        if size is None: 
+            size = config.get_size('main_frame')
         wx.Frame.__init__(self, parent, title=title, size=size, style=style)
 
         # --- STRATEGY PANE ---
@@ -48,10 +49,10 @@ class MyFrame(wx.Frame):
         vsplit.SplitVertically(hsplit, self.results_notebook, 400)
         hsplit.SplitHorizontally(trial_list_holder, strategy_holder, 200)
 
-        hsplit.SetMinimumPaneSize(lfs.STRATEGY_PANE_MIN_SIZE[1])
-        vsplit.SetMinimumPaneSize(lfs.STRATEGY_PANE_MIN_SIZE[0])
-        hsplit.SetSashPosition(lfs.FILE_LIST_START_HEIGHT)
-        vsplit.SetSashPosition(lfs.STRATEGY_PANE_MIN_SIZE[0])
+        hsplit.SetMinimumPaneSize(config['gui']['strategy_pane']['min_height'])
+        vsplit.SetMinimumPaneSize(config['gui']['strategy_pane']['min_width'])
+        hsplit.SetSashPosition(config['gui']['strategy_pane']['min_height'])
+        vsplit.SetSashPosition(config['gui']['strategy_pane']['min_width'])
 
         self.Bind(wx.EVT_CLOSE, self._close_application)
 

@@ -6,7 +6,7 @@ from wx.lib.buttons import GenButton
 
 from .named_controls import NamedChoiceCtrl
 from .utils import recursive_layout, strip_unicode
-from .look_and_feel_settings import lfs
+from spikepy.common.config_manager import config_manager as config
 from spikepy.common import program_text as pt
 from spikepy.common.strategy_manager import StrategyManager
 from spikepy.common.strategy import Strategy
@@ -66,7 +66,7 @@ class StrategyPane(ScrolledPanel):
         # ==== SETUP SIZER ====
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         flag = wx.EXPAND|wx.ALL
-        border = lfs.STRATEGY_PANE_BORDER
+        border = config['gui']['strategy_pane']['border']
         sizer.Add(self.strategy_chooser, proportion=0, 
                                           flag=flag|wx.ALIGN_CENTER_HORIZONTAL, 
                                           border=border)
@@ -131,7 +131,8 @@ class StrategyPane(ScrolledPanel):
         '''
         if self._should_sync:
             self._should_sync = False
-            wx.CallLater(lfs.STRATEGY_WAIT_TIME, self._toggle_should_sync)
+            wx.CallLater(config['gui']['strategy_pane']['wait_time'], 
+                         self._toggle_should_sync)
             current_strategy      = self.get_current_strategy()
             button_state = pt.CUSTOM_LC in current_strategy.name.lower()
 
@@ -269,14 +270,14 @@ class StrategySummary(wx.Panel):
         lsizer = wx.BoxSizer(orient=wx.VERTICAL)
         rsizer = wx.BoxSizer(orient=wx.VERTICAL)
         rsizer_flag = wx.ALL|wx.ALIGN_LEFT
-        rsizer_border = lfs.STRATEGY_SUMMARY_BORDER
+        rsizer_border = config['gui']['strategy_pane']['summary_border']
 
         for method_text in self.method_text_list:
             rsizer.Add(method_text, proportion=0, flag=rsizer_flag, 
                        border=rsizer_border)
         
         flag = wx.ALL|wx.ALIGN_RIGHT
-        border = lfs.STRATEGY_SUMMARY_BORDER
+        border = config['gui']['strategy_pane']['summary_border']
         for stage_text in s:
             lsizer.Add(stage_text, proportion=0, flag=flag, 
                                   border=border)
@@ -316,7 +317,7 @@ class StrategySummary(wx.Panel):
             font.SetWeight(wx.FONTWEIGHT_NORMAL)
             stage_text.SetFont(font)
         minwidth = max(stage_text_widths)
-        minwidth = minwidth + 2*lfs.STRATEGY_SUMMARY_BORDER
+        minwidth = minwidth + 2*config['gui']['strategy_pane']['summary_border']
         minsize = (minwidth, 1)
         return minsize 
 

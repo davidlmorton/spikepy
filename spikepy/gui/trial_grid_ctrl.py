@@ -3,7 +3,7 @@ import os
 import wx.grid as gridlib
 from wx.lib.pubsub import Publisher as pub
 from spikepy.gui import utils
-from .look_and_feel_settings import lfs
+from spikepy.common.config_manager import config_manager as config
 import wx
 
 from spikepy.common import program_text as pt
@@ -33,8 +33,7 @@ class TrialGridCtrl(gridlib.Grid):
         self.SetColAttr(0, attr0)
         self.SetColAttr(1, attr1)
         # set the col labels
-        self.SetColLabelValue(0, '%s/%s' % (lfs.FILE_LIST_UNMARKED_STATUS,
-                                            lfs.FILE_LIST_MARKED_STATUS))
+        self.SetColLabelValue(0, '%s/%s' % config.get_status_markers())
         self.SetColLabelValue(1, pt.TRIAL_NAME)
         # set the col widths
         self.SetColSize(0, 5)
@@ -99,16 +98,16 @@ class TrialGridCtrl(gridlib.Grid):
 
     def _get_marked_status(self, row):
         cell_value = self.GetCellValue(row, 0)
-        if cell_value == lfs.FILE_LIST_UNMARKED_STATUS:
+        if cell_value == config.unmarked_status:
             return False
         else:
             return True
 
     def _set_marked_status(self, row, status):
         if status:
-            self.SetCellValue(row, 0, lfs.FILE_LIST_MARKED_STATUS)
+            self.SetCellValue(row, 0, config.marked_status)
         else:
-            self.SetCellValue(row, 0, lfs.FILE_LIST_UNMARKED_STATUS)
+            self.SetCellValue(row, 0, config.unmarked_status)
         pub.sendMessage(topic='TRIAL_MARKS_CHANGED', data=None)
 
     @property
