@@ -17,10 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 
-from spikepy.gui.named_controls import NamedChoiceCtrl, NamedSpinCtrl
+from spikepy.developer_tools import named_controls as nc 
 from spikepy.gui.utils import recursive_layout
-from spikepy.gui.look_and_feel_settings import lfs
-
 
 class ControlPanel(wx.Panel):
     def __init__(self, parent, **kwargs):
@@ -29,19 +27,19 @@ class ControlPanel(wx.Panel):
         window_names = ['boxcar', 'triang', 'Blackman', 'Hamming', 'Hanning',
                         'Bartlett', 'Parzen', 'Bohman', 'Blackman-Harris', 
                         'Nuttall', 'Barthann']
-        window_chooser = NamedChoiceCtrl(self, name="Windowing function:",
+        window_chooser = nc.NamedChoiceCtrl(self, name="Windowing function:",
                                            choices=window_names)
-        passband_chooser = NamedChoiceCtrl(self, name="Passband Type:", 
+        passband_chooser = nc.NamedChoiceCtrl(self, name="Passband Type:", 
                                            choices=["High Pass", "Low Pass", 
                                                     "Band Pass"])
-        low_cutoff_spinctrl = NamedSpinCtrl(self, name="Low cutoff frequency:",
+        low_cutoff_spinctrl = nc.NamedSpinCtrl(self, name="Low cutoff frequency:",
                                             min=10, max=100000)
-        high_cutoff_spinctrl = NamedSpinCtrl(self, 
+        high_cutoff_spinctrl = nc.NamedSpinCtrl(self, 
                                              name="High cutoff frequency:",
                                              min=10, max=100000)
-        cutoff_spinctrl = NamedSpinCtrl(self, name="Cutoff frequency:",
+        cutoff_spinctrl = nc.NamedSpinCtrl(self, name="Cutoff frequency:",
                                               min=10, max=100000)
-        taps_spinctrl = NamedSpinCtrl(self, name="Taps:",
+        taps_spinctrl = nc.NamedSpinCtrl(self, name="Taps:",
                                             min=1, max=20000)
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)

@@ -17,9 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 
-from spikepy.gui.named_controls import NamedFloatCtrl, OptionalNamedFloatCtrl
-from spikepy.gui.look_and_feel_settings import lfs
-
+from spikepy.developer_tools import named_controls as nc
 
 class ControlPanel(wx.Panel):
     def __init__(self, parent, **kwargs):
@@ -27,27 +25,26 @@ class ControlPanel(wx.Panel):
 
         sd_units_checkbox = wx.CheckBox(self,
                 label='Thresholds as multiple\nof standard deviation.')
-        threshold_1_sd = NamedFloatCtrl(self, name='Threshold (SDs):')
-        threshold_1    = NamedFloatCtrl(self, name='Threshold:')
+        threshold_1_sd = nc.NamedFloatCtrl(self, name='Threshold (SDs):')
+        threshold_1    = nc.NamedFloatCtrl(self, name='Threshold:')
 
-        threshold_2_sd = OptionalNamedFloatCtrl(self, 
+        threshold_2_sd = nc.OptionalNamedFloatCtrl(self, 
                                                name='Second Threshold (SDs):')
-        threshold_2    = OptionalNamedFloatCtrl(self, 
+        threshold_2    = nc.OptionalNamedFloatCtrl(self, 
                                                name='Second Threshold:')
-        refractory_time = NamedFloatCtrl(self, name='Refractory period (ms):')
-        max_spike_width = NamedFloatCtrl(self, 
+        refractory_time = nc.NamedFloatCtrl(self, name='Refractory period (ms):')
+        max_spike_width = nc.NamedFloatCtrl(self, 
                                       name='Max spike width at threshold (ms):')
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         flag = wx.ALIGN_LEFT|wx.ALL|wx.EXPAND
-        border = lfs.CONTROL_PANEL_BORDER
-        sizer.Add(sd_units_checkbox, proportion=0, flag=flag, border=border)
-        sizer.Add(threshold_1_sd,    proportion=0, flag=flag, border=border)
-        sizer.Add(threshold_1,       proportion=0, flag=flag, border=border)
-        sizer.Add(threshold_2_sd,    proportion=0, flag=flag, border=border)
-        sizer.Add(threshold_2,       proportion=0, flag=flag, border=border)
-        sizer.Add(refractory_time,   proportion=0, flag=flag, border=border)
-        sizer.Add(max_spike_width,   proportion=0, flag=flag, border=border)
+        sizer.Add(sd_units_checkbox, proportion=0, flag=flag)
+        sizer.Add(threshold_1_sd,    proportion=0, flag=flag)
+        sizer.Add(threshold_1,       proportion=0, flag=flag)
+        sizer.Add(threshold_2_sd,    proportion=0, flag=flag)
+        sizer.Add(threshold_2,       proportion=0, flag=flag)
+        sizer.Add(refractory_time,   proportion=0, flag=flag)
+        sizer.Add(max_spike_width,   proportion=0, flag=flag)
         self.SetSizer(sizer)
 
         self.Bind(wx.EVT_CHECKBOX, self._units_check, sd_units_checkbox)

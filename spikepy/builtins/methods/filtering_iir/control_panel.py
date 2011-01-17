@@ -17,44 +17,35 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 
-from spikepy.gui.named_controls import (NamedChoiceCtrl, NamedTextCtrl,
-                                        NamedSpinCtrl)
+from spikepy.developer_tools import named_controls as nc
 from spikepy.gui.utils import recursive_layout
-from spikepy.gui.look_and_feel_settings import lfs
 
 class ControlPanel(wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
 
-        function_chooser = NamedChoiceCtrl(self, name="Filter function:",
+        function_chooser = nc.NamedChoiceCtrl(self, name="Filter function:",
                                            choices=["Butterworth", "Bessel"])
-        passband_chooser = NamedChoiceCtrl(self, name="Passband Type:", 
+        passband_chooser = nc.NamedChoiceCtrl(self, name="Passband Type:", 
                                            choices=["High Pass", "Low Pass", 
                                                     "Band Pass"])
-        low_cutoff_spinctrl = NamedSpinCtrl(self, name="Low cutoff frequency:",
+        low_cutoff_spinctrl = nc.NamedSpinCtrl(self, name="Low cutoff frequency:",
                                                   min=10, max=100000)
-        high_cutoff_spinctrl = NamedSpinCtrl(self, 
+        high_cutoff_spinctrl = nc.NamedSpinCtrl(self, 
                                              name="High cutoff frequency:",
                                              min=10, max=100000)
-        cutoff_spinctrl = NamedSpinCtrl(self, name="Cutoff frequency:", 
+        cutoff_spinctrl = nc.NamedSpinCtrl(self, name="Cutoff frequency:", 
                                               min=10, max=100000)
-        order_spinctrl = NamedSpinCtrl(self, name="Order:", min=1, max=12)
+        order_spinctrl = nc.NamedSpinCtrl(self, name="Order:", min=1, max=12)
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         flag = wx.ALIGN_LEFT|wx.ALL|wx.EXPAND
-        border = lfs.CONTROL_PANEL_BORDER
-        sizer.Add(function_chooser, proportion=0, 
-                  flag=flag, border=border)
-        sizer.Add(passband_chooser, proportion=0, 
-                  flag=flag, border=border)
-        sizer.Add(low_cutoff_spinctrl, proportion=0, 
-                  flag=flag, border=border)
-        sizer.Add(high_cutoff_spinctrl, proportion=0, 
-                  flag=flag, border=border)
-        sizer.Add(cutoff_spinctrl, proportion=0, 
-                  flag=flag, border=border)
-        sizer.Add(order_spinctrl,   proportion=0, 
-                  flag=flag, border=border)
+        sizer.Add(function_chooser, proportion=0, flag=flag)
+        sizer.Add(passband_chooser, proportion=0, flag=flag)
+        sizer.Add(low_cutoff_spinctrl, proportion=0, flag=flag)
+        sizer.Add(high_cutoff_spinctrl, proportion=0, flag=flag)
+        sizer.Add(cutoff_spinctrl, proportion=0, flag=flag)
+        sizer.Add(order_spinctrl,   proportion=0, flag=flag)
         self.SetSizer(sizer)
 
         self.Bind(wx.EVT_CHOICE, self._passband_choice_made, 

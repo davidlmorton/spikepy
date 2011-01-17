@@ -24,13 +24,14 @@ import numpy
 
 from spikepy.plotting.multi_plot_panel import MultiPlotPanel
 from spikepy.plotting.utils import adjust_axes_edges
-from spikepy.gui.look_and_feel_settings import lfs
 from spikepy.common import program_text as pt
+from spikepy.common.config_manager import config_manager as config
+from spikepy.gui.look_and_feel_settings import lfs 
 
 class FilterPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
-        self._dpi       = lfs.PLOT_DPI
-        self._figsize   = lfs.PLOT_FIGSIZE
+        self._dpi       = config['gui']['plotting']['dpi']
+        self._figsize   = config.get_size('figure')
         self._facecolor = lfs.PLOT_FACECOLOR
         self.name       = name
         MultiPlotPanel.__init__(self, parent, figsize=self._figsize,

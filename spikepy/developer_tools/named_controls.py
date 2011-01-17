@@ -19,8 +19,8 @@ import string
 
 import wx
 
-from .look_and_feel_settings import lfs
-from .validators import FloatValidator
+from spikepy.gui.validators import FloatValidator
+from spikepy.common.config_manager import config_manager as config
 
 class NamedChoiceCtrl(wx.Panel):
     def __init__(self, parent, name="", choices=[], bar_width=None, **kwargs):
@@ -36,7 +36,7 @@ class NamedChoiceCtrl(wx.Panel):
         else:
             self.choice = wx.Choice(self, choices=choices)
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        border = lfs.CHOICE_BORDER
+        border = config.control_border
         flag = wx.ALIGN_CENTER_VERTICAL|wx.ALL
         sizer.Add(self.name, proportion=0, flag=flag, border=border)
         sizer.Add((10,5), proportion=0)
@@ -71,7 +71,7 @@ class NamedSpinCtrl(wx.Panel):
         
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         flag = wx.ALIGN_CENTER_VERTICAL|wx.ALL
-        border=lfs.TEXT_CTRL_BORDER
+        border = config.control_border
         sizer.Add(self.name, proportion=0, 
                   flag=flag|wx.ALIGN_RIGHT, border=border)
         sizer.Add((10,5), proportion=0)
@@ -129,7 +129,7 @@ class NamedFloatCtrl(wx.Panel):
         
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         flag = wx.ALIGN_CENTER_VERTICAL|wx.ALL
-        border=lfs.TEXT_CTRL_BORDER
+        border=config.control_border
         sizer.Add(self.name, proportion=0, 
                   flag=flag|wx.ALIGN_RIGHT, border=border)
         sizer.Add((10,5), proportion=0)
@@ -156,7 +156,7 @@ class NamedTextCtrl(wx.Panel):
         
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         flag = wx.ALIGN_CENTER_VERTICAL|wx.ALL
-        border=lfs.TEXT_CTRL_BORDER
+        border=config.control_border
         sizer.Add(self.name, proportion=0, 
                   flag=flag|wx.ALIGN_RIGHT, border=border)
         sizer.Add((10,5), proportion=0)

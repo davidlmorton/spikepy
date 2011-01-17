@@ -7,9 +7,12 @@
     [[strategy_pane]]
         min_width=integer(min=300, max=800, default=None) # in pixels
         min_height=integer(min=100, max=800, default=None) # in pixels
+        wait_time=float(min=50, max=10000, default=None) # in ms
         border=integer(min=0, max=10, default=None) # in pixels
         summary_border=integer(min=0, max=10, default=None) # in pixels
-        wait_time=float(min=50, max=10000, default=None) # in ms
+        control_border=integer(min=0, max=10, default=None) # in pixels
+        control_border_mac=integer(min=0, max=10, default=None) # in pixels
+        control_panel_border=integer(min=0, max=10, default=None) # in pixels
     [[trial_list]]
         start_height=integer(min=100, max=400, default=None) # in pixels
         marked_status=integer(default=None)
@@ -22,6 +25,7 @@
         raster_pos_rate=option('top', 'bottom', 'center', default=None)
         raster_width=float(min=0.0, default=None) # width of spike raster ticks
         dpi=float(min=10, max=150, default=None)
+        aspect_ratio=float(min=1.0, max=10.0, default=None)
         [[[spacing]]]
             no_label_axes_left=integer(max=0, default=None)
             no_label_axes_bottom=integer(max=0, default=None)
@@ -31,6 +35,9 @@
             right_border=integer(min=0, default=None)
             top_border=integer(min=0, default=None)
             bottom_border=integer(min=0, default=None)
+        [[[printing]]]
+            preview_width=integer(min=300, default=None)
+            preview_height=integer(min=300, default=None)
     [[control_panel]]
         border=integer(min=0, max=10, default=None)
 [backend]

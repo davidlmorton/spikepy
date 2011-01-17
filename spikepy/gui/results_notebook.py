@@ -23,7 +23,6 @@ from spikepy.plotting.detection_plot_panel import DetectionPlotPanel
 from spikepy.plotting.extraction_plot_panel import ExtractionPlotPanel
 from spikepy.plotting.clustering_plot_panel import ClusteringPlotPanel
 from spikepy.plotting.summary_plot_panel import SummaryPlotPanel
-from spikepy.gui.look_and_feel_settings import lfs
 from spikepy.common import program_text as pt
 from spikepy.gui.utils import SinglePanelFrame
 

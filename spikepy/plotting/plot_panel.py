@@ -30,7 +30,7 @@ from wx.lib.pubsub import Publisher as pub
 from spikepy.gui.utils import get_bitmap_image
 from spikepy.plotting.utils import PlotPanelPrintout
 from spikepy.common import program_text as pt
-from spikepy.gui.look_and_feel_settings import lfs
+from spikepy.common.config_manager import config_manager as config
 
 class CustomToolbar(Toolbar):
     """
@@ -181,7 +181,9 @@ class PlotPanel (wx.Panel):
         self.print_data = wx.PrintData()
         self.print_data.SetPaperId(wx.PAPER_LETTER)
         self.print_data.SetPrintMode(wx.PRINT_MODE_PRINTER)
-        self.preview_frame_size = lfs.PRINT_PREVIEW_FRAME_SIZE
+        w = config['gui']['plotting']['printing']['preview_width']
+        h = config['gui']['plotting']['printing']['preview_height']
+        self.preview_frame_size = (w,h)
         self.page_setup_data = wx.PageSetupDialogData()
         self.preview_frame_pos = None
 

@@ -17,15 +17,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 
-from .look_and_feel_settings import lfs
 from spikepy.common import program_text as pt
 
 class PreferencesFrame(wx.Frame):
     def __init__(self, parent, id=wx.ID_ANY, title=pt.PREFERENCES_FRAME_TITLE,
-                 size=None, style=lfs.MAIN_FRAME_STYLE):
+                 size=None):
+        pass
                  
-        if size is None: size = lfs.PREFERENCES_FRAME_SIZE             
-        wx.Frame.__init__(self, parent, title=title, size=size, style=style)
 
 class PreferencesNotebook(wx.Notebook):
     def __init__(self, parent, **kwargs):

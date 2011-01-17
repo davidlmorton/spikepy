@@ -21,7 +21,7 @@ from wx.lib.pubsub import Publisher as pub
 from wx.lib.scrolledpanel import ScrolledPanel
 from wx.lib.buttons import GenButton
 
-from .named_controls import NamedChoiceCtrl
+from spikepy.developer_tools.named_controls import NamedChoiceCtrl
 from .utils import recursive_layout, strip_unicode
 from spikepy.common.config_manager import config_manager as config
 from spikepy.common import program_text as pt

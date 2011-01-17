@@ -17,18 +17,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 
-from spikepy.gui.named_controls import NamedFloatCtrl, OptionalNamedFloatCtrl
-from spikepy.gui.look_and_feel_settings import lfs
-
+from spikepy.developer_tools import named_controls as nc
 
 class ControlPanel(wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
 
-        pre_window_ctrl = NamedFloatCtrl(self, name='Window Prepadding (ms)')
+        pre_window_ctrl = nc.NamedFloatCtrl(self, name='Window Prepadding (ms)')
         spike_centered_checkbox = wx.CheckBox(self, 
                 label='Window centered on spike.')
-        post_window_ctrl = NamedFloatCtrl(self, name='Window Postpadding (ms)')
+        post_window_ctrl = nc.NamedFloatCtrl(self, name='Window Postpadding (ms)')
         exclude_overlappers_checkbox = wx.CheckBox(self, 
                 label='Exclude windows that overlap.')
         truncation_info = wx.StaticText(self, label=
@@ -39,17 +37,11 @@ class ControlPanel(wx.Panel):
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         flag = wx.ALIGN_LEFT|wx.ALL|wx.EXPAND
-        border = lfs.CONTROL_PANEL_BORDER
-        sizer.Add(pre_window_ctrl,              proportion=0, flag=flag, 
-                border=border)
-        sizer.Add(spike_centered_checkbox,      proportion=0, flag=flag, 
-                border=border)
-        sizer.Add(post_window_ctrl,             proportion=0, flag=flag, 
-                border=border)
-        sizer.Add(exclude_overlappers_checkbox, proportion=0, flag=flag, 
-                border=border)
-        sizer.Add(truncation_info, proportion=0, flag=flag, 
-                border=border)
+        sizer.Add(pre_window_ctrl,              proportion=0, flag=flag)
+        sizer.Add(spike_centered_checkbox,      proportion=0, flag=flag) 
+        sizer.Add(post_window_ctrl,             proportion=0, flag=flag) 
+        sizer.Add(exclude_overlappers_checkbox, proportion=0, flag=flag) 
+        sizer.Add(truncation_info, proportion=0, flag=flag) 
         self.SetSizer(sizer)
 
         self.spike_centered_checkbox      = spike_centered_checkbox

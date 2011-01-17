@@ -23,7 +23,7 @@ import wx
 
 from validators import CharacterSubsetValidator
 from spikepy.common import program_text as pt
-from .named_controls import NamedTextCtrl, NamedChoiceCtrl 
+from spikepy.developer_tools import named_controls as nc
 
 valid_strategy_characters = ('-_.,%s%s' % 
                              (string.ascii_letters, string.digits))
@@ -81,7 +81,7 @@ class ExportDirectoryPanel(wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
 
-        self.export_text = NamedTextCtrl(self, name=pt.EXPORT_TO_DIRECTORY, 
+        self.export_text = nc.NamedTextCtrl(self, name=pt.EXPORT_TO_DIRECTORY, 
                                           style=wx.TE_READONLY)
         default_path = os.getcwd()
         self.export_text.SetValue(default_path)
@@ -109,7 +109,7 @@ class ExportOptionsPanel(wx.Panel):
         format_choices = [pt.PLAIN_TEXT_SPACES, 
                    pt.PLAIN_TEXT_TABS,
                    pt.CSV, pt.MATLAB, pt.NUMPY_BINARY]
-        self.file_format = NamedChoiceCtrl(self, name=pt.FILE_FORMAT, 
+        self.file_format = nc.NamedChoiceCtrl(self, name=pt.FILE_FORMAT, 
                                       choices=format_choices)
     
         sizer = wx.BoxSizer(wx.VERTICAL)

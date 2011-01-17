@@ -17,24 +17,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 
-from spikepy.gui.look_and_feel_settings import lfs
-from spikepy.gui.named_controls import NamedSpinCtrl, NamedFloatCtrl
-
+from spikepy.developer_tools import named_controls as nc
 
 class ControlPanel(wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
 
-        iterations = NamedSpinCtrl(self, name="Iterations:")
-        threshold = NamedFloatCtrl(self, name="Threshold:")
-        number_of_clusters = NamedSpinCtrl(self, name="Number of clusters:")
+        iterations = nc.NamedSpinCtrl(self, name="Iterations:")
+        threshold = nc.NamedFloatCtrl(self, name="Threshold:")
+        number_of_clusters = nc.NamedSpinCtrl(self, name="Number of clusters:")
 
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         flag = wx.ALIGN_LEFT|wx.ALL|wx.EXPAND
-        border = lfs.CONTROL_PANEL_BORDER
-        sizer.Add(iterations, proportion=0, flag=flag, border=border)
-        sizer.Add(threshold, proportion=0, flag=flag, border=border)
-        sizer.Add(number_of_clusters, proportion=0, flag=flag, border=border)
+        sizer.Add(iterations, proportion=0, flag=flag)
+        sizer.Add(threshold, proportion=0, flag=flag)
+        sizer.Add(number_of_clusters, proportion=0, flag=flag)
         self.SetSizer(sizer)
 
         self.iterations = iterations

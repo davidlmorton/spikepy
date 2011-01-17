@@ -22,9 +22,9 @@ import wx
 from spikepy.common.strategy import (make_methods_used_name, 
                                      make_settings_name, 
                                      make_strategy_name)
-from validators import CharacterSubsetValidator
+from spikepy.gui.validators import CharacterSubsetValidator
 from spikepy.common import program_text as pt
-from .named_controls import NamedTextCtrl 
+from spikepy.developer_tools.named_controls import NamedTextCtrl 
 
 valid_strategy_characters = ('-_.,%s%s' % 
                              (string.ascii_letters, string.digits))

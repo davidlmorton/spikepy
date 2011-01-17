@@ -33,6 +33,7 @@ class ConfigManager(object):
         self._user = None
         self._current = configobj.ConfigObj()
         self._status_markers = None
+        self._control_border = None
 
     def load_configs(self):
         self.load_builtin_config()
@@ -63,7 +64,16 @@ class ConfigManager(object):
         elif name == 'pyshell':
             size_ratio = self['gui']['menu_bar']['pyshell_size_ratio']
             return self.get_size('main_frame')*size_ratio
-                   
+        elif name == 'results_frame':
+            mfs = self.get_size('main_frame')
+            height = mfs[1]-230 # pixels in menu and such.
+            width = mfs[0]-self['gui']['strategy_pane']['min_width']-20
+            return numpy.array([width, height])       
+        elif name == 'figure':
+            base = self.get_size('results_frame')/self['gui']['plotting']['dpi']
+            width = base[0]
+            height = width/self['gui']['plotting']['aspect_ratio']
+            return numpy.array([width, height])
 
     @property
     def unmarked_status(self):
@@ -85,6 +95,19 @@ class ConfigManager(object):
             unmarked = self._current['gui']['trial_list']['unmarked_status']
             marked = self._current['gui']['trial_list']['marked_status']
         return (unichr(unmarked), unichr(marked))
+
+    @property
+    def control_border(self):
+        if self._control_border is None:
+            self._control_border = self.get_control_border()
+        return self._control_border
+
+    def get_control_border(self):
+        if path_utils.platform == 'mac':
+            cb = self['gui']['strategy_pane']['control_border_mac']
+        else:
+            cb = self['gui']['strategy_pane']['control_border']
+        return cb
     
     @property
     def current(self):
