@@ -25,14 +25,15 @@ from scipy import signal as scisig
 from spikepy.plotting.multi_plot_panel import MultiPlotPanel
 from spikepy.plotting.utils import adjust_axes_edges, clear_axes
 
-from spikepy.gui.look_and_feel_settings import lfs
+from spikepy.common.config_manager import config_manager as config
 from spikepy.common import program_text as pt
 
 class DetectionPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
-        self._dpi       = lfs.PLOT_DPI
-        self._figsize   = lfs.PLOT_FIGSIZE
-        self._facecolor = lfs.PLOT_FACECOLOR
+        pconfig = config['gui']['plotting']
+        self._dpi       = pconfig['dpi']
+        self._figsize   = config.get_size('figure')
+        self._facecolor = pconfig['face_color']
         self.name       = name
         MultiPlotPanel.__init__(self, parent, figsize=self._figsize,
                                               facecolor=self._facecolor,
@@ -132,7 +133,7 @@ class DetectionPlotPanel(MultiPlotPanel):
 
         # lay out subplots
         canvas_size = self._plot_panels[trial_id].GetMinSize()
-        lfs.default_adjust_subplots(figure, canvas_size)
+        config.default_adjust_subplots(figure, canvas_size)
 
         # --- add axis for spike plot ---
         self._spike_axes[trial_id] = figure.add_subplot(
@@ -140,7 +141,7 @@ class DetectionPlotPanel(MultiPlotPanel):
         spike_axes = self._spike_axes[trial_id]
         self.setup_spike_axes_labels(spike_axes, trial_id)
         
-        bottom = lfs.AXES_BOTTOM
+        bottom = config['gui']['plotting']['spacing']['axes_bottom']
         adjust_axes_edges(spike_axes, canvas_size_in_pixels=canvas_size,
                                       bottom=bottom)
 
@@ -152,6 +153,7 @@ class DetectionPlotPanel(MultiPlotPanel):
         spike_axes.set_title(pt.TRIAL_NAME+new_name)
 
     def _plot_filtered_traces(self, trial, figure, trial_id):
+        pc = config['gui']['plotting']
         if trial.detection_filter.results is not None:
             traces = trial.detection_filter.results
         else:
@@ -163,21 +165,24 @@ class DetectionPlotPanel(MultiPlotPanel):
             clear_tick_labels = axes is not trace_axes[-1]  
             clear_axes(axes, clear_tick_labels=clear_tick_labels)
 
-            axes.plot(times, trace, color=lfs.PLOT_COLOR_2, 
-                             linewidth=lfs.PLOT_LINEWIDTH_2, 
-                             label=pt.DETECTION_TRACE_GRAPH_LABEL)
+            axes.plot(times, trace, 
+                      color=pc['detection']['filtered_trace_color'], 
+                      linewidth=pc['detection']['filtered_trace_linewidth'], 
+                      label=pt.DETECTION_TRACE_GRAPH_LABEL)
             ymax = numpy.max(numpy.abs(trace))
             axes.set_ylim(ymin=-ymax*1.1, ymax=ymax*1.4)
             std = numpy.std(trace)
 
             for factor, linestyle in [(2,'solid'),(4,'dashed')]:
-                axes.axhline(std*factor, color=lfs.PLOT_STD_LINE_COLOR, 
-                                  linewidth=lfs.PLOT_STD_LINEWIDTH, 
-                                  label=r'$%d\sigma$' % factor,
-                                  linestyle=linestyle)
-                axes.axhline(-std*factor, color=lfs.PLOT_STD_LINE_COLOR, 
-                                  linewidth=lfs.PLOT_STD_LINEWIDTH, 
-                                  linestyle=linestyle)
+                axes.axhline(std*factor, 
+                             color=pc['std_trace_color'], 
+                             linewidth=pc['std_trace_linewidth'], 
+                             label=r'$%d\sigma$' % factor,
+                             linestyle=linestyle)
+                axes.axhline(-std*factor, 
+                             color=pc['std_trace_color'], 
+                             linewidth=pc['std_trace_linewidth'], 
+                             linestyle=linestyle)
         try:
             axes.legend(loc='upper right', ncol=3, shadow=True, 
                         bbox_to_anchor=[1.03,1.1])
@@ -186,6 +191,7 @@ class DetectionPlotPanel(MultiPlotPanel):
             
 
     def _plot_spikes(self, trial, figure, trial_id):
+        pc = config['gui']['plotting']
         # remove old lines if present.
         spike_axes = self._spike_axes[trial_id]
         spike_axes.clear()
@@ -207,7 +213,7 @@ class DetectionPlotPanel(MultiPlotPanel):
                 del(axes.lines[1])
             
             raster_height_factor = 2.0
-            raster_pos = lfs.SPIKE_RASTER_ON_TRACES_POSITION
+            raster_pos = pc['detection']['raster_pos_traces']
             if raster_pos == 'top':    spike_y = max(axes.get_ylim())
             if raster_pos == 'botom':  spike_y = min(axes.get_ylim())
             if raster_pos == 'center': 
@@ -215,13 +221,14 @@ class DetectionPlotPanel(MultiPlotPanel):
                 raster_height_factor = 1.0
             spike_xs = spike_list
             spike_ys = [spike_y for spike_index in spike_list]
-            axes.plot(spike_xs, spike_ys, color=lfs.SPIKE_RASTER_COLOR, 
-                                 linewidth=0, 
-                                 marker='|',
-                                 markersize=lfs.SPIKE_RASTER_HEIGHT*
-                                            raster_height_factor,
-                                 markeredgewidth=lfs.SPIKE_RASTER_WIDTH,
-                                 label=pt.SPIKES_GRAPH_LABEL)
+            axes.plot(spike_xs, spike_ys, 
+                      color=pc['detection']['raster_color'], 
+                      linewidth=0, 
+                      marker='|',
+                      markersize=pc['detection']['raster_height']*
+                        raster_height_factor,
+                      markeredgewidth=pc['detection']['raster_width'],
+                      label=pt.SPIKES_GRAPH_LABEL)
 
         # --- plot spike rate ---
         width = 50.0
@@ -241,10 +248,11 @@ class DetectionPlotPanel(MultiPlotPanel):
 
             
         spike_axes.plot(bin_points, spikes*1000.0/bin_width, 
-                        color=lfs.PLOT_COLOR_2, linewidth=lfs.PLOT_LINEWIDTH_2)
+                        color=pc['detection']['filtered_trace_color'], 
+                        linewidth=pc['detection']['filtered_trace_linewidth'])
 
         raster_height_factor = 2.0
-        raster_pos = lfs.SPIKE_RASTER_ON_RATE_POSITION
+        raster_pos = pc['detection']['raster_pos_rate']
         if raster_pos == 'top':    spike_y = max(spike_axes.get_ylim())
         if raster_pos == 'botom':  spike_y = min(spike_axes.get_ylim())
         if raster_pos == 'center': 
@@ -254,12 +262,12 @@ class DetectionPlotPanel(MultiPlotPanel):
         spike_xs = accepted_spike_list
         spike_ys = [spike_y for spike_index in accepted_spike_list]
         spike_axes.plot(spike_xs, spike_ys, 
-                                color=lfs.SPIKE_RASTER_COLOR,
-                                linewidth=0.0,
-                                marker='|',
-                                markeredgewidth=lfs.SPIKE_RASTER_WIDTH,
-                                markersize=lfs.SPIKE_RASTER_HEIGHT*
-                                            raster_height_factor)
+                        color=pc['detection']['raster_color'], 
+                        linewidth=0, 
+                        marker='|',
+                        markersize=pc['detection']['raster_height']*
+                          raster_height_factor,
+                        markeredgewidth=pc['detection']['raster_width'])
 
         spike_axes.set_xlim(0.0, trial.times[-1])
 

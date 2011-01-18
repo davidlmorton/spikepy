@@ -22,16 +22,17 @@ import wx
 import numpy
 
 from spikepy.plotting.multi_plot_panel import MultiPlotPanel
-from spikepy.gui.look_and_feel_settings import lfs
 from spikepy.common import program_text as pt
 from spikepy.plotting.utils import adjust_axes_edges, set_axes_num_ticks
 from spikepy.common.utils import pca
+from spikepy.common.config_manager import config_manager as config
 
 class ClusteringPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
-        self._dpi       = lfs.PLOT_DPI
-        self._figsize   = lfs.PLOT_FIGSIZE
-        self._facecolor = lfs.PLOT_FACECOLOR
+        pconfig = config['gui']['plotting']
+        self._dpi       = pconfig['dpi']
+        self._figsize   = config.get_size('figure')
+        self._facecolor = pconfig['face_color']
         self.name       = name
         MultiPlotPanel.__init__(self, parent, figsize=self._figsize,
                                               facecolor=self._facecolor,
@@ -104,17 +105,19 @@ class ClusteringPlotPanel(MultiPlotPanel):
             axes = figure.add_subplot(2,3,3+i)
             self._pca_axes_list[trial_id].append(axes)
         canvas_size = self._plot_panels[trial_id].GetMinSize()
-        lfs.default_adjust_subplots(figure, canvas_size)
-        adjust_axes_edges(fa, canvas_size, bottom=lfs.AXES_BOTTOM)
+        config.default_adjust_subplots(figure, canvas_size)
+        bottom = config['gui']['plotting']['spacing']['axes_bottom']
+        left = config['gui']['plotting']['spacing']['axes_left']
+        adjust_axes_edges(fa, canvas_size, bottom=bottom)
         # give room for yticklabels on pca plots
         adjust_axes_edges(self._pca_axes_list[trial_id][0], canvas_size,
-                          right=2*lfs.AXES_LEFT/3)
+                          right=2*left/3)
         adjust_axes_edges(self._pca_axes_list[trial_id][1], canvas_size,
-                          left=lfs.AXES_LEFT/3)
+                          left=left/3)
         adjust_axes_edges(self._pca_axes_list[trial_id][1], canvas_size,
-                          right=lfs.AXES_LEFT/3)
+                          right=left/3)
         adjust_axes_edges(self._pca_axes_list[trial_id][2], canvas_size,
-                          left=2*lfs.AXES_LEFT/3)
+                          left=2*left/3)
 
     def _plot_pcas(self, trial, figure, trial_id):
         for i, axes in enumerate(self._pca_axes_list[trial_id]):
@@ -133,7 +136,7 @@ class ClusteringPlotPanel(MultiPlotPanel):
 
             pc_x = [2,3,3] # which pc is associated with what axis.
             pc_y = [1,1,2]
-            color = lfs.get_color_from_cycle(feature_number)
+            color = config.get_color_from_cycle(feature_number)
             for i, axes in enumerate(self._pca_axes_list[trial_id]):
                 axes.set_ylabel(pt.PCA_LABEL % (pc_y[i], pct_var[pc_y[i]-1], '%'))
                 axes.set_xlabel(pt.PCA_LABEL % (pc_x[i], pct_var[pc_x[i]-1], '%'))
@@ -158,14 +161,19 @@ class ClusteringPlotPanel(MultiPlotPanel):
 
         axes.set_autoscale_on(True)
         feature_numbers = sorted(features.keys())
+        pc = config['gui']['plotting']
         for feature_number in feature_numbers:
-            color = lfs.get_color_from_cycle(feature_number)
+            color = config.get_color_from_cycle(feature_number)
             num_features = len(features[feature_number])
             avg_feature = numpy.average(features[feature_number], axis=0)
-            axes.plot(avg_feature, linewidth=lfs.PLOT_LINEWIDTH_1,
-                               color=color, alpha=1.0, 
-                               label=pt.AVERAGE_OF % num_features)
+            axes.plot(avg_feature, 
+                      linewidth=pc['bold_linewidth'],
+                      color=color, 
+                      alpha=1.0, 
+                      label=pt.AVERAGE_OF % num_features)
             for feature in features[feature_number]:
-                axes.plot(feature, linewidth=lfs.PLOT_LINEWIDTH_4,
-                               color=color, alpha=0.2) 
+                axes.plot(feature, 
+                          linewidth=pc['std_trace_linewidth'],
+                          color=color, 
+                          alpha=0.2) 
         axes.legend(loc='upper right')

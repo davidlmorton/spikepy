@@ -22,16 +22,17 @@ import wx
 import numpy
 
 from spikepy.plotting.multi_plot_panel import MultiPlotPanel
-from spikepy.gui.look_and_feel_settings import lfs
 from spikepy.common import program_text as pt
 from spikepy.plotting.utils import adjust_axes_edges, set_axes_num_ticks
 from spikepy.common.utils import pca
+from spikepy.common.config_manager import config_manager as config
 
 class ExtractionPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
-        self._dpi       = lfs.PLOT_DPI
-        self._figsize   = lfs.PLOT_FIGSIZE
-        self._facecolor = lfs.PLOT_FACECOLOR
+        pconfig = config['gui']['plotting']
+        self._dpi       = pconfig['dpi']
+        self._figsize   = config.get_size('figure')
+        self._facecolor = pconfig['face_color']
         self.name       = name
         MultiPlotPanel.__init__(self, parent, figsize=self._figsize,
                                               facecolor=self._facecolor,
@@ -104,17 +105,20 @@ class ExtractionPlotPanel(MultiPlotPanel):
             axes = figure.add_subplot(2,3,3+i)
             self._pca_axes_list[trial_id].append(axes)
         canvas_size = self._plot_panels[trial_id].GetMinSize()
-        lfs.default_adjust_subplots(figure, canvas_size)
-        adjust_axes_edges(fa, canvas_size, bottom=lfs.AXES_BOTTOM)
+        config.default_adjust_subplots(figure, canvas_size)
+        bottom = config['gui']['plotting']['spacing']['axes_bottom']
+        left = config['gui']['plotting']['spacing']['axes_left']
+        
+        adjust_axes_edges(fa, canvas_size, bottom=bottom)
         # give room for yticklabels on pca plots
         adjust_axes_edges(self._pca_axes_list[trial_id][0], canvas_size,
-                          right=2*lfs.AXES_LEFT/3)
+                          right=2*left/3)
         adjust_axes_edges(self._pca_axes_list[trial_id][1], canvas_size,
-                          left=lfs.AXES_LEFT/3)
+                          left=left/3)
         adjust_axes_edges(self._pca_axes_list[trial_id][1], canvas_size,
-                          right=lfs.AXES_LEFT/3)
+                          right=left/3)
         adjust_axes_edges(self._pca_axes_list[trial_id][2], canvas_size,
-                          left=2*lfs.AXES_LEFT/3)
+                          left=2*left/3)
 
     def _plot_pcas(self, trial, figure, trial_id):
 
@@ -139,6 +143,7 @@ class ExtractionPlotPanel(MultiPlotPanel):
             set_axes_num_ticks(axes, axis='both', num=4)
 
     def _plot_features(self, trial, figure, trial_id):
+        pc = config['gui']['plotting']['extraction']
         axes = self._feature_axes[trial_id]
         axes.clear()
         trial = self._trials[trial_id]
@@ -156,8 +161,10 @@ class ExtractionPlotPanel(MultiPlotPanel):
 
         axes.set_autoscale_on(True)
         for feature in features:
-            axes.plot(feature, linewidth=lfs.PLOT_LINEWIDTH_4,
-                               color="black", alpha=0.2)
+            axes.plot(feature, 
+                      linewidth=pc['feature_trace_linewidth'],
+                      color=pc['feature_trace_color'], 
+                      alpha=pc['feature_trace_alpha'])
         axes.set_xlim((0,len(features[0])-1))
 
         # EXTRACTED FEATURE INFO

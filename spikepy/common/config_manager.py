@@ -113,6 +113,26 @@ class ConfigManager(object):
     def current(self):
         return copy.copy(self._current)
 
+    def default_adjust_subplots(self, figure, canvas_size_in_pixels):
+        '''
+        Adjust the figure's subplot parameters according to the settings
+        in this config_manager
+        '''
+        psconfig = self['gui']['plotting']['spacing']
+        left   = psconfig['left_border'] / canvas_size_in_pixels[0]
+        right  = 1.0 - psconfig['right_border'] / canvas_size_in_pixels[0]
+        top    = 1.0 - psconfig['top_border'] / canvas_size_in_pixels[1]
+        bottom = psconfig['bottom_border'] / canvas_size_in_pixels[1]
+        figure.subplots_adjust(hspace=0.03, wspace=0.03, 
+                               left=left, right=right, 
+                               bottom=bottom, top=top)
+
+    def get_color_from_cycle(self, num):
+        cycle = self['gui']['plotting']['clustering']['color_cycle']
+        len_color_cycle = len(cycle)
+        return cycle[num % len_color_cycle]
+        
+
 config_manager = ConfigManager()
 
 

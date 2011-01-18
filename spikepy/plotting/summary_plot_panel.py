@@ -24,15 +24,16 @@ import numpy
 import scipy
 
 from spikepy.plotting.multi_plot_panel import MultiPlotPanel
-from spikepy.gui.look_and_feel_settings import lfs
 from spikepy.common import program_text as pt
 from spikepy.plotting.utils import adjust_axes_edges
+from spikepy.common.config_manager import config_manager as config
 
 class SummaryPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
-        self._dpi       = lfs.PLOT_DPI
-        self._figsize   = lfs.PLOT_FIGSIZE
-        self._facecolor = lfs.PLOT_FACECOLOR
+        pconfig = config['gui']['plotting']
+        self._dpi       = pconfig['dpi']
+        self._figsize   = config.get_size('figure')
+        self._facecolor = pconfig['face_color']
         self.name       = name
         MultiPlotPanel.__init__(self, parent, figsize=self._figsize,
                                               facecolor=self._facecolor,
@@ -105,7 +106,7 @@ class SummaryPlotPanel(MultiPlotPanel):
                                                         figheight)
                 figure.clear()
                 canvas_size = self._plot_panels[trial_id].GetMinSize()
-                lfs.default_adjust_subplots(figure, canvas_size)
+                config.default_adjust_subplots(figure, canvas_size)
                 self._setup_axes(trial, figure, trial_id, canvas_size, 
                                  num_cluster_combinations, num_clusters)
             
@@ -143,9 +144,10 @@ class SummaryPlotPanel(MultiPlotPanel):
         self._trace_axes[trial_id] = trace_axes
         trace_yaxis = trace_axes.get_yaxis()
         trace_yaxis.set_ticks_position('right')
-        plot_width = (canvas_size[0] - lfs.CLUSTER_RASTER_LEFT -
-                                       lfs.CLUSTER_RASTER_RIGHT)
-        text_loc_percent = 1.0 + lfs.CLUSTER_RIGHT_YLABEL/plot_width
+        pc = config['gui']['plotting']['summary']
+        plot_width = (canvas_size[0] - pc['raster_left'] -
+                                       pc['raster_right'])
+        text_loc_percent = 1.0 + pc['right_ylabel']/plot_width
         trace_axes.text(text_loc_percent, 0.5, pt.TRACE_NUMBER,
                         verticalalignment='center',
                         horizontalalignment='left',
@@ -153,9 +155,9 @@ class SummaryPlotPanel(MultiPlotPanel):
                         transform=trace_axes.transAxes,
                         clip_on=False)
 
-        bottom = lfs.AXES_BOTTOM 
-        right  = lfs.CLUSTER_RASTER_RIGHT
-        left   = lfs.CLUSTER_RASTER_LEFT 
+        bottom = config['gui']['plotting']['spacing']['axes_bottom']
+        right  = pc['raster_right']
+        left   = pc['raster_left']
         for axes in [trace_axes, raster_axes]:
             adjust_axes_edges(axes, canvas_size_in_pixels=canvas_size, 
                                     bottom=bottom, right=right, left=left)
@@ -175,7 +177,7 @@ class SummaryPlotPanel(MultiPlotPanel):
         self.average_axes = average_axes
         self.std_axes     = std_axes
 
-        left   = lfs.AXES_LEFT 
+        left   = config['gui']['plotting']['spacing']['axes_left']
         adjust_axes_edges(std_axes, canvas_size_in_pixels=canvas_size, 
                                     left=left)
 
@@ -189,10 +191,12 @@ class SummaryPlotPanel(MultiPlotPanel):
         trace_ticks = []
         trace_offsets = [-i*2*numpy.max(numpy.abs(traces)) 
                          for i in xrange(len(traces))]
+        pc = config['gui']['plotting']
         for trace, trace_offset in zip(traces, trace_offsets):
-            trace_axes.plot(times, trace+trace_offset, color=lfs.PLOT_COLOR_2, 
-                                 label=pt.DETECTION_TRACE_GRAPH_LABEL,
-                                 alpha=lfs.CLUSTER_STD_ALPHA)
+            trace_axes.plot(times, trace+trace_offset, 
+                            color=pc['detection']['filtered_trace_color'], 
+                            label=pt.DETECTION_TRACE_GRAPH_LABEL,
+                            alpha=pc['summary']['std_alpha'])
             trace_ticks.append(numpy.average(trace+trace_offset))
         old_ylim = trace_axes.get_ylim()
         ysize = max(old_ylim) - min(old_ylim) 
@@ -208,9 +212,9 @@ class SummaryPlotPanel(MultiPlotPanel):
             spike_xs = spike_times[key]
             spike_ys = [spike_y for i in xrange(len(spike_xs))]
             trace_axes.plot(spike_xs, spike_ys, linewidth=0, marker='|',
-                             markersize=lfs.SPIKE_RASTER_HEIGHT,
-                             markeredgewidth=lfs.SPIKE_RASTER_WIDTH,
-                             color=lfs.SPIKE_RASTER_COLOR)
+                             markersize=pc['detection']['raster_height'],
+                             markeredgewidth=pc['detection']['raster_width'],
+                             color=pc['detection']['raster_color'])
         # label raster_axes y ticks
         raster_axes.set_yticks(spike_y_list)
         raster_axes.set_yticklabels(['%d' % key for key in keys])
@@ -228,16 +232,17 @@ class SummaryPlotPanel(MultiPlotPanel):
     def _plot_clusters(self, trial, figure, trial_id, ncc):
         averages_and_stds = self._get_averages_and_stds(trial)
         
+        pc = config['gui']['plotting']
         for cluster_num, (average, stds) in averages_and_stds.items():
             times = numpy.arange(0,len(average))*(trial.dt/3.0)
             line = self.average_axes.plot(times, average,
                               label=pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)[0]
             color = line.get_color()
             self.average_axes.fill_between(times, 
-                                                  average+stds,
-                                                  average-stds,
-                                                  color=color,
-                                                  alpha=lfs.CLUSTER_TRACE_ALPHA)
+                                           average+stds,
+                                           average-stds,
+                                           color=color,
+                                           alpha=pc['summary']['std_alpha'])
 
             self.std_axes.plot(times, stds, 
                           label=pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)

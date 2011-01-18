@@ -26,13 +26,13 @@ from spikepy.plotting.multi_plot_panel import MultiPlotPanel
 from spikepy.plotting.utils import adjust_axes_edges
 from spikepy.common import program_text as pt
 from spikepy.common.config_manager import config_manager as config
-from spikepy.gui.look_and_feel_settings import lfs 
 
 class FilterPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
-        self._dpi       = config['gui']['plotting']['dpi']
+        pconfig = config['gui']['plotting']
+        self._dpi       = pconfig['dpi']
         self._figsize   = config.get_size('figure')
-        self._facecolor = lfs.PLOT_FACECOLOR
+        self._facecolor = pconfig['face_color']
         self.name       = name
         MultiPlotPanel.__init__(self, parent, figsize=self._figsize,
                                               facecolor=self._facecolor,
@@ -43,11 +43,11 @@ class FilterPlotPanel(MultiPlotPanel):
         pub.subscribe(self._trial_renamed,  topic='TRIAL_RENAMED')
 
         if name == 'detection_filter':
-            self.line_color = lfs.PLOT_COLOR_2
-            self.line_width = lfs.PLOT_LINEWIDTH_2
+            self.line_color = pconfig['detection']['filtered_trace_color']
+            self.line_width = pconfig['detection']['filtered_trace_linewidth']
         if name == 'extraction_filter':
-            self.line_color = lfs.PLOT_COLOR_3
-            self.line_width = lfs.PLOT_LINEWIDTH_3
+            self.line_color = pconfig['extraction']['filtered_trace_color']
+            self.line_width = pconfig['extraction']['filtered_trace_linewidth']
 
         self._trials = weakref.WeakValueDictionary()
         self._trace_axes = {}
@@ -101,6 +101,7 @@ class FilterPlotPanel(MultiPlotPanel):
     def _plot_raw_traces(self, trial, figure, trial_id):
         traces = trial.raw_traces
         times  = trial.times
+        pconfig = config['gui']['plotting']
 
         for i, trace in enumerate(traces):
             if i==0:
@@ -114,9 +115,10 @@ class FilterPlotPanel(MultiPlotPanel):
                                            sharex=top_axes,
                                            sharey=top_axes))
             axes = self._trace_axes[trial_id][-1]
-            axes.plot(times, trace, color=lfs.PLOT_COLOR_1, 
-                             linewidth=lfs.PLOT_LINEWIDTH_1, 
-                             label=pt.RAW)
+            axes.plot(times, trace, 
+                      color=pconfig['std_trace_color'], 
+                      linewidth=pconfig['std_trace_linewidth'], 
+                      label=pt.RAW)
             axes.set_ylabel('%s #%d' % (pt.TRACE, (i+1)))
             if i+1 < len(traces): #all but the last trace
                 # make the x/yticklabels dissapear
@@ -127,7 +129,7 @@ class FilterPlotPanel(MultiPlotPanel):
 
         # lay out subplots
         canvas_size = self._plot_panels[trial_id].GetMinSize()
-        lfs.default_adjust_subplots(figure, canvas_size)
+        config.default_adjust_subplots(figure, canvas_size)
 
         # --- add psd plot ---
         all_traces = numpy.hstack(traces)
@@ -136,13 +138,13 @@ class FilterPlotPanel(MultiPlotPanel):
         psd_axes = self._psd_axes[trial_id]
         psd_axes.psd(all_traces, Fs=trial.sampling_freq, NFFT=2**11,
                                  label=pt.RAW,
-                                 linewidth=lfs.PLOT_LINEWIDTH_1, 
-                                 color=lfs.PLOT_COLOR_1)
+                                 linewidth=pconfig['std_trace_linewidth'], 
+                                 color=pconfig['std_trace_color'])
         psd_axes.set_ylabel(pt.PSD_Y_AXIS_LABEL)
         name = trial.display_name
         psd_axes.set_title(pt.TRIAL_NAME+name)
 
-        bottom = lfs.AXES_BOTTOM
+        bottom = pconfig['spacing']['axes_bottom']
         adjust_axes_edges(psd_axes, canvas_size_in_pixels=canvas_size, 
                                     bottom=bottom)
 
