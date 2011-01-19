@@ -1,7 +1,7 @@
 [gui]
     [[main_frame]]
+        height=integer(min=300, max=1200, default=None)
         aspect_ratio=float(min=0.5, max=4, default=None)
-        fill_ratio=float(min=0.4, max=1.0, default=None)
     [[menu_bar]]
         pyshell_size_ratio=float(min=0.2, max=1.1, default=None)
     [[strategy_pane]]
@@ -25,21 +25,21 @@
         aspect_ratio=float(min=1.0, max=10.0, default=None)
         face_color=float_list(min=3, max=4, default=None)
         std_trace_color=float_list(min=3, max=4, default=None)
-        std_trace_linewidth=float(min=0.0, max=5.0, default=None)
-        bold_linewidth=float(min=0.0, max=5.0, default=None)
+        std_trace_linewidth=integer(min=0, max=5, default=None)
+        bold_linewidth=integer(min=0, max=5, default=None)
         [[[detection]]]
             filtered_trace_color=float_list(min=3, max=4, default=None)
-            filtered_trace_linewidth=float(min=0.0, max=5.0, default=None)
+            filtered_trace_linewidth=integer(min=0, max=5, default=None)
             raster_pos_traces=option('top', 'bottom', 'center', default=None)
             raster_pos_rate=option('top', 'bottom', 'center', default=None)
-            raster_width=float(min=0.0, default=None) 
+            raster_width=integer(min=0, default=None) 
             raster_height=float(min=1.0, default=None)
             raster_color=float_list(min=3, max=4, default=None)
         [[[extraction]]]
             filtered_trace_color=float_list(min=3, max=4, default=None)
-            filtered_trace_linewidth=float(min=0.0, max=5.0, default=None)
+            filtered_trace_linewidth=integer(min=0, max=5, default=None)
             feature_trace_color=float_list(min=3, max=4, default=None)
-            feature_trace_linewidth=float(min=0.0, max=5.0, default=None)
+            feature_trace_linewidth=integer(min=0, max=5, default=None)
             feature_trace_alpha=float(min=0.0, max=1.0, default=None)
         [[[clustering]]]
             color_cycle=list(min=1, default=None)

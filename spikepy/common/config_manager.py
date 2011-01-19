@@ -57,8 +57,7 @@ class ConfigManager(object):
 
     def get_size(self, name):
         if name == 'main_frame':
-            screen_height = wx.GetDisplaySize()[1]
-            height = screen_height*self['gui']['main_frame']['fill_ratio']
+            height = self['gui']['main_frame']['height']
             width  = height*self['gui']['main_frame']['aspect_ratio']
             return numpy.array([width, height])
         elif name == 'pyshell':
