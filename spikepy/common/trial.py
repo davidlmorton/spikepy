@@ -128,6 +128,17 @@ class Trial(object):
         stage_data.settings = settings
         stage_data.results  = results
 
+    @classmethod
+    def from_archive(cls, archive):
+        return_trial = Trial(sampling_freq=archive['sampling_freq'],
+                             raw_traces=archive['raw_traces'], 
+                             fullpath=archive['fullpath'])
+        for stage in return_trial.stages:
+            if stage.name in archive.keys():
+                data_for_stage = archive[stage.name]
+                return_trial.set_data_for_stage(stage.name, **data_for_stage)
+        return return_trial
+
     def get_data_from_stage(self, stage_name):
         stage_data = self.get_stage_data(stage_name)
         return_dict = {'method': stage_data.method,
@@ -206,6 +217,11 @@ class Trial(object):
             return features, pc, var
         else:
             return features
+
+    def get_num_clusters(self):
+        if self.extraction.results is None or self.clustering.results is None:
+            raise RuntimeError('Trial with trial_id:%s does not have extraction or clustering results, so cannot find clustered features.' % self.trial_id)
+        return len(self.clustering.results.keys())
 
     def rename(self, new_display_name):
         display_names.remove(self.display_name)
