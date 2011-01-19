@@ -234,7 +234,10 @@ class SummaryPlotPanel(MultiPlotPanel):
         
         pc = config['gui']['plotting']
         for cluster_num, (average, stds) in averages_and_stds.items():
-            times = numpy.arange(0,len(average))*(trial.dt/3.0)
+            try:
+                times = numpy.arange(0,len(average))*(trial.dt/3.0)
+            except TypeError:
+                continue # don't try to plot empty clusters.
             line = self.average_axes.plot(times, average,
                               label=pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)[0]
             color = line.get_color()

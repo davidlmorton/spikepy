@@ -168,15 +168,18 @@ class ClusteringPlotPanel(MultiPlotPanel):
         feature_numbers = sorted(features.keys())
         for feature_number in feature_numbers:
             rotated_features = features[feature_number]
-            pct_var = [tvar/sum(var)*100.0 for tvar in var]
+            if len(rotated_features) < 1:
+                continue # don't try to plot empty clusters.
             trf = rotated_features.T
 
             color = config.get_color_from_cycle(feature_number)
-            axes.set_xlabel(pt.PCA_LABEL % (1, pct_var[0], '%'))
-            axes.set_ylabel(pt.PCA_LABEL % (2, pct_var[1], '%'))
             axes.plot(trf[0], trf[1], color=color,
                                       linewidth=0,
                                       marker='.')
+
+        pct_var = [tvar/sum(var)*100.0 for tvar in var]
+        axes.set_xlabel(pt.PCA_LABEL % (1, pct_var[0], '%'))
+        axes.set_ylabel(pt.PCA_LABEL % (2, pct_var[1], '%'))
 
         set_axes_num_ticks(axes, axis='both', num=4)
 
@@ -198,6 +201,8 @@ class ClusteringPlotPanel(MultiPlotPanel):
         for feature_number in feature_numbers:
             color = config.get_color_from_cycle(feature_number)
             num_features = len(features[feature_number])
+            if num_features < 1:
+                continue # don't bother trying to plot empty clusters.
             avg_feature = numpy.average(features[feature_number], axis=0)
             axes.plot(avg_feature, 
                       linewidth=pc['bold_linewidth'],
@@ -225,6 +230,14 @@ class ClusteringPlotPanel(MultiPlotPanel):
 
             axes.set_autoscale_on(True)
             pc = config['gui']['plotting']
+
+            if len(features[i]) < 1 or len(features[j]) < 1:
+                empty_cluster = j
+                if len(features[i]) < 1:
+                    empty_cluster = i
+                axes.set_xlabel('Cluster %d vs %d (cluster %d is empty)' %
+                                (i, j, empty_cluster))
+                continue # don't try doing gaussian fits on single point or no point clusters.
 
             p1, p2 = pu.projection(features[i], features[j])
             axes.hist(p1, bins=8, fc=config.get_color_from_cycle(i), ec='k')
