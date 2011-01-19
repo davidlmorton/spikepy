@@ -21,7 +21,7 @@ def num_projection_combinations(n):
     elif n == 2:
         return 1
     elif n == 1:
-        return 1
+        return 0
 
 def center(cluster):
     '''

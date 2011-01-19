@@ -117,7 +117,7 @@ class ClusteringPlotPanel(MultiPlotPanel):
             num_rows = 2*(int(math.ceil(num_pros/2.0))+1)
         else:
             num_clusters = 1
-            num_pros = 1
+            num_pros = 0
             num_rows = 4
         num_cols = 2
         self._set_plot_size(num_rows/2, trial_id)
@@ -227,8 +227,14 @@ class ClusteringPlotPanel(MultiPlotPanel):
             pc = config['gui']['plotting']
 
             p1, p2 = pu.projection(features[i], features[j])
-            axes.hist(p1, bins=8, color=config.get_color_from_cycle(i), ec='k')
-            axes.hist(p2, bins=8, color=config.get_color_from_cycle(j), ec='k')
+            axes.hist(p1, bins=8, fc=config.get_color_from_cycle(i), ec='k')
+            axes.hist(p2, bins=8, fc=config.get_color_from_cycle(j), ec='k')
+
+            if len(features[i]) < 2 or len(features[j]) < 2:
+                axes.set_xlabel('Cluster %d vs %d (unknown overlap)' %
+                                (i, j))
+                continue # don't try doing gaussian fits on single point or no point clusters.
+
             x, y1, y2 = pu.get_both_gaussians(p1, p2, num_points=100)
             ylow, yhigh = axes.get_ylim()
             axes.plot(x, y1*yhigh*0.8, color='k', linewidth=2.0)
