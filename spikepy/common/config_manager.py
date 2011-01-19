@@ -88,7 +88,7 @@ class ConfigManager(object):
         return self._status_markers[1]
 
     def get_status_markers(self):
-        if path_utils.platform == 'mac':
+        if path_utils.platform() == 'mac':
             unmarked = self._current['gui']['trial_list']['unmarked_status_mac']
             marked = self._current['gui']['trial_list']['marked_status_mac']
         else:
@@ -103,7 +103,7 @@ class ConfigManager(object):
         return self._control_border
 
     def get_control_border(self):
-        if path_utils.platform == 'mac':
+        if path_utils.platform() == 'mac':
             cb = self['gui']['strategy_pane']['control_border_mac']
         else:
             cb = self['gui']['strategy_pane']['control_border']
