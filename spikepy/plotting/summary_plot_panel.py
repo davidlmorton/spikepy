@@ -214,7 +214,7 @@ class SummaryPlotPanel(MultiPlotPanel):
             trace_axes.plot(spike_xs, spike_ys, linewidth=0, marker='|',
                              markersize=pc['detection']['raster_height'],
                              markeredgewidth=pc['detection']['raster_width'],
-                             color=pc['detection']['raster_color'])
+                             color=config.get_color_from_cycle(key))
         # label raster_axes y ticks
         raster_axes.set_yticks(spike_y_list)
         raster_axes.set_yticklabels(['%d' % key for key in keys])
@@ -239,13 +239,11 @@ class SummaryPlotPanel(MultiPlotPanel):
             except TypeError:
                 continue # don't try to plot empty clusters.
             line = self.average_axes.plot(times, average,
+                              color=config.get_color_from_cycle(cluster_num),
                               label=pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)[0]
-            color = line.get_color()
-            self.average_axes.fill_between(times, 
-                                           average+stds,
-                                           average-stds,
-                                           color=color,
-                                           alpha=pc['summary']['std_alpha'])
+            self.average_axes.fill_between(times, average+stds, average-stds,
+                              color=config.get_color_from_cycle(cluster_num),
+                              alpha=pc['summary']['std_alpha'])
 
             self.std_axes.plot(times, stds, 
                           label=pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)

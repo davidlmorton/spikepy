@@ -114,21 +114,22 @@ class ClusteringPlotPanel(MultiPlotPanel):
         if results is not None:
             num_clusters = trial.get_num_clusters()
             num_pros = pu.num_projection_combinations(num_clusters)
-            num_rows = 2*(int(math.ceil(num_pros/2.0))+1)
+            num_srows = 2 + int(math.ceil(num_pros/2.0))
         else:
             num_clusters = 1
             num_pros = 0
-            num_rows = 4
+            num_srows = 2
+        num_trows = int(math.ceil(num_srows/2.0))
         num_cols = 2
-        self._set_plot_size(num_rows/2, trial_id)
+        self._set_plot_size(num_trows, trial_id)
         figure.clear()
-        fa = self._feature_axes[trial_id] = figure.add_subplot(num_rows/2,
+        fa = self._feature_axes[trial_id] = figure.add_subplot(num_trows,
                                                                num_cols,1)
-        pca = self._pca_axes[trial_id] = figure.add_subplot(num_rows/2, 
+        pca = self._pca_axes[trial_id] = figure.add_subplot(num_trows, 
                                                             num_cols, 2)
         self._pro_axes[trial_id] = []
         for i in range(num_pros):
-            self._pro_axes[trial_id].append(figure.add_subplot(num_rows, 
+            self._pro_axes[trial_id].append(figure.add_subplot(num_srows, 
                                                                num_cols, i+5))
 
         canvas_size = self._plot_panels[trial_id].GetMinSize()
@@ -240,8 +241,11 @@ class ClusteringPlotPanel(MultiPlotPanel):
                 continue # don't try doing gaussian fits on single point or no point clusters.
 
             p1, p2 = pu.projection(features[i], features[j])
-            axes.hist(p1, bins=8, fc=config.get_color_from_cycle(i), ec='k')
-            axes.hist(p2, bins=8, fc=config.get_color_from_cycle(j), ec='k')
+            bounds = pu.get_bounds(p1, p2)
+            axes.hist(p1, range=bounds, bins=23, 
+                          fc=config.get_color_from_cycle(i), ec='k')
+            axes.hist(p2, range=bounds, bins=23, 
+                          fc=config.get_color_from_cycle(j), ec='k')
 
             if len(features[i]) < 2 or len(features[j]) < 2:
                 axes.set_xlabel('Cluster %d vs %d (unknown overlap)' %
@@ -252,6 +256,8 @@ class ClusteringPlotPanel(MultiPlotPanel):
             ylow, yhigh = axes.get_ylim()
             axes.plot(x, y1*yhigh*0.8, color='k', linewidth=2.0)
             axes.plot(x, y2*yhigh*0.8, color='k', linewidth=2.0)
+
+            axes.set_xlim(*bounds)
 
             axes.set_ylabel('')
             axes.set_xlabel('Cluster %d vs %d (%3.1f%s overlap)' %
