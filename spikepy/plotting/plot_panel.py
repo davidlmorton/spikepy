@@ -41,6 +41,7 @@ class CustomToolbar(Toolbar):
 
         self.plot_panel = plot_panel
 
+        '''
         self.PRINT_ID = wx.NewId()
         self.AddSimpleTool(self.PRINT_ID, get_bitmap_image('printer'),
                            shortHelpString="Print",
@@ -58,6 +59,7 @@ class CustomToolbar(Toolbar):
                            shortHelpString="print preview",
                            longHelpString="PRINT")
         wx.EVT_TOOL(self, self.PRINT_ID3, self._print_preview)
+        '''
 
         self.ENLARGE_CANVAS_ID = wx.NewId()
         self.AddSimpleTool(self.ENLARGE_CANVAS_ID, 

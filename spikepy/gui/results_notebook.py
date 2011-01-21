@@ -108,13 +108,13 @@ class ResultsPanel(wx.Panel):
         cursor_position_bar = CursorPositionBar(self)
         self.plot_panel = plot_panels[self.name](self, self.name)
 
-        method_details_button = wx.Button(self, label=pt.METHOD_DETAILS)
+        #method_details_button = wx.Button(self, label=pt.METHOD_DETAILS)
 
         top_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         top_sizer.Add(cursor_position_bar, proportion=0, 
                 flag=wx.ALL|wx.EXPAND, border=0)
-        top_sizer.Add(method_details_button, proportion=0, 
-                flag=wx.ALL|wx.ALIGN_CENTER_VERTICAL, border=4)
+        #top_sizer.Add(method_details_button, proportion=0, 
+        #        flag=wx.ALL|wx.ALIGN_CENTER_VERTICAL, border=4)
         
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         sizer.Add(top_sizer, proportion=0, flag=wx.EXPAND)

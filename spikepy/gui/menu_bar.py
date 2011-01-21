@@ -61,13 +61,13 @@ class SpikepyMenuBar(wx.MenuBar):
         print_menu.Append(PRINT,            text=pt.PRINT)
         print_menu.Append(PRINT_PREVIEW,    text=pt.PRINT_PREVIEW)
         print_menu.Append(PAGE_SETUP,       text=pt.PAGE_SETUP)
-        file_menu.AppendSubMenu(print_menu,      pt.PRINT_SUBMENU)
+        #file_menu.AppendSubMenu(print_menu,      pt.PRINT_SUBMENU)
         file_menu.AppendSeparator()
         file_menu.Append(EXIT,              text=pt.EXIT)
         
         # --- EDIT ---
-        edit_menu = wx.Menu()
-        edit_menu.Append(PREFERENCES, text=pt.PREFERENCES)
+        #edit_menu = wx.Menu()
+        #edit_menu.Append(PREFERENCES, text=pt.PREFERENCES)
         
         # --- VIEW ---
         view_menu = wx.Menu()
@@ -80,7 +80,7 @@ class SpikepyMenuBar(wx.MenuBar):
         help_menu.Append(ABOUT, text=pt.ABOUT)
 
         self.Append(file_menu, pt.FILE)
-        self.Append(edit_menu, pt.EDIT)
+        #self.Append(edit_menu, pt.EDIT)
         self.Append(view_menu, pt.VIEW)
         self.Append(help_menu, pt.HELP)
         
