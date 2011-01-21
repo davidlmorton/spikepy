@@ -36,6 +36,8 @@ class StrategyManager(object):
             strategy_path = get_data_dirs()[level]['strategies']
             self.load_strategies(strategy_path)
 
+        pub.subscribe(self.save_strategies, 'SAVE_ALL_STRATEGIES')
+
     def load_strategies(self, path):
         if os.path.exists(path):
             files = os.listdir(path)
@@ -44,6 +46,15 @@ class StrategyManager(object):
                     fullpath = os.path.join(path, f)
                     strategy = Strategy.from_file(fullpath)
                     self.add_strategy(strategy)
+
+    def save_strategies(self, message=None):
+        strategy_path = get_data_dirs()['user']['strategies']
+        for strategy in self.strategies.values():
+            if strategy.fullpath is None:
+                fullpath = os.path.join(strategy_path, 
+                                        '%s.strategy' % strategy.name)
+                strategy.fullpath = fullpath
+                strategy.save(fullpath)
 
     # --- ADD AND REMOVE STRATEGIES ---
     def add_strategy(self, strategy):

@@ -51,6 +51,7 @@ class Strategy(object):
         self.methods_used_name = methods_used_name
         self.settings = settings
         self.settings_name = settings_name
+        self.fullpath = None
 
     @property
     def name(self):
@@ -124,6 +125,7 @@ class Strategy(object):
         self.methods_used = strategy_dict['methods_used']
         self.settings     = strategy_dict['settings']
         self.name         = strategy_dict['name']
+        self.fullpath     = fullpath
 
     @classmethod
     def from_file(cls, fullpath):
