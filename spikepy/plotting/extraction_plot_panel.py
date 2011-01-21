@@ -168,16 +168,16 @@ class ExtractionPlotPanel(MultiPlotPanel):
         axes.set_xlim((0,len(features[0])-1))
 
         # EXTRACTED FEATURE INFO
-        center = 0.70
+        center = 0.80
         axes.text(center, 0.95, pt.FEATURE_SETS, 
                   verticalalignment='center',
                   horizontalalignment='center',
                   transform=axes.transAxes)
-        axes.text(center-0.01, 0.91, "%s%d" % (pt.FOUND, len(features)),
+        axes.text(center-0.01, 0.88, "%s%d" % (pt.FOUND, len(features)),
                   verticalalignment='center',
                   horizontalalignment='right',
                   transform=axes.transAxes)
-        axes.text(center+0.01, 0.91, "%s%d" % (pt.EXCLUDED, 
+        axes.text(center+0.01, 0.88, "%s%d" % (pt.EXCLUDED, 
                                                num_excluded_features),
                   verticalalignment='center',
                   horizontalalignment='left',

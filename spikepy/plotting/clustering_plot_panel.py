@@ -242,9 +242,9 @@ class ClusteringPlotPanel(MultiPlotPanel):
 
             p1, p2 = pu.projection(features[i], features[j])
             bounds = pu.get_bounds(p1, p2)
-            axes.hist(p1, range=bounds, bins=23, 
+            h1 = axes.hist(p1, range=bounds, bins=23, 
                           fc=config.get_color_from_cycle(i), ec='k')
-            axes.hist(p2, range=bounds, bins=23, 
+            h2 = axes.hist(p2, range=bounds, bins=23, 
                           fc=config.get_color_from_cycle(j), ec='k')
 
             if len(features[i]) < 2 or len(features[j]) < 2:
@@ -253,11 +253,13 @@ class ClusteringPlotPanel(MultiPlotPanel):
                 continue # don't try doing gaussian fits on single point or no point clusters.
 
             x, y1, y2 = pu.get_both_gaussians(p1, p2, num_points=100)
-            ylow, yhigh = axes.get_ylim()
-            axes.plot(x, y1*yhigh*0.8, color='k', linewidth=2.0)
-            axes.plot(x, y2*yhigh*0.8, color='k', linewidth=2.0)
+            ymax = numpy.max( numpy.hstack([h1[0], h2[0]]) )*1.05
+
+            axes.plot(x, y1*ymax*0.8, color='k', linewidth=2.0)
+            axes.plot(x, y2*ymax*0.8, color='k', linewidth=2.0)
 
             axes.set_xlim(*bounds)
+            axes.set_ylim(0, ymax)
 
             axes.set_ylabel('')
             axes.set_xlabel('Cluster %d vs %d (%3.1f%s overlap)' %

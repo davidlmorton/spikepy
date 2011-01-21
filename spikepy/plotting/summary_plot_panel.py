@@ -246,6 +246,7 @@ class SummaryPlotPanel(MultiPlotPanel):
                               alpha=pc['summary']['std_alpha'])
 
             self.std_axes.plot(times, stds, 
+                          color=config.get_color_from_cycle(cluster_num),
                           label=pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)
 
     def _get_averages_and_stds(self, trial):
