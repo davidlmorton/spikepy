@@ -81,10 +81,12 @@ class Trial(object):
         self.extraction_filter = StageData(self, name='extraction_filter',
                                            dependents=[self.extraction])
         self.detection_filter  = StageData(self, name='detection_filter', 
-                                           dependents=[self.detection])
+                                           dependents=[self.detection, 
+                                                       self.extraction_filter])
 
         self.clustering.set_prereqs([self.extraction])
         self.extraction.set_prereqs([self.extraction_filter, self.detection])
+        self.extraction_filter.set_prereqs([self.detection_filter])
         self.detection.set_prereqs([self.detection_filter])
 
         self.stages = [self.detection_filter,

@@ -46,7 +46,7 @@ class StrategyPane(ScrolledPanel):
         stage_choicebook = wx.Choicebook(self, wx.ID_ANY)
 
         # ==== PANELS ====
-        detection_filter_panel = StagePanel(stage_choicebook, 
+        detection_filter_panel = DetectionFilterStagePanel(stage_choicebook, 
                                             stage_num=1,
                                             display_name=pt.DETECTION_FILTER,
                                             stage_name='detection_filter')
@@ -345,6 +345,7 @@ class StrategySummary(wx.Panel):
 
         self.Layout()
 
+
 class StagePanel(wx.Panel):
     def __init__(self, parent, stage_num=None, 
                                display_name=None,
@@ -459,3 +460,10 @@ class StagePanel(wx.Panel):
         else:
             pub.sendMessage(topic='RUN_MARKED', data=data)
 
+class DetectionFilterStagePanel(StagePanel):
+    def load_methods(self):
+        methods = StagePanel.load_methods(self)
+        if 'Copy Detection Filtering' in  methods.keys():
+            del methods['Copy Detection Filtering']
+        return methods
+    

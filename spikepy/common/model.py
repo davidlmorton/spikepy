@@ -78,12 +78,33 @@ class Model(object):
         del message.data['trial_list']
         handler = self.handlers[stage_name]
 
+        # extra special case for copy detection filter method
+        if message.data['method_name'] == 'Copy Detection Filtering':
+            self._copy_detection_filter(trial_list)
+            return # don't try to do a real filtering job.
+
         # special case for clustering
         if stage_name == 'clustering':
             self._clustering(trial_list, **message.data)
         else:
             for trial in trial_list:
                 handler(trial=trial, **message.data)
+
+    def _copy_detection_filter(self, trial_list):
+        for trial in trial_list:
+            e_stage_data = trial.get_stage_data('extraction_filter')
+            e_stage_data.reinitialize()
+            e_stage_data.method = 'Copy Detection Filtering'
+            e_stage_data.settings = {}
+            pub.sendMessage(topic="PROCESS_STARTED", data=[trial])
+
+            d_stage_data = trial.get_stage_data('detection_filter')
+            e_stage_data.results = d_stage_data.results
+            
+            pub.sendMessage(topic="PROCESS_ENDED", data=[trial])
+            pub.sendMessage(topic='TRIAL_FILTERED',
+                            data=(trial, 'extraction_filter'))
+            pub.sendMessage(topic='RUNNING_COMPLETED')
             
     # ---- OPEN FILE ----
     def _open_data_file(self, message):
