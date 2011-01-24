@@ -29,6 +29,7 @@ from .trial_grid_ctrl import TrialGridCtrl
 from .results_notebook import ResultsNotebook
 from spikepy.common.config_manager import config_manager as config
 from spikepy.common import program_text as pt
+from spikepy.gui import pyshell
 
 class View(object):
     def __init__(self, *args, **kwargs):
@@ -62,6 +63,7 @@ class MyFrame(wx.Frame):
 
         self.results_notebook = results_notebook = ResultsNotebook(
                                                     vsplit)
+        pyshell.locals_dict['results_notebook'] = self.results_notebook
 
         vsplit.SplitVertically(hsplit, self.results_notebook, 400)
         hsplit.SplitHorizontally(trial_list_holder, strategy_holder, 200)

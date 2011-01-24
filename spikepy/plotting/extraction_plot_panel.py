@@ -21,164 +21,104 @@ from wx.lib.pubsub import Publisher as pub
 import wx
 import numpy
 
-from spikepy.plotting.multi_plot_panel import MultiPlotPanel
+from spikepy.plotting.spikepy_plot_panel import SpikepyPlotPanel
+from spikepy.plotting import utils
 from spikepy.common import program_text as pt
-from spikepy.plotting.utils import adjust_axes_edges, set_axes_num_ticks
-from spikepy.common.utils import pca
 from spikepy.common.config_manager import config_manager as config
 
-class ExtractionPlotPanel(MultiPlotPanel):
+class ExtractionPlotPanel(SpikepyPlotPanel):
     def __init__(self, parent, name):
-        pconfig = config['gui']['plotting']
-        self._dpi       = pconfig['dpi']
-        self._figsize   = config.get_size('figure')
-        self._facecolor = pconfig['face_color']
-        self.name       = name
-        MultiPlotPanel.__init__(self, parent, figsize=self._figsize,
-                                              facecolor=self._facecolor,
-                                              edgecolor=self._facecolor,
-                                              dpi=self._dpi)
-        pub.subscribe(self._remove_trial,  topic="REMOVE_PLOT")
-        pub.subscribe(self._trial_added,   topic='TRIAL_ADDED')
-        pub.subscribe(self._trial_altered, topic='TRIAL_FEATURE_EXTRACTED')
-        pub.subscribe(self._trial_altered, topic='STAGE_REINITIALIZED')
-        pub.subscribe(self._trial_renamed,  topic='TRIAL_RENAMED')
+        SpikepyPlotPanel.__init__(self, parent, name)
 
-        self._trials        = {}
-        self._feature_axes  = {}
-        self._pca_axes_list = {}
 
-    def _remove_trial(self, message=None):
-        trial_id = message.data
-        del self._trials[trial_id]
-        if trial_id in self._feature_axes.keys():
-            del self._feature_axes[trial_id]
+    def _basic_setup(self, trial_id):
+        plot_panel = self._plot_panels[trial_id]
+        plot_panel.clear()
 
-    def _trial_added(self, message=None, trial=None):
-        if message is not None:
-            trial = message.data
+        # set the size of the plot properly.
+        num_rows = 2
+        figheight = self._figsize[1] * num_rows
+        figwidth  = self._figsize[0]
+        plot_panel.set_minsize(figwidth, figheight)
+        self._trial_renamed(trial_id=trial_id)
 
-        trial_id = trial.trial_id
-        self._trials[trial_id] = trial
-        figsize = (self._figsize[0], self._figsize[1]*2)
-        self.add_plot(trial_id, figsize=figsize, 
-                                facecolor=self._facecolor,
-                                edgecolor=self._facecolor,
-                                dpi=self._dpi)
-        figure = self._plot_panels[trial_id].figure
-        self._create_axes(trial, figure, trial_id)
-        self._replot_panels.add(trial_id)
+        # set up feature axes and pca axes
+        figure = plot_panel.figure
+        plot_panel.axes['feature'] = figure.add_subplot(num_rows, 1, 1)
+        plot_panel.axes['pca'] = []
+        for i in xrange(3):
+            axes = figure.add_subplot(num_rows, 3, i+4)
+            plot_panel.axes['pca'].append(axes)
 
-    def _trial_renamed(self, message=None):
-        trial = message.data
-        trial_id = trial.trial_id
-        new_name = trial.display_name
-        axes = self._feature_axes[trial_id]
-        axes.set_title(pt.TRIAL_NAME+new_name)
-        self.draw_canvas(trial_id)
-
-    def _trial_altered(self, message=None):
-        trial, stage_name = message.data
-        if stage_name != self.name:
-            return
-        trial_id = trial.trial_id
-        if trial_id == self._currently_shown:
-            self.plot(trial_id)
-            if trial_id in self._replot_panels:
-                self._replot_panels.remove(trial_id)
-        else:
-            self._replot_panels.add(trial_id)
-
-    def plot(self, trial_id):
-        trial = self._trials[trial_id]
-        figure = self._plot_panels[trial_id].figure
-        
-        self._plot_features(trial, figure, trial_id)
-        self._plot_pcas(trial, figure, trial_id)
-
-        self.draw_canvas(trial_id)
-
-    def _create_axes(self, trial, figure, trial_id):
-        fa = self._feature_axes[trial_id] = figure.add_subplot(2,1,1)
-        self._pca_axes_list[trial_id] = []
-        for i in [1,2,3]:
-            axes = figure.add_subplot(2,3,3+i)
-            self._pca_axes_list[trial_id].append(axes)
-        canvas_size = self._plot_panels[trial_id].GetMinSize()
+        canvas_size = plot_panel.GetMinSize()
+        # adjust subplots to spikepy uniform standard
         config.default_adjust_subplots(figure, canvas_size)
+
+        # tweek psd axes and trace axes
+        top = -config['gui']['plotting']['spacing']['title_vspace']
         bottom = config['gui']['plotting']['spacing']['axes_bottom']
+        utils.adjust_axes_edges(plot_panel.axes['feature'], canvas_size,
+                                bottom=bottom, top=top)
+
         left = config['gui']['plotting']['spacing']['axes_left']
-        
-        adjust_axes_edges(fa, canvas_size, bottom=bottom)
-        # give room for yticklabels on pca plots
-        adjust_axes_edges(self._pca_axes_list[trial_id][0], canvas_size,
-                          right=2*left/3)
-        adjust_axes_edges(self._pca_axes_list[trial_id][1], canvas_size,
-                          left=left/3)
-        adjust_axes_edges(self._pca_axes_list[trial_id][1], canvas_size,
-                          right=left/3)
-        adjust_axes_edges(self._pca_axes_list[trial_id][2], canvas_size,
-                          left=2*left/3)
+        outter = (2.0*left)/3.0
+        inner = left/3.0
+        pca_axes = plot_panel.axes['pca']
+        utils.adjust_axes_edges(pca_axes[0], canvas_size, right=outter)
+        utils.adjust_axes_edges(pca_axes[1], canvas_size, right=inner, 
+                                                          left=inner)
+        utils.adjust_axes_edges(pca_axes[2], canvas_size, left=outter)
 
-    def _plot_pcas(self, trial, figure, trial_id):
+        # label axes
+        plot_panel.axes['feature'].set_xlabel(pt.FEATURE_INDEX)
+        plot_panel.axes['feature'].set_ylabel(pt.FEATURE_AMPLITUDE)
 
+        self.pc_y = [2,3,3] # which pc is associated with what axis.
+        self.pc_x = [1,1,2]
+        self.pca_colors = ['r', 'g', 'b']
+        for x, y, axes in zip(self.pc_x, self.pc_y, pca_axes):
+            axes.set_xlabel(pt.PCA_LABEL % (x, 100, '%'), 
+                            color=self.pca_colors[x-1])
+            axes.set_ylabel(pt.PCA_LABEL % (y, 100, '%'),
+                            color=self.pca_colors[y-1])
+
+    def _pre_run(self, trial_id):
+        pass
+
+    def _post_run(self, trial_id):
+        # clear all the axes
+        plot_panel = self._plot_panels[trial_id]
+        utils.clear_axes(plot_panel.axes['feature'])
+        pca_axes = plot_panel.axes['pca']
+        for axes in pca_axes:
+            utils.clear_axes(axes)
+
+        # plot the pca projections
         trial = self._trials[trial_id]
-        if trial.extraction.results is not None:
-            features = trial.extraction.results['features']
-        else:
-            return
-
         rotated_features, pc, var = trial.get_pca_rotated_features()
         pct_var = [tvar/sum(var)*100.0 for tvar in var]
         trf = rotated_features.T
 
-        pc_x = [2,3,3] # which pc is associated with what axis.
-        pc_y = [1,1,2]
-        for i, axes in enumerate(self._pca_axes_list[trial_id]):
-            axes.clear()
-            axes.set_ylabel(pt.PCA_LABEL % (pc_y[i], pct_var[pc_y[i]-1], '%'))
-            axes.set_xlabel(pt.PCA_LABEL % (pc_x[i], pct_var[pc_x[i]-1], '%'))
-            axes.plot(trf[pc_x[i]-1], trf[pc_y[i]-1], color='black', 
-                                      linewidth=0, marker='.')
-            set_axes_num_ticks(axes, axis='both', num=4)
+        for x, y, axes in zip(self.pc_x, self.pc_y, pca_axes):
+            axes.set_xlabel(pt.PCA_LABEL % (x, pct_var[x-1], '%'),
+                            color=self.pca_colors[x-1])
+            axes.set_ylabel(pt.PCA_LABEL % (y, pct_var[y-1], '%'),
+                            color=self.pca_colors[y-1])
+            axes.plot(trf[x-1], trf[y-1], color='black', 
+                                          linewidth=0, 
+                                          marker='.')
+            utils.set_axes_num_ticks(axes, axis='both', num=4)
 
-    def _plot_features(self, trial, figure, trial_id):
+        # plot the features
         pc = config['gui']['plotting']['extraction']
-        axes = self._feature_axes[trial_id]
-        axes.clear()
         trial = self._trials[trial_id]
-        new_name = trial.display_name
-        axes.set_title(pt.TRIAL_NAME+new_name)
-        axes.set_ylabel(pt.FEATURE_AMPLITUDE)
-        axes.set_xlabel(pt.FEATURE_INDEX)
+        features = trial.extraction.results['features']
+        feature_axes = plot_panel.axes['feature']
 
-        if trial.extraction.results is not None:
-            features = trial.extraction.results['features']
-        else:
-            return
-        num_excluded_features = len(
-                trial.extraction.results['excluded_features'])
-
-        axes.set_autoscale_on(True)
         for feature in features:
-            axes.plot(feature, 
-                      linewidth=pc['feature_trace_linewidth'],
-                      color=pc['feature_trace_color'], 
-                      alpha=pc['feature_trace_alpha'])
-        axes.set_xlim((0,len(features[0])-1))
+            feature_axes.plot(feature, 
+                              linewidth=pc['feature_trace_linewidth'],
+                              color=pc['feature_trace_color'], 
+                              alpha=pc['feature_trace_alpha'])
+        feature_axes.set_xlim((0,len(features[0])-1))
 
-        # EXTRACTED FEATURE INFO
-        center = 0.80
-        axes.text(center, 0.95, pt.FEATURE_SETS, 
-                  verticalalignment='center',
-                  horizontalalignment='center',
-                  transform=axes.transAxes)
-        axes.text(center-0.01, 0.88, "%s%d" % (pt.FOUND, len(features)),
-                  verticalalignment='center',
-                  horizontalalignment='right',
-                  transform=axes.transAxes)
-        axes.text(center+0.01, 0.88, "%s%d" % (pt.EXCLUDED, 
-                                               num_excluded_features),
-                  verticalalignment='center',
-                  horizontalalignment='left',
-                  transform=axes.transAxes)

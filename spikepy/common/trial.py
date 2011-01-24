@@ -55,7 +55,7 @@ class Trial(object):
     multiple electrodes recording simultaneously.
     """
     def __init__(self, sampling_freq=1.0, 
-                       raw_traces=[], 
+                       raw_traces=[[0.0]], 
                        fullpath='FULLPATH NOT SET'):
         self.fullpath      = fullpath
         filename = os.path.split(fullpath)[1]
@@ -128,6 +128,11 @@ class Trial(object):
         stage_data = self.get_stage_data(stage_name)
         stage_data.method   = method
         stage_data.settings = settings
+        # check for old-style detection results and fix it.
+        if stage_name == 'detection':
+            if results is not None and len(results) > 0:
+                if hasattr(results[0], '__iter__'):
+                    results = results[0]
         stage_data.results  = results
 
     @classmethod
@@ -147,6 +152,32 @@ class Trial(object):
                        'settings': stage_data.settings,
                        'results': stage_data.results}
         return return_dict
+
+    def has_run_stage(self, stage_name):
+        stage_data = self.get_stage_data(stage_name)
+        return stage_data.results is not None
+
+    def can_run_stage(self, stage_name):
+        return self.get_readyness()[stage_name]
+
+    def get_prereq_stage_names(self, stage_name):
+        '''
+        Return a set of stage names which are either direct or 
+        remote prereqs of the given stage_name.
+        '''
+        prereq_set = set()
+        self._get_prereq_stage_names(stage_name, prereq_set)
+        return prereq_set
+
+    def _get_prereq_stage_names(self, stage_name, prereq_set):
+        '''
+        Given 'prereq_set' as an empty set(), this will recursively add
+        all prerequisite stages to 'stage_name'
+        '''
+        stage_data = self.get_stage_data(stage_name)
+        for prereq in stage_data.prereqs:
+            prereq_set.add(prereq.name)
+            self._get_prereq_stage_names(prereq.name, prereq_set)
 
     def get_stage_data(self, stage_name):
         if stage_name == pt.DETECTION_FILTER:
@@ -228,6 +259,7 @@ class Trial(object):
     def rename(self, new_display_name):
         display_names.remove(self.display_name)
         self.display_name = new_display_name
+        display_names.add(self.display_name)
         pub.sendMessage(topic='TRIAL_RENAMED', data=self)
 
     def export(self, path=None, stages_selected=[], file_format=None):
@@ -368,16 +400,11 @@ class StageData(object):
     def set_prereqs(self, prereqs):
         self.prereqs = prereqs
     
-    def publish_reinitialized(self):
-        pub.sendMessage(topic='STAGE_REINITIALIZED', 
-                        data=(self.trial, self.name))
-
     def reinitialize(self):
         if self.results is not None:
             self.results  = None
             self.settings = None
             self.method   = None
-            self.publish_reinitialized()
             for dependent in self.dependents:
                 dependent.reinitialize()
 

@@ -25,6 +25,7 @@ from spikepy.plotting.clustering_plot_panel import ClusteringPlotPanel
 from spikepy.plotting.summary_plot_panel import SummaryPlotPanel
 from spikepy.common import program_text as pt
 from spikepy.gui.utils import SinglePanelFrame
+from spikepy.gui import pyshell
 
 plot_panels = {"detection_filter" : FilterPlotPanel,
                "detection"        : DetectionPlotPanel,
@@ -39,12 +40,18 @@ class ResultsNotebook(wx.Notebook):
         wx.Notebook.__init__(self, parent, **kwargs)
         
         detection_filter_panel = ResultsPanel(self,  "detection_filter")
+        detection_panel = ResultsPanel(self,  "detection")
+        extraction_filter_panel = ResultsPanel(self,  "extraction_filter")
+        extraction_panel = ResultsPanel(self,  "extraction")
+        clustering_panel = ResultsPanel(self,  "clustering")
+        summary_panel = ResultsPanel(self,  "summary")
+        '''
         detection_panel = ResultsPanel(self,         "detection")
         extraction_filter_panel = ResultsPanel(self, "extraction_filter")
         extraction_panel = ResultsPanel(self,        "extraction")
         clustering_panel = ResultsPanel(self,        "clustering")
         summary_panel = ResultsPanel(self,           "summary")
-        
+        '''
         self.AddPage(detection_filter_panel,  pt.DETECTION_FILTER)
         self.AddPage(detection_panel,         pt.DETECTION)
         self.AddPage(extraction_filter_panel, pt.EXTRACTION_FILTER)
@@ -68,15 +75,10 @@ class ResultsNotebook(wx.Notebook):
                                'extraction':extraction_panel,
                                'clustering':clustering_panel,
                                'summary':summary_panel}
+        pyshell.locals_dict['results_panels'] = self.results_panels
 
-    def get_currently_shown_plot_panel(self):
-        # the following code relies heavily on existing structure, maybe this
-        # isn't a good idea
-        current_multi_plot_panel = self.GetCurrentPage().plot_panel
-        plot_panels = current_multi_plot_panel._plot_panels
-        current_plot_panel_key = current_multi_plot_panel._currently_shown
-        return plot_panels[current_plot_panel_key]
-        
+    def get_current_stage_name(self):
+        return self.GetCurrentPage().name
 
     def _print(self, data=None):
         current_plot_panel = self.get_currently_shown_plot_panel()
@@ -93,7 +95,7 @@ class ResultsNotebook(wx.Notebook):
     def _page_changed(self, event=None):
         old_page_num  = event.GetOldSelection()
         new_page_num  = event.GetSelection()
-        pub.sendMessage(topic='RESULTS_NOTEBOOK_PAGE_CHANGING', 
+        pub.sendMessage(topic='RESULTS_NOTEBOOK_PAGE_CHANGED', 
                         data=(old_page_num, new_page_num))
         event.Skip()
 

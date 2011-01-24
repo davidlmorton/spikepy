@@ -28,9 +28,10 @@ from wx.lib.scrolledpanel import ScrolledPanel
 from wx.lib.pubsub import Publisher as pub
 
 from spikepy.gui.utils import get_bitmap_image
-from spikepy.plotting.utils import PlotPanelPrintout
+from spikepy.plotting import utils
 from spikepy.common import program_text as pt
 from spikepy.common.config_manager import config_manager as config
+from spikepy.gui import pyshell
 
 class CustomToolbar(Toolbar):
     """
@@ -75,7 +76,7 @@ class CustomToolbar(Toolbar):
                            longHelpString=pt.SHRINK_FIGURE_CANVAS)
         wx.EVT_TOOL(self, self.SHRINK_CANVAS_ID, self._shrink_canvas)
         self.EnableTool(self.SHRINK_CANVAS_ID, False)
-        self.DeleteToolByPos(6)
+        self.DeleteToolByPos(6) # subplots adjust tool is worse than useless.
         self.canvas = canvas
 
     def _enlarge_canvas(self, event=None):
@@ -145,6 +146,7 @@ class PlotPanel (wx.Panel):
         wx.Panel.__init__(self, parent)
 
         self.figure = Figure(**kwargs)
+        pyshell.locals_dict['figures'].append(self.figure)
         self.canvas = Canvas(self, wx.ID_ANY, self.figure)
         self.canvas.mpl_connect('motion_notify_event', self._update_coordinates)
         self.toolbar = CustomToolbar(self.canvas, self)
@@ -179,7 +181,6 @@ class PlotPanel (wx.Panel):
         pub.subscribe(self._hide_toolbar,   topic="HIDE_TOOLBAR")
 
         # ---- Configure Printing ----
-
         self.print_data = wx.PrintData()
         self.print_data.SetPaperId(wx.PAPER_LETTER)
         self.print_data.SetPrintMode(wx.PRINT_MODE_PRINTER)
@@ -189,6 +190,13 @@ class PlotPanel (wx.Panel):
         self.page_setup_data = wx.PageSetupDialogData()
         self.preview_frame_pos = None
 
+        self.axes = {}
+
+    def clear(self):
+        self.axes = {}
+        utils.clear_figure(self.figure)
+
+    '''
     def do_print(self, data=None):
         printout = PlotPanelPrintout(self.canvas)
         print_dialog_data = wx.PrintDialogData(self.print_data)
@@ -218,6 +226,7 @@ class PlotPanel (wx.Panel):
 
         preview_frame.Show(True)
         self.preview_frame = preview_frame
+    '''
 
     def _preview_page_setup(self, event=None):
         page_setup_data = wx.PageSetupDialogData(self.print_data)

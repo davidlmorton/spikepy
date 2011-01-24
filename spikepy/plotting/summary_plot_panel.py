@@ -14,137 +14,76 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
-from collections import defaultdict
+import math
 import os
 
 from wx.lib.pubsub import Publisher as pub
 import wx
 import numpy
-import scipy
 
-from spikepy.plotting.multi_plot_panel import MultiPlotPanel
+from spikepy.plotting.spikepy_plot_panel import SpikepyPlotPanel
+from spikepy.plotting import utils
 from spikepy.common import program_text as pt
-from spikepy.plotting.utils import adjust_axes_edges
 from spikepy.common.config_manager import config_manager as config
 
-class SummaryPlotPanel(MultiPlotPanel):
+class SummaryPlotPanel(SpikepyPlotPanel):
     def __init__(self, parent, name):
-        pconfig = config['gui']['plotting']
-        self._dpi       = pconfig['dpi']
-        self._figsize   = config.get_size('figure')
-        self._facecolor = pconfig['face_color']
-        self.name       = name
-        MultiPlotPanel.__init__(self, parent, figsize=self._figsize,
-                                              facecolor=self._facecolor,
-                                              edgecolor=self._facecolor,
-                                              dpi=self._dpi)
-        pub.subscribe(self._remove_trial,  topic="REMOVE_PLOT")
-        pub.subscribe(self._trial_added,   topic='TRIAL_ADDED')
-        pub.subscribe(self._trial_altered, topic='TRIAL_CLUSTERED')
-        pub.subscribe(self._trial_altered, topic='STAGE_REINITIALIZED')
-        pub.subscribe(self._trial_renamed,  topic='TRIAL_RENAMED')
+        if name == 'summary':
+            # will make this panel update when clustering does
+            name = 'clustering' 
+        SpikepyPlotPanel.__init__(self, parent, name)
 
-        self._trials = {}
-        self._fig_cleared = True
-        self._trace_axes = defaultdict(lambda :None)
+    def _basic_setup(self, trial_id):
+        plot_panel = self._plot_panels[trial_id]
+        plot_panel.clear()
 
-    def _remove_trial(self, message=None):
-        trial_id = message.data
-        del self._trials[trial_id]
+    def _pre_run(self, trial_id):
+        pass
 
-    def _trial_added(self, message=None, trial=None):
-        if message is not None:
-            trial = message.data
-
-        trial_id = trial.trial_id
-        self._trials[trial_id] = trial
-        self.add_plot(trial_id, figsize=self._figsize, 
-                                facecolor=self._facecolor,
-                                edgecolor=self._facecolor,
-                                dpi=self._dpi)
-        self._replot_panels.add(trial_id)
-
-    def _trial_renamed(self, message=None):
-        trial = message.data
-        trial_id = trial.trial_id
-        if self._trace_axes[trial_id] is not None:
-            new_name = trial.display_name
-            trace_axes = self._trace_axes[trial_id]
-            trace_axes.set_title(pt.TRIAL_NAME+new_name)
-            self.draw_canvas(trial_id)
-
-    def _trial_altered(self, message=None):
-        trial, stage_name = message.data
-        if stage_name != 'clustering':
-            return
-        trial_id = trial.trial_id
-        if trial_id == self._currently_shown:
-            self.plot(trial_id)
-            if trial_id in self._replot_panels:
-                self._replot_panels.remove(trial_id)
-        else:
-            self._replot_panels.add(trial_id)
-
-    def plot(self, trial_id):
+    def _post_run(self, trial_id):
         trial = self._trials[trial_id]
-        if trial.clustering.results is not None:
-            num_clusters = len(trial.clustering.results.keys())
-            assert num_clusters > 0
-            if num_clusters > 1:
-                num_cluster_combinations = nchoosek(num_clusters, 2)
-            else:
-                num_cluster_combinations = 1
-            old_minsize = self._plot_panels[trial_id].GetMinSize()
-            figwidth = self._figsize[0]
-            figheight = self._figsize[1]*(num_cluster_combinations+2)
-            figure = self._plot_panels[trial_id].figure
+        plot_panel = self._plot_panels[trial_id]
+        plot_panel.clear()
+        figure = plot_panel.figure
+        num_clusters = len(trial.clustering.results.keys())
 
-            if old_minsize[1] != figheight or self._fig_cleared:
-                self._fig_cleared = False
-                self._plot_panels[trial_id].set_minsize(figwidth, 
-                                                        figheight)
-                figure.clear()
-                canvas_size = self._plot_panels[trial_id].GetMinSize()
-                config.default_adjust_subplots(figure, canvas_size)
-                self._setup_axes(trial, figure, trial_id, canvas_size, 
-                                 num_cluster_combinations, num_clusters)
-            
-            self._plot_rasters(trial, figure, trial_id, 
-                               num_cluster_combinations, num_clusters)
-            self._plot_clusters(trial, figure, trial_id, 
-                                num_cluster_combinations)
-            self._plot_distances(trial, figure, trial_id, 
-                                 num_cluster_combinations)
+        self._setup_axes(trial, figure, trial_id, num_clusters)
+        
+        self._plot_rasters(trial, figure, trial_id, num_clusters)
+        self._plot_averages_and_stds(trial, figure, trial_id)
+        self._plot_clusters(trial_id)
+        self._pot_isis(trial_id)
 
-            self.draw_canvas(trial_id)
-        else:
-            if not self._fig_cleared:
-                figure = self._plot_panels[trial_id].figure
-                figure.clear()
-                self._fig_cleared = True
-                self._trace_axes[trial_id] = None
-                self.draw_canvas(trial_id)
 
-    def _setup_axes(self, trial, figure, trial_id, canvas_size,  
-                    ncc, num_clusters):
+    def _setup_axes(self, trial, figure, trial_id, num_clusters):
+        pc = config['gui']['plotting']['summary']
+        plot_panel = self._plot_panels[trial_id]
+
+        # make the figure canvas the correct size.
+        num_srows = 3 + num_clusters
+        num_trows = int(math.ceil(num_srows/2.0))
+        figwidth = self._figsize[0]
+        figheight = self._figsize[1]*(num_trows)
+        plot_panel.set_minsize(figwidth, figheight)
+        self._trial_renamed(trial_id=trial_id)
+
+        canvas_size = plot_panel.GetMinSize()
+
         # --- RASTER AND TRACE AXES ---
-        raster_axes = figure.add_subplot(ncc+2, 1, 1)
+        raster_axes = figure.add_subplot(num_trows, 1, 1)
         raster_yaxis = raster_axes.get_yaxis()
         raster_yaxis.set_ticks_position('left')
         raster_axes.set_xlabel(pt.PLOT_TIME)
         raster_axes.set_ylabel(pt.CLUSTER_NUMBER)
+        plot_panel.axes['raster'] = raster_axes
+
         # trace_axes will be on top of raster_axes
         trace_axes = figure.add_axes(raster_axes.get_position(), 
                                      axisbg=(1.0, 1.0, 1.0, 0.0),
                                      sharex=raster_axes)
-        trial = self._trials[trial_id]
-        new_name = trial.display_name
-        trace_axes.set_title(pt.TRIAL_NAME+new_name)
-        self._trace_axes[trial_id] = trace_axes
+
         trace_yaxis = trace_axes.get_yaxis()
         trace_yaxis.set_ticks_position('right')
-        pc = config['gui']['plotting']['summary']
         plot_width = (canvas_size[0] - pc['raster_left'] -
                                        pc['raster_right'])
         text_loc_percent = 1.0 + pc['right_ylabel']/plot_width
@@ -154,44 +93,159 @@ class SummaryPlotPanel(MultiPlotPanel):
                         rotation='vertical',
                         transform=trace_axes.transAxes,
                         clip_on=False)
+        plot_panel.axes['trace'] = trace_axes
 
+        # --- AVERAGE AND STD AXES ---
+        average_axes = figure.add_subplot(num_srows, 2, 5)
+        average_axes.set_ylabel(pt.AVERAGE_SPIKE_SHAPES)
+        average_axes.set_xlabel(pt.PLOT_TIME)
+        plot_panel.axes['average'] = average_axes
+        
+        std_axes = figure.add_subplot(num_srows, 2, 6, sharex=average_axes)
+        std_axes.set_ylabel(pt.SPIKE_STDS)
+        std_axes.set_xlabel(pt.PLOT_TIME)
+        plot_panel.axes['std'] = std_axes
+
+        # cluster and isi axes
+        cluster_axes = []
+        isi_axes = []
+        isi_sub_axes = []
+        for i in xrange(num_clusters):
+            ca = figure.add_subplot(num_srows, 2, 6+2*i+1)
+            ia = figure.add_subplot(num_srows, 2, 6+2*i+2)
+
+            if i+1 < num_clusters:
+                ca.set_xticklabels([''],visible=False)
+                ia.set_xticklabels([''],visible=False)
+
+            cluster_axes.append(ca)
+            isi_axes.append(ia)
+
+
+        plot_panel.axes['cluster'] = cluster_axes
+        plot_panel.axes['isi'] = isi_axes
+
+        config.default_adjust_subplots(figure, canvas_size)
+
+        for ia in isi_axes:
+            isa = figure.add_axes(ia.get_position(), 
+                                  axisbg=(1.0, 1.0, 1.0, 0.0))
+            isi_sub_axes.append(isa)
+        plot_panel.axes['isi_sub'] = isi_sub_axes
+
+        # tweek trace/raster edges
         bottom = config['gui']['plotting']['spacing']['axes_bottom']
         right  = pc['raster_right']
         left   = pc['raster_left']
+        top = -config['gui']['plotting']['spacing']['title_vspace']
         for axes in [trace_axes, raster_axes]:
-            adjust_axes_edges(axes, canvas_size_in_pixels=canvas_size, 
-                                    bottom=bottom, right=right, left=left)
-
-        self.trace_axes  = trace_axes
-        self.raster_axes = raster_axes
-
-        # --- AVG AND STD AXES ---
-        average_axes = figure.add_subplot(ncc+2, 2, 3)
-        average_axes.set_ylabel(pt.AVERAGE_SPIKE_SHAPES)
-        average_axes.set_xlabel(pt.PLOT_TIME)
-        
-        std_axes = figure.add_subplot(ncc+2, 2, 4, sharex=average_axes)
-        std_axes.set_ylabel(pt.SPIKE_STDS)
-        std_axes.set_xlabel(pt.PLOT_TIME)
-
-        self.average_axes = average_axes
-        self.std_axes     = std_axes
-
-        left   = config['gui']['plotting']['spacing']['axes_left']
-        adjust_axes_edges(std_axes, canvas_size_in_pixels=canvas_size, 
+            utils.adjust_axes_edges(axes, canvas_size_in_pixels=canvas_size, 
+                                    top=top,
+                                    bottom=bottom, 
+                                    right=right, 
                                     left=left)
 
-    def _plot_rasters(self, trial, figure, trial_id, ncc, num_clusters):
-        trace_axes = self.trace_axes
-        raster_axes = self.raster_axes
+        # tweek edges
+        left   = config['gui']['plotting']['spacing']['axes_left']
+        utils.adjust_axes_edges(average_axes, 
+                                canvas_size_in_pixels=canvas_size, 
+                                bottom=bottom)
+        utils.adjust_axes_edges(std_axes, canvas_size_in_pixels=canvas_size, 
+                                left=left, bottom=bottom)
 
+        nl_bottom = config['gui']['plotting']['spacing']['no_label_axes_bottom']
+        for ca, ia, isa in zip(cluster_axes, isi_axes, isi_sub_axes):
+            utils.adjust_axes_edges(ca, canvas_size, bottom=nl_bottom)
+            utils.adjust_axes_edges(ia, canvas_size, left=left, 
+                                                     bottom=nl_bottom)
+            utils.adjust_axes_edges(isa, canvas_size, left=left, 
+                                                     bottom=nl_bottom)
+
+        for isa in isi_sub_axes:
+            total_width = isa.get_position().width
+            total_height = isa.get_position().height
+            utils.adjust_axes_edges(isa, canvas_size, 
+                    left=-0.50*total_width*canvas_size[0],
+                    bottom=-0.50*total_height*canvas_size[1],
+                    right=nl_bottom, 
+                    top=nl_bottom/2)
+
+    def _pot_isis(self, trial_id):
+        pc = config['gui']['plotting']
+        isi_axes = self._plot_panels[trial_id].axes['isi']
+        isi_sub_axes = self._plot_panels[trial_id].axes['isi_sub']
+
+        trial = self._trials[trial_id]
+        times = trial.get_stage_data('clustering').results
+
+        cluster_numbers = sorted(times.keys())
+        for cluster_number, axes, sub_axes in zip(cluster_numbers, 
+                                                  isi_axes, 
+                                                  isi_sub_axes):
+            color = config.get_color_from_cycle(cluster_number)
+
+            nt = numpy.array(sorted(times[cluster_number]))
+            isi = nt[1:]-nt[:-1]
+
+            axes.hist(isi, bins=70, 
+                      range=(0.0, pc['summary']['upper_isi_bound2']),
+                      fc=color, ec='k')
+
+            sub_axes.hist(isi, bins=30, 
+                      range=(0.0, pc['summary']['upper_isi_bound1']),
+                      fc=color, ec='k')
+            utils.set_axes_num_ticks(sub_axes, axis='yaxis', num=4)
+
+        axes.set_xlabel(pt.ISI)
+        
+    def _plot_clusters(self, trial_id):
+        pc = config['gui']['plotting']
+        cluster_axes = self._plot_panels[trial_id].axes['cluster']
+
+        trial = self._trials[trial_id]
+        features = trial.get_clustered_features()
+
+        feature_numbers = sorted(features.keys())
+        for feature_number, axes in zip(feature_numbers, cluster_axes):
+            color = config.get_color_from_cycle(feature_number)
+            num_features = len(features[feature_number])
+            if num_features < 1:
+                continue # don't bother trying to plot empty clusters.
+            avg_feature = numpy.average(features[feature_number], axis=0)
+            axes.plot(avg_feature, 
+                      linewidth=pc['bold_linewidth'],
+                      color=color, 
+                      alpha=1.0, 
+                      label='%d' % num_features)
+            for feature in features[feature_number]:
+                axes.plot(feature, 
+                          linewidth=pc['std_trace_linewidth'],
+                          color=color, 
+                          alpha=0.2) 
+
+            try:
+                axes.legend(loc='upper right', 
+                            shadow=True, 
+                            bbox_to_anchor=[1.03,1.1])
+            except: #old versions of matplotlib don't have bbox_to_anchor
+                pass
+
+        axes.set_ylabel(pt.FEATURE_AMPLITUDE)
+        axes.set_xlabel(pt.FEATURE_INDEX)
+    
+
+    def _plot_rasters(self, trial, figure, trial_id, num_clusters):
+        pc = config['gui']['plotting']
+        trace_axes = self._plot_panels[trial_id].axes['trace']
+        raster_axes = self._plot_panels[trial_id].axes['raster']
+
+        # plot traces
         times = trial.times
         traces = trial.detection_filter.results
         
         trace_ticks = []
         trace_offsets = [-i*2*numpy.max(numpy.abs(traces)) 
                          for i in xrange(len(traces))]
-        pc = config['gui']['plotting']
         for trace, trace_offset in zip(traces, trace_offsets):
             trace_axes.plot(times, trace+trace_offset, 
                             color=pc['detection']['filtered_trace_color'], 
@@ -202,6 +256,8 @@ class SummaryPlotPanel(MultiPlotPanel):
         ysize = max(old_ylim) - min(old_ylim) 
         trace_axes.set_yticks(trace_ticks)
         trace_axes.set_yticklabels(['%d' % i for i in xrange(len(traces))])
+
+        # plot rasters
         spike_times = trial.clustering.results
         keys = sorted(spike_times.keys())
         ylim = trace_axes.get_ylim()
@@ -228,24 +284,25 @@ class SummaryPlotPanel(MultiPlotPanel):
         for axes in [trace_axes, raster_axes]:
             axes.set_ylim(final_ylim)
 
-        
-    def _plot_clusters(self, trial, figure, trial_id, ncc):
-        averages_and_stds = self._get_averages_and_stds(trial)
-        
+    def _plot_averages_and_stds(self, trial, figure, trial_id):
         pc = config['gui']['plotting']
+        averages_and_stds = self._get_averages_and_stds(trial)
+        average_axes = self._plot_panels[trial_id].axes['average']
+        std_axes = self._plot_panels[trial_id].axes['std']
+        
         for cluster_num, (average, stds) in averages_and_stds.items():
             try:
                 times = numpy.arange(0,len(average))*(trial.dt/3.0)
             except TypeError:
                 continue # don't try to plot empty clusters.
-            line = self.average_axes.plot(times, average,
+            line = average_axes.plot(times, average,
                               color=config.get_color_from_cycle(cluster_num),
                               label=pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)[0]
-            self.average_axes.fill_between(times, average+stds, average-stds,
+            average_axes.fill_between(times, average+stds, average-stds,
                               color=config.get_color_from_cycle(cluster_num),
                               alpha=pc['summary']['std_alpha'])
 
-            self.std_axes.plot(times, stds, 
+            std_axes.plot(times, stds, 
                           color=config.get_color_from_cycle(cluster_num),
                           label=pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)
 
@@ -259,10 +316,3 @@ class SummaryPlotPanel(MultiPlotPanel):
             return_dict[key] = (average, stds)
         return return_dict
 
-    def _plot_distances(self, trial, figure, trial_id, ncc):
-        pass
-
-
-def nchoosek(n, k):
-    f = scipy.factorial
-    return f(n)/(f(k)*f(n-k))

@@ -41,6 +41,8 @@ class Controller(object):
         self.model = Model()
         self.model.setup_subscriptions()
         self.view = View()
+        self.results_notebook = self.view.frame.results_notebook
+        self._selected_trial = None
 
         # save for locals in pyshell
         locals_dict['model']      = self.model
@@ -54,6 +56,9 @@ class Controller(object):
                       topic="OPEN_OPEN_FILE_DIALOG")
         pub.subscribe(self._trial_selection_changed, 
                       topic='TRIAL_SELECTION_CHANGED')
+        pub.subscribe(self._results_notebook_page_changed,
+                      topic='RESULTS_NOTEBOOK_PAGE_CHANGED')
+        pub.subscribe(self._update_status, topic='UPDATE_STATUS')
         pub.subscribe(self._calculate_run_buttons_state,
                       topic='CALCULATE_RUN_BUTTONS_STATE')
         pub.subscribe(self._trial_closed, topic='TRIAL_CLOSED')
@@ -198,11 +203,26 @@ class Controller(object):
         trial_id = message.data
         pub.sendMessage(topic='REMOVE_PLOT', data=trial_id)
 
+    def _update_status(self, message):
+        if message.data == pt.STATUS_IDLE:
+            trial_id = self._selected_trial
+            stage_name = self.results_notebook.get_current_stage_name()
+            if trial_id is not None:
+                pub.sendMessage(topic='DISPLAY_RESULT', 
+                                data=(trial_id, stage_name))
+
+    def _results_notebook_page_changed(self, message):
+        trial_id = self._selected_trial
+        stage_name = self.results_notebook.get_current_stage_name()
+        if trial_id is not None:
+            pub.sendMessage(topic='DISPLAY_RESULT', 
+                            data=(trial_id, stage_name))
 
     def _trial_selection_changed(self, message):
-        # XXX will this do something more?
         trial_id = message.data
-        pub.sendMessage(topic='SHOW_PLOT', data=trial_id)
+        self._selected_trial = trial_id
+        stage_name = self.results_notebook.get_current_stage_name()
+        pub.sendMessage(topic='DISPLAY_RESULT', data=(trial_id, stage_name))
 
     def _open_open_file_dialog(self, message):
         frame = message.data

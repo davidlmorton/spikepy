@@ -27,6 +27,9 @@
         std_trace_color=float_list(min=3, max=4, default=None)
         std_trace_linewidth=integer(min=0, max=5, default=None)
         bold_linewidth=integer(min=0, max=5, default=None)
+        title_fontsize=integer(min=10, max=72, default=None)
+        [[[filtering]]]
+            psd_freq_resolution=float(default=None)
         [[[detection]]]
             filtered_trace_color=float_list(min=3, max=4, default=None)
             filtered_trace_linewidth=integer(min=0, max=5, default=None)
@@ -48,7 +51,10 @@
             raster_right=float(default=None)
             right_ylabel=float(default=None)
             std_alpha=float(min=0.0, max=1.0, default=None)
+            upper_isi_bound1=float(min=1.0, default=None)
+            upper_isi_bound2=float(min=1.0, default=None)
         [[[spacing]]]
+            title_vspace=float(default=None)
             no_label_axes_left=float(max=0, default=None)
             no_label_axes_bottom=float(max=0, default=None)
             axes_left=float(max=0, default=None)
@@ -57,6 +63,8 @@
             right_border=float(min=0, default=None)
             top_border=float(min=0, default=None)
             bottom_border=float(min=0, default=None)
+            hspace=float(default=None)
+            vspace=float(default=None)
         [[[printing]]]
             preview_width=integer(min=300, default=None)
             preview_height=integer(min=300, default=None)

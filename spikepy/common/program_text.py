@@ -94,11 +94,13 @@ SAMPLE_NUMBER = "Sample Number"
 PLOT_TIME = "Time (ms)"
 TIME_AXIS = "Time (ms fixme)"
 SPIKE_RATE_AXIS = "Estimated\nspike rate (Hz)"
+SPIKES_FOUND = "Found %d spikes" # % len(spikes)
 DETECTION_TRACE_GRAPH_LABEL = "Detection Filtered"
 STD_GRAPH_LABEL = 'Standard Deviation'
 SPIKES_GRAPH_LABEL = "Spikes"
 RAW = "Raw"
-PSD_Y_AXIS_LABEL = "PSD (dB/Hz)"
+PSD_Y_AXIS_LABEL = "Power\nspectral density (dB/Hz)"
+PSD_X_AXIS_LABEL = "Frequency (Hz)"
 TRIAL_NAME = 'Trial Name: '
 FILTERED_TRACE_GRAPH_LABEL = "Filtered"
 MISSING_PLOT_ERROR = "Plot associated with '%s' does not exist."
@@ -160,6 +162,7 @@ NAME_CANNOT_BEGIN_WITH = 'The name cannot begin with "."'
 
 # --- Clustering Results ---
 CLUSTER_NUMBER = "Cluster Number"
+ISI = "Interspike Interval (ms)"
 TRACE_NUMBER = "Trace Number"
 AVERAGE_SPIKE_SHAPES = "Average Spike Shapes"
 AVERAGE_OF = "Average of %d" # % number_of_spikes_in_cluster

@@ -21,6 +21,43 @@ A collection of utility functions for the spikepy plotting.
 import wx
 from matplotlib.ticker import MaxNLocator
 
+from spikepy.common.config_manager import config_manager as config
+
+def clear_figure(figure):
+    '''
+    Clear the figure, but keep the texts
+    '''
+    previous_texts = figure.texts
+    figure.clear()
+    figure.texts = previous_texts
+
+def plot_raster_to_axes(spike_times, axes, 
+                        bounds=None, 
+                        raster_pos='center',
+                        marker_size=20,
+                        **kwargs):
+    raster_height_factor = 2.0
+    if raster_pos == 'top':    
+        spike_y = max(axes.get_ylim())
+    elif raster_pos == 'bottom':  
+        spike_y = min(axes.get_ylim())
+    elif raster_pos == 'center': 
+        spike_y = 0.0
+        raster_height_factor = 1.0
+    else:
+        spike_y = raster_pos # raster_pos is a y value.
+    marker_size *= raster_height_factor
+
+    spike_ys = [spike_y for t in spike_times]
+
+    axes.plot(spike_times, spike_ys, marker='|', 
+                                     markersize=marker_size,
+                                     linewidth=0,
+                                     **kwargs)
+    prev_xlim = axes.get_xlim()
+    axes.set_xlim(min(bounds[0], prev_xlim[0]),
+                  max(bounds[1], prev_xlim[1]))
+
 def clear_axes(axes, clear_tick_labels=False):
     '''
     Clear the axes but not the x or ylabels
@@ -30,9 +67,27 @@ def clear_axes(axes, clear_tick_labels=False):
     axes.clear()
     axes.set_xlabel(xlabel)
     axes.set_ylabel(ylabel)
-    if clear_tick_labels:
+    if clear_tick_labels == True:
         axes.set_xticklabels([''], visible=False)   
         axes.set_yticklabels([''], visible=False)   
+    elif clear_tick_labels == 'y_only':
+        axes.set_yticklabels([''], visible=False)   
+    elif clear_tick_labels == 'x_only':
+        axes.set_xticklabels([''], visible=False)   
+
+def set_title(figure=None, old_text_obj=None, canvas_size_in_pixels=None, 
+              new_name=None):
+    if old_text_obj is not None and old_text_obj in figure.texts:
+        figure.texts.remove(old_text_obj)
+    title_vspace = config['gui']['plotting']['spacing']['title_vspace']
+    text_y = 1.0 - as_fraction(y=title_vspace, 
+                               canvas_size_in_pixels=canvas_size_in_pixels)
+    text_x = 0.5
+    fontsize = config['gui']['plotting']['title_fontsize']
+    return figure.text(text_x, text_y, new_name, 
+                       fontsize=fontsize,
+                       horizontalalignment='center',
+                       verticalalignment='center')
 
 def set_axes_num_ticks(axes, axis='both', num=5):
     '''
@@ -50,6 +105,14 @@ def set_axes_num_ticks(axes, axis='both', num=5):
     if axis == 'yaxis' or axis == 'both':
         axes.yaxis.set_major_locator(MaxNLocator(num-1))
 
+def as_fraction(x=None, y=None, canvas_size_in_pixels=None):
+    if x is not None and y is not None:
+        return x/canvas_size_in_pixels[0], y/canvas_size_in_pixels[1]
+    elif x is not None:
+        return x/canvas_size_in_pixels[0]
+    elif y is not None:
+        return y/canvas_size_in_pixels[1]
+
 def adjust_axes_edges(axes, canvas_size_in_pixels=None, 
                             top=0.0, 
                             bottom=0.0, 
@@ -57,6 +120,8 @@ def adjust_axes_edges(axes, canvas_size_in_pixels=None,
                             right=0.0):
     '''
     Adjusts the axes edge positions relative to the center of the axes.
+        POSITIVE -> OUTWARD or growing the axes
+        NEGATIVE -> INWARD or shrinking the axes
     If canvas_size_in_pixels is provided and not None then adjustments
         are in pixels, otherwise they are in percentage of the figure size.
     Returns:
@@ -64,10 +129,8 @@ def adjust_axes_edges(axes, canvas_size_in_pixels=None,
     '''
     # adjust to percentages of canvas size.
     if canvas_size_in_pixels is not None: 
-        left  /= canvas_size_in_pixels[0]
-        right /= canvas_size_in_pixels[0]
-        top    /= canvas_size_in_pixels[1]
-        bottom /= canvas_size_in_pixels[1]
+        left, top = as_fraction(left, top, canvas_size_in_pixels)
+        right, bottom = as_fraction(right, bottom, canvas_size_in_pixels)
         
     'Moves given edge of axes by a fraction of the figure size.'
     box = axes.get_position()

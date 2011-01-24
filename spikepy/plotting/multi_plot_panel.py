@@ -20,7 +20,6 @@ import weakref
 import wx
 from wx.lib.pubsub import Publisher as pub
 from wx.lib.scrolledpanel import ScrolledPanel
-from matplotlib.pyplot import close
 
 from spikepy.common import program_text as pt
 from spikepy.plotting.plot_panel import PlotPanel
@@ -38,12 +37,11 @@ class MultiPlotPanel(ScrolledPanel):
         """
         ScrolledPanel.__init__(self, parent)
 
-        self._plot_panels = weakref.WeakValueDictionary()
         kwargs['toolbar_visible'] = toolbar_visible
         self._plot_kwargs = kwargs
+        self._plot_panels = {}
         self._currently_shown = 'DEFAULT'
         self._toolbar_visible = toolbar_visible 
-        self._replot_panels = set()
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(sizer)
@@ -64,7 +62,7 @@ class MultiPlotPanel(ScrolledPanel):
         Add new plot, if key already exists, overwrite silently.
         '''
         if key in self._plot_panels.keys():
-            self.GetSizer().Remove(self._plot_panels[key])
+            raise RuntimeError("Plot with key '%s' already in this MultiPlotPanel." % key)
 
         self._plot_kwargs.update(kwargs)
         self._plot_panels[key] = PlotPanel(self, **self._plot_kwargs)
@@ -73,13 +71,6 @@ class MultiPlotPanel(ScrolledPanel):
 
         self._plot_panels[key].Show(False)
         self.Layout()
-
-
-    def plot(self, key):
-        '''
-        to be overwritten in subclass
-        '''
-        pass
 
     def draw_canvas(self, key):
         # hide -> draw -> unhide   to avoid display bugs with canvas
@@ -91,11 +82,13 @@ class MultiPlotPanel(ScrolledPanel):
         self.SetupScrolling()
         self.Layout()
 
+    def clear_plot(self, key=None):
+        self._plot_panels[key].clear()
+
     def _remove_plot(self, message):
         removed_panel_key = message.data
         if removed_panel_key == self._currently_shown:
             self._show_plot(new_panel_key='DEFAULT')
-        close(self._plot_panels[removed_panel_key].figure)
         self._plot_panels[removed_panel_key].Destroy()
 
     def _show_plot(self, message=None, new_panel_key=None):
@@ -105,14 +98,16 @@ class MultiPlotPanel(ScrolledPanel):
             raise RuntimeError(pt.MISSING_PLOT_ERROR %
                                 new_panel_key)
 
+        # --- Hide what's shown now first.
         shown_plot_panel = self._plot_panels[self._currently_shown]
         shown_plot_panel.Show(False)
 
+        # --- Swap what should be shown.
         self._currently_shown = new_panel_key
         showing_plot_panel = self._plot_panels[new_panel_key]
-        if new_panel_key in self._replot_panels:
-            self.plot(new_panel_key)
-            self._replot_panels.remove(new_panel_key)
+
+        # --- Show what should be shown.
         showing_plot_panel.Show(True)
         self.Layout()
         self.SetupScrolling()
+

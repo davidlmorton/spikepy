@@ -51,6 +51,9 @@ def run(trace_list, sampling_freq, threshold_1=None,
                                             max_spike_width=max_spike_width)
             result = numpy.array(result)*dt
             spike_list.append(result)
-        return spike_list
+        # FIXME return a single list of spike times, regardless of num_traces.
+        # figure out how to decide if spikes on multiple channels are
+        # the same spike.
+        return spike_list[0]
 
 

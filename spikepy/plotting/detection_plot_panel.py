@@ -20,176 +20,156 @@ import os
 from wx.lib.pubsub import Publisher as pub
 import wx
 import numpy
-from scipy import signal as scisig
 
-from spikepy.plotting.multi_plot_panel import MultiPlotPanel
-from spikepy.plotting.utils import adjust_axes_edges, clear_axes
+from spikepy.plotting.spikepy_plot_panel import SpikepyPlotPanel
+from spikepy.plotting import utils
 
 from spikepy.common.config_manager import config_manager as config
 from spikepy.common import program_text as pt
 
-class DetectionPlotPanel(MultiPlotPanel):
+class DetectionPlotPanel(SpikepyPlotPanel):
     def __init__(self, parent, name):
-        pconfig = config['gui']['plotting']
-        self._dpi       = pconfig['dpi']
-        self._figsize   = config.get_size('figure')
-        self._facecolor = pconfig['face_color']
-        self.name       = name
-        MultiPlotPanel.__init__(self, parent, figsize=self._figsize,
-                                              facecolor=self._facecolor,
-                                              edgecolor=self._facecolor,
-                                              dpi=self._dpi)
-        pub.subscribe(self._remove_trial,   topic="REMOVE_PLOT")
-        pub.subscribe(self._trial_added,    topic='TRIAL_ADDED')
-        pub.subscribe(self._trial_altered,  topic='TRIAL_SPIKE_DETECTED')
-        pub.subscribe(self._trial_filtered, topic='TRIAL_FILTERED')
-        pub.subscribe(self._trial_altered,  topic="STAGE_REINITIALIZED")
-        pub.subscribe(self._trial_renamed,  topic='TRIAL_RENAMED')
+        SpikepyPlotPanel.__init__(self, parent, name)
 
-        self._trials     = {}
-        self._trace_axes = {}
-        self._spike_axes = {}
+        pc = config['gui']['plotting']
+        self.line_color = pc['detection']['filtered_trace_color']
+        self.line_width = pc['detection']['filtered_trace_linewidth']
 
-    def _remove_trial(self, message=None):
-        trial_id = message.data
-        del self._trials[trial_id]
-        if trial_id in self._trace_axes.keys():
-            del self._trace_axes[trial_id]
-        if trial_id in self._spike_axes.keys():
-            del self._spike_axes[trial_id]
-
-    def _trial_added(self, message=None, trial=None):
-        if message is not None:
-            trial = message.data
-
-        trial_id = trial.trial_id
-        self._trials[trial_id] = trial
-        num_traces = len(trial.raw_traces)
-        # make room for multiple traces and a spike-rate plot.
-        figsize = (self._figsize[0], self._figsize[1]*(num_traces+1))
-        self.add_plot(trial_id, figsize=figsize, 
-                                facecolor=self._facecolor,
-                                edgecolor=self._facecolor,
-                                dpi=self._dpi)
-        figure = self._plot_panels[trial_id].figure
-        self._create_axes(trial, figure, trial_id)
-        self._replot_panels.add(trial_id)
-    
-    def _trial_renamed(self, message=None):
-        trial = message.data
-        trial_id = trial.trial_id
-        new_name = trial.display_name
-        spike_axes = self._spike_axes[trial_id]
-        spike_axes.set_title(pt.TRIAL_NAME+new_name)
-        self.draw_canvas(trial_id)
         
-    def _trial_filtered(self, message=None):
-        trial, stage_name = message.data
-        if stage_name == 'detection_filter':
-            self._trial_altered(message=message, force=True)
+    def _basic_setup(self, trial_id):
+        plot_panel = self._plot_panels[trial_id]
+        plot_panel.clear()
 
-    def _trial_altered(self, message=None, force=False):
-        trial, stage_name = message.data
-        if stage_name != self.name and not force:
-            return
-        trial_id = trial.trial_id
-        if trial_id == self._currently_shown:
-            self.plot(trial_id)
-            if trial_id in self._replot_panels:
-                self._replot_panels.remove(trial_id)
-        else:
-            self._replot_panels.add(trial_id)
-
-    def plot(self, trial_id):
         trial = self._trials[trial_id]
-        figure = self._plot_panels[trial_id].figure
-        
-        self._plot_filtered_traces(trial, figure, trial_id)
-        self._plot_spikes(trial, figure, trial_id)
+        # set the size of the plot properly
+        num_traces = len(trial.raw_traces)
+        num_rows = 1 + num_traces
+        figheight = self._figsize[1] * num_rows
+        figwidth  = self._figsize[0]
+        plot_panel.set_minsize(figwidth, figheight)
+        self._trial_renamed(trial_id=trial_id)
 
-        self.draw_canvas(trial_id)
+        # set up firing_rate and trace axes
+        figure = plot_panel.figure
+        plot_panel.axes['rate'] = figure.add_subplot(num_rows, 1, 1)
+        plot_panel.axes['trace'] = []
+        for i in xrange(len(trial.raw_traces)):
+            trace_axes = figure.add_subplot(num_rows, 1, i+2)
+            plot_panel.axes['trace'].append(trace_axes)
 
-    def _create_axes(self, trial, figure, trial_id):
-        traces = trial.raw_traces
-        for i, trace in enumerate(traces):
-            if i==0:
-                self._trace_axes[trial_id] = [
-                        figure.add_subplot(len(traces)+1, 1, i+2)]
-                top_axes = self._trace_axes[trial_id][0]
-            else:
-                self._trace_axes[trial_id].append(
-                        figure.add_subplot(len(traces)+1, 
-                                           1, i+2,
-                                           sharex=top_axes,
-                                           sharey=top_axes))
-            axes = self._trace_axes[trial_id][-1]
-            axes.set_ylabel('%s #%d' % (pt.TRACE, (i+1)))
-            if i+1 < len(traces): #all but the last trace
-                # make the x/yticklabels dissapear
-                axes.set_xticklabels([''],visible=False)
-                axes.set_yticklabels([''],visible=False)
-
-        axes.set_xlabel(pt.PLOT_TIME)
-
-        # lay out subplots
-        canvas_size = self._plot_panels[trial_id].GetMinSize()
+        canvas_size = plot_panel.GetMinSize()
+        # adjust subplots to spikepy uniform standard
         config.default_adjust_subplots(figure, canvas_size)
 
-        # --- add axis for spike plot ---
-        self._spike_axes[trial_id] = figure.add_subplot(
-                len(self._trace_axes[trial_id])+1, 1, 1)
-        spike_axes = self._spike_axes[trial_id]
-        self.setup_spike_axes_labels(spike_axes, trial_id)
-        
+        # tweek firing_rate axes and trace axes
+        top = -config['gui']['plotting']['spacing']['title_vspace']
         bottom = config['gui']['plotting']['spacing']['axes_bottom']
-        adjust_axes_edges(spike_axes, canvas_size_in_pixels=canvas_size,
-                                      bottom=bottom)
+        utils.adjust_axes_edges(plot_panel.axes['rate'], canvas_size,
+                                bottom=bottom, top=top)
 
-    def setup_spike_axes_labels(self, spike_axes, trial_id):
-        spike_axes.set_xlabel(pt.PLOT_TIME)
-        spike_axes.set_ylabel(pt.SPIKE_RATE_AXIS, multialignment='center')
-        trial = self._trials[trial_id]
-        new_name = trial.display_name
-        spike_axes.set_title(pt.TRIAL_NAME+new_name)
+        nl_bottom = config['gui']['plotting']['spacing']['no_label_axes_bottom']
+        for trace_axes in plot_panel.axes['trace'][:-1]:
+            utils.adjust_axes_edges(trace_axes, canvas_size, bottom=nl_bottom)
 
-    def _plot_filtered_traces(self, trial, figure, trial_id):
+        # label axes
+        plot_panel.axes['rate'].set_xlabel(pt.PLOT_TIME)
+        plot_panel.axes['rate'].set_ylabel(pt.SPIKE_RATE_AXIS, 
+                                          multialignment='center')
+
+        for i, trace_axes in enumerate(plot_panel.axes['trace']):
+            if i+1 < num_traces:
+                trace_axes.set_xticklabels([''],visible=False)
+            trace_axes.set_ylabel('%s #%d' % (pt.TRACE, (i+1)))
+        plot_panel.axes['trace'][-1].set_xlabel(pt.PLOT_TIME)
+
+    def _pre_run(self, trial_id):
         pc = config['gui']['plotting']
-        if trial.detection_filter.results is not None:
-            traces = trial.detection_filter.results
-        else:
-            return
-        times = trial.times
+        plot_panel = self._plot_panels[trial_id]
+        trial = self._trials[trial_id]
+        filtered_traces = trial.get_stage_data('detection_filter').results
 
-        trace_axes = self._trace_axes[trial_id]
-        for trace, axes in zip(traces, trace_axes):
-            clear_tick_labels = axes is not trace_axes[-1]  
-            clear_axes(axes, clear_tick_labels=clear_tick_labels)
-
-            axes.plot(times, trace, 
-                      color=pc['detection']['filtered_trace_color'], 
-                      linewidth=pc['detection']['filtered_trace_linewidth'], 
-                      label=pt.DETECTION_TRACE_GRAPH_LABEL)
-            ymax = numpy.max(numpy.abs(trace))
-            axes.set_ylim(ymin=-ymax*1.1, ymax=ymax*1.4)
-            std = numpy.std(trace)
+        # clear and plot the traces
+        num_traces = len(trial.raw_traces)
+        for i, trace_axes in enumerate(plot_panel.axes['trace']):
+            clear_tick_labels = False
+            if i+1 < num_traces:
+                clear_tick_labels = 'x_only'
+            utils.clear_axes(trace_axes, clear_tick_labels=clear_tick_labels)
+            trace_axes.plot(trial.times, filtered_traces[i],
+                            color=self.line_color, 
+                            linewidth=self.line_width, 
+                            label=pt.FILTERED_TRACE_GRAPH_LABEL)
+            trace_axes.set_xlim(trial.times[0], trial.times[-1])
+            std = numpy.std(filtered_traces[i])
 
             for factor, linestyle in [(2,'solid'),(4,'dashed')]:
-                axes.axhline(std*factor, 
-                             color=pc['std_trace_color'], 
-                             linewidth=pc['std_trace_linewidth'], 
-                             label=r'$%d\sigma$' % factor,
-                             linestyle=linestyle)
-                axes.axhline(-std*factor, 
-                             color=pc['std_trace_color'], 
-                             linewidth=pc['std_trace_linewidth'], 
-                             linestyle=linestyle)
+                trace_axes.axhline(std*factor, 
+                                   color=pc['std_trace_color'], 
+                                   linewidth=pc['std_trace_linewidth'], 
+                                   label=r'$%d\sigma$' % factor,
+                                   linestyle=linestyle)
+                trace_axes.axhline(-std*factor, 
+                                   color=pc['std_trace_color'], 
+                                   linewidth=pc['std_trace_linewidth'], 
+                                   linestyle=linestyle)
+        axes = plot_panel.axes['trace'][0]
         try:
             axes.legend(loc='upper right', ncol=3, shadow=True, 
                         bbox_to_anchor=[1.03,1.1])
         except: #old versions of matplotlib don't have bbox_to_anchor
             axes.legend(loc='upper right', ncol=3)
-            
 
+    def _post_run(self, trial_id):
+        pc = config['gui']['plotting']
+        plot_panel = self._plot_panels[trial_id]
+        rate_axes = plot_panel.axes['rate']
+
+        utils.clear_axes(rate_axes)
+
+        trial = self._trials[trial_id]
+        spikes = trial.detection.results
+        times = trial.times
+
+        # plot the estimated firing rate
+        bins = 70
+        weight = (1000.0*bins)/times[-1]
+        weights = [weight for s in spikes]
+        rate_axes.hist(spikes, range=(times[0], times[-1]), 
+                               bins=bins,
+                               weights=weights,
+                               ec='k',
+                               fc=self.line_color)
+
+        # print how many spikes were found.
+        rate_axes.text(0.015, 0.925, pt.SPIKES_FOUND % len(spikes), 
+                       verticalalignment='center',
+                       horizontalalignment='left',
+                       transform=rate_axes.transAxes)
+
+        color=pc['detection']['raster_color']
+        marker_size=pc['detection']['raster_height']
+        markeredgewidth=pc['detection']['raster_width']
+        # plot raster on rate plot
+        raster_pos=pc['detection']['raster_pos_rate']
+        utils.plot_raster_to_axes(spikes, rate_axes,
+                                  bounds=(times[0], times[-1]),
+                                  raster_pos=raster_pos,
+                                  marker_size=marker_size,
+                                  markeredgewidth=markeredgewidth,
+                                  color=color)
+
+        # clear old rasters, then plot rasters on traces
+        raster_pos=pc['detection']['raster_pos_traces']
+        for trace_axes in plot_panel.axes['trace']:
+            if len(trace_axes.lines) == 6:
+                trace_axes.lines[-1].remove()
+            utils.plot_raster_to_axes(spikes, trace_axes,
+                                      bounds=(times[0], times[-1]),
+                                      raster_pos=raster_pos,
+                                      marker_size=marker_size,
+                                      markeredgewidth=markeredgewidth,
+                                      color=color)
+        
     def _plot_spikes(self, trial, figure, trial_id):
         pc = config['gui']['plotting']
         # remove old lines if present.
@@ -212,24 +192,6 @@ class DetectionPlotPanel(MultiPlotPanel):
             if len(lines) == 2:
                 del(axes.lines[1])
             
-            raster_height_factor = 2.0
-            raster_pos = pc['detection']['raster_pos_traces']
-            if raster_pos == 'top':    spike_y = max(axes.get_ylim())
-            if raster_pos == 'botom':  spike_y = min(axes.get_ylim())
-            if raster_pos == 'center': 
-                spike_y = 0.0
-                raster_height_factor = 1.0
-            spike_xs = spike_list
-            spike_ys = [spike_y for spike_index in spike_list]
-            axes.plot(spike_xs, spike_ys, 
-                      color=pc['detection']['raster_color'], 
-                      linewidth=0, 
-                      marker='|',
-                      markersize=pc['detection']['raster_height']*
-                        raster_height_factor,
-                      markeredgewidth=pc['detection']['raster_width'],
-                      label=pt.SPIKES_GRAPH_LABEL)
-
         # --- plot spike rate ---
         width = 50.0
         required_proportion = 0.75
@@ -271,40 +233,6 @@ class DetectionPlotPanel(MultiPlotPanel):
 
         spike_axes.set_xlim(0.0, trial.times[-1])
 
-def get_accepted_spike_list(spikes, samling_freq, width, required_proportion):
-    '''
-    Gather the spikes which occur across <reqired_proportion> of electrodes
-    within <width> of spikes on the other electrodes.
-    '''
-    return spikes[0] # FIXME flesh out and put into detection code.
-
-
-def get_spike_rate(spike_list, width, sampling_rate, num_samples):
-    binary_spike_train = numpy.zeros(num_samples, dtype=numpy.float64)
-    dt = (1.0/sampling_rate)*1000.0
-    for spike in spike_list:
-        binary_spike_train[int(spike/dt)] = 1.0
-    kernel = gaussian_kernel(width, sampling_rate)
-    return scisig.convolve(kernel, binary_spike_train, mode='same')*1000.0
-
-
-def gaussian_kernel(width, sampling_rate):
-    "width in (ms), sampling_rate in (Hz)"
-    # -3*width to 3*width will get more than 99.7% of strength
-    samples_per_ms = sampling_rate/1000.0
-    num_samples = samples_per_ms * 6.0 * width
-    if not num_samples%2: # ensure odd num_samples
-        num_samples += 1
-    x_values = numpy.linspace(-3.0*width, 3.0*width, num_samples)
-    result = gaussian(x_values, width)
-    result /= (numpy.sum(result)/num_samples)*6.0*width # normalize
-    return result
-
-
-def gaussian(x, width):
-    peak = 1.0/numpy.sqrt(2*numpy.pi*width**2)
-    exponent = -x**2/(2*width**2)
-    return peak * numpy.exp(exponent)
 
 
 def bin_spikes(spike_list, total_time, bin_width=50.0, bin_alignment="middle"):

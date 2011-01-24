@@ -22,75 +22,24 @@ from wx.lib.pubsub import Publisher as pub
 import wx
 import numpy
 
-from spikepy.plotting.multi_plot_panel import MultiPlotPanel
+from spikepy.plotting.spikepy_plot_panel import SpikepyPlotPanel
+from spikepy.plotting import utils
 from spikepy.common import program_text as pt
-from spikepy.plotting.utils import adjust_axes_edges, set_axes_num_ticks
-from spikepy.common.utils import pca
 from spikepy.common.config_manager import config_manager as config
 from spikepy import projection_utils as pu
 
-class ClusteringPlotPanel(MultiPlotPanel):
+class ClusteringPlotPanel(SpikepyPlotPanel):
     def __init__(self, parent, name):
-        pconfig = config['gui']['plotting']
-        self._dpi       = pconfig['dpi']
-        self._figsize   = config.get_size('figure')
-        self._facecolor = pconfig['face_color']
-        self.name       = name
-        MultiPlotPanel.__init__(self, parent, figsize=self._figsize,
-                                              facecolor=self._facecolor,
-                                              edgecolor=self._facecolor,
-                                              dpi=self._dpi)
-        pub.subscribe(self._remove_trial,  topic="REMOVE_PLOT")
-        pub.subscribe(self._trial_added,   topic='TRIAL_ADDED')
-        pub.subscribe(self._trial_altered, topic='TRIAL_CLUSTERED')
-        pub.subscribe(self._trial_altered, topic='STAGE_REINITIALIZED')
-        pub.subscribe(self._trial_renamed,  topic='TRIAL_RENAMED')
+        SpikepyPlotPanel.__init__(self, parent, name)
 
-        self._trials        = {}
-        self._feature_axes  = {}
-        self._pca_axes      = {}
-        self._pro_axes      = {}
+    def _basic_setup(self, trial_id):
+        plot_panel = self._plot_panels[trial_id]
+        plot_panel.clear()
 
-    def _remove_trial(self, message=None):
-        trial_id = message.data
-        del self._trials[trial_id]
-        if trial_id in self._feature_axes.keys():
-            del self._feature_axes[trial_id]
+    def _pre_run(self, trial_id):
+        pass
 
-    def _trial_added(self, message=None, trial=None):
-        if message is not None:
-            trial = message.data
-
-        trial_id = trial.trial_id
-        self._trials[trial_id] = trial
-        figsize = (self._figsize[0], self._figsize[1])
-        self.add_plot(trial_id, figsize=figsize, 
-                                facecolor=self._facecolor,
-                                edgecolor=self._facecolor,
-                                dpi=self._dpi)
-        self._replot_panels.add(trial_id)
-
-    def _trial_renamed(self, message=None):
-        trial = message.data
-        trial_id = trial.trial_id
-        new_name = trial.display_name
-        axes = self._feature_axes[trial_id]
-        axes.set_title(pt.TRIAL_NAME+new_name)
-        self.draw_canvas(trial_id)
-
-    def _trial_altered(self, message=None):
-        trial, stage_name = message.data
-        if stage_name != self.name:
-            return
-        trial_id = trial.trial_id
-        if trial_id == self._currently_shown:
-            self.plot(trial_id)
-            if trial_id in self._replot_panels:
-                self._replot_panels.remove(trial_id)
-        else:
-            self._replot_panels.add(trial_id)
-
-    def plot(self, trial_id):
+    def _post_run(self, trial_id):
         trial = self._trials[trial_id]
         figure = self._plot_panels[trial_id].figure
         self._create_axes(trial, figure, trial_id)
@@ -99,17 +48,14 @@ class ClusteringPlotPanel(MultiPlotPanel):
         self._plot_pcas(trial, figure, trial_id)
         self._plot_pros(trial, figure, trial_id)
 
-        self.draw_canvas(trial_id)
-
     def _set_plot_size(self, num_rows, trial_id):
         plot_panel = self._plot_panels[trial_id]
-        new_min_size = (plot_panel._original_min_size[0],
-                        plot_panel._original_min_size[1] * num_rows)
-        plot_panel.SetMinSize(new_min_size)
-        if hasattr(plot_panel.GetParent(), 'SetupScrolling'):
-            plot_panel.GetParent().SetupScrolling()
+        new_min_size = (self._figsize[0],
+                        self._figsize[1] * num_rows)
+        plot_panel.set_minsize(new_min_size[0], new_min_size[1])
 
     def _create_axes(self, trial, figure, trial_id):
+        # figure out how large the canvas should be
         results = trial.clustering.results
         if results is not None:
             num_clusters = trial.get_num_clusters()
@@ -122,30 +68,38 @@ class ClusteringPlotPanel(MultiPlotPanel):
         num_trows = int(math.ceil(num_srows/2.0))
         num_cols = 2
         self._set_plot_size(num_trows, trial_id)
-        figure.clear()
-        fa = self._feature_axes[trial_id] = figure.add_subplot(num_trows,
-                                                               num_cols,1)
-        pca = self._pca_axes[trial_id] = figure.add_subplot(num_trows, 
-                                                            num_cols, 2)
-        self._pro_axes[trial_id] = []
+        utils.clear_figure(figure)
+        self._trial_renamed(trial_id=trial_id)
+
+        # add subplots
+        plot_panel = self._plot_panels[trial_id]
+        fa = plot_panel.axes['feature'] = figure.add_subplot(num_trows,
+                                                             num_cols,1)
+        pca = plot_panel.axes['pca'] = figure.add_subplot(num_trows, 
+                                                          num_cols, 2)
+        plot_panel.axes['pro'] = []
         for i in range(num_pros):
-            self._pro_axes[trial_id].append(figure.add_subplot(num_srows, 
-                                                               num_cols, i+5))
+            plot_panel.axes['pro'].append(figure.add_subplot(num_srows, 
+                                                             num_cols, i+5))
 
         canvas_size = self._plot_panels[trial_id].GetMinSize()
         config.default_adjust_subplots(figure, canvas_size)
 
+        # tweek axes edges
         axes_left = config['gui']['plotting']['spacing']['axes_left']
         axes_bottom = config['gui']['plotting']['spacing']['axes_bottom']
-        # give room for yticklabels on pca plot
-        adjust_axes_edges(pca, canvas_size,
-                          left=2*axes_left/3)
-        adjust_axes_edges(fa, canvas_size,
-                          right=axes_left/3)
-        # raise all subplots bottom up a bit, for labels
-        adjust_axes_edges(pca, canvas_size, bottom=axes_bottom)
-        adjust_axes_edges(fa, canvas_size, bottom=axes_bottom)
-        for i, pro_axes in enumerate(self._pro_axes[trial_id]):
+        title_vspace = config['gui']['plotting']['spacing']['title_vspace']
+        #     give room for yticklabels on pca plot
+        utils.adjust_axes_edges(pca, canvas_size,
+                          left=2*axes_left/3, 
+                          top=-title_vspace)
+        utils.adjust_axes_edges(fa, canvas_size,
+                          right=axes_left/3,
+                          top=-title_vspace)
+        #     raise all subplots bottom up a bit, for labels
+        utils.adjust_axes_edges(pca, canvas_size, bottom=axes_bottom)
+        utils.adjust_axes_edges(fa, canvas_size, bottom=axes_bottom)
+        for i, pro_axes in enumerate(plot_panel.axes['pro']):
             left = 0.0
             right = 0.0
             bottom = axes_bottom
@@ -153,18 +107,14 @@ class ClusteringPlotPanel(MultiPlotPanel):
                 right = axes_left/2.0
             else:
                 left = axes_left/2.0
-            adjust_axes_edges(pro_axes, canvas_size, left=left, 
+            utils.adjust_axes_edges(pro_axes, canvas_size, left=left, 
                                                      right=right,
                                                      bottom=bottom)
 
     def _plot_pcas(self, trial, figure, trial_id):
-        axes = self._pca_axes[trial_id]
-        axes.clear()
+        axes = self._plot_panels[trial_id].axes['pca']
 
-        if trial.clustering.results is not None:
-            features, pc, var = trial.get_clustered_features(pca_rotated=True)
-        else:
-            return
+        features, pc, var = trial.get_clustered_features(pca_rotated=True)
 
         feature_numbers = sorted(features.keys())
         for feature_number in feature_numbers:
@@ -179,24 +129,19 @@ class ClusteringPlotPanel(MultiPlotPanel):
                                       marker='.')
 
         pct_var = [tvar/sum(var)*100.0 for tvar in var]
-        axes.set_xlabel(pt.PCA_LABEL % (1, pct_var[0], '%'))
-        axes.set_ylabel(pt.PCA_LABEL % (2, pct_var[1], '%'))
+        axes.set_xlabel(pt.PCA_LABEL % (1, pct_var[0], '%'), color='r')
+        axes.set_ylabel(pt.PCA_LABEL % (2, pct_var[1], '%'), color='g')
 
-        set_axes_num_ticks(axes, axis='both', num=4)
+        utils.set_axes_num_ticks(axes, axis='both', num=4)
 
     def _plot_features(self, trial, figure, trial_id):
-        axes = self._feature_axes[trial_id]
-        axes.clear()
+        axes = self._plot_panels[trial_id].axes['feature']
 
         axes.set_ylabel(pt.FEATURE_AMPLITUDE)
         axes.set_xlabel(pt.FEATURE_INDEX)
 
-        if trial.clustering.results is not None:
-            features = trial.get_clustered_features()
-        else:
-            return
+        features = trial.get_clustered_features()
 
-        axes.set_autoscale_on(True)
         feature_numbers = sorted(features.keys())
         pc = config['gui']['plotting']
         for feature_number in feature_numbers:
@@ -209,27 +154,29 @@ class ClusteringPlotPanel(MultiPlotPanel):
                       linewidth=pc['bold_linewidth'],
                       color=color, 
                       alpha=1.0, 
-                      label=pt.AVERAGE_OF % num_features)
+                      label='%d' % num_features)
             for feature in features[feature_number]:
                 axes.plot(feature, 
                           linewidth=pc['std_trace_linewidth'],
                           color=color, 
                           alpha=0.2) 
-        #axes.legend(loc='upper right')
+
+        try:
+            axes.legend(loc='upper right', 
+                        ncol=min(4, len(feature_numbers)), 
+                        shadow=True, 
+                        bbox_to_anchor=[1.03,1.1])
+        except: #old versions of matplotlib don't have bbox_to_anchor
+            pass
 
     def _plot_pros(self, trial, figure, trial_id):
-        if trial.clustering.results is not None:
-            features = trial.get_clustered_features()
-            results = trial.clustering.results
-        else:
-            return
+        features = trial.get_clustered_features()
+        results = trial.clustering.results
+        plot_panel = self._plot_panels[trial_id]
 
         combos = pu.get_projection_combinations(results.keys())
-        for combo, axes in zip(combos, self._pro_axes[trial_id]):
+        for combo, axes in zip(combos, plot_panel.axes['pro']):
             i, j = combo
-            axes.clear()
-
-            axes.set_autoscale_on(True)
             pc = config['gui']['plotting']
 
             if len(features[i]) < 1 or len(features[j]) < 1:

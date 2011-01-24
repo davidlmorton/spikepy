@@ -101,10 +101,9 @@ class Model(object):
             d_stage_data = trial.get_stage_data('detection_filter')
             e_stage_data.results = d_stage_data.results
             
+            pub.sendMessage(topic='TRIAL_ALTERED',
+                            data=(trial.trial_id, 'extraction_filter'))
             pub.sendMessage(topic="PROCESS_ENDED", data=[trial])
-            pub.sendMessage(topic='TRIAL_FILTERED',
-                            data=(trial, 'extraction_filter'))
-            pub.sendMessage(topic='RUNNING_COMPLETED')
             
     # ---- OPEN FILE ----
     def _open_data_file(self, message):
@@ -179,13 +178,6 @@ class Model(object):
         Alters:
             trial           : stores results, method_used and settings
                               in the appropriate StageData instance.
-        Publishes:
-            'TRIAL_%s_FILTERED'    : if the trial was filtered successfully,
-                                     the %s will be one of DETECTION or 
-                                                           EXTRACTION
-                                     --data = trial
-            'RUNNING_COMPLETED'    : if the trial was filtered successfully
-                                     -- data = None
         """
         stage_data = trial.get_stage_data(stage_name)
         stage_data.reinitialize()
@@ -208,13 +200,12 @@ class Model(object):
         return filtered_traces
 
     def _filter_consumer(self, delayed_result, trial, stage_name):
-        pub.sendMessage(topic="PROCESS_ENDED", data=[trial])
         filtered_traces = delayed_result.get()
         stage_data = trial.get_stage_data(stage_name)
         stage_data.results = format_traces(filtered_traces)
-        pub.sendMessage(topic='TRIAL_FILTERED',
-                        data=(trial, stage_name))
-        pub.sendMessage(topic='RUNNING_COMPLETED')
+        pub.sendMessage(topic='TRIAL_ALTERED',
+                        data=(trial.trial_id, stage_name))
+        pub.sendMessage(topic="PROCESS_ENDED", data=[trial])
 
     # ---- DETECTION ----
     def _detection(self, trial=None, stage_name=None, method_name=None, 
@@ -231,12 +222,6 @@ class Model(object):
         Alters:
             trial           : stores results, method_used and settings
                               in the appropriate StageData instance.
-        Publishes:
-            'TRIAL_DETECTIONED'     : if the trial was successfully spike 
-                                      detected
-                                     --data = trial
-            'RUNNING_COMPLETED'    : if the trial was filtered successfully
-                                     -- data = None
         """
         trial.detection.reinitialize()
         trial.detection.method   = method_name
@@ -261,13 +246,16 @@ class Model(object):
         return spikes
 
     def _detection_consumer(self, delayed_result, trial):
-        pub.sendMessage(topic="PROCESS_ENDED", data=[trial])
         spikes = delayed_result.get()
         # XXX carefully consider what to do if no spikes were detected.
-        if len(spikes[0]) > 0:
+        if len(spikes) > 0:
             trial.detection.results = spikes
-        pub.sendMessage(topic='TRIAL_SPIKE_DETECTED', data=(trial, 'detection'))
-        pub.sendMessage(topic='RUNNING_COMPLETED')
+        else:
+            raise RuntimeError('No spikes detected on trial with trial_id:%s' 
+                               % trial.trial_id)
+        pub.sendMessage(topic='TRIAL_ALTERED', 
+                        data=(trial.trial_id, 'detection'))
+        pub.sendMessage(topic="PROCESS_ENDED", data=[trial])
 
     # ---- EXTRACTION ----
     def _extraction(self, trial=None, stage_name=None, method_name=None, 
@@ -284,12 +272,6 @@ class Model(object):
         Alters:
             trial           : stores results, method_used and settings
                               in the appropriate StageData instance.
-        Publishes:
-            'TRIAL_DETECTIONED'     : if the trial was successfully feature
-                                      extracted
-                                     --data = trial
-            'RUNNING_COMPLETED'    : if the trial was filtered successfully
-                                     -- data = None
         """
         trial.extraction.reinitialize()
         trial.extraction.method   = method_name
@@ -300,7 +282,7 @@ class Model(object):
                         cargs=(trial,))
 
     def _extraction_worker(self, trial, method_name, settings):
-        spike_list = trial.detection.results[0]
+        spike_list = trial.detection.results
         if len(spike_list) == 0:
             return None # no spikes from detection = no extraction
         new_sample_rate = 30000
@@ -319,13 +301,12 @@ class Model(object):
         return features_dict
 
     def _extraction_consumer(self, delayed_result, trial):
-        pub.sendMessage(topic="PROCESS_ENDED", data=[trial])
         features_dict = delayed_result.get()
         features_dict['features'] = numpy.array(features_dict['features'])
         trial.extraction.results = features_dict
-        pub.sendMessage(topic='TRIAL_FEATURE_EXTRACTED', data=(trial,
-                                                               'extraction'))
-        pub.sendMessage(topic='RUNNING_COMPLETED')
+        pub.sendMessage(topic='TRIAL_ALTERED', 
+                        data=(trial.trial_id, 'extraction'))
+        pub.sendMessage(topic="PROCESS_ENDED", data=[trial])
 
     def _cluster_single(self, trial, **kwargs):
         return self._clustering([trial], **kwargs)
@@ -345,11 +326,6 @@ class Model(object):
         Alters:
             trial_list      : stores results, method_used and settings
                               in the appropriate StageData instance(s).
-        Publishes:
-            'TRIAL_CLUSTERINGED'    : if the trial was successfully clustered
-                                     --data = trial
-            'RUNNING_COMPLETED'    : if the trial was filtered successfully
-                                     -- data = None
         """
         for trial in trial_list:
             trial.clustering.reinitialize()
@@ -397,7 +373,7 @@ class Model(object):
             trial_results.append(feature_time)
 
     def _clustering_consumer(self, delayed_result, trial_list):
-        pub.sendMessage(topic="PROCESS_ENDED", data=trial_list)
         for trial in trial_list:
-            pub.sendMessage(topic='TRIAL_CLUSTERED', data=(trial,'clustering'))
-        pub.sendMessage(topic='RUNNING_COMPLETED')
+            pub.sendMessage(topic='TRIAL_ALTERED', 
+                            data=(trial.trial_id,'clustering'))
+        pub.sendMessage(topic="PROCESS_ENDED", data=trial_list)

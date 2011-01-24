@@ -122,7 +122,7 @@ class ConfigManager(object):
         right  = 1.0 - psconfig['right_border'] / canvas_size_in_pixels[0]
         top    = 1.0 - psconfig['top_border'] / canvas_size_in_pixels[1]
         bottom = psconfig['bottom_border'] / canvas_size_in_pixels[1]
-        figure.subplots_adjust(hspace=0.03, wspace=0.03, 
+        figure.subplots_adjust(hspace=0.00, wspace=0.00, 
                                left=left, right=right, 
                                bottom=bottom, top=top)
 

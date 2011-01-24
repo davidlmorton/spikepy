@@ -103,8 +103,8 @@ class StrategyPane(ScrolledPanel):
 
         self._should_sync = True
                                 
-        pub.subscribe(self._results_notebook_page_changing, 
-                      topic='RESULTS_NOTEBOOK_PAGE_CHANGING')
+        pub.subscribe(self._results_notebook_page_changed, 
+                      topic='RESULTS_NOTEBOOK_PAGE_CHANGED')
         pub.subscribe(self._set_run_buttons_state,
                       topic='SET_RUN_BUTTONS_STATE')
 
@@ -117,7 +117,7 @@ class StrategyPane(ScrolledPanel):
         self.strategy_manager = StrategyManager()
         self._temp_strategies = {}
 
-        self.Bind(wx.EVT_IDLE, self._sync)
+        #self.Bind(wx.EVT_IDLE, self._sync)
         self.Bind(wx.EVT_BUTTON, self._save_button_pressed, self.save_button)
         self.Bind(wx.EVT_CHOICEBOOK_PAGE_CHANGED, self._page_changed)
         self.Bind(wx.EVT_CHOICE, self._strategy_choice_made, 
@@ -234,7 +234,7 @@ class StrategyPane(ScrolledPanel):
             # set parameters
             control_panel.set_parameters(**non_unicode_stage_settings)
 
-    def _results_notebook_page_changing(self, message=None):
+    def _results_notebook_page_changed(self, message=None):
         old_page_num, new_page_num = message.data
         if new_page_num < 5: # don't try to change if changing to summary
             self.stage_choicebook.SetSelection(new_page_num)

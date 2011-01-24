@@ -21,7 +21,7 @@ import wx
 
 # this is filled up when program runs, it is just a repository of
 #   handy local variables for the pyshell.
-locals_dict = {'pub': pub}
+locals_dict = {'pub': pub, 'figures':[]}
 
 
 class PyShellDialog(wx.Dialog):
