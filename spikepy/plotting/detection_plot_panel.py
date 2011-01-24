@@ -134,11 +134,18 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         bins = 70
         weight = (1000.0*bins)/times[-1]
         weights = [weight for s in spikes]
-        rate_axes.hist(spikes, range=(times[0], times[-1]), 
-                               bins=bins,
-                               weights=weights,
-                               ec='k',
-                               fc=self.line_color)
+        try:
+            rate_axes.hist(spikes, range=(times[0], times[-1]), 
+                                   bins=bins,
+                                   weights=weights,
+                                   ec='k',
+                                   fc=self.line_color)
+        except ValueError:
+            rate_axes.hist(spikes, range=(times[0], times[-1]), 
+                                   bins=bins,
+                                   ec='k',
+                                   fc=self.line_color)
+            rate_axes.set_ylabel('Spikes per bin')
 
         # print how many spikes were found.
         rate_axes.text(0.015, 0.925, pt.SPIKES_FOUND % len(spikes), 
