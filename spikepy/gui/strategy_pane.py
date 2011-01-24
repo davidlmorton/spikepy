@@ -117,7 +117,7 @@ class StrategyPane(ScrolledPanel):
         self.strategy_manager = StrategyManager()
         self._temp_strategies = {}
 
-        #self.Bind(wx.EVT_IDLE, self._sync)
+        self.Bind(wx.EVT_IDLE, self._sync)
         self.Bind(wx.EVT_BUTTON, self._save_button_pressed, self.save_button)
         self.Bind(wx.EVT_CHOICEBOOK_PAGE_CHANGED, self._page_changed)
         self.Bind(wx.EVT_CHOICE, self._strategy_choice_made, 
