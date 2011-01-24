@@ -165,10 +165,10 @@ class SummaryPlotPanel(SpikepyPlotPanel):
             total_width = isa.get_position().width
             total_height = isa.get_position().height
             utils.adjust_axes_edges(isa, canvas_size, 
-                    left=-0.50*total_width*canvas_size[0],
-                    bottom=-0.50*total_height*canvas_size[1],
+                    left=-0.35*total_width*canvas_size[0],
+                    bottom=-0.35*total_height*canvas_size[1],
                     right=nl_bottom, 
-                    top=nl_bottom/2)
+                    top=nl_bottom)
 
     def _pot_isis(self, trial_id):
         pc = config['gui']['plotting']
