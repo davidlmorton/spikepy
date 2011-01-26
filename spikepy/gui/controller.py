@@ -58,7 +58,8 @@ class Controller(object):
                       topic='TRIAL_SELECTION_CHANGED')
         pub.subscribe(self._results_notebook_page_changed,
                       topic='RESULTS_NOTEBOOK_PAGE_CHANGED')
-        pub.subscribe(self._update_status, topic='UPDATE_STATUS')
+        pub.subscribe(self._plot_results, topic='PLOT_RESULTS')
+        pub.subscribe(self._hide_results, topic='HIDE_RESULTS')
         pub.subscribe(self._calculate_run_buttons_state,
                       topic='CALCULATE_RUN_BUTTONS_STATE')
         pub.subscribe(self._trial_closed, topic='TRIAL_CLOSED')
@@ -203,26 +204,47 @@ class Controller(object):
         trial_id = message.data
         pub.sendMessage(topic='REMOVE_PLOT', data=trial_id)
 
-    def _update_status(self, message):
-        if message.data == pt.STATUS_IDLE:
-            trial_id = self._selected_trial
-            stage_name = self.results_notebook.get_current_stage_name()
-            if trial_id is not None:
-                pub.sendMessage(topic='DISPLAY_RESULT', 
-                                data=(trial_id, stage_name))
+    def _plot_results(self, message):
+        trial_id = self._selected_trial
+        stage_name = self.results_notebook.get_current_stage_name()
+        should_plot = self.results_notebook.should_plot(stage_name)
+        
+        if trial_id is not None and should_plot:
+            pub.sendMessage(topic='DISPLAY_RESULT', 
+                            data=(trial_id, stage_name))
+
+    def _hide_results(self, message):
+        stage_name = message.data
+        print "Hiding %s" % stage_name
+        if stage_name != 'all':
+            pub.sendMessage(topic='CLEAR_RESULTS', data=stage_name)
+        else:
+            for stage_name in ['detection_filter', 'detection', 
+                               'extraction_filter', 'extraction', 
+                               'clustering', 'summary']:
+                pub.sendMessage(topic='CLEAR_RESULTS', data=stage_name)
 
     def _results_notebook_page_changed(self, message):
         trial_id = self._selected_trial
         stage_name = self.results_notebook.get_current_stage_name()
-        if trial_id is not None:
+        should_plot = self.results_notebook.should_plot(stage_name)
+
+        if trial_id is not None and should_plot:
+            print "Displaying %s" % stage_name
             pub.sendMessage(topic='DISPLAY_RESULT', 
                             data=(trial_id, stage_name))
 
     def _trial_selection_changed(self, message):
         trial_id = message.data
+        # clear all plots when changing trial selections.
+        message.data = 'all'
+        self._hide_results(message)
+
         self._selected_trial = trial_id
         stage_name = self.results_notebook.get_current_stage_name()
-        pub.sendMessage(topic='DISPLAY_RESULT', data=(trial_id, stage_name))
+        should_plot = self.results_notebook.should_plot(stage_name)
+        if should_plot:
+            pub.sendMessage(topic='DISPLAY_RESULT', data=(trial_id, stage_name))
 
     def _open_open_file_dialog(self, message):
         frame = message.data

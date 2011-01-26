@@ -45,13 +45,7 @@ class ResultsNotebook(wx.Notebook):
         extraction_panel = ResultsPanel(self,  "extraction")
         clustering_panel = ResultsPanel(self,  "clustering")
         summary_panel = ResultsPanel(self,  "summary")
-        '''
-        detection_panel = ResultsPanel(self,         "detection")
-        extraction_filter_panel = ResultsPanel(self, "extraction_filter")
-        extraction_panel = ResultsPanel(self,        "extraction")
-        clustering_panel = ResultsPanel(self,        "clustering")
-        summary_panel = ResultsPanel(self,           "summary")
-        '''
+
         self.AddPage(detection_filter_panel,  pt.DETECTION_FILTER)
         self.AddPage(detection_panel,         pt.DETECTION)
         self.AddPage(extraction_filter_panel, pt.EXTRACTION_FILTER)
@@ -76,6 +70,10 @@ class ResultsNotebook(wx.Notebook):
                                'clustering':clustering_panel,
                                'summary':summary_panel}
         pyshell.locals_dict['results_panels'] = self.results_panels
+        self._last_page_selected = None
+
+    def should_plot(self, stage_name):
+        return self.results_panels[stage_name].plot_checkbox.IsChecked()
 
     def get_current_stage_name(self):
         return self.GetCurrentPage().name
@@ -97,33 +95,55 @@ class ResultsNotebook(wx.Notebook):
         new_page_num  = event.GetSelection()
         pub.sendMessage(topic='RESULTS_NOTEBOOK_PAGE_CHANGED', 
                         data=(old_page_num, new_page_num))
+
+        old_page = self.GetPage(old_page_num)
+        pub.sendMessage(topic="HIDE_RESULTS", data=old_page.name)
         event.Skip()
 
     def _change_page(self, message=None):
-        new_page_num = message.data
+        new_page_num, old_page_num = message.data
         self.ChangeSelection(new_page_num)
+        pub.sendMessage(topic='RESULTS_NOTEBOOK_PAGE_CHANGED', 
+                        data=(old_page_num, new_page_num))
+
+        old_page = self.GetPage(old_page_num)
+        pub.sendMessage(topic="HIDE_RESULTS", data=old_page.name)
+
 
 class ResultsPanel(wx.Panel):
     def __init__(self, parent, name, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
         self.name = name
-        cursor_position_bar = CursorPositionBar(self)
         self.plot_panel = plot_panels[self.name](self, self.name)
-
-        #method_details_button = wx.Button(self, label=pt.METHOD_DETAILS)
+        self.plot_checkbox = wx.CheckBox(self, 
+                                         label=pt.PLOT_RESULTS)
+        self.plot_checkbox.SetValue(True)
 
         top_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        top_sizer.Add(cursor_position_bar, proportion=0, 
-                flag=wx.ALL|wx.EXPAND, border=0)
-        #top_sizer.Add(method_details_button, proportion=0, 
-        #        flag=wx.ALL|wx.ALIGN_CENTER_VERTICAL, border=4)
+        top_sizer.Add(self.plot_checkbox, proportion=0, 
+                flag=wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM, border=4)
         
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         sizer.Add(top_sizer, proportion=0, flag=wx.EXPAND)
         sizer.Add(self.plot_panel, proportion=1, flag=wx.EXPAND)
         self.SetSizer(sizer)
 
+        pub.subscribe(self._set_plot_results_checkbox, 
+                       "SET_PLOT_RESULTS_CHECKBOX")
+
         self.Bind(wx.EVT_BUTTON, self._show_method_details)
+        self.Bind(wx.EVT_CHECKBOX, self._plot_results)
+
+    def _set_plot_results_checkbox(self, message):
+        state, name = message.data
+        if name == self.name or name == 'all':
+            self.plot_checkbox.SetValue(state)
+
+    def _plot_results(self, event):
+        if self.plot_checkbox.IsChecked():
+            pub.sendMessage("PLOT_RESULTS", data=self.name)
+        else:
+            pub.sendMessage("HIDE_RESULTS", data=self.name)
 
     def _tell_report_coordinates(self, report_coordinates):
         for plot_panel in self.plot_panel._plot_panels.values():

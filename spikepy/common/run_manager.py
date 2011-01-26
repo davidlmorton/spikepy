@@ -98,6 +98,7 @@ class RunManager(object):
         else:
             pub.sendMessage(topic="UPDATE_STATUS",
                             data=pt.STATUS_IDLE)
+            pub.sendMessage(topic="PLOT_RESULTS")
         wx.Yield()
 
     def _file_opening_started(self, message=None):

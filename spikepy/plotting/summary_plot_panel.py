@@ -28,9 +28,6 @@ from spikepy.common.config_manager import config_manager as config
 
 class SummaryPlotPanel(SpikepyPlotPanel):
     def __init__(self, parent, name):
-        if name == 'summary':
-            # will make this panel update when clustering does
-            name = 'clustering' 
         SpikepyPlotPanel.__init__(self, parent, name)
 
     def _basic_setup(self, trial_id):

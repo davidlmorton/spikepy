@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import time
+import gc
 
 import matplotlib
 matplotlib.use('WXAgg') # breaks pep-8 to put code here, but matplotlib 
@@ -195,6 +196,7 @@ class PlotPanel (wx.Panel):
     def clear(self):
         self.axes = {}
         utils.clear_figure(self.figure)
+        gc.collect()
 
     '''
     def do_print(self, data=None):

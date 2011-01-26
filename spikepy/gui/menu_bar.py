@@ -35,6 +35,7 @@ DEFAULT            = wx.NewId()
 ABOUT              = wx.ID_ABOUT
 SHELL              = wx.NewId()
 SHOW_TOOLBARS      = wx.NewId()
+SHOW_PLOTS         = wx.NewId()
 SAVE_SESSION       = wx.NewId()
 LOAD_SESSION       = wx.NewId()
 EXPORT_MARKED      = wx.NewId()
@@ -73,6 +74,9 @@ class SpikepyMenuBar(wx.MenuBar):
         view_menu = wx.Menu()
         view_menu.Append(SHOW_TOOLBARS, text=pt.SHOW_TOOLBARS_MENU, 
                          kind=wx.ITEM_CHECK)
+        view_menu.Append(SHOW_PLOTS, text=pt.SHOW_PLOTS, 
+                         kind=wx.ITEM_CHECK)
+        view_menu.Check(SHOW_PLOTS, True)
         
         # --- HELP ---
         help_menu = wx.Menu()
@@ -99,6 +103,7 @@ class SpikepyMenuBar(wx.MenuBar):
         frame.Bind(wx.EVT_MENU, self._show_preferences, id=PREFERENCES)
         # View
         frame.Bind(wx.EVT_MENU, self._show_toolbars,    id=SHOW_TOOLBARS)
+        frame.Bind(wx.EVT_MENU, self._show_plots,       id=SHOW_PLOTS)
         # Help
         frame.Bind(wx.EVT_MENU, self._python_shell,     id=SHELL)
         frame.Bind(wx.EVT_MENU, self._about_box,        id=ABOUT)
@@ -106,6 +111,7 @@ class SpikepyMenuBar(wx.MenuBar):
         self.frame = frame
 
         self._toolbars_shown = False
+        self._plots_shown = True
 
     def _print(self, event=None):
         pub.sendMessage(topic="PRINT", data=None)
@@ -190,6 +196,15 @@ class SpikepyMenuBar(wx.MenuBar):
         else:
             pub.sendMessage(topic='SHOW_TOOLBAR', data=None)
             self._toolbars_shown = True
+
+    def _show_plots(self, event):
+        pub.sendMessage(topic="SET_PLOT_RESULTS_CHECKBOX", 
+                        data=(not self._plots_shown, 'all'))
+        if self._plots_shown:
+            pub.sendMessage(topic='HIDE_RESULTS', data='all')
+        else:
+            pub.sendMessage(topic='PLOT_RESULTS')
+        self._plots_shown = not self._plots_shown
 
     def _about_box(self, event):
         # dialog box to open when "About" is clicked

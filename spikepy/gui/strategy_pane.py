@@ -237,14 +237,15 @@ class StrategyPane(ScrolledPanel):
     def _results_notebook_page_changed(self, message=None):
         old_page_num, new_page_num = message.data
         if new_page_num < 5: # don't try to change if changing to summary
-            self.stage_choicebook.SetSelection(new_page_num)
+            self.stage_choicebook.ChangeSelection(new_page_num)
 
     def _page_changed(self, event=None):
         if event is not None:
+            old_page_num = event.GetOldSelection()
             new_page_num = event.GetSelection()
             self.strategy_summary.select_stage(new_page_num+1)
             pub.sendMessage(topic='STRATEGY_CHOICEBOOK_PAGE_CHANGED', 
-                            data=new_page_num)
+                            data=(new_page_num, old_page_num))
 
     def do_layout(self):
         self.SetupScrolling()

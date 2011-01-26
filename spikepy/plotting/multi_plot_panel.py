@@ -89,6 +89,7 @@ class MultiPlotPanel(ScrolledPanel):
         removed_panel_key = message.data
         if removed_panel_key == self._currently_shown:
             self._show_plot(new_panel_key='DEFAULT')
+        self.clear_plot(removed_panel_key)
         self._plot_panels[removed_panel_key].Destroy()
 
     def _show_plot(self, message=None, new_panel_key=None):
