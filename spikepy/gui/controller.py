@@ -39,7 +39,7 @@ def make_version_float(version_number_string):
     nums = version_number_string.split('.')
     result = 0.0
     for i, num in enumerate(nums):
-        result += float(num)*10**(3*(len(nums)-i))
+        result += float(num)*10**(-3*i)
     return result
 
 class Controller(object):

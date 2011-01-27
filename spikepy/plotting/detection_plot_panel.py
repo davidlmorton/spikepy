@@ -133,7 +133,7 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         # plot the estimated firing rate
         bins = 70
         weight = (1000.0*bins)/times[-1]
-        weights = [weight for s in spikes]
+        weights = numpy.array( [weight for s in spikes] )
         try:
             rate_axes.hist(spikes, range=(times[0], times[-1]), 
                                    bins=bins,
