@@ -43,6 +43,7 @@ def run(trace_list, sampling_freq, spike_list,
         excluded_waveforms = defaultdict(list)
         dt = (1.0/sampling_freq)*1000.0 # in ms
         spike_index_list = spike_list/dt
+        spike_index_list = numpy.array(spike_index_list, dtype=numpy.int32)
         for trace in trace_list:
             results = window_spikes(trace, spike_index_list,
                     window_size=window_size,
@@ -61,25 +62,21 @@ def run(trace_list, sampling_freq, spike_list,
                 excluded_waveforms[ei].append(
                         numpy.array(ew, dtype=numpy.float64))
 
-        # concatenate collected waveforms from the same spike.
-        for key in waveforms.keys():
-            waveforms[key] = numpy.hstack(waveforms[key])
-        for key in excluded_waveforms.keys():
-            excluded_waveforms[key] = numpy.hstack(excluded_waveforms[key])
-
         # generate contents to be returned
         waveform_list  = []
         waveform_times = []
         for spike_index, waveform in waveforms.items():
-            waveform_list.append(waveform)
+            waveform_list.append(numpy.hstack(waveform))
             waveform_times.append(spike_index*dt) 
 
         excluded_waveform_list  = []
         excluded_waveform_times = []
         for spike_index, waveform in excluded_waveforms.items():
-            excluded_waveform_list.append(waveform)
+            excluded_waveform_list.append(numpy.hstack(waveform))
             excluded_waveform_times.append(spike_index*dt) 
             
-        return {'features':waveform_list, 'feature_times':waveform_times,
-                'excluded_features':excluded_waveform_list,
+        return {'features':numpy.vstack(waveform_list), 
+                'feature_times':waveform_times,
+                # cannot vstack excluded because their shapes may not match
+                'excluded_features':excluded_waveform_list, 
                 'excluded_feature_times':excluded_waveform_times}

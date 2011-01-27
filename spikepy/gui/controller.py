@@ -219,6 +219,7 @@ class Controller(object):
 
     def _trial_closed(self, message):
         trial_id = message.data
+        self._selected_trial = None
         pub.sendMessage(topic='REMOVE_PLOT', data=trial_id)
 
     def _plot_results(self, message):
@@ -258,7 +259,7 @@ class Controller(object):
         self._selected_trial = trial_id
         stage_name = self.results_notebook.get_current_stage_name()
         should_plot = self.results_notebook.should_plot(stage_name)
-        if should_plot:
+        if trial_id is not None and should_plot:
             pub.sendMessage(topic='DISPLAY_RESULT', data=(trial_id, stage_name))
 
     def _open_open_file_dialog(self, message):

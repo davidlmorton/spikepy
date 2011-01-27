@@ -71,10 +71,8 @@ def window_spikes(signal, spike_index_list, window_size=40,
     # ------------------------------------------------------------------------
     # -- make the spike windows from the good_spike_index_list
     # ------------------------------------------------------------------------
-    spike_windows = numpy.empty( 
-            (len(good_spike_index_list),window_size), dtype=numpy.float64)
-    excluded_windows = numpy.empty( 
-            (len(excluded_spike_index_list),window_size), dtype=numpy.float64)
+    excluded_windows = [0 for i in xrange(len(excluded_spike_index_list))]
+    spike_windows = [0 for i in xrange(len(good_spike_index_list))]
     for i, si in enumerate(good_spike_index_list):
         spike_windows[i] = signal[si-pre_i:si+post_i]
     for i, si in enumerate(excluded_spike_index_list):
@@ -102,7 +100,6 @@ def determine_excluded_spikes(signal, spike_index_list, window_size,
         if bi > 0 and ei < len(signal)-1:
             # test for begining overlapping with end of last spike
             if i > 0 and bi < (spike_index_list[i-1] + post_i):
-                excluded_spike_index_set.add(si)
                 excluded_spike_index_set.add(si)
             else:
                 # doesn't overlap and isn't too close to ends of signal

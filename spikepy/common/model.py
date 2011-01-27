@@ -302,7 +302,6 @@ class Model(object):
 
     def _extraction_consumer(self, delayed_result, trial):
         features_dict = delayed_result.get()
-        features_dict['features'] = numpy.array(features_dict['features'])
         trial.extraction.results = features_dict
         pub.sendMessage(topic='TRIAL_ALTERED', 
                         data=(trial.trial_id, 'extraction'))

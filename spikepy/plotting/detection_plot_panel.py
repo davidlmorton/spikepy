@@ -140,7 +140,7 @@ class DetectionPlotPanel(SpikepyPlotPanel):
                                    weights=weights,
                                    ec='k',
                                    fc=self.line_color)
-        except ValueError:
+        except AttributeError: # catching old versions of matplotlib error.
             rate_axes.hist(spikes, range=(times[0], times[-1]), 
                                    bins=bins,
                                    ec='k',
