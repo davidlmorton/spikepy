@@ -96,7 +96,12 @@ class ResultsNotebook(wx.Notebook):
         pub.sendMessage(topic='RESULTS_NOTEBOOK_PAGE_CHANGED', 
                         data=(old_page_num, new_page_num))
 
-        old_page = self.GetPage(old_page_num)
+        try:
+            old_page = self.GetPage(old_page_num)
+        except ValueError:
+            # we're catching an odd behavior of wx on application close.
+            event.Skip()
+            return
         pub.sendMessage(topic="HIDE_RESULTS", data=old_page.name)
         event.Skip()
 

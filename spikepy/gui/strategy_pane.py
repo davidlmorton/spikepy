@@ -41,8 +41,6 @@ class StrategyPane(ScrolledPanel):
         
         self.strategy_chooser = NamedChoiceCtrl(self, name=pt.STRATEGY_NAME)
         self.strategy_summary = StrategySummary(self)
-        self.save_button = wx.Button(self, label=pt.SAVE_STRATEGY)
-        line = wx.StaticLine(self)
         stage_choicebook = wx.Choicebook(self, wx.ID_ANY)
 
         # ==== PANELS ====
@@ -84,19 +82,33 @@ class StrategyPane(ScrolledPanel):
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         flag = wx.EXPAND|wx.ALL
         border = config['gui']['strategy_pane']['border']
-        sizer.Add(self.strategy_chooser, proportion=0, 
-                                          flag=flag|wx.ALIGN_CENTER_HORIZONTAL, 
-                                          border=border)
+        sizer.Add(self.strategy_chooser,                proportion=0, 
+                  flag=flag|wx.ALIGN_CENTER_HORIZONTAL,  border=border)
         sizer.Add(self.strategy_summary,  proportion=0, 
                                           flag=flag|wx.ALIGN_CENTER_HORIZONTAL, 
                                           border=border)
-        sizer.Add(self.save_button, proportion=0, flag=wx.ALL|wx.ALIGN_RIGHT, 
-                                          border=border)
-        
-        sizer.Add(line,  proportion=0, 
-                                          flag=flag|wx.ALIGN_CENTER_HORIZONTAL, 
-                                          border=border)
-        sizer.Add(stage_choicebook,  proportion=1, flag=flag, border=border)
+        # ++ buttons ++
+        button_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        self.run_strategy_button = wx.Button(self, label=pt.RUN_STRATEGY)
+        self.run_stage_button    = wx.Button(self, label=pt.RUN_STAGE)
+        self.save_button         = wx.Button(self, label=pt.SAVE_STRATEGY)
+
+        button_sizer.Add(self.run_strategy_button,   proportion=0, 
+                         flag=wx.ALL,                 border=3)
+        button_sizer.Add(self.save_button,           proportion=1, 
+                         flag=wx.ALL,                 border=3)
+        button_sizer.Add(self.run_stage_button,      proportion=0, 
+                         flag=wx.ALL,                 border=3)
+        # -- buttons --
+
+        sizer.Add(button_sizer,        proportion=0,
+                  flag=flag,            border=1)
+        sizer.Add(wx.StaticLine(self), proportion=0, 
+                  flag=flag|wx.ALIGN_CENTER_HORIZONTAL, 
+                                        border=border)
+        sizer.Add(stage_choicebook,    proportion=1, 
+                  flag=flag,            border=border)
+
         self.strategy_summary.select_stage(1)
         self.SetSizer(sizer)
         self.do_layout()
@@ -119,6 +131,8 @@ class StrategyPane(ScrolledPanel):
 
         self.Bind(wx.EVT_IDLE, self._sync)
         self.Bind(wx.EVT_BUTTON, self._save_button_pressed, self.save_button)
+        self.Bind(wx.EVT_BUTTON, self._run_stage, self.run_stage_button)
+        self.Bind(wx.EVT_BUTTON, self._run_strategy, self.run_strategy_button)
         self.Bind(wx.EVT_CHOICEBOOK_PAGE_CHANGED, self._page_changed)
         self.Bind(wx.EVT_CHOICE, self._strategy_choice_made, 
                                  self.strategy_chooser.choice) 
@@ -260,14 +274,39 @@ class StrategyPane(ScrolledPanel):
                 return stage
         return None
 
-    def _set_run_buttons_state(self, message):
+    @property
+    def current_stage(self):
+        return self.stage_choicebook.GetCurrentPage()
+
+    def _run_stage(self, event):
+        # disable run buttons
+        self.set_run_buttons_state()
+        wx.Yield()
+
+        self.current_stage.run()
+
+    def _run_strategy(self, event):
+        # disable run buttons
+        self.set_run_buttons_state()
+        wx.Yield()
+
+        for stage in self.stage_panels:
+            stage.run()
+
+    def set_run_buttons_state(self, states=[False, False]):
+        self.run_stage_button.Enable(states[0])
+        self.run_strategy_button.Enable(states[1])
+
+    def _set_run_buttons_state(self, message=None):
         run_state = message.data
-        for stage_panel in self.stage_panels:
-            stage_name = stage_panel.stage_name
-            ra_state = run_state['all'][stage_name]
-            rm_state = run_state['marked'][stage_name]
-            stage_panel.run_all_button.Enable(ra_state)
-            stage_panel.run_marked_button.Enable(rm_state)
+        stage_name = self.current_stage.stage_name
+
+        run_stage_state    = run_state[stage_name]
+        run_strategy_state = run_state['strategy']
+
+        self.set_run_buttons_state(states=[run_stage_state, 
+                                           run_strategy_state])
+
 
 class StrategySummary(wx.Panel):
     def __init__(self, parent, **kwargs):
@@ -367,16 +406,6 @@ class StagePanel(wx.Panel):
         self.method_chooser = NamedChoiceCtrl(self, name=pt.METHOD+":",
                                  choices=self.method_names)
 
-        # --- RUN BUTTONS ---
-        button_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        self.run_all_button    = wx.Button(self, label=pt.RUN_ALL)
-        self.run_marked_button = wx.Button(self, label=pt.RUN_MARKED)
-        button_sizer.Add(self.run_marked_button,  proportion=0, 
-                      flag=wx.ALL,                 border=3)
-        button_sizer.Add(wx.StaticText(self),     proportion=1)
-        button_sizer.Add(self.run_all_button,     proportion=0, 
-                      flag=wx.ALL,  border=3)
-
         # --- SIZER ---
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         ea_flag = wx.EXPAND|wx.ALL
@@ -385,14 +414,10 @@ class StagePanel(wx.Panel):
         for method in self.methods.values():
             sizer.Add(method['control_panel'],  proportion=0,
                       flag=ea_flag,              border=6)
-        sizer.Add(button_sizer,                 proportion=0,
-                      flag=ea_flag,               border=1)
         self.SetSizer(sizer)
         
         self.Bind(wx.EVT_CHOICE, self.method_choice_made,
                   self.method_chooser.choice)
-        self.Bind(wx.EVT_BUTTON, self._on_run_all, self.run_all_button)
-        self.Bind(wx.EVT_BUTTON, self._on_run_marked, self.run_marked_button)
         
         pub.subscribe(self._set_stage_parameters, topic='SET_PARAMETERS')
         self.method_choice_made(method_name=self.method_names[0])
@@ -443,23 +468,15 @@ class StagePanel(wx.Panel):
         pub.sendMessage(topic="UPDATE_STRATEGY_SUMMARY", 
                         data=(self.stage_num, self.method_name_chosen))
 
-    def _on_run_marked(self, event=None):
-        self._run(run_all=False)
-
-    def _on_run_all(self, event=None):
-        self._run(run_all=True)
-
-    def _run(self, run_all=True):
+    def run(self):
         control_panel = self.methods[self.method_name_chosen]['control_panel']
         settings = control_panel.get_parameters()
         wx.Yield() # about to let scipy hog cpu, so process all wx events.
         data = {'stage_name' :self.stage_name,
                 'method_name':self.method_name_chosen,
                 'settings'   :settings}
-        if run_all:
-            pub.sendMessage(topic='RUN_ALL', data=data)
-        else:
-            pub.sendMessage(topic='RUN_MARKED', data=data)
+
+        pub.sendMessage(topic='RUN_MARKED', data=data)
 
 class DetectionFilterStagePanel(StagePanel):
     def load_methods(self):

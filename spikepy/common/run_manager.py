@@ -26,12 +26,61 @@ class RunManager(object):
         self.num_processes = 0
         self.num_files = 0
         self.locked_trials = set()
+        self._to_be_run_list = []
 
         pub.subscribe(self._process_started, "PROCESS_STARTED")
         pub.subscribe(self._process_ended, "PROCESS_ENDED")
 
         pub.subscribe(self._file_opening_started, "FILE_OPENING_STARTED")
         pub.subscribe(self._file_opening_ended, "FILE_OPENING_ENDED")
+        pub.subscribe(self._run_stage, "RUN_STAGE")
+
+        self._run_order = ['detection_filter',
+                           'detection',
+                           'extraction_filter',
+                           'extraction',
+                           'clustering']
+        self._running = False
+
+    def _get_next_to_run(self):
+        if self._to_be_run_list:
+            for stage_name in self._run_order:
+                for run_data in self._to_be_run_list:
+                    if run_data['stage_name'] == stage_name:
+                        return run_data
+            raise RuntimeError("Stage to be run doesn't exist. %s" %
+                                self._to_be_run_list)
+
+    def _run_stage(self, message):
+        self._to_be_run_list.append(message.data)
+        self._complete_run()
+
+    def _complete_run(self):
+        if self._running:
+            return
+
+        self._running = True
+        while self._get_next_to_run() is not None:
+            next_to_run = self._get_next_to_run() 
+            while not self.can_run(next_to_run):
+                wx.Yield()
+                wx.MilliSleep(100)
+                wx.Yield()
+            self._to_be_run_list.remove(next_to_run)
+            pub.sendMessage("EXECUTE_STAGE", next_to_run)
+        self._running = False
+
+    def can_run(self, run_data):
+        stage_name = run_data['stage_name']
+        trial_list = run_data['trial_list']
+        stage_settings = run_data['settings']
+        stage_name = run_data['stage_name']
+        stage_method = run_data['method_name']
+        methods_used = {stage_name:stage_method}
+        settings     = {stage_name:stage_settings}
+        run_states = self.get_stage_run_states(methods_used, settings,
+                                               trial_list)
+        return run_states[stage_name]
 
     def get_stage_run_states(self, methods_used, settings, trial_list,
                                    force_novelty=False):

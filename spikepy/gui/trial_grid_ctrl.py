@@ -280,6 +280,9 @@ class TrialGridCtrl(gridlib.Grid):
         else:
             self.AppendRows()
         assert len(self._trial_ids) == self._num_nonempty_rows
+        # make new trial come in already marked.
+        row = self._get_row_from_trial_id(trial.trial_id)
+        self._set_marked_status(row, True)
 
     def _trial_renamed(self, message):
         trial = message.data

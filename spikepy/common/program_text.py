@@ -26,6 +26,12 @@ FILE_LISTCTRL_TITLE = 'Opened Files List'
 PREFERENCES_FRAME_TITLE = "Preferences"
 WORKSPACES_MANAGER = "Workspaces Manager"
 
+MATPLOTLIB_VERSION = '''Matplotlib versions less than %s will not
+render all plots optimally.
+
+You're running version %s now.  
+Consider upgrading to get better looking plots.''' # % (min_ver, current_ver)
+
 ABOUT_SPIKEPY = ("Spikepy is a python-based spike sorting "
             "framework. It has been designed to be general enough to implement "
             "many different spike sorting algorithms. Spikepy can be used by "
@@ -128,8 +134,8 @@ SHOW_CURSOR_POSITION = "Show Cursor Position"
 USE_SCIENTIFIC_NOTATION = "Use Scientific Notation"
 PLOT_RESULTS = 'Plot Results'
 SETTINGS = "Settings"
-RUN_ALL = u'Run On All (\u2200)'
-RUN_MARKED = "Run On Marked" 
+RUN_STAGE = "Run This Stage"
+RUN_STRATEGY = "Run Strategy" 
 METHOD = "Method"
 METHOD_DETAILS = "Method Details"
 METHOD_DETAILS_FRAME_TITLE = "Details for %s" # % method_name

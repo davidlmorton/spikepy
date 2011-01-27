@@ -35,6 +35,12 @@ from .trial_rename_dialog import TrialRenameDialog
 from .pyshell import locals_dict
 from .export_dialog import ExportDialog
 
+def make_version_float(version_number_string):
+    nums = version_number_string.split('.')
+    result = 0.0
+    for i, num in enumerate(nums):
+        result += float(num)*10**(3*(len(nums)-i))
+    return result
 
 class Controller(object):
     def __init__(self):
@@ -50,6 +56,17 @@ class Controller(object):
         locals_dict['controller'] = self
         self.setup_subscriptions()
 
+    def warn_for_matplotlib_version(self):
+        import matplotlib
+        version = matplotlib.__version__
+        min_version = '0.99.1.1'
+
+        if make_version_float(version) < make_version_float(min_version):
+            msg = pt.MATPLOTLIB_VERSION % (min_version, version)
+            dlg = wx.MessageDialog(self.view.frame, msg, 
+                                   style=wx.OK|wx.ICON_EXCLAMATION)
+            dlg.ShowModal()
+            dlg.Destroy()
 
     def setup_subscriptions(self):
         pub.subscribe(self._open_open_file_dialog, 
@@ -88,11 +105,11 @@ class Controller(object):
 
     def _run_all(self, message):
         message.data['trial_list'] = self.get_all_trials()
-        pub.sendMessage(topic='EXECUTE_STAGE', data=message.data) 
+        pub.sendMessage(topic='RUN_STAGE', data=message.data) 
 
     def _run_marked(self, message):
         message.data['trial_list'] = self.get_marked_trials()
-        pub.sendMessage(topic='EXECUTE_STAGE', data=message.data) 
+        pub.sendMessage(topic='RUN_STAGE', data=message.data) 
 
     def _export_trials(self, message):
         export_type = message.data
@@ -131,17 +148,17 @@ class Controller(object):
         methods_used, settings = message.data
 
         checker = self.model.run_manager.get_stage_run_states
-        all_trials = self.get_all_trials()
         marked_trials = self.get_marked_trials()
         run_state = {}
-        for trials, key in zip([all_trials, marked_trials], ['all', 'marked']):
-            run_state[key] = checker(methods_used, settings, trials)
+        run_state.update(checker(methods_used, settings, marked_trials))
+        run_state['strategy'] = any(run_state.values())
 
         pub.sendMessage(topic='SET_RUN_BUTTONS_STATE', data=run_state)
 
     def _close_application(self, message):
         pub.sendMessage(topic='SAVE_ALL_STRATEGIES')
         pub.unsubAll()
+        wx.Yield()
         # deinitialize the frame manager
         self.view.frame.Destroy()
         if self.model._processing_pool is not None:
@@ -215,7 +232,6 @@ class Controller(object):
 
     def _hide_results(self, message):
         stage_name = message.data
-        print "Hiding %s" % stage_name
         if stage_name != 'all':
             pub.sendMessage(topic='CLEAR_RESULTS', data=stage_name)
         else:
@@ -230,7 +246,6 @@ class Controller(object):
         should_plot = self.results_notebook.should_plot(stage_name)
 
         if trial_id is not None and should_plot:
-            print "Displaying %s" % stage_name
             pub.sendMessage(topic='DISPLAY_RESULT', 
                             data=(trial_id, stage_name))
 
