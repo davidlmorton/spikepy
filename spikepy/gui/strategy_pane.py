@@ -290,6 +290,7 @@ class StrategyPane(ScrolledPanel):
         self.set_run_buttons_state()
         wx.Yield()
 
+        pub.sendMessage("OPEN_STRATEGY_PROGRESS_DIALOG")
         for stage in self.stage_panels:
             stage.run()
 

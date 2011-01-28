@@ -31,6 +31,7 @@ from spikepy.common.utils import pool_process
 from .view import View
 from .utils import named_color, load_pickle
 from spikepy.common import program_text as pt
+from spikepy.gui.strategy_progress_dialog import StrategyProgressDialog
 from .trial_rename_dialog import TrialRenameDialog
 from .pyshell import locals_dict
 from .export_dialog import ExportDialog
@@ -49,6 +50,7 @@ class Controller(object):
         self.view = View()
         self.results_notebook = self.view.frame.results_notebook
         self._selected_trial = None
+        self._strategy_progress_dlg = None
 
         # save for locals in pyshell
         locals_dict['model']      = self.model
@@ -88,6 +90,9 @@ class Controller(object):
         pub.subscribe(self._export_trials,  topic="EXPORT_TRIALS")
         pub.subscribe(self._run_all,  topic="RUN_ALL")
         pub.subscribe(self._run_marked,  topic="RUN_MARKED")
+        pub.subscribe(self._open_strategy_progress_dialog, 
+                      topic="OPEN_STRATEGY_PROGRESS_DIALOG")
+        pub.subscribe(self._trial_altered, topic='TRIAL_ALTERED')
 
     def start_debug_subscriptions(self):
         pub.subscribe(self._print_messages) # subscribes to all topics
@@ -261,6 +266,23 @@ class Controller(object):
         should_plot = self.results_notebook.should_plot(stage_name)
         if trial_id is not None and should_plot:
             pub.sendMessage(topic='DISPLAY_RESULT', data=(trial_id, stage_name))
+
+    def _trial_altered(self, message):
+        trial_id, stage_name = message.data
+        if self._strategy_progress_dlg is not None:
+            done = self._strategy_progress_dlg.update_progress(trial_id, 
+                                                               stage_name)
+            if done:
+                self._strategy_progress_dlg = None
+
+    def _open_strategy_progress_dialog(self, message):
+        trial_list = self.get_marked_trials()
+        display_names = [trial.display_name for trial in trial_list]
+        ids = [trial.trial_id for trial in trial_list]
+        
+        self._strategy_progress_dlg = StrategyProgressDialog(self.view.frame,
+                                    display_names, ids, style=wx.STAY_ON_TOP)
+        self._strategy_progress_dlg.Show()
 
     def _open_open_file_dialog(self, message):
         frame = message.data

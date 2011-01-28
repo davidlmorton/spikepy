@@ -142,6 +142,7 @@ METHOD_DETAILS_FRAME_TITLE = "Details for %s" # % method_name
 RUN_BUTTON_RUNNING_STATUS = "Running"
 SAVE_STRATEGY = "Save Strategy..."
 STRATEGY = "Strategy"
+STRATEGY_PROGRESS_INFO = "Strategy Completion Progress"
 STRATEGY_NAME = "Strategy Name:"
 FILE_LISTCTRL_TITLE = "Opened Files"
 
