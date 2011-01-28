@@ -27,14 +27,12 @@ from wx.lib.pubsub import Publisher as pub
 from wx.lib.delayedresult import startWorker
 import numpy
 
-from .open_data_file import open_data_file
-from .utils import pool_process, upsample_trace_list
+from spikepy.common.open_data_file import open_data_file
 from spikepy.common import utils
 from spikepy.common import path_utils 
 from spikepy.common import plugin_utils
 from spikepy.common import config_utils
 from spikepy.common.config_manager import config_manager
-from .trial import format_traces
 from spikepy.common.run_manager import RunManager
 
 class Model(object):
@@ -132,7 +130,7 @@ class Model(object):
             pub.sendMessage(topic='ALREADY_OPENING_FILE', data=fullpath)
 
     def _open_file_worker(self, fullpath):
-        trial_list = pool_process(self._processing_pool, open_data_file, 
+        trial_list = utils.pool_process(self._processing_pool, open_data_file, 
                              args=(fullpath,))
         return trial_list
 
@@ -194,15 +192,22 @@ class Model(object):
         raw_traces = trial.raw_traces
         filtered_traces = []
         method = plugin_utils.get_method(stage_name, method_name)
-        filtered_traces = pool_process(self._processing_pool, method.run,
+        filtered_traces = utils.pool_process(self._processing_pool, method.run,
                                        args=(raw_traces, trial.sampling_freq),
                                        kwargs=settings)
         return filtered_traces
 
     def _filter_consumer(self, delayed_result, trial, stage_name):
-        filtered_traces = delayed_result.get()
+        filtered_traces = utils.format_traces(delayed_result.get())
+
+        resample_results = resample(filtered_traces, trial.sampling_freq,
+                                    processing_pool=self._processing_pool)
+        resampled_filtered_traces, new_sampling_freq = resample_results
+
         stage_data = trial.get_stage_data(stage_name)
-        stage_data.results = format_traces(filtered_traces)
+        stage_data.results = {'traces':filtered_traces,
+                              'resampled_traces':resampled_filtered_traces,
+                              'new_sampling_freq':new_sampling_freq}
         pub.sendMessage(topic='TRIAL_ALTERED',
                         data=(trial.trial_id, stage_name))
         pub.sendMessage(topic="PROCESS_ENDED", data=[trial])
@@ -233,15 +238,12 @@ class Model(object):
                         cargs=(trial,))
 
     def _detection_worker(self, trial, method_name, settings):
-        new_sample_rate = 30000
-        filtered_traces = pool_process(self._processing_pool, 
-                                       upsample_trace_list,
-                                       args=(trial.detection_filter.results,
-                                             trial.sampling_freq,
-                                             new_sample_rate))
+        dfr = trial.detection_filter.results
+        traces = dfr['resampled_traces']
+        new_sampling_freq = dfr['new_sampling_freq']
         method = plugin_utils.get_method('detection', method_name)
-        spikes = pool_process(self._processing_pool, method.run,
-                              args=(filtered_traces, new_sample_rate), 
+        spikes = utils.pool_process(self._processing_pool, method.run,
+                              args=(traces, new_sampling_freq), 
                               kwargs=settings)
         return spikes
 
@@ -285,19 +287,14 @@ class Model(object):
         spike_list = trial.detection.results
         if len(spike_list) == 0:
             return None # no spikes from detection = no extraction
-        new_sample_rate = 30000
-        filtered_traces = pool_process(self._processing_pool, 
-                                       upsample_trace_list,
-                                       args=(trial.extraction_filter.results,
-                                             trial.sampling_freq,
-                                             new_sample_rate))
+
+        efr = trial.extraction_filter.results
+        traces = efr['resampled_traces']
+        new_sampling_freq = efr['new_sampling_freq']
         method = plugin_utils.get_method('extraction', method_name)
-        features_dict = pool_process(self._processing_pool,
-                                     method.run,
-                                     args=(filtered_traces, 
-                                           new_sample_rate,
-                                           spike_list),
-                                     kwargs=settings)
+        features_dict = utils.pool_process(self._processing_pool, method.run,
+                              args=(traces, new_sampling_freq, spike_list),
+                              kwargs=settings)
         return features_dict
 
     def _extraction_consumer(self, delayed_result, trial):
@@ -354,7 +351,7 @@ class Model(object):
         if len(feature_set_list) == 0:
             return None # no spikes = no clustering
 
-        results = pool_process(self._processing_pool, method.run,
+        results = utils.pool_process(self._processing_pool, method.run,
                                args=(feature_set_list,),
                                kwargs=(settings))
 
@@ -376,3 +373,13 @@ class Model(object):
             pub.sendMessage(topic='TRIAL_ALTERED', 
                             data=(trial.trial_id,'clustering'))
         pub.sendMessage(topic="PROCESS_ENDED", data=trial_list)
+
+def resample(trace_list, prev_sampling_freq, processing_pool=None):
+    new_sampling_freq = config_manager['backend']['new_sampling_freq']
+    resampled_trace_list = utils.pool_process(processing_pool, 
+                                        utils.resample_signals,
+                                        args=(trace_list,
+                                              prev_sampling_freq,
+                                              new_sampling_freq))
+    return utils.format_traces(resampled_trace_list), new_sampling_freq
+

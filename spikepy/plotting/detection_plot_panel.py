@@ -86,7 +86,7 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         pc = config['gui']['plotting']
         plot_panel = self._plot_panels[trial_id]
         trial = self._trials[trial_id]
-        filtered_traces = trial.get_stage_data('detection_filter').results
+        traces = trial.get_stage_data('detection_filter').results['traces']
 
         # clear and plot the traces
         num_traces = len(trial.raw_traces)
@@ -95,12 +95,12 @@ class DetectionPlotPanel(SpikepyPlotPanel):
             if i+1 < num_traces:
                 clear_tick_labels = 'x_only'
             utils.clear_axes(trace_axes, clear_tick_labels=clear_tick_labels)
-            trace_axes.plot(trial.times, filtered_traces[i],
+            trace_axes.plot(trial.times, traces[i],
                             color=self.line_color, 
                             linewidth=self.line_width, 
                             label=pt.FILTERED_TRACE_GRAPH_LABEL)
             trace_axes.set_xlim(trial.times[0], trial.times[-1])
-            std = numpy.std(filtered_traces[i])
+            std = numpy.std(traces[i])
 
             for factor, linestyle in [(2,'solid'),(4,'dashed')]:
                 trace_axes.axhline(std*factor, 

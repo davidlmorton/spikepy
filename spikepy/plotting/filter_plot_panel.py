@@ -121,7 +121,7 @@ class FilterPlotPanel(SpikepyPlotPanel):
         trial = self._trials[trial_id]
 
         # calculate psd to be plotted.
-        filtered_traces = trial.get_stage_data(self.name).results
+        filtered_traces = trial.get_stage_data(self.name).results['traces']
         Pxx, freqs = signal_utils.psd(filtered_traces.flatten(),
                                       trial.sampling_freq,
                                       pc['filtering']['psd_freq_resolution'])

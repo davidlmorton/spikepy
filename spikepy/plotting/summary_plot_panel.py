@@ -238,7 +238,7 @@ class SummaryPlotPanel(SpikepyPlotPanel):
 
         # plot traces
         times = trial.times
-        traces = trial.detection_filter.results
+        traces = trial.detection_filter.results['traces']
         
         trace_ticks = []
         trace_offsets = [-i*2*numpy.max(numpy.abs(traces)) 

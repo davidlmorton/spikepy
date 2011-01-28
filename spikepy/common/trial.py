@@ -28,8 +28,7 @@ import numpy
 import scipy.io
 
 from spikepy.common import program_text as pt
-from spikepy.common.utils import save_list_txt
-from spikepy.common.utils import pca
+from spikepy.common import utils
 
 text_delimiters = {pt.PLAIN_TEXT_TABS: '\t',
                    pt.PLAIN_TEXT_SPACES: ' ',
@@ -61,7 +60,7 @@ class Trial(object):
         filename = os.path.split(fullpath)[1]
         self.display_name = get_unique_display_name(filename)
         display_names.add(self.display_name)
-        self.raw_traces    = format_traces(raw_traces)
+        self.raw_traces    = utils.format_traces(raw_traces)
         self._id = uuid.uuid4() 
 
         self.sampling_freq = sampling_freq
@@ -228,7 +227,7 @@ class Trial(object):
         if self.extraction.results is None:
             raise RuntimeError('Trial with trial_id:%s does not have extraction results, so cannot find pca_rotated features.' % self.trial_id)
         features = self.extraction.results['features']
-        rotated_features, pc, var = pca(features)
+        rotated_features, pc, var = utils.pca(features)
         return rotated_features, pc, var
 
     def get_clustered_features(self, pca_rotated=False):
@@ -288,7 +287,7 @@ class Trial(object):
                     for trace in self.raw_traces:
                         results.append(trace)
                     delimiter = text_delimiters[file_format]
-                    save_list_txt(fullpath, results, 
+                    utils.save_list_txt(fullpath, results, 
                                   delimiter=delimiter)
                 elif file_format == pt.NUMPY_BINARY:
                     numpy.savez(fullpath, times = times, 
@@ -310,7 +309,7 @@ class Trial(object):
                     for trace in stage_data.results:
                         results.append(trace)
                     delimiter = text_delimiters[file_format]
-                    save_list_txt(fullpath, results, 
+                    utils.save_list_txt(fullpath, results, 
                                   delimiter=delimiter)
                 elif file_format == pt.NUMPY_BINARY:
                     numpy.savez(fullpath, times=times,
@@ -325,7 +324,7 @@ class Trial(object):
                     file_format == pt.PLAIN_TEXT_SPACES or
                     file_format == pt.CSV ):
                     delimiter = text_delimiters[file_format]
-                    save_list_txt(fullpath, stage_data.results, 
+                    utils.save_list_txt(fullpath, stage_data.results, 
                                   delimiter=delimiter)
                 elif file_format == pt.NUMPY_BINARY:
                     numpy.savez(fullpath, 
@@ -345,7 +344,7 @@ class Trial(object):
                     for feature_set in features:
                         results.append(feature_set)
                     delimiter = text_delimiters[file_format]
-                    save_list_txt(fullpath, results, 
+                    utils.save_list_txt(fullpath, results, 
                                   delimiter=delimiter)
                 elif file_format == pt.NUMPY_BINARY:
                     numpy.savez(fullpath, feature_sets=features,
@@ -365,23 +364,12 @@ class Trial(object):
                     file_format == pt.PLAIN_TEXT_SPACES or
                     file_format == pt.CSV ):
                     delimiter = text_delimiters[file_format]
-                    save_list_txt(fullpath, results, 
+                    utils.save_list_txt(fullpath, results, 
                                   delimiter=delimiter)
                 elif file_format == pt.NUMPY_BINARY:
                     numpy.savez(fullpath, **string_dict)
                 elif file_format == pt.MATLAB:
                     scipy.io.savemat(fullpath, string_dict)
-
-
-def zero_mean(trace_array):
-    return trace_array - numpy.average(trace_array)
-
-
-def format_traces(trace_list):
-    array_trace_list = [zero_mean(numpy.array(trace,dtype=numpy.float64))
-                        for trace in trace_list]
-    traces = numpy.vstack(array_trace_list)
-    return traces
 
 
 class StageData(object):

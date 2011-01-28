@@ -21,9 +21,19 @@ import sys
 
 import numpy
 from numpy.linalg import svd
-from scipy.signal import resample
+from scipy import signal as scisig
+
+from spikepy.common.config_manager import config_manager as config
+
+def zero_mean(trace_array):
+    return trace_array - numpy.average(trace_array)
 
 
+def format_traces(trace_list):
+    array_trace_list = [zero_mean(numpy.array(trace,dtype=numpy.float64))
+                        for trace in trace_list]
+    traces = numpy.vstack(array_trace_list)
+    return traces
 
 def pool_process(pool, function, args=tuple(), kwargs=dict()):
     if pool is not None:
@@ -37,20 +47,21 @@ def pool_process(pool, function, args=tuple(), kwargs=dict()):
         result = function(*args, **kwargs)
     return result
 
-def upsample_trace_list(trace_list, prev_sample_rate, desired_sample_rate):
+
+def resample_signals(signals, prev_sample_rate, desired_sample_rate):
     '''
-    Upsample voltage traces.
+    Resample the signals.
     Inputs:
-        trace_list          : a list of voltage traces
+        signals          : a list of signals
         prev_sample_rate    : the sample rate in hz of the traces to be 
-                              upsampled
+                              resampled
         desired_sample_rate : the target sample rate of the traces
     Returns:
-        a list of resampled traces
+        a list of resampled signals
     '''
     rate_factor = desired_sample_rate/float(prev_sample_rate)
-    return [resample(trace, len(trace)*rate_factor)
-            for trace in trace_list]
+    return [scisig.resample(signal, len(signal)*rate_factor)
+            for signal in signals]
 
 def save_list_txt(filename, array_list, delimiter=' '):
     '''
