@@ -43,38 +43,66 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         trial = self._trials[trial_id]
         # set the size of the plot properly
         num_traces = len(trial.raw_traces)
-        num_rows = 1 + num_traces
-        figheight = self._figsize[1] * num_rows
+        num_trows = 1 + num_traces
+        num_srows = num_trows * 2
+        figheight = self._figsize[1] * num_trows
         figwidth  = self._figsize[0]
         plot_panel.set_minsize(figwidth, figheight)
         self._trial_renamed(trial_id=trial_id)
 
-        # set up firing_rate and trace axes
+        # set up the spike windows and isi axes
         figure = plot_panel.figure
-        plot_panel.axes['rate'] = figure.add_subplot(num_rows, 1, 1)
+        plot_panel.axes['spikes'] = sa = figure.add_subplot(num_srows, 2, 1)
+        plot_panel.axes['isi'] = ia = figure.add_subplot(num_srows, 2, 2)
+
+        # set up firing_rate and trace axes
+        plot_panel.axes['rate'] = ra = figure.add_subplot(num_srows, 1, 2)
         plot_panel.axes['trace'] = []
         for i in xrange(len(trial.raw_traces)):
-            trace_axes = figure.add_subplot(num_rows, 1, i+2)
+            trace_axes = figure.add_subplot(num_trows, 1, i+2)
             plot_panel.axes['trace'].append(trace_axes)
 
         canvas_size = plot_panel.GetMinSize()
         # adjust subplots to spikepy uniform standard
         config.default_adjust_subplots(figure, canvas_size)
 
-        # tweek firing_rate axes and trace axes
-        top = -config['gui']['plotting']['spacing']['title_vspace']
+        # tweek the spike windows and isi axes
         bottom = config['gui']['plotting']['spacing']['axes_bottom']
-        utils.adjust_axes_edges(plot_panel.axes['rate'], canvas_size,
-                                bottom=bottom, top=top)
+        left   = config['gui']['plotting']['spacing']['axes_left']
+        top = -config['gui']['plotting']['spacing']['title_vspace']
+        utils.adjust_axes_edges(sa, canvas_size, top=top)
+        utils.adjust_axes_edges(ia, canvas_size, left=left, top=top)
+
+        # add the isi sub-subplot
+        isa = figure.add_axes(ia.get_position(), 
+                              axisbg=(1.0, 1.0, 1.0, 0.0))
+        plot_panel.axes['isi_sub'] = isa
+
+        # tweek the isi sub-subplot
+        nl_bottom = config['gui']['plotting']['spacing']['no_label_axes_bottom']
+        total_width = isa.get_position().width
+        total_height = isa.get_position().height
+        utils.adjust_axes_edges(isa, canvas_size, 
+                left=-0.35*total_width*canvas_size[0],
+                bottom=-0.35*total_height*canvas_size[1],
+                right=nl_bottom, 
+                top=nl_bottom)
+
+        # tweek firing_rate axes and trace axes
+        utils.adjust_axes_edges(ra, canvas_size,
+                                top=bottom, bottom=2*nl_bottom)
 
         nl_bottom = config['gui']['plotting']['spacing']['no_label_axes_bottom']
         for trace_axes in plot_panel.axes['trace'][:-1]:
             utils.adjust_axes_edges(trace_axes, canvas_size, bottom=nl_bottom)
 
         # label axes
-        plot_panel.axes['rate'].set_xlabel(pt.PLOT_TIME)
-        plot_panel.axes['rate'].set_ylabel(pt.SPIKE_RATE_AXIS, 
-                                          multialignment='center')
+        sa.set_xlabel(pt.PLOT_TIME)
+        sa.set_ylabel(pt.SPIKES_GRAPH_LABEL)
+        ia.set_xlabel(pt.ISI)
+        ia.set_ylabel(pt.COUNT_PER_BIN)
+        ra.set_xticklabels([''],visible=False)
+        ra.set_ylabel(pt.SPIKE_RATE_AXIS, multialignment='center')
 
         for i, trace_axes in enumerate(plot_panel.axes['trace']):
             if i+1 < num_traces:
@@ -99,7 +127,6 @@ class DetectionPlotPanel(SpikepyPlotPanel):
                             color=self.line_color, 
                             linewidth=self.line_width, 
                             label=pt.FILTERED_TRACE_GRAPH_LABEL)
-            trace_axes.set_xlim(trial.times[0], trial.times[-1])
             std = numpy.std(traces[i])
 
             for factor, linestyle in [(2,'solid'),(4,'dashed')]:
@@ -112,44 +139,76 @@ class DetectionPlotPanel(SpikepyPlotPanel):
                                    color=pc['std_trace_color'], 
                                    linewidth=pc['std_trace_linewidth'], 
                                    linestyle=linestyle)
+            trace_axes.set_xlim(trial.times[0], trial.times[-1])
         axes = plot_panel.axes['trace'][0]
         try:
             axes.legend(loc='upper right', ncol=3, shadow=True, 
-                        bbox_to_anchor=[1.03,1.1])
+                        bbox_to_anchor=[1.03,1.075])
         except: #old versions of matplotlib don't have bbox_to_anchor
             axes.legend(loc='upper right', ncol=3)
 
     def _post_run(self, trial_id):
         pc = config['gui']['plotting']
         plot_panel = self._plot_panels[trial_id]
+        sa = plot_panel.axes['spikes']
+        ia = plot_panel.axes['isi']
+        isa = plot_panel.axes['isi_sub']
         rate_axes = plot_panel.axes['rate']
 
         utils.clear_axes(rate_axes)
+        utils.clear_axes(sa)
+        utils.clear_axes(ia)
+        utils.clear_axes(isa)
 
         trial = self._trials[trial_id]
-        spikes = trial.detection.results
+        spikes = trial.detection.results['spike_times']
         times = trial.times
+        bounds = (times[0], times[-1])
+
+        # plot spike windows
+        spike_windows = trial.detection.results['spike_windows']
+        nsf = trial.detection_filter.results['new_sampling_freq']
+        window_len = len(spike_windows[0])
+        window_times = numpy.arange(window_len)*(1000.0/nsf) 
+        for window in spike_windows:
+            sa.plot(window_times, window, color=self.line_color,
+                                          linewidth=0.5,
+                                          alpha=0.3)
+
+        # plot the isi and isi_sub
+        isi = spikes[1:] - spikes[:-1]
+
+        ia.hist(isi, bins=70, 
+                  range=(0.0, pc['summary']['upper_isi_bound2']),
+                  fc=self.line_color, ec='k')
+
+        isa_upper_range =  pc['summary']['upper_isi_bound1']
+        isa.hist(isi, bins=int(isa_upper_range),
+                  range=(0.0, isa_upper_range),
+                  fc=self.line_color, ec='k')
 
         # plot the estimated firing rate
         bins = 70
         weight = (1000.0*bins)/times[-1]
         weights = numpy.array( [weight for s in spikes] )
         try:
-            rate_axes.hist(spikes, range=(times[0], times[-1]), 
+            rate_axes.hist(spikes, range=bounds,
                                    bins=bins,
                                    weights=weights,
                                    ec='k',
                                    fc=self.line_color)
         except AttributeError: # catching old versions of matplotlib error.
-            rate_axes.hist(spikes, range=(times[0], times[-1]), 
+            rate_axes.hist(spikes, range=bounds,
                                    bins=bins,
                                    ec='k',
                                    fc=self.line_color)
-            rate_axes.set_ylabel('Spikes per bin')
+            rate_axes.set_ylabel(pt.SPIKES_PER_BIN)
+
+        rate_axes.set_xticklabels([''],visible=False)
 
         # print how many spikes were found.
-        rate_axes.text(0.015, 0.925, pt.SPIKES_FOUND % len(spikes), 
-                       verticalalignment='center',
+        rate_axes.text(0.015, 1.025, pt.SPIKES_FOUND % len(spikes), 
+                       verticalalignment='bottom',
                        horizontalalignment='left',
                        transform=rate_axes.transAxes)
 
@@ -159,7 +218,7 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         # plot raster on rate plot
         raster_pos=pc['detection']['raster_pos_rate']
         utils.plot_raster_to_axes(spikes, rate_axes,
-                                  bounds=(times[0], times[-1]),
+                                  bounds=bounds,
                                   raster_pos=raster_pos,
                                   marker_size=marker_size,
                                   markeredgewidth=markeredgewidth,
@@ -171,111 +230,9 @@ class DetectionPlotPanel(SpikepyPlotPanel):
             if len(trace_axes.lines) == 6:
                 trace_axes.lines[-1].remove()
             utils.plot_raster_to_axes(spikes, trace_axes,
-                                      bounds=(times[0], times[-1]),
+                                      bounds=bounds,
                                       raster_pos=raster_pos,
                                       marker_size=marker_size,
                                       markeredgewidth=markeredgewidth,
                                       color=color)
         
-    def _plot_spikes(self, trial, figure, trial_id):
-        pc = config['gui']['plotting']
-        # remove old lines if present.
-        spike_axes = self._spike_axes[trial_id]
-        spike_axes.clear()
-        self.setup_spike_axes_labels(spike_axes, trial_id)
-
-        if trial.detection.results is not None:
-            spikes = trial.detection.results
-        else:
-            while self._spike_axes[trial_id].lines:
-                del(self._spike_axes[trial_id].lines[0])
-            return # this trial has never been spike detected.
-        times = trial.times
-
-        for spike_list, axes in zip(spikes, self._trace_axes[trial_id]):
-            axes.set_autoscale_on(False)
-            lines = axes.get_lines()
-            # check if raster is already plotted
-            if len(lines) == 2:
-                del(axes.lines[1])
-            
-        # --- plot spike rate ---
-        width = 50.0
-        required_proportion = 0.75
-        accepted_spike_list = get_accepted_spike_list(trial.detection.results, 
-                                                      trial.sampling_freq, 
-                                                      width,
-                                                      required_proportion)
-        #spike_rate = get_spike_rate(accepted_spike_list, width, 
-        #                            trial.sampling_freq, 
-        #                            len(trial.detection_filter.results[0]))
-
-        bin_width = 100.0
-        spikes, bin_points = bin_spikes(accepted_spike_list, trial.times[-1], 
-                                        bin_width=bin_width, 
-                                        bin_alignment='middle')
-
-            
-        spike_axes.plot(bin_points, spikes*1000.0/bin_width, 
-                        color=pc['detection']['filtered_trace_color'], 
-                        linewidth=pc['detection']['filtered_trace_linewidth'])
-
-        raster_height_factor = 2.0
-        raster_pos = pc['detection']['raster_pos_rate']
-        if raster_pos == 'top':    spike_y = max(spike_axes.get_ylim())
-        if raster_pos == 'botom':  spike_y = min(spike_axes.get_ylim())
-        if raster_pos == 'center': 
-            spike_y = 0.0
-            raster_height_factor = 1.0
-            
-        spike_xs = accepted_spike_list
-        spike_ys = [spike_y for spike_index in accepted_spike_list]
-        spike_axes.plot(spike_xs, spike_ys, 
-                        color=pc['detection']['raster_color'], 
-                        linewidth=0, 
-                        marker='|',
-                        markersize=pc['detection']['raster_height']*
-                          raster_height_factor,
-                        markeredgewidth=pc['detection']['raster_width'])
-
-        spike_axes.set_xlim(0.0, trial.times[-1])
-
-
-
-def bin_spikes(spike_list, total_time, bin_width=50.0, bin_alignment="middle"):
-    """
-    A function to return a list of bins and a list of the number of spikes in 
-        each bin.
-    Inputs:
-        spike_list        : the list of times at which spikes were detected
-        total_time        : the length (of time) of the trace from which the 
-                            spikes were detected
-        bin_width         : how much time one bin should correspond to
-        bin_alignment     : the location of a bin that the bin time corresponds 
-                            to ('beginning', 'middle', or 'end')
-
-    Returns:
-        spikes            : an array of the number of spikes in each bin
-        bin_points        : an array of bin times
-    """
-    low  = 0.0
-    high = 0.0
-    def is_between(value):
-        return low <= value <= high
-
-    bins = numpy.arange(0.0, total_time, bin_width)
-    spikes = []
-    for i in xrange(len(bins)-1):
-        low  = bins[i]
-        high = bins[i+1]
-        spike_count = len(filter(is_between, spike_list))
-        spikes.append(spike_count)
-    # final bin
-    low = bins[-1]
-    high = total_time
-    spike_count = len(filter(is_between, spike_list))
-    spikes.append(spike_count)
-    bin_shift_dict = {"beginning": 0.0, "middle": 0.5, "end": 1.0}
-    bin_points = bins + bin_width*bin_shift_dict[bin_alignment]
-    return numpy.array(spikes), bin_points
-    

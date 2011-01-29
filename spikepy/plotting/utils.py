@@ -33,6 +33,7 @@ def clear_figure(figure):
 
 def plot_raster_to_axes(spike_times, axes, 
                         bounds=None, 
+                        force_bounds=True,
                         raster_pos='center',
                         marker_size=20,
                         **kwargs):
@@ -55,8 +56,13 @@ def plot_raster_to_axes(spike_times, axes,
                                      linewidth=0,
                                      **kwargs)
     prev_xlim = axes.get_xlim()
-    axes.set_xlim(min(bounds[0], prev_xlim[0]),
-                  max(bounds[1], prev_xlim[1]))
+    if force_bounds:
+        lb = bounds[0]
+        ub = bounds[1]
+    else:
+        lb = min(bounds[0], prev_xlim[0])
+        ub = max(bounds[1], prev_xlim[1])
+    axes.set_xlim(lb, ub)
 
 def clear_axes(axes, clear_tick_labels=False):
     '''

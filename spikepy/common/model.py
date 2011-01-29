@@ -251,7 +251,22 @@ class Model(object):
         spikes = delayed_result.get()
         # XXX carefully consider what to do if no spikes were detected.
         if len(spikes) > 0:
-            trial.detection.results = spikes
+            # make the spike windows here and store them.
+            bc = config_manager['backend']
+            pre_padding = bc['spike_window_prepad']
+            post_padding = bc['spike_window_postpad']
+            dfr = trial.detection_filter.results
+            traces = dfr['resampled_traces']
+            sampling_freq = dfr['new_sampling_freq']
+            window_maker = plugin_utils.get_method('extraction', 'Spike Window')
+            window_dict = window_maker.run(traces, sampling_freq, 
+                                           spikes, pre_padding=pre_padding,
+                                                   post_padding=post_padding,
+                                                   exclude_overlappers=False)
+            results_dict = {'spike_windows':window_dict['features'],
+                            'spike_window_times': window_dict['feature_times'],
+                            'spike_times': spikes}
+            trial.detection.results = results_dict
         else:
             raise RuntimeError('No spikes detected on trial with trial_id:%s' 
                                % trial.trial_id)
@@ -284,7 +299,7 @@ class Model(object):
                         cargs=(trial,))
 
     def _extraction_worker(self, trial, method_name, settings):
-        spike_list = trial.detection.results
+        spike_list = trial.detection.results['spike_times']
         if len(spike_list) == 0:
             return None # no spikes from detection = no extraction
 

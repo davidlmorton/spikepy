@@ -72,3 +72,5 @@
         border=integer(min=0, max=10, default=None)
 [backend]
     new_sampling_freq=integer(min=5000, max=50000, default=None)
+    spike_window_prepad=float(min=0.01, default=None)
+    spike_window_postpad=float(min=0.01, default=None)

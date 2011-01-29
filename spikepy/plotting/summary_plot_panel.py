@@ -188,8 +188,9 @@ class SummaryPlotPanel(SpikepyPlotPanel):
                       range=(0.0, pc['summary']['upper_isi_bound2']),
                       fc=color, ec='k')
 
-            sub_axes.hist(isi, bins=30, 
-                      range=(0.0, pc['summary']['upper_isi_bound1']),
+            isa_upper_range =  pc['summary']['upper_isi_bound1']
+            sub_axes.hist(isi, bins=int(isa_upper_range), 
+                      range=(0.0, isa_upper_range),
                       fc=color, ec='k')
             utils.set_axes_num_ticks(sub_axes, axis='yaxis', num=4)
 

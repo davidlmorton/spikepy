@@ -123,6 +123,7 @@ class ResultsPanel(wx.Panel):
         self.plot_checkbox = wx.CheckBox(self, 
                                          label=pt.PLOT_RESULTS)
         self.plot_checkbox.SetValue(True)
+        self.plot_checkbox.Show(False)
 
         top_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         top_sizer.Add(self.plot_checkbox, proportion=0, 

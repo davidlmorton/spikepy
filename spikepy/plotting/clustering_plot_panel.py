@@ -199,7 +199,7 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
                                 (i, j))
                 continue # don't try doing gaussian fits on single point or no point clusters.
 
-            x, y1, y2 = pu.get_both_gaussians(p1, p2, num_points=100)
+            x, y1, y2 = pu.get_both_gaussians(p1, p2, num_points=300)
             ymax = numpy.max( numpy.hstack([h1[0], h2[0]]) )*1.05
 
             axes.plot(x, y1*ymax*0.8, color='k', linewidth=2.0)
