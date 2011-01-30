@@ -37,7 +37,6 @@ SHELL              = wx.NewId()
 SHOW_TOOLBARS      = wx.NewId()
 SHOW_PLOTS         = wx.NewId()
 SAVE_SESSION       = wx.NewId()
-LOAD_SESSION       = wx.NewId()
 EXPORT_MARKED      = wx.NewId()
 EXPORT_ALL         = wx.NewId()
 PRINT_SUBMENU      = wx.NewId()
@@ -53,7 +52,6 @@ class SpikepyMenuBar(wx.MenuBar):
         file_menu = wx.Menu()
         file_menu.Append(OPEN, text=pt.OPEN)
         file_menu.AppendSeparator()
-        file_menu.Append(LOAD_SESSION,      text=pt.LOAD_SESSION)
         file_menu.Append(SAVE_SESSION,      text=pt.SAVE_SESSION)
         file_menu.AppendSeparator()
         file_menu.Append(EXPORT_MARKED,     text=pt.EXPORT_MARKED_TRIALS)
@@ -91,7 +89,6 @@ class SpikepyMenuBar(wx.MenuBar):
         # --- BIND MENU EVENTS ---
         # File
         frame.Bind(wx.EVT_MENU, self._open_file,        id=OPEN)
-        frame.Bind(wx.EVT_MENU, self._load_session,     id=LOAD_SESSION)
         frame.Bind(wx.EVT_MENU, self._save_session,     id=SAVE_SESSION)
         frame.Bind(wx.EVT_MENU, self._export_marked,    id=EXPORT_MARKED)
         frame.Bind(wx.EVT_MENU, self._export_all,       id=EXPORT_ALL)
@@ -130,17 +127,6 @@ class SpikepyMenuBar(wx.MenuBar):
 
     def _show_preferences(self, event=None):
         preferences_frame = PreferencesFrame(self)
-
-    def _load_session(self, event=None):
-        wildcard = pt.SESSION_FILES + '|*.ses|'
-        wildcard += pt.ALL_FILES + '|*'
-        dlg = wx.FileDialog(self, message=pt.LOAD_SESSION, 
-                                  style=wx.FD_OPEN, 
-                                  wildcard=wildcard)
-        if dlg.ShowModal() == wx.ID_OK:
-            save_path = dlg.GetPath()
-            pub.sendMessage(topic='LOAD_SESSION', data=save_path)
-        dlg.Destroy()
 
     def _save_session(self, event=None):
         wildcard = pt.SESSION_FILES + '|*.ses|'

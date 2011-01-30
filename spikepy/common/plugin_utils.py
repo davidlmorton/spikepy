@@ -38,22 +38,28 @@ base_classes = {'detection_filter':  FilteringMethod,
 
 def get_methods_for_stage(stage_name):
     '''
-    Return a list of method objects, given the stage_name.
+    Return a list of method objects and a list of method classes, 
+        given the stage_name.
     '''
     return_methods = []
+    return_classes = []
     base_class = base_classes[stage_name]
     for method_class in _class_registry[base_class]:
         method = method_class()
         return_methods.append(method)
-    return return_methods
+        return_classes.append(method_class)
+    return (return_methods, return_classes)
 
-def get_method(stage_name, method_name):
+def get_method(stage_name, method_name, instantiate=False):
     '''
     Return a method object, given the stage_name and method_name.
     '''
-    for method in get_methods_for_stage(stage_name):
+    for method, method_class in zip(*get_methods_for_stage(stage_name)):
         if method.name == method_name:
-            return method
+            if instantiate:
+                return method
+            else:
+                return method_class
     raise runtimeerror("couldn't find method named '%s' from stage '%s'" %
                         (method_name, stage_name))
 

@@ -25,7 +25,7 @@ import wx
 from wx.lib.pubsub import Publisher as pub
 from wx.lib.delayedresult import startWorker
 
-from ..common.model import Model
+from spikepy.common.run_manager import RunManager
 from ..common.trial import Trial
 from spikepy.common.utils import pool_process
 from .view import View
@@ -45,8 +45,7 @@ def make_version_float(version_number_string):
 
 class Controller(object):
     def __init__(self):
-        self.model = Model()
-        self.model.setup_subscriptions()
+        self.model = RunManager()
         self.view = View()
         self.results_notebook = self.view.frame.results_notebook
         self._selected_trial = None
@@ -83,15 +82,14 @@ class Controller(object):
                       topic='CALCULATE_RUN_BUTTONS_STATE')
         pub.subscribe(self._trial_closed, topic='TRIAL_CLOSED')
         pub.subscribe(self._save_session, topic='SAVE_SESSION')
-        pub.subscribe(self._load_session, topic='LOAD_SESSION')
         pub.subscribe(self._close_application,  topic="CLOSE_APPLICATION")
         pub.subscribe(self._open_rename_trial_dialog,
                       topic='OPEN_RENAME_TRIAL_DIALOG')
         pub.subscribe(self._export_trials,  topic="EXPORT_TRIALS")
-        pub.subscribe(self._run_all,  topic="RUN_ALL")
-        pub.subscribe(self._run_marked,  topic="RUN_MARKED")
-        pub.subscribe(self._open_strategy_progress_dialog, 
-                      topic="OPEN_STRATEGY_PROGRESS_DIALOG")
+        pub.subscribe(self._run_strategy_on_marked,  
+                      topic="RUN_STRATEGY_ON_MARKED")
+        pub.subscribe(self._run_stage_on_marked,  topic="RUN_STAGE_ON_MARKED")
+        pub.subscribe(self._aborting_strategy, topic='ABORTING_STRATEGY')
         pub.subscribe(self._trial_altered, topic='TRIAL_ALTERED')
 
     def start_debug_subscriptions(self):
@@ -108,13 +106,15 @@ class Controller(object):
     def get_all_trials(self):
         return self.model.trials.values()
 
-    def _run_all(self, message):
-        message.data['trial_list'] = self.get_all_trials()
-        pub.sendMessage(topic='RUN_STAGE', data=message.data) 
-
-    def _run_marked(self, message):
+    def _run_stage_on_marked(self, message):
         message.data['trial_list'] = self.get_marked_trials()
         pub.sendMessage(topic='RUN_STAGE', data=message.data) 
+
+    def _run_strategy_on_marked(self, message):
+        trial_list = self.get_marked_trials()
+        message.data['trial_list'] = trial_list
+        self._open_strategy_progress_dialog(trial_list)
+        pub.sendMessage(topic='RUN_STRATEGY', data=message.data) 
 
     def _export_trials(self, message):
         export_type = message.data
@@ -152,7 +152,7 @@ class Controller(object):
     def _calculate_run_buttons_state(self, message):
         methods_used, settings = message.data
 
-        checker = self.model.run_manager.get_stage_run_states
+        checker = self.model.get_stage_run_states
         marked_trials = self.get_marked_trials()
         run_state = {}
         run_state.update(checker(methods_used, settings, marked_trials))
@@ -166,8 +166,6 @@ class Controller(object):
         wx.Yield()
         # deinitialize the frame manager
         self.view.frame.Destroy()
-        if self.model._processing_pool is not None:
-            self.model._processing_pool.close()
 
     def _save_session(self, message):
         save_path = message.data
@@ -178,45 +176,6 @@ class Controller(object):
         with open(save_path, 'w') as ofile:
             cPickle.dump(trial_archives, ofile, protocol=-1)
         
-    def _load_session(self, message):
-        session_fullpath = message.data
-        session_filename = os.path.split(session_fullpath)[1]
-        session_name = os.path.splitext(session_filename)[0]
-        startWorker(self._load_session_consumer, self._load_session_worker, 
-                    wargs=(session_fullpath,), cargs=(session_filename, 
-                                                      session_name))
-
-    def _load_session_worker(self, session_fullpath):
-        pool = self.model._processing_pool
-        trial_archives = pool_process(pool, load_pickle, 
-                                      args=(session_fullpath,))
-        return trial_archives
-
-
-    def _load_session_consumer(self, delayed_result, session_filename, 
-                               session_name):
-        # change the fullpath so it corresponds to the session file
-        trial_archives = delayed_result.get()
-        trials = []
-        for archive in trial_archives:
-            trial = Trial(sampling_freq=archive['sampling_freq'],
-                          raw_traces=archive['raw_traces'], 
-                          fullpath=archive['fullpath'])
-            trials.append(trial)
-            for stage in trial.stages:
-                if stage.name in archive.keys():
-                    data_for_stage = archive[stage.name]
-                    trial.set_data_for_stage(stage.name, **data_for_stage)
-
-        # simulate opening the files
-        for trial in trials:
-            self.model.trials[trial.trial_id] = trial
-            pub.sendMessage(topic='OPENING_DATA_FILE', data=trial.fullpath)
-            pub.sendMessage(topic='TRIAL_ADDED',       data=trial)
-            pub.sendMessage(topic='FILE_OPENED',       data=trial.fullpath)
-            pub.sendMessage(topic='SET_STRATEGY', 
-                            data=(trial.methods_used, trial.settings))
-            
     def _print_messages(self, message):
         topic = message.topic
         data = message.data
@@ -275,8 +234,11 @@ class Controller(object):
             if done:
                 self._strategy_progress_dlg = None
 
-    def _open_strategy_progress_dialog(self, message):
-        trial_list = self.get_marked_trials()
+    def _aborting_strategy(self, message):
+        self._strategy_progress_dlg.abort()
+        self._strategy_progress_dlg = None
+
+    def _open_strategy_progress_dialog(self, trial_list):
         display_names = [trial.display_name for trial in trial_list]
         ids = [trial.trial_id for trial in trial_list]
         

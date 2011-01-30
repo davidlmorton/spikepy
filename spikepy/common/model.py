@@ -14,6 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+print "MODEL IS DEPRECATED, DO NOT LOAD"
 
 import traceback 
 import sys
@@ -267,11 +268,10 @@ class Model(object):
                             'spike_window_times': window_dict['feature_times'],
                             'spike_times': spikes}
             trial.detection.results = results_dict
+            pub.sendMessage(topic='TRIAL_ALTERED', 
+                            data=(trial.trial_id, 'detection'))
         else:
-            raise RuntimeError('No spikes detected on trial with trial_id:%s' 
-                               % trial.trial_id)
-        pub.sendMessage(topic='TRIAL_ALTERED', 
-                        data=(trial.trial_id, 'detection'))
+            pub.sendMessage(topic='NO_SPIKES_DETECTED', data=trial)
         pub.sendMessage(topic="PROCESS_ENDED", data=[trial])
 
     # ---- EXTRACTION ----

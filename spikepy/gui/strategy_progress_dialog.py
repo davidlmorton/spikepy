@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import wx
+from wx.lib.pubsub import Publisher as pub
 
 from spikepy.common.config_manager import config_manager as config
 from spikepy.common import program_text as pt
@@ -79,5 +80,9 @@ class StrategyProgressDialog(wx.Dialog):
             self.Show(False)
             self.Destroy()
         return end
+
+    def abort(self):
+        self.Show(False)
+        self.Destroy()
         
 

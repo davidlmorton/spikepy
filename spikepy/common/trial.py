@@ -127,11 +127,6 @@ class Trial(object):
         stage_data = self.get_stage_data(stage_name)
         stage_data.method   = method
         stage_data.settings = settings
-        # check for old-style detection results and fix it.
-        if stage_name == 'detection':
-            if results is not None and len(results) > 0:
-                if hasattr(results[0], '__iter__'):
-                    results = results[0]
         stage_data.results  = results
 
     @classmethod

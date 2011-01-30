@@ -166,14 +166,12 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         bounds = (times[0], times[-1])
 
         # plot spike windows
-        spike_windows = trial.detection.results['spike_windows']
-        nsf = trial.detection_filter.results['new_sampling_freq']
-        window_len = len(spike_windows[0])
-        window_times = numpy.arange(window_len)*(1000.0/nsf) 
-        for window in spike_windows:
-            sa.plot(window_times, window, color=self.line_color,
-                                          linewidth=0.5,
-                                          alpha=0.3)
+        spike_window_ys = trial.detection.results['spike_window_ys']
+        spike_window_xs = trial.detection.results['spike_window_xs']
+        for window in spike_window_ys:
+            sa.plot(spike_window_xs, window, color=self.line_color,
+                                             linewidth=0.5,
+                                             alpha=0.3)
 
         # plot the isi and isi_sub
         isi = spikes[1:] - spikes[:-1]

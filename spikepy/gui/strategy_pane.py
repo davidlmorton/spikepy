@@ -283,16 +283,20 @@ class StrategyPane(ScrolledPanel):
         self.set_run_buttons_state()
         wx.Yield()
 
-        self.current_stage.run()
+        strategy = self.get_current_strategy()
+        stage_name = self.current_stage.stage_name
+        pub.sendMessage("RUN_STAGE_ON_MARKED", 
+                        data={'strategy':strategy, 
+                              'stage_name':stage_name})
 
     def _run_strategy(self, event):
         # disable run buttons
         self.set_run_buttons_state()
         wx.Yield()
 
-        pub.sendMessage("OPEN_STRATEGY_PROGRESS_DIALOG")
-        for stage in self.stage_panels:
-            stage.run()
+        strategy = self.get_current_strategy()
+        pub.sendMessage("RUN_STRATEGY_ON_MARKED", 
+                        data={'strategy':strategy})
 
     def set_run_buttons_state(self, states=[False, False]):
         self.run_stage_button.Enable(states[0])
@@ -425,7 +429,8 @@ class StagePanel(wx.Panel):
 
     def load_methods(self):
         methods = {}
-        for method in plugin_utils.get_methods_for_stage(self.stage_name):
+        ms, mcs = plugin_utils.get_methods_for_stage(self.stage_name)
+        for method in ms:
             methods[method.name] = {}
             methods[method.name]['control_panel'] =\
                     method.make_control_panel(self, style=wx.BORDER_SUNKEN)
