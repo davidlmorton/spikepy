@@ -261,7 +261,6 @@ class RunManager(object):
         else:
             self._register_running_strategy(message)
             stage_name = self._get_next_stage_name()
-            print stage_name
             if stage_name is None:
                 self._register_done_running_strategy()
                 return # we're done now.
