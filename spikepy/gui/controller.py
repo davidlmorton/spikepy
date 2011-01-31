@@ -35,6 +35,9 @@ from .trial_rename_dialog import TrialRenameDialog
 from .pyshell import locals_dict
 from .export_dialog import ExportDialog
 
+all_stages = ['detection_filter', 'detection', 'extraction_filter', 
+              'extraction', 'clustering']
+
 def make_version_float(version_number_string):
     nums = version_number_string.split('.')
     result = 0.0
@@ -89,7 +92,7 @@ class Controller(object):
                       topic="RUN_STRATEGY_ON_MARKED")
         pub.subscribe(self._run_stage_on_marked,  topic="RUN_STAGE_ON_MARKED")
         pub.subscribe(self._aborting_strategy, topic='ABORTING_STRATEGY')
-        pub.subscribe(self._trial_altered, topic='TRIAL_ALTERED')
+        pub.subscribe(self._processing_finished, topic='PROCESSING_FINISHED')
 
     def start_debug_subscriptions(self):
         pub.subscribe(self._print_messages) # subscribes to all topics
@@ -112,7 +115,7 @@ class Controller(object):
     def _run_strategy_on_marked(self, message):
         trial_list = self.get_marked_trials()
         message.data['trial_list'] = trial_list
-        self._open_strategy_progress_dialog(trial_list)
+        self._open_strategy_progress_dialog()
         pub.sendMessage(topic='RUN_STRATEGY', data=message.data) 
 
     def _export_trials(self, message):
@@ -225,11 +228,10 @@ class Controller(object):
         if trial_id is not None and should_plot:
             pub.sendMessage(topic='DISPLAY_RESULT', data=(trial_id, stage_name))
 
-    def _trial_altered(self, message):
-        trial_id, stage_name = message.data
+    def _processing_finished(self, message):
+        stage_name = message.data
         if self._strategy_progress_dlg is not None:
-            done = self._strategy_progress_dlg.update_progress(trial_id, 
-                                                               stage_name)
+            done = self._strategy_progress_dlg.update_progress(stage_name)
             if done:
                 self._strategy_progress_dlg = None
 
@@ -248,18 +250,16 @@ class Controller(object):
         msg_dlg.Destroy()
         
 
-    def _open_strategy_progress_dialog(self, trial_list):
-        display_names = [trial.display_name for trial in trial_list]
-        ids = [trial.trial_id for trial in trial_list]
-        
+    def _open_strategy_progress_dialog(self, stage_names=all_stages):
         main_frame_pos = self.view.frame.GetPosition()
         main_frame_size = self.view.frame.GetSize()
         dlg_pos = (main_frame_pos[0]+main_frame_size[0]/2,
                    main_frame_pos[1]+main_frame_size[1]/2)
         self._strategy_progress_dlg = StrategyProgressDialog(self.view.frame,
-                                    display_names, ids, pos=dlg_pos,
+                                    stage_names, pos=dlg_pos,
                                     style=wx.STAY_ON_TOP)
         self._strategy_progress_dlg.Show()
+        done = self._strategy_progress_dlg.update_progress('STARTUP')
 
     def _open_open_file_dialog(self, message):
         frame = message.data

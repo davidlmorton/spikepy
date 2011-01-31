@@ -353,6 +353,8 @@ class RunManager(object):
             else:
                 raise RuntimeError('No result was generated for trial:%s during the processing of stage:%s' % (trial.trial_id, stage_name))
 
+        pub.sendMessage("PROCESSING_FINISHED", data=stage_name)
+
         self._register_done_running()
         if self._running_strategy:
             self._run_stage(self._strategy_message)
