@@ -55,11 +55,15 @@ class StrategyProgressDialog(wx.Dialog):
             pi = NamedProgressIndicator(self, display_name) 
             self.progress_indicators.append(pi)
 
+        self.abort_button = wx.Button(self, label=pt.ABORT)
+
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         sizer.Add(info_text, proportion=0, 
                   flag=wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, border=10)
         for pi in self.progress_indicators:
             sizer.Add(pi, proportion=0, flag=wx.ALL|wx.EXPAND, border=3)
+        sizer.Add(self.abort_button, proportion=0, flag=wx.ALL|wx.EXPAND,
+                  border=6)
 
         self.SetSizerAndFit(sizer)
 
@@ -68,6 +72,8 @@ class StrategyProgressDialog(wx.Dialog):
                              'extraction_filter':3,
                              'extraction':4,
                              'clustering':5}
+
+        self.Bind(wx.EVT_BUTTON, self._abort, self.abort_button)
 
     def update_progress(self, trial_id, stage_name):
         index = self.ids.index(trial_id)
@@ -80,6 +86,11 @@ class StrategyProgressDialog(wx.Dialog):
             self.Show(False)
             self.Destroy()
         return end
+
+    def _abort(self, event):
+        pub.sendMessage("ABORT_STRATEGY", data='USER_PRESSED_ABORT')
+        self.abort_button.SetLabel(pt.ABORTING)
+        self.abort_button.Enable(False)
 
     def abort(self):
         self.Show(False)

@@ -35,16 +35,15 @@ def format_traces(trace_list):
     traces = numpy.vstack(array_trace_list)
     return traces
 
-def pool_process(pool, function, args=tuple(), kwargs=dict()):
+def pool_map(pool, function, iterable):
     if pool is not None:
         try:
-            pool_result = pool.apply_async(function, args=args, kwds=kwargs)
-            result = pool_result.get()
+            result = pool.map(function, iterable)
         except:
             traceback.print_exc()
             sys.exit(1)
     else:
-        result = function(*args, **kwargs)
+        result = map(function, iterable)
     return result
 
 

@@ -96,7 +96,12 @@ def extraction_process_worker(run_queue, results_queue):
     for run_data in iter(run_queue.get, None):
         method_class, run_dict = run_data
         method_obj = method_class()
-        result = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
+        try:
+            result = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
+        except:
+            result = {'features': [], 'feature_times':[],
+                      'excluded_features':[],
+                      'excluded_feature_times':[]}
         
         results_queue.put({'trial_id':run_dict['trial_id'],
                            'data':result})
@@ -208,27 +213,32 @@ class RunManager(object):
 
     def _register_done_running_strategy(self):
         if self._running_strategy:
+            if self._aborting_strategy:
+                last_stage_name_run = self._run_order[self._strategy_step-1]
+                pub.sendMessage('ABORTING_STRATEGY', 
+                                data=(self._offending_trials, 
+                                      self._abort_reasons, 
+                                      last_stage_name_run))
             self._running_strategy = False
             # the following two lines will crash system if things are broken.
             #   so think of them as asserts...
             self._strategy_message = None
             self._strategy_step = 1000
-            # handle abort status here XXX
-            if self._aborting_strategy:
-                print self._offending_trials, self._abort_reasons
 
     def _get_next_stage_name(self):
         if self._aborting_strategy:
-            pub.sendMessage('ABORTING_STRATEGY')
             return None
         if self._strategy_step < len(self._run_order):
             self._strategy_step += 1
             return self._run_order[self._strategy_step-1]
 
     def _abort_strategy(self, message=None, offending_trial=None, reason=None):
-        if offending_trial is not None:
-            self._offending_trials.append(offending_trial)
-        self._abort_reasons.append(reason)
+        if message is None:
+            if offending_trial is not None:
+                self._offending_trials.append(offending_trial)
+            self._abort_reasons.append(reason)
+        else:
+            self._abort_reasons.append(message.data)
         if self._running_strategy:
             self._aborting_strategy = True
 

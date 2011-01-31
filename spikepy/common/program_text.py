@@ -144,6 +144,11 @@ RUN_BUTTON_RUNNING_STATUS = "Running"
 SAVE_STRATEGY = "Save Strategy..."
 STRATEGY = "Strategy"
 STRATEGY_PROGRESS_INFO = "Strategy Completion Progress"
+ABORT = 'Abort'
+ABORTING = 'Aborting...'
+USER_ABORT_MESSAGE = 'You chose to abort.\n\nLast stage completed:%s' # % stage_name
+ABORT_MESSAGE = 'The following trials aborted the strategy run:\n\n'
+ABORT_TRIALS = 'Trial:%s     Reason:%s\n' # % (trial_display_name, reason)
 STRATEGY_NAME = "Strategy Name:"
 FILE_LISTCTRL_TITLE = "Opened Files"
 

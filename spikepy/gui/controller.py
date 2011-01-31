@@ -27,7 +27,6 @@ from wx.lib.delayedresult import startWorker
 
 from spikepy.common.run_manager import RunManager
 from ..common.trial import Trial
-from spikepy.common.utils import pool_process
 from .view import View
 from .utils import named_color, load_pickle
 from spikepy.common import program_text as pt
@@ -237,13 +236,29 @@ class Controller(object):
     def _aborting_strategy(self, message):
         self._strategy_progress_dlg.abort()
         self._strategy_progress_dlg = None
+        offending_trials, abort_reasons, last_stage_name_run = message.data
+        if 'USER_PRESSED_ABORT' in abort_reasons:
+            info = pt.USER_ABORT_MESSAGE % last_stage_name_run
+        else:
+            info = pt.ABORT_MESSAGE
+            for ot, ar in zip(offending_trials, abort_reasons):
+                info += pt.ABORT_TRIALS % (ot.display_name, ar)
+        msg_dlg = wx.MessageDialog(self.view.frame, info, style=wx.OK|wx.CENTRE)
+        msg_dlg.ShowModal()
+        msg_dlg.Destroy()
+        
 
     def _open_strategy_progress_dialog(self, trial_list):
         display_names = [trial.display_name for trial in trial_list]
         ids = [trial.trial_id for trial in trial_list]
         
+        main_frame_pos = self.view.frame.GetPosition()
+        main_frame_size = self.view.frame.GetSize()
+        dlg_pos = (main_frame_pos[0]+main_frame_size[0]/2,
+                   main_frame_pos[1]+main_frame_size[1]/2)
         self._strategy_progress_dlg = StrategyProgressDialog(self.view.frame,
-                                    display_names, ids, style=wx.STAY_ON_TOP)
+                                    display_names, ids, pos=dlg_pos,
+                                    style=wx.STAY_ON_TOP)
         self._strategy_progress_dlg.Show()
 
     def _open_open_file_dialog(self, message):
