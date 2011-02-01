@@ -95,21 +95,29 @@ def set_title(figure=None, old_text_obj=None, canvas_size_in_pixels=None,
                        horizontalalignment='center',
                        verticalalignment='center')
 
-def set_axes_num_ticks(axes, axis='both', num=5):
+def set_axes_ticker(axes, axis='both', nbins=7, steps=[1,2,5,10], 
+                    prune='lower', **kwargs):
     '''
     Sets the number of labeled ticks on the specified axis of the axes.
     Inputs:
         axes        : a matplotlib Axes2D object
         axis        : a string with either 'xaxis', 'yaxis', or 'both'
-        num         : the number of tickmarks you want on the specified axis.
+        nbins       : the number of tickmarks you want on the specified axis.
+        steps       : something the MaxNLocator needs to make good choices.
+        prune       : leave off a tick, one of 'lower', 'upper', 'both' or None
+        **kwargs    : passed on to MaxNLocator
     Returns: None
     '''
     if axis == 'xaxis' or axis == 'both':
-        # NOTE the MaxNLocator sets the maximum number of *intervals*
-        #  so the max number of ticks will be one more.
-        axes.xaxis.set_major_locator(MaxNLocator(num-1))
+        axes.xaxis.set_major_locator(MaxNLocator(nbins=nbins, 
+                                                 steps=steps, 
+                                                 prune=prune,
+                                                 **kwargs))
     if axis == 'yaxis' or axis == 'both':
-        axes.yaxis.set_major_locator(MaxNLocator(num-1))
+        axes.yaxis.set_major_locator(MaxNLocator(nbins=nbins,
+                                                 steps=steps,
+                                                 prune=prune,
+                                                 **kwargs))
 
 def as_fraction(x=None, y=None, canvas_size_in_pixels=None):
     if x is not None and y is not None:
@@ -119,6 +127,56 @@ def as_fraction(x=None, y=None, canvas_size_in_pixels=None):
     elif y is not None:
         return y/canvas_size_in_pixels[1]
 
+def as_fraction_axes(x=None, y=None, axes=None,
+                     canvas_size_in_pixels=None):
+    try:
+        bbox = axes.get_position()
+        height = bbox.height
+        width  = bbox.width
+    except:
+        return
+
+    height *= canvas_size_in_pixels[1]
+    width *= canvas_size_in_pixels[0]
+
+    if x is not None and y is not None:
+        return float(x/width), float(y/height)
+    elif x is not None:
+        return float(x/width)
+    elif y is not None:
+        return float(y/height)
+
+def add_shadow_legend(x, y, axes, canvas_size, ncol=100):
+    x_frac, y_frac = as_fraction_axes(x, y, axes, canvas_size)
+    try:
+        axes.legend(loc='lower right',
+                    shadow=True,
+                    ncol=ncol,
+                    bbox_to_anchor=[1.0+x_frac, 1.0-y_frac])
+    except:
+        return
+
+def set_tick_fontsize(axes, fontsize=12):
+    for ticklabel in axes.get_yticklabels():
+        ticklabel.set_size(fontsize)
+    for ticklabel in axes.get_xticklabels():
+        ticklabel.set_size(fontsize)
+
+def format_y_axis_hist(axes, minimum_max=None, fontsize=None):
+    ylim = axes.get_ylim()
+    y_max = int(ylim[1]+1)
+    if minimum_max is not None:
+        if y_max < minimum_max:
+            y_max = minimum_max
+    if y_max % 2:
+        y_max = int(y_max)+1 # force y_max is even.
+    y_mid = y_max/2
+
+    axes.set_ylim(0, y_max)
+    axes.set_yticks([y_mid, y_max])
+    if fontsize is not None:
+        set_tick_fontsize(axes, fontsize)
+    
 def adjust_axes_edges(axes, canvas_size_in_pixels=None, 
                             top=0.0, 
                             bottom=0.0, 

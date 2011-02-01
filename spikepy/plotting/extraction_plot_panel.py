@@ -107,7 +107,8 @@ class ExtractionPlotPanel(SpikepyPlotPanel):
             axes.plot(trf[x-1], trf[y-1], color='black', 
                                           linewidth=0, 
                                           marker='.')
-            utils.set_axes_num_ticks(axes, axis='both', num=4)
+            utils.set_axes_ticker(axes, nbins=4, axis='xaxis', prune=None)
+            utils.set_axes_ticker(axes, axis='yaxis')
 
         # plot the features
         pc = config['gui']['plotting']['extraction']
@@ -120,5 +121,6 @@ class ExtractionPlotPanel(SpikepyPlotPanel):
                               linewidth=pc['feature_trace_linewidth'],
                               color=pc['feature_trace_color'], 
                               alpha=pc['feature_trace_alpha'])
+        utils.set_axes_ticker(feature_axes, axis='yaxis')
         feature_axes.set_xlim((0,len(features[0])-1))
 

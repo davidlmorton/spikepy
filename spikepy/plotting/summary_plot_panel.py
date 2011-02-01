@@ -94,11 +94,13 @@ class SummaryPlotPanel(SpikepyPlotPanel):
 
         # --- AVERAGE AND STD AXES ---
         average_axes = figure.add_subplot(num_srows, 2, 5)
+        utils.set_axes_ticker(average_axes, axis='yaxis')
         average_axes.set_ylabel(pt.AVERAGE_SPIKE_SHAPES)
         average_axes.set_xlabel(pt.PLOT_TIME)
         plot_panel.axes['average'] = average_axes
         
         std_axes = figure.add_subplot(num_srows, 2, 6, sharex=average_axes)
+        utils.set_axes_ticker(std_axes, axis='yaxis')
         std_axes.set_ylabel(pt.SPIKE_STDS)
         std_axes.set_xlabel(pt.PLOT_TIME)
         plot_panel.axes['std'] = std_axes
@@ -110,6 +112,7 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         for i in xrange(num_clusters):
             ca = figure.add_subplot(num_srows, 2, 6+2*i+1)
             ia = figure.add_subplot(num_srows, 2, 6+2*i+2)
+            utils.set_axes_ticker(ca, axis='yaxis')
 
             if i+1 < num_clusters:
                 ca.set_xticklabels([''],visible=False)
@@ -187,12 +190,13 @@ class SummaryPlotPanel(SpikepyPlotPanel):
             axes.hist(isi, bins=70, 
                       range=(0.0, pc['summary']['upper_isi_bound2']),
                       fc=color, ec='k')
+            utils.format_y_axis_hist(axes, minimum_max=20)
 
             isa_upper_range =  pc['summary']['upper_isi_bound1']
             sub_axes.hist(isi, bins=int(isa_upper_range), 
                       range=(0.0, isa_upper_range),
                       fc=color, ec='k')
-            utils.set_axes_num_ticks(sub_axes, axis='yaxis', num=4)
+            utils.format_y_axis_hist(sub_axes, minimum_max=20, fontsize=9)
 
         axes.set_xlabel(pt.ISI)
         
@@ -220,13 +224,10 @@ class SummaryPlotPanel(SpikepyPlotPanel):
                           linewidth=pc['std_trace_linewidth'],
                           color=color, 
                           alpha=0.2) 
-
-            try:
-                axes.legend(loc='upper right', 
-                            shadow=True, 
-                            bbox_to_anchor=[1.03,1.1])
-            except: #old versions of matplotlib don't have bbox_to_anchor
-                pass
+            canvas_size = self._plot_panels[trial_id].GetMinSize()
+            legend_offset = pc['spacing']['legend_offset']
+            utils.add_shadow_legend(legend_offset, legend_offset, axes,
+                                    canvas_size)
 
         axes.set_ylabel(pt.FEATURE_AMPLITUDE)
         axes.set_xlabel(pt.FEATURE_INDEX)

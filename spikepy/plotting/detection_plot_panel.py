@@ -53,6 +53,7 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         # set up the spike windows and isi axes
         figure = plot_panel.figure
         plot_panel.axes['spikes'] = sa = figure.add_subplot(num_srows, 2, 1)
+        utils.set_axes_ticker(sa, axis='yaxis')
         plot_panel.axes['isi'] = ia = figure.add_subplot(num_srows, 2, 2)
 
         # set up firing_rate and trace axes
@@ -60,6 +61,7 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         plot_panel.axes['trace'] = []
         for i in xrange(len(trial.raw_traces)):
             trace_axes = figure.add_subplot(num_trows, 1, i+2)
+            utils.set_axes_ticker(trace_axes, axis='yaxis')
             plot_panel.axes['trace'].append(trace_axes)
 
         canvas_size = plot_panel.GetMinSize()
@@ -140,12 +142,12 @@ class DetectionPlotPanel(SpikepyPlotPanel):
                                    linewidth=pc['std_trace_linewidth'], 
                                    linestyle=linestyle)
             trace_axes.set_xlim(trial.times[0], trial.times[-1])
-        axes = plot_panel.axes['trace'][0]
-        try:
-            axes.legend(loc='upper right', ncol=3, shadow=True, 
-                        bbox_to_anchor=[1.03,1.075])
-        except: #old versions of matplotlib don't have bbox_to_anchor
-            axes.legend(loc='upper right', ncol=3)
+            utils.set_axes_ticker(trace_axes, axis='yaxis') 
+        top_trace_axes = plot_panel.axes['trace'][0]
+        canvas_size = plot_panel.GetMinSize()
+        legend_offset = pc['spacing']['legend_offset']
+        utils.add_shadow_legend(legend_offset, legend_offset, top_trace_axes,
+                                canvas_size)
 
     def _post_run(self, trial_id):
         pc = config['gui']['plotting']
@@ -172,6 +174,7 @@ class DetectionPlotPanel(SpikepyPlotPanel):
             sa.plot(spike_window_xs, window, color=self.line_color,
                                              linewidth=0.5,
                                              alpha=0.3)
+        utils.set_axes_ticker(sa, axis='yaxis')
 
         # plot the isi and isi_sub
         isi = spikes[1:] - spikes[:-1]
@@ -179,11 +182,13 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         ia.hist(isi, bins=70, 
                   range=(0.0, pc['summary']['upper_isi_bound2']),
                   fc=self.line_color, ec='k')
+        utils.format_y_axis_hist(ia, minimum_max=20)
 
         isa_upper_range =  pc['summary']['upper_isi_bound1']
         isa.hist(isi, bins=int(isa_upper_range),
                   range=(0.0, isa_upper_range),
                   fc=self.line_color, ec='k')
+        utils.format_y_axis_hist(isa, minimum_max=20, fontsize=9)
 
         # plot the estimated firing rate
         bins = 70
@@ -202,6 +207,7 @@ class DetectionPlotPanel(SpikepyPlotPanel):
                                    fc=self.line_color)
             rate_axes.set_ylabel(pt.SPIKES_PER_BIN)
 
+        utils.format_y_axis_hist(rate_axes, minimum_max=10)
         rate_axes.set_xticklabels([''],visible=False)
 
         # print how many spikes were found.
@@ -233,4 +239,5 @@ class DetectionPlotPanel(SpikepyPlotPanel):
                                       marker_size=marker_size,
                                       markeredgewidth=markeredgewidth,
                                       color=color)
+            utils.set_axes_ticker(trace_axes, axis='yaxis')
         

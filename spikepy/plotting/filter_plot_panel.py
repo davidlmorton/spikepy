@@ -52,10 +52,12 @@ class FilterPlotPanel(SpikepyPlotPanel):
         
         # set up psd axes and trace axes
         figure = plot_panel.figure
-        plot_panel.axes['psd'] = figure.add_subplot(num_rows, 1, 1)
+        plot_panel.axes['psd'] = psd_axes = figure.add_subplot(num_rows, 1, 1)
+        utils.set_axes_ticker(psd_axes, axis='yaxis')
         plot_panel.axes['trace'] = []
         for i in xrange(len(trial.raw_traces)):
             trace_axes = figure.add_subplot(num_rows, 1, i+2)
+            utils.set_axes_ticker(trace_axes, axis='yaxis')
             plot_panel.axes['trace'].append(trace_axes)
 
         canvas_size = plot_panel.GetMinSize()
@@ -101,6 +103,7 @@ class FilterPlotPanel(SpikepyPlotPanel):
                       label=pt.RAW,
                       linewidth=pc['std_trace_linewidth'], 
                       color=pc['std_trace_color'])
+        utils.set_axes_ticker(psd_axes, axis='yaxis')
 
         # clear and plot the traces
         num_traces = len(trial.raw_traces)
@@ -114,6 +117,7 @@ class FilterPlotPanel(SpikepyPlotPanel):
                             linewidth=pc['std_trace_linewidth'], 
                             label=pt.RAW)
             trace_axes.set_xlim(trial.times[0], trial.times[-1])
+            utils.set_axes_ticker(trace_axes, axis='yaxis')
 
     def _post_run(self, trial_id):
         pc = config['gui']['plotting']
@@ -136,6 +140,7 @@ class FilterPlotPanel(SpikepyPlotPanel):
                       label=pt.FILTERED_TRACE_GRAPH_LABEL, 
                       linewidth=self.line_width, 
                       color=self.line_color)
+        utils.set_axes_ticker(psd_axes, axis='yaxis')
 
         # clear old filtered traces (if they exist) and plot new
         for i, trace_axes in enumerate(plot_panel.axes['trace']):
@@ -146,11 +151,12 @@ class FilterPlotPanel(SpikepyPlotPanel):
                             color=self.line_color, 
                             linewidth=self.line_width, 
                             label=pt.FILTERED_TRACE_GRAPH_LABEL)
+            utils.set_axes_ticker(trace_axes, axis='yaxis')
+            
 
         top_trace_axes = plot_panel.axes['trace'][0]
-        try:
-            top_trace_axes.legend(loc='upper right', ncol=2, shadow=True, 
-                                  bbox_to_anchor=[1.03,1.1])
-        except: #old versions of matplotlib don't have bbox_to_anchor
-            psd_axes.legend(loc='lower right')
+        canvas_size = plot_panel.GetMinSize()
+        legend_offset = pc['spacing']['legend_offset']
+        utils.add_shadow_legend(legend_offset, legend_offset, top_trace_axes,
+                                canvas_size)
 

@@ -54,6 +54,7 @@
             upper_isi_bound1=float(min=1.0, default=None)
             upper_isi_bound2=float(min=1.0, default=None)
         [[[spacing]]]
+            legend_offset=float(default=None)
             title_vspace=float(default=None)
             no_label_axes_left=float(max=0, default=None)
             no_label_axes_bottom=float(max=0, default=None)
