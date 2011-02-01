@@ -107,7 +107,7 @@ DETECTION_TRACE_GRAPH_LABEL = "Detection Filtered"
 STD_GRAPH_LABEL = 'Standard Deviation'
 SPIKES_GRAPH_LABEL = "Spikes"
 RAW = "Raw"
-PSD_Y_AXIS_LABEL = "Power\nspectral density (dB/Hz)"
+PSD_Y_AXIS_LABEL = "Power\nSpectral Density (dB/Hz)"
 PSD_X_AXIS_LABEL = "Frequency (Hz)"
 TRIAL_NAME = 'Trial Name: '
 FILTERED_TRACE_GRAPH_LABEL = "Filtered"
@@ -128,6 +128,7 @@ STARTUP = "Starting up"
 FEATURE_AMPLITUDE = "Feature Amplitude"
 FEATURE_INDEX = "Feature Index"
 FEATURE_SETS = "Feature Sets"
+PC_AMPLITUDE = "Principal Component\nVector Amplitude"
 PCA_LABEL = 'Principal Component %d (%3.1f%s)' #%(component_num, 
                                                #  percent_variance,'%')
 FOUND = 'Found: '
@@ -180,9 +181,9 @@ NAME_CANNOT_BEGIN_WITH = 'The name cannot begin with "."'
 CLUSTER_NUMBER = "Cluster Number"
 ISI = "Interspike Interval (ms)"
 TRACE_NUMBER = "Trace Number"
-AVERAGE_SPIKE_SHAPES = "Average Spike Shapes"
+AVERAGE_SPIKE_SHAPES = "Average Spike\nShapes"
 AVERAGE_OF = "Average of %d" # % number_of_spikes_in_cluster
-SPIKE_STDS = "Spike STDs"
+SPIKE_STDS = "Cluster\nStandard Deviation"
 SPECIFIC_CLUSTER_NUMBER = "Cluster %d" # % cluster_num
 
 # --- Printing ---

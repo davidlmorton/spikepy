@@ -56,7 +56,12 @@ class FilterPlotPanel(SpikepyPlotPanel):
         utils.set_axes_ticker(psd_axes, axis='yaxis')
         plot_panel.axes['trace'] = []
         for i in xrange(len(trial.raw_traces)):
-            trace_axes = figure.add_subplot(num_rows, 1, i+2)
+            if i == 0:
+                trace_axes = figure.add_subplot(num_rows, 1, i+2)
+            else:
+                trace_axes = figure.add_subplot(num_rows, 1, i+2,
+                                                sharex=trace_axes)
+                
             utils.set_axes_ticker(trace_axes, axis='yaxis')
             plot_panel.axes['trace'].append(trace_axes)
 
@@ -80,8 +85,6 @@ class FilterPlotPanel(SpikepyPlotPanel):
         plot_panel.axes['psd'].set_xlabel(pt.PSD_X_AXIS_LABEL)
 
         for i, trace_axes in enumerate(plot_panel.axes['trace']):
-            if i+1 < num_traces:
-                trace_axes.set_xticklabels([''],visible=False)
             trace_axes.set_ylabel('%s #%d' % (pt.TRACE, (i+1)))
         plot_panel.axes['trace'][-1].set_xlabel(pt.PLOT_TIME)
             
@@ -109,9 +112,7 @@ class FilterPlotPanel(SpikepyPlotPanel):
         num_traces = len(trial.raw_traces)
         for i, trace_axes in enumerate(plot_panel.axes['trace']):
             clear_tick_labels = False
-            if i+1 < num_traces:
-                clear_tick_labels = 'x_only'
-            utils.clear_axes(trace_axes, clear_tick_labels=clear_tick_labels)
+            utils.clear_axes(trace_axes)
             trace_axes.plot(trial.times, trial.raw_traces[i],
                             color=pc['std_trace_color'], 
                             linewidth=pc['std_trace_linewidth'], 

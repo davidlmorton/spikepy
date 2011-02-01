@@ -60,7 +60,8 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         plot_panel.axes['rate'] = ra = figure.add_subplot(num_srows, 1, 2)
         plot_panel.axes['trace'] = []
         for i in xrange(len(trial.raw_traces)):
-            trace_axes = figure.add_subplot(num_trows, 1, i+2)
+            trace_axes = figure.add_subplot(num_trows, 1, i+2, 
+                                            sharex=plot_panel.axes['rate'])
             utils.set_axes_ticker(trace_axes, axis='yaxis')
             plot_panel.axes['trace'].append(trace_axes)
 
@@ -81,20 +82,20 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         plot_panel.axes['isi_sub'] = isa
 
         # tweek the isi sub-subplot
-        nl_bottom = config['gui']['plotting']['spacing']['no_label_axes_bottom']
+        isi_inset = config['gui']['plotting']['spacing']['isi_inset']
         total_width = isa.get_position().width
         total_height = isa.get_position().height
         utils.adjust_axes_edges(isa, canvas_size, 
                 left=-0.35*total_width*canvas_size[0],
                 bottom=-0.35*total_height*canvas_size[1],
-                right=nl_bottom, 
-                top=nl_bottom)
+                right=isi_inset, 
+                top=isi_inset)
 
         # tweek firing_rate axes and trace axes
+        nl_bottom = config['gui']['plotting']['spacing']['no_label_axes_bottom']
         utils.adjust_axes_edges(ra, canvas_size,
                                 top=bottom, bottom=2*nl_bottom)
 
-        nl_bottom = config['gui']['plotting']['spacing']['no_label_axes_bottom']
         for trace_axes in plot_panel.axes['trace'][:-1]:
             utils.adjust_axes_edges(trace_axes, canvas_size, bottom=nl_bottom)
 
@@ -107,8 +108,6 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         ra.set_ylabel(pt.SPIKE_RATE_AXIS, multialignment='center')
 
         for i, trace_axes in enumerate(plot_panel.axes['trace']):
-            if i+1 < num_traces:
-                trace_axes.set_xticklabels([''],visible=False)
             trace_axes.set_ylabel('%s #%d' % (pt.TRACE, (i+1)))
         plot_panel.axes['trace'][-1].set_xlabel(pt.PLOT_TIME)
 
@@ -121,10 +120,7 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         # clear and plot the traces
         num_traces = len(trial.raw_traces)
         for i, trace_axes in enumerate(plot_panel.axes['trace']):
-            clear_tick_labels = False
-            if i+1 < num_traces:
-                clear_tick_labels = 'x_only'
-            utils.clear_axes(trace_axes, clear_tick_labels=clear_tick_labels)
+            utils.clear_axes(trace_axes)
             trace_axes.plot(trial.times, traces[i],
                             color=self.line_color, 
                             linewidth=self.line_width, 
@@ -208,7 +204,6 @@ class DetectionPlotPanel(SpikepyPlotPanel):
             rate_axes.set_ylabel(pt.SPIKES_PER_BIN)
 
         utils.format_y_axis_hist(rate_axes, minimum_max=10)
-        rate_axes.set_xticklabels([''],visible=False)
 
         # print how many spikes were found.
         rate_axes.text(0.015, 1.025, pt.SPIKES_FOUND % len(spikes), 

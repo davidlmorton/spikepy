@@ -245,6 +245,21 @@ class Trial(object):
         else:
             return features
 
+    def get_clustered_spike_windows(self):
+        if self.extraction.results is None or self.clustering.results is None:
+            raise RuntimeError('Trial with trial_id:%s does not have extraction or clustering results, so cannot find clustered spike windows.' % self.trial_id)
+        window_times = self.detection.results['spike_window_times']
+        windows = self.detection.results['spike_window_ys']
+        times = self.clustering.results
+        clustered_windows = defaultdict(list)
+        for cluster_num, time_list in times.items():
+            for time in time_list:
+                window_index = window_times.index(time)
+                clustered_windows[cluster_num].append(windows[window_index])
+            clustered_windows[cluster_num] =\
+                    numpy.array(clustered_windows[cluster_num]) 
+        return clustered_windows
+
     def get_num_clusters(self):
         if self.extraction.results is None or self.clustering.results is None:
             raise RuntimeError('Trial with trial_id:%s does not have extraction or clustering results, so cannot find clustered features.' % self.trial_id)

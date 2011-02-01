@@ -36,18 +36,19 @@ class ExtractionPlotPanel(SpikepyPlotPanel):
         plot_panel.clear()
 
         # set the size of the plot properly.
-        num_rows = 2
-        figheight = self._figsize[1] * num_rows
+        num_rows = 3
+        figheight = self._figsize[1] * (num_rows - 1)
         figwidth  = self._figsize[0]
         plot_panel.set_minsize(figwidth, figheight)
         self._trial_renamed(trial_id=trial_id)
 
         # set up feature axes and pca axes
         figure = plot_panel.figure
-        plot_panel.axes['feature'] = figure.add_subplot(num_rows, 1, 1)
+        plot_panel.axes['feature'] = fa = figure.add_subplot(num_rows, 1, 1)
+        plot_panel.axes['pc'] = figure.add_subplot(num_rows, 1, 2, sharex=fa)
         plot_panel.axes['pca'] = []
         for i in xrange(3):
-            axes = figure.add_subplot(num_rows, 3, i+4)
+            axes = figure.add_subplot(num_rows, 3, i+7)
             plot_panel.axes['pca'].append(axes)
 
         canvas_size = plot_panel.GetMinSize()
@@ -57,21 +58,30 @@ class ExtractionPlotPanel(SpikepyPlotPanel):
         # tweek psd axes and trace axes
         top = -config['gui']['plotting']['spacing']['title_vspace']
         bottom = config['gui']['plotting']['spacing']['axes_bottom']
+        nl_bottom = config['gui']['plotting']['spacing']['no_label_axes_bottom']
         utils.adjust_axes_edges(plot_panel.axes['feature'], canvas_size,
-                                bottom=bottom, top=top)
+                                bottom=-nl_bottom, top=top)
+        utils.adjust_axes_edges(plot_panel.axes['pc'], canvas_size,
+                                bottom=3*bottom/4, top=2*nl_bottom)
 
         left = config['gui']['plotting']['spacing']['axes_left']
         outter = (2.0*left)/3.0
         inner = left/3.0
         pca_axes = plot_panel.axes['pca']
-        utils.adjust_axes_edges(pca_axes[0], canvas_size, right=outter)
+        utils.adjust_axes_edges(pca_axes[0], canvas_size, right=outter,
+                                top=bottom/4)
         utils.adjust_axes_edges(pca_axes[1], canvas_size, right=inner, 
-                                                          left=inner)
-        utils.adjust_axes_edges(pca_axes[2], canvas_size, left=outter)
+                                left=inner,
+                                top=bottom/4)
+        utils.adjust_axes_edges(pca_axes[2], canvas_size, left=outter,
+                                top=bottom/4)
 
         # label axes
-        plot_panel.axes['feature'].set_xlabel(pt.FEATURE_INDEX)
+        plot_panel.axes['feature'].set_xticklabels([''], visible=False)
         plot_panel.axes['feature'].set_ylabel(pt.FEATURE_AMPLITUDE)
+        plot_panel.axes['pc'].set_xlabel(pt.FEATURE_INDEX)
+        plot_panel.axes['pc'].set_ylabel(pt.PC_AMPLITUDE,
+                                         multialignment='center')
 
         self.pc_y = [2,3,3] # which pc is associated with what axis.
         self.pc_x = [1,1,2]
@@ -88,7 +98,10 @@ class ExtractionPlotPanel(SpikepyPlotPanel):
     def _post_run(self, trial_id):
         # clear all the axes
         plot_panel = self._plot_panels[trial_id]
-        utils.clear_axes(plot_panel.axes['feature'])
+        feature_axes = plot_panel.axes['feature']
+        pc_axes = plot_panel.axes['pc']
+        utils.clear_axes(feature_axes)
+        utils.clear_axes(pc_axes)
         pca_axes = plot_panel.axes['pca']
         for axes in pca_axes:
             utils.clear_axes(axes)
@@ -110,14 +123,21 @@ class ExtractionPlotPanel(SpikepyPlotPanel):
             utils.set_axes_ticker(axes, nbins=4, axis='xaxis', prune=None)
             utils.set_axes_ticker(axes, axis='yaxis')
 
+        # plot the pc vector components.
+        feature_xs = [i for i in range(len(pc[0]))]
+        for i, pc_vector in reversed([i for i in enumerate(pc[:3])]):
+            pc_axes.fill_between(feature_xs, pc_vector, 
+                                 color=self.pca_colors[i],
+                                 alpha=0.8)
+        utils.set_axes_ticker(pc_axes, axis='yaxis', prune=None)
+
         # plot the features
         pc = config['gui']['plotting']['extraction']
         trial = self._trials[trial_id]
         features = trial.extraction.results['features']
-        feature_axes = plot_panel.axes['feature']
 
         for feature in features:
-            feature_axes.plot(feature, 
+            feature_axes.plot(feature_xs, feature, 
                               linewidth=pc['feature_trace_linewidth'],
                               color=pc['feature_trace_color'], 
                               alpha=pc['feature_trace_alpha'])

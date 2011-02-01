@@ -48,7 +48,6 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         
         self._plot_rasters(trial, figure, trial_id, num_clusters)
         self._plot_averages_and_stds(trial, figure, trial_id)
-        self._plot_clusters(trial_id)
         self._pot_isis(trial_id)
 
 
@@ -95,13 +94,14 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         # --- AVERAGE AND STD AXES ---
         average_axes = figure.add_subplot(num_srows, 2, 5)
         utils.set_axes_ticker(average_axes, axis='yaxis')
-        average_axes.set_ylabel(pt.AVERAGE_SPIKE_SHAPES)
+        average_axes.set_ylabel(pt.AVERAGE_SPIKE_SHAPES,
+                                multialignment='center')
         average_axes.set_xlabel(pt.PLOT_TIME)
         plot_panel.axes['average'] = average_axes
         
         std_axes = figure.add_subplot(num_srows, 2, 6, sharex=average_axes)
         utils.set_axes_ticker(std_axes, axis='yaxis')
-        std_axes.set_ylabel(pt.SPIKE_STDS)
+        std_axes.set_ylabel(pt.SPIKE_STDS, multialignment='center')
         std_axes.set_xlabel(pt.PLOT_TIME)
         plot_panel.axes['std'] = std_axes
 
@@ -110,13 +110,15 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         isi_axes = []
         isi_sub_axes = []
         for i in xrange(num_clusters):
-            ca = figure.add_subplot(num_srows, 2, 6+2*i+1)
-            ia = figure.add_subplot(num_srows, 2, 6+2*i+2)
+            if i == 0:
+                ca = figure.add_subplot(num_srows, 2, 6+2*i+1)
+                ia = figure.add_subplot(num_srows, 2, 6+2*i+2)
+            else:
+                ca = figure.add_subplot(num_srows, 2, 6+2*i+1, sharex=ca)
+                ia = figure.add_subplot(num_srows, 2, 6+2*i+2, sharex=ia)
+                
             utils.set_axes_ticker(ca, axis='yaxis')
-
-            if i+1 < num_clusters:
-                ca.set_xticklabels([''],visible=False)
-                ia.set_xticklabels([''],visible=False)
+            ia.set_ylabel(pt.COUNT_PER_BIN)
 
             cluster_axes.append(ca)
             isi_axes.append(ia)
@@ -141,7 +143,7 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         for axes in [trace_axes, raster_axes]:
             utils.adjust_axes_edges(axes, canvas_size_in_pixels=canvas_size, 
                                     top=top,
-                                    bottom=bottom, 
+                                    bottom=bottom,
                                     right=right, 
                                     left=left)
 
@@ -161,14 +163,15 @@ class SummaryPlotPanel(SpikepyPlotPanel):
             utils.adjust_axes_edges(isa, canvas_size, left=left, 
                                                      bottom=nl_bottom)
 
+        isi_inset = config['gui']['plotting']['spacing']['isi_inset']
         for isa in isi_sub_axes:
             total_width = isa.get_position().width
             total_height = isa.get_position().height
             utils.adjust_axes_edges(isa, canvas_size, 
                     left=-0.35*total_width*canvas_size[0],
                     bottom=-0.35*total_height*canvas_size[1],
-                    right=nl_bottom, 
-                    top=nl_bottom)
+                    right=isi_inset, 
+                    top=isi_inset)
 
     def _pot_isis(self, trial_id):
         pc = config['gui']['plotting']
@@ -200,39 +203,6 @@ class SummaryPlotPanel(SpikepyPlotPanel):
 
         axes.set_xlabel(pt.ISI)
         
-    def _plot_clusters(self, trial_id):
-        pc = config['gui']['plotting']
-        cluster_axes = self._plot_panels[trial_id].axes['cluster']
-
-        trial = self._trials[trial_id]
-        features = trial.get_clustered_features()
-
-        feature_numbers = sorted(features.keys())
-        for feature_number, axes in zip(feature_numbers, cluster_axes):
-            color = config.get_color_from_cycle(feature_number)
-            num_features = len(features[feature_number])
-            if num_features < 1:
-                continue # don't bother trying to plot empty clusters.
-            avg_feature = numpy.average(features[feature_number], axis=0)
-            axes.plot(avg_feature, 
-                      linewidth=pc['bold_linewidth'],
-                      color=color, 
-                      alpha=1.0, 
-                      label='%d' % num_features)
-            for feature in features[feature_number]:
-                axes.plot(feature, 
-                          linewidth=pc['std_trace_linewidth'],
-                          color=color, 
-                          alpha=0.2) 
-            canvas_size = self._plot_panels[trial_id].GetMinSize()
-            legend_offset = pc['spacing']['legend_offset']
-            utils.add_shadow_legend(legend_offset, legend_offset, axes,
-                                    canvas_size)
-
-        axes.set_ylabel(pt.FEATURE_AMPLITUDE)
-        axes.set_xlabel(pt.FEATURE_INDEX)
-    
-
     def _plot_rasters(self, trial, figure, trial_id, num_clusters):
         pc = config['gui']['plotting']
         trace_axes = self._plot_panels[trial_id].axes['trace']
@@ -283,17 +253,19 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         for axes in [trace_axes, raster_axes]:
             axes.set_ylim(final_ylim)
 
+
+
     def _plot_averages_and_stds(self, trial, figure, trial_id):
         pc = config['gui']['plotting']
-        averages_and_stds = self._get_averages_and_stds(trial)
+        windows = trial.get_clustered_spike_windows()
+        averages_and_stds = self._get_averages_and_stds(windows)
         average_axes = self._plot_panels[trial_id].axes['average']
         std_axes = self._plot_panels[trial_id].axes['std']
         
         for cluster_num, (average, stds) in averages_and_stds.items():
-            try:
-                times = numpy.arange(0,len(average))*(trial.dt/3.0)
-            except TypeError:
-                continue # don't try to plot empty clusters.
+            if len(average) == 0:
+                continue # don't try to plot empty clusters
+            times = trial.detection.results['spike_window_xs']
             line = average_axes.plot(times, average,
                               color=config.get_color_from_cycle(cluster_num),
                               label=pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)[0]
@@ -305,13 +277,39 @@ class SummaryPlotPanel(SpikepyPlotPanel):
                           color=config.get_color_from_cycle(cluster_num),
                           label=pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)
 
-    def _get_averages_and_stds(self, trial):
-        features = trial.get_clustered_features()
+        # plot clustered spike windows
+        cluster_axes = self._plot_panels[trial_id].axes['cluster']
+        cluster_nums = sorted(windows.keys())
+        for cluster_num, axes in zip(cluster_nums, cluster_axes):
+            color = config.get_color_from_cycle(cluster_num)
+            num_windows = len(windows[cluster_num])
+            if num_windows < 1:
+                continue # don't bother trying to plot empty clusters.
+            for window in windows[cluster_num]:
+                axes.plot(times, window, 
+                          linewidth=pc['std_trace_linewidth'],
+                          color=color, 
+                          alpha=0.2) 
+            avg_window = numpy.average(windows[cluster_num], axis=0)
+            axes.plot(times, avg_window, 
+                      linewidth=pc['bold_linewidth'],
+                      color=color, 
+                      alpha=1.0, 
+                      label='%d' % num_windows)
+            axes.set_ylabel(pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)
+            canvas_size = self._plot_panels[trial_id].GetMinSize()
+            legend_offset = pc['spacing']['legend_offset']
+            utils.add_shadow_legend(legend_offset, legend_offset, axes,
+                                    canvas_size)
+
+        axes.set_xlabel(pt.PLOT_TIME)
+    
+
+    def _get_averages_and_stds(self, windows):
         return_dict = {}
-        for key in features.keys():
-            features[key] = numpy.array(features[key])
-            stds     = numpy.std(features[key],     axis=0)
-            average  = numpy.average(features[key], axis=0)
+        for key in windows.keys():
+            stds     = numpy.std(windows[key],     axis=0)
+            average  = numpy.average(windows[key], axis=0)
             return_dict[key] = (average, stds)
         return return_dict
 

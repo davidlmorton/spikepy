@@ -73,13 +73,15 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
 
         # add subplots
         plot_panel = self._plot_panels[trial_id]
-        fa = plot_panel.axes['feature'] = figure.add_subplot(num_trows,
-                                                             num_cols,1)
-        utils.set_axes_ticker(fa, axis='yaxis')
         pca = plot_panel.axes['pca'] = figure.add_subplot(num_trows, 
                                                           num_cols, 2)
         utils.set_axes_ticker(pca, axis='xaxis', prune=None)
         utils.set_axes_ticker(pca, axis='yaxis')
+
+        fa = plot_panel.axes['feature'] = figure.add_subplot(num_trows,
+                                                             num_cols,1)
+        utils.set_axes_ticker(fa, axis='yaxis')
+
         plot_panel.axes['pro'] = []
         for i in range(num_pros):
             plot_panel.axes['pro'].append(figure.add_subplot(num_srows, 
@@ -130,17 +132,12 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
             color = config.get_color_from_cycle(feature_number)
             axes.plot(trf[0], trf[1], color=color,
                                       linewidth=0,
-                                      label='%d' % num_features,
                                       marker='.')
 
         pct_var = [tvar/sum(var)*100.0 for tvar in var]
         axes.set_xlabel(pt.PCA_LABEL % (1, pct_var[0], '%'), color='r')
         axes.set_ylabel(pt.PCA_LABEL % (2, pct_var[1], '%'), color='g')
 
-
-        canvas_size = self._plot_panels[trial_id].GetMinSize()
-        legend_offset = config['gui']['plotting']['spacing']['legend_offset']
-        utils.add_shadow_legend(legend_offset, legend_offset, axes, canvas_size,                                ncol=9)
 
     def _plot_features(self, trial, figure, trial_id):
         axes = self._plot_panels[trial_id].axes['feature']
@@ -157,16 +154,21 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
             num_features = len(features[feature_number])
             if num_features < 1:
                 continue # don't bother trying to plot empty clusters.
-            avg_feature = numpy.average(features[feature_number], axis=0)
-            axes.plot(avg_feature, 
-                      linewidth=pc['bold_linewidth'],
-                      color=color, 
-                      alpha=1.0) 
             for feature in features[feature_number]:
                 axes.plot(feature, 
                           linewidth=pc['std_trace_linewidth'],
                           color=color, 
                           alpha=0.2) 
+            avg_feature = numpy.average(features[feature_number], axis=0)
+            axes.plot(avg_feature, 
+                      linewidth=pc['bold_linewidth'],
+                      color=color, 
+                      label='%d' % num_features,
+                      alpha=1.0) 
+
+        canvas_size = self._plot_panels[trial_id].GetMinSize()
+        legend_offset = config['gui']['plotting']['spacing']['legend_offset']
+        utils.add_shadow_legend(legend_offset, legend_offset, axes, canvas_size,                                ncol=9, loc='lower left')
 
 
     def _plot_pros(self, trial, figure, trial_id):

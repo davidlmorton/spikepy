@@ -146,13 +146,18 @@ def as_fraction_axes(x=None, y=None, axes=None,
     elif y is not None:
         return float(y/height)
 
-def add_shadow_legend(x, y, axes, canvas_size, ncol=100):
+def add_shadow_legend(x, y, axes, canvas_size, ncol=100, loc='lower right'):
     x_frac, y_frac = as_fraction_axes(x, y, axes, canvas_size)
+    if loc=='lower left':
+        bbox_to_anchor=[x_frac, 1.0-y_frac]
+    else:
+        bbox_to_anchor=[1.0+x_frac, 1.0-y_frac]
+
     try:
-        axes.legend(loc='lower right',
+        axes.legend(loc=loc,
                     shadow=True,
                     ncol=ncol,
-                    bbox_to_anchor=[1.0+x_frac, 1.0-y_frac])
+                    bbox_to_anchor=bbox_to_anchor)
     except:
         return
 
