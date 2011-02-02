@@ -132,11 +132,16 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
             color = config.get_color_from_cycle(feature_number)
             axes.plot(trf[0], trf[1], color=color,
                                       linewidth=0,
-                                      marker='.')
+                                      marker='o',
+                                      markersize=5,
+                                      markeredgewidth=0)
 
         pct_var = [tvar/sum(var)*100.0 for tvar in var]
-        axes.set_xlabel(pt.PCA_LABEL % (1, pct_var[0], '%'), color='r')
-        axes.set_ylabel(pt.PCA_LABEL % (2, pct_var[1], '%'), color='g')
+        pca_colors = config.pca_colors
+        axes.set_xlabel(pt.PCA_LABEL % (1, pct_var[0], '%'), 
+                        color=pca_colors[0])
+        axes.set_ylabel(pt.PCA_LABEL % (2, pct_var[1], '%'), 
+                        color=pca_colors[1])
 
 
     def _plot_features(self, trial, figure, trial_id):
@@ -149,22 +154,29 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
 
         feature_numbers = sorted(features.keys())
         pc = config['gui']['plotting']
-        for feature_number in feature_numbers:
+        for i, feature_number in enumerate(feature_numbers):
             color = config.get_color_from_cycle(feature_number)
             num_features = len(features[feature_number])
             if num_features < 1:
                 continue # don't bother trying to plot empty clusters.
+            feature_xs = [a for a in range(len(features[feature_number][0]))]
+
             for feature in features[feature_number]:
-                axes.plot(feature, 
+                axes.plot(feature_xs, feature, 
                           linewidth=pc['std_trace_linewidth'],
                           color=color, 
                           alpha=0.2) 
             avg_feature = numpy.average(features[feature_number], axis=0)
-            axes.plot(avg_feature, 
+            if i == 0:
+                label = pt.CLUSTER_SIZE % num_features
+            else:
+                label = '%d' % num_features
+            axes.plot(feature_xs, avg_feature, 
                       linewidth=pc['bold_linewidth'],
                       color=color, 
-                      label='%d' % num_features,
+                      label=label,
                       alpha=1.0) 
+            axes.set_xlim(feature_xs[0],feature_xs[-1])
 
         canvas_size = self._plot_panels[trial_id].GetMinSize()
         legend_offset = config['gui']['plotting']['spacing']['legend_offset']

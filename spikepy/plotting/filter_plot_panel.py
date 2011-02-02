@@ -31,10 +31,10 @@ class FilterPlotPanel(SpikepyPlotPanel):
 
         pc = config['gui']['plotting']
         if name == 'detection_filter':
-            self.line_color = pc['detection']['filtered_trace_color']
+            self.line_color = config.detection_color
             self.line_width = pc['detection']['filtered_trace_linewidth']
         if name == 'extraction_filter':
-            self.line_color = pc['extraction']['filtered_trace_color']
+            self.line_color = config.extraction_color
             self.line_width = pc['extraction']['filtered_trace_linewidth']
 
     def _basic_setup(self, trial_id):
@@ -105,7 +105,7 @@ class FilterPlotPanel(SpikepyPlotPanel):
         psd_axes.plot(freqs, plotted_Pxx, 
                       label=pt.RAW,
                       linewidth=pc['std_trace_linewidth'], 
-                      color=pc['std_trace_color'])
+                      color='k')
         utils.set_axes_ticker(psd_axes, axis='yaxis')
 
         # clear and plot the traces
@@ -114,7 +114,7 @@ class FilterPlotPanel(SpikepyPlotPanel):
             clear_tick_labels = False
             utils.clear_axes(trace_axes)
             trace_axes.plot(trial.times, trial.raw_traces[i],
-                            color=pc['std_trace_color'], 
+                            color='k', 
                             linewidth=pc['std_trace_linewidth'], 
                             label=pt.RAW)
             trace_axes.set_xlim(trial.times[0], trial.times[-1])
@@ -152,6 +152,7 @@ class FilterPlotPanel(SpikepyPlotPanel):
                             color=self.line_color, 
                             linewidth=self.line_width, 
                             label=pt.FILTERED_TRACE_GRAPH_LABEL)
+            trace_axes.set_xlim(trial.times[0], trial.times[-1])
             utils.set_axes_ticker(trace_axes, axis='yaxis')
             
 

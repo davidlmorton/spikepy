@@ -28,6 +28,19 @@
         std_trace_linewidth=integer(min=0, max=5, default=None)
         bold_linewidth=integer(min=0, max=5, default=None)
         title_fontsize=integer(min=10, max=72, default=None)
+        [[[colors]]]
+            red=float_list(min=3, max=4, default=None)
+            blue=float_list(min=3, max=4, default=None)
+            orange=float_list(min=3, max=4, default=None)
+            green=float_list(min=3, max=4, default=None)
+            brown=float_list(min=3, max=4, default=None)
+            lime=float_list(min=3, max=4, default=None)
+            pink=float_list(min=3, max=4, default=None)
+            purple=float_list(min=3, max=4, default=None)
+            cycle=list(default=None)
+            detection=string(default=None)
+            extraction=string(default=None)
+            pca=list(default=None)
         [[[filtering]]]
             psd_freq_resolution=float(default=None)
         [[[detection]]]

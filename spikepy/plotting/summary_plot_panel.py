@@ -69,8 +69,8 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         raster_axes = figure.add_subplot(num_trows, 1, 1)
         raster_yaxis = raster_axes.get_yaxis()
         raster_yaxis.set_ticks_position('left')
-        raster_axes.set_xlabel(pt.PLOT_TIME)
         raster_axes.set_ylabel(pt.CLUSTER_NUMBER)
+        raster_axes.set_xticklabels([''], visible=False)
         plot_panel.axes['raster'] = raster_axes
 
         # trace_axes will be on top of raster_axes
@@ -78,6 +78,7 @@ class SummaryPlotPanel(SpikepyPlotPanel):
                                      axisbg=(1.0, 1.0, 1.0, 0.0),
                                      sharex=raster_axes)
 
+        trace_axes.set_xlabel(pt.PLOT_TIME)
         trace_yaxis = trace_axes.get_yaxis()
         trace_yaxis.set_ticks_position('right')
         plot_width = (canvas_size[0] - pc['raster_left'] -
@@ -192,14 +193,16 @@ class SummaryPlotPanel(SpikepyPlotPanel):
 
             axes.hist(isi, bins=70, 
                       range=(0.0, pc['summary']['upper_isi_bound2']),
-                      fc=color, ec='k')
+                      fc=color, ec='w')
             utils.format_y_axis_hist(axes, minimum_max=20)
+            axes.set_xlim(-5.0)
 
             isa_upper_range =  pc['summary']['upper_isi_bound1']
             sub_axes.hist(isi, bins=int(isa_upper_range), 
                       range=(0.0, isa_upper_range),
-                      fc=color, ec='k')
+                      fc=color, ec='w')
             utils.format_y_axis_hist(sub_axes, minimum_max=20, fontsize=9)
+            sub_axes.set_xlim(-0.15)
 
         axes.set_xlabel(pt.ISI)
         
@@ -217,7 +220,7 @@ class SummaryPlotPanel(SpikepyPlotPanel):
                          for i in xrange(len(traces))]
         for trace, trace_offset in zip(traces, trace_offsets):
             trace_axes.plot(times, trace+trace_offset, 
-                            color=pc['detection']['filtered_trace_color'], 
+                            color=config.detection_color, 
                             label=pt.DETECTION_TRACE_GRAPH_LABEL,
                             alpha=pc['summary']['std_alpha'])
             trace_ticks.append(numpy.average(trace+trace_offset))
@@ -244,8 +247,6 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         raster_axes.set_yticks(spike_y_list)
         raster_axes.set_yticklabels(['%d' % key for key in keys])
     
-        raster_axes.set_xlabel(pt.PLOT_TIME)
-
         old_ylim = trace_axes.get_ylim()
         ysize = max(old_ylim) - min(old_ylim) 
         final_ylim = (old_ylim[0]-0.20*ysize,
@@ -261,21 +262,63 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         averages_and_stds = self._get_averages_and_stds(windows)
         average_axes = self._plot_panels[trial_id].axes['average']
         std_axes = self._plot_panels[trial_id].axes['std']
+
+        times = trial.detection.results['spike_window_xs']
+        spike_width = (times[-1]-times[0])/len(trial.raw_traces)
         
+        # grey patch behind multi-trode concatinated spike windows
+        for i in range(len(trial.raw_traces)):
+            if i%2:
+                average_axes.axvspan(spike_width*i, 
+                                     spike_width*i+spike_width, 
+                                     ec='k', fc='k', alpha=0.065)
+        for i in range(len(trial.raw_traces)):
+            if i%2:
+                std_axes.axvspan(spike_width*i, 
+                                 spike_width*i+spike_width, 
+                                 ec='k', fc='k', alpha=0.065)
+
+        avg_min = None
+        avg_max = None
+        std_min = None
+        std_max = None
         for cluster_num, (average, stds) in averages_and_stds.items():
             if len(average) == 0:
                 continue # don't try to plot empty clusters
-            times = trial.detection.results['spike_window_xs']
-            line = average_axes.plot(times, average,
-                              color=config.get_color_from_cycle(cluster_num),
-                              label=pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)[0]
+                    
             average_axes.fill_between(times, average+stds, average-stds,
                               color=config.get_color_from_cycle(cluster_num),
                               alpha=pc['summary']['std_alpha'])
+            line = average_axes.plot(times, average,
+                              color=config.get_color_from_cycle(cluster_num),
+                              label=pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)[0]
+            average_axes.set_xlim(times[0], times[-1])
+            # figure out min and max for ylims later
+            this_avg_min = numpy.min(average-stds)
+            if avg_min is None or this_avg_min < avg_min:
+                avg_min = this_avg_min
+            this_avg_max = numpy.max(average+stds)
+            if avg_max is None or this_avg_max > avg_max:
+                avg_max = this_avg_max
+
+
+            this_std_min = numpy.min(stds)
+
 
             std_axes.plot(times, stds, 
                           color=config.get_color_from_cycle(cluster_num),
                           label=pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)
+            std_axes.set_xlim(times[0], times[-1])
+            this_std_min = numpy.min(stds)
+            if std_min is None or this_std_min < std_min:
+                std_min = this_std_min
+            this_std_max = numpy.max(stds)
+            if std_max is None or this_std_max > std_max:
+                std_max = this_std_max
+        average_axes.set_ylim(avg_min-abs(avg_min)*0.1,
+                              avg_max+abs(avg_max)*0.1)
+        std_axes.set_ylim(std_min-abs(std_min)*0.1,
+                          std_max+abs(std_max)*0.1)
 
         # plot clustered spike windows
         cluster_axes = self._plot_panels[trial_id].axes['cluster']
@@ -285,6 +328,14 @@ class SummaryPlotPanel(SpikepyPlotPanel):
             num_windows = len(windows[cluster_num])
             if num_windows < 1:
                 continue # don't bother trying to plot empty clusters.
+
+            # grey patch behind multi-trode concatinated spike windows
+            spike_width = (times[-1]-times[0])/len(trial.raw_traces)
+            for i in range(len(trial.raw_traces)):
+                if i%2:
+                    axes.axvspan(spike_width*i, spike_width*i+spike_width, 
+                               ec='k', fc='k', alpha=0.065)
+
             for window in windows[cluster_num]:
                 axes.plot(times, window, 
                           linewidth=pc['std_trace_linewidth'],
@@ -295,8 +346,11 @@ class SummaryPlotPanel(SpikepyPlotPanel):
                       linewidth=pc['bold_linewidth'],
                       color=color, 
                       alpha=1.0, 
-                      label='%d' % num_windows)
+                      label=pt.CLUSTER_SIZE % num_windows)
             axes.set_ylabel(pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)
+            axes.set_xlim(times[0], times[-1])
+            axes.set_ylim(numpy.min(windows[cluster_num])*1.1, 
+                          numpy.max(windows[cluster_num])*1.1)
             canvas_size = self._plot_panels[trial_id].GetMinSize()
             legend_offset = pc['spacing']['legend_offset']
             utils.add_shadow_legend(legend_offset, legend_offset, axes,

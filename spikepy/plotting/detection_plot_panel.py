@@ -32,7 +32,7 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         SpikepyPlotPanel.__init__(self, parent, name)
 
         pc = config['gui']['plotting']
-        self.line_color = pc['detection']['filtered_trace_color']
+        self.line_color = config.detection_color
         self.line_width = pc['detection']['filtered_trace_linewidth']
 
         
@@ -129,12 +129,12 @@ class DetectionPlotPanel(SpikepyPlotPanel):
 
             for factor, linestyle in [(2,'solid'),(4,'dashed')]:
                 trace_axes.axhline(std*factor, 
-                                   color=pc['std_trace_color'], 
+                                   color='k', 
                                    linewidth=pc['std_trace_linewidth'], 
                                    label=r'$%d\sigma$' % factor,
                                    linestyle=linestyle)
                 trace_axes.axhline(-std*factor, 
-                                   color=pc['std_trace_color'], 
+                                   color='k', 
                                    linewidth=pc['std_trace_linewidth'], 
                                    linestyle=linestyle)
             trace_axes.set_xlim(trial.times[0], trial.times[-1])
@@ -166,25 +166,39 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         # plot spike windows
         spike_window_ys = trial.detection.results['spike_window_ys']
         spike_window_xs = trial.detection.results['spike_window_xs']
+
+        # grey patch behind multi-trode concatinated spike windows
+        spike_width = (spike_window_xs[-1]-spike_window_xs[0])/\
+                      len(trial.raw_traces)
+        for i in range(len(trial.raw_traces)):
+            if i%2:
+                sa.axvspan(spike_width*i, spike_width*i+spike_width, 
+                           ec='k', fc='k', alpha=0.065)
+
         for window in spike_window_ys:
             sa.plot(spike_window_xs, window, color=self.line_color,
                                              linewidth=0.5,
                                              alpha=0.3)
         utils.set_axes_ticker(sa, axis='yaxis')
+        sa.set_xlim(spike_window_xs[0], spike_window_xs[-1])
+        sa.set_ylim(numpy.min(spike_window_ys)*1.1, 
+                    numpy.max(spike_window_ys)*1.1)
 
         # plot the isi and isi_sub
         isi = spikes[1:] - spikes[:-1]
 
         ia.hist(isi, bins=70, 
                   range=(0.0, pc['summary']['upper_isi_bound2']),
-                  fc=self.line_color, ec='k')
+                  fc='k', ec='w')
         utils.format_y_axis_hist(ia, minimum_max=20)
+        ia.set_xlim(-5.0)
 
         isa_upper_range =  pc['summary']['upper_isi_bound1']
         isa.hist(isi, bins=int(isa_upper_range),
                   range=(0.0, isa_upper_range),
-                  fc=self.line_color, ec='k')
+                  fc='k', ec='w')
         utils.format_y_axis_hist(isa, minimum_max=20, fontsize=9)
+        isa.set_xlim(-0.15)
 
         # plot the estimated firing rate
         bins = 70
@@ -194,12 +208,12 @@ class DetectionPlotPanel(SpikepyPlotPanel):
             rate_axes.hist(spikes, range=bounds,
                                    bins=bins,
                                    weights=weights,
-                                   ec='k',
+                                   ec='w',
                                    fc=self.line_color)
         except AttributeError: # catching old versions of matplotlib error.
             rate_axes.hist(spikes, range=bounds,
                                    bins=bins,
-                                   ec='k',
+                                   ec='w',
                                    fc=self.line_color)
             rate_axes.set_ylabel(pt.SPIKES_PER_BIN)
 
@@ -211,7 +225,7 @@ class DetectionPlotPanel(SpikepyPlotPanel):
                        horizontalalignment='left',
                        transform=rate_axes.transAxes)
 
-        color=pc['detection']['raster_color']
+        color='k'
         marker_size=pc['detection']['raster_height']
         markeredgewidth=pc['detection']['raster_width']
         # plot raster on rate plot
@@ -234,5 +248,6 @@ class DetectionPlotPanel(SpikepyPlotPanel):
                                       marker_size=marker_size,
                                       markeredgewidth=markeredgewidth,
                                       color=color)
+            trace_axes.set_xlim(*bounds)
             utils.set_axes_ticker(trace_axes, axis='yaxis')
         

@@ -85,7 +85,7 @@ class ExtractionPlotPanel(SpikepyPlotPanel):
 
         self.pc_y = [2,3,3] # which pc is associated with what axis.
         self.pc_x = [1,1,2]
-        self.pca_colors = ['r', 'g', 'b']
+        self.pca_colors = config.pca_colors
         for x, y, axes in zip(self.pc_x, self.pc_y, pca_axes):
             axes.set_xlabel(pt.PCA_LABEL % (x, 100, '%'), 
                             color=self.pca_colors[x-1])
@@ -119,7 +119,9 @@ class ExtractionPlotPanel(SpikepyPlotPanel):
                             color=self.pca_colors[y-1])
             axes.plot(trf[x-1], trf[y-1], color='black', 
                                           linewidth=0, 
-                                          marker='.')
+                                          marker='o',
+                                          markersize=4,
+                                          markeredgewidth=0)
             utils.set_axes_ticker(axes, nbins=4, axis='xaxis', prune=None)
             utils.set_axes_ticker(axes, axis='yaxis')
 
@@ -139,8 +141,8 @@ class ExtractionPlotPanel(SpikepyPlotPanel):
         for feature in features:
             feature_axes.plot(feature_xs, feature, 
                               linewidth=pc['feature_trace_linewidth'],
-                              color=pc['feature_trace_color'], 
+                              color='k', 
                               alpha=pc['feature_trace_alpha'])
         utils.set_axes_ticker(feature_axes, axis='yaxis')
-        feature_axes.set_xlim((0,len(features[0])-1))
+        feature_axes.set_xlim(feature_xs[0],feature_xs[-1])
 

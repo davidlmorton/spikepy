@@ -26,6 +26,10 @@ from validate import Validator
 from spikepy.common import path_utils
 from spikepy.common import config_utils
 
+def rgb_int_to_float(*args):
+    return [arg/255.0 for arg in args]
+        
+
 class ConfigManager(object):
     def __init__(self):
         self._builtin = None
@@ -73,6 +77,55 @@ class ConfigManager(object):
             width = base[0]
             height = width/self['gui']['plotting']['aspect_ratio']
             return numpy.array([width, height])
+
+    # --- COLORS ---
+    @property
+    def red(self):
+        return self.get_color('red')
+
+    @property
+    def blue(self):
+        return self.get_color('blue')
+
+    @property
+    def orange(self):
+        return self.get_color('orange')
+
+    @property
+    def green(self):
+        return self.get_color('green')
+
+    @property
+    def brown(self):
+        return self.get_color('brown')
+
+    @property
+    def lime(self):
+        return self.get_color('lime')
+
+    @property
+    def pink(self):
+        return self.get_color('pink')
+
+    @property
+    def purple(self):
+        return self.get_color('purple')
+
+    @property
+    def detection_color(self):
+        return self.get_color(self['gui']['plotting']['colors']['detection'])
+
+    @property
+    def extraction_color(self):
+        return self.get_color(self['gui']['plotting']['colors']['extraction'])
+
+    @property
+    def pca_colors(self):
+        color_list = self['gui']['plotting']['colors']['pca']
+        return [self.get_color(color) for color in color_list]
+
+    def get_color(self, color):
+        return rgb_int_to_float(*self['gui']['plotting']['colors'][color])
 
     @property
     def unmarked_status(self):
@@ -126,10 +179,11 @@ class ConfigManager(object):
                                left=left, right=right, 
                                bottom=bottom, top=top)
 
+
     def get_color_from_cycle(self, num):
-        cycle = self['gui']['plotting']['clustering']['color_cycle']
+        cycle = self['gui']['plotting']['colors']['cycle']
         len_color_cycle = len(cycle)
-        return cycle[num % len_color_cycle]
+        return self.get_color(cycle[num % len_color_cycle])
         
 
 config_manager = ConfigManager()
