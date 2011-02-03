@@ -30,6 +30,7 @@ from spikepy.common.open_data_file import open_data_file
 from spikepy.common import utils
 from spikepy.common import path_utils 
 from spikepy.common import plugin_utils
+from spikepy.common import projection_utils as pu
 from spikepy.common import config_utils
 from spikepy.common.config_manager import config_manager
 import spikepy.common.program_text as pt
@@ -98,11 +99,18 @@ def extraction_process_worker(run_queue, results_queue):
         method_obj = method_class()
         try:
             result = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
+            rotated_features, pc, var = utils.pca(result['features'])
+            result['pca_rotated_features'] = rotated_features
+            result['pca_basis_vectors'] = pc
+            result['pca_variances'] = var
         except:
             result = {'features': [], 'feature_times':[],
                       'excluded_features':[],
-                      'excluded_feature_times':[]}
-        
+                      'excluded_feature_times':[],
+                      'pca_rotated_features':[],
+                      'pca_basis_vectors':[],
+                      'pca_variances':[]}
+
         results_queue.put({'trial_id':run_dict['trial_id'],
                            'data':result})
 
@@ -112,27 +120,65 @@ def clustering_process_worker(run_queue, results_queue):
         method_obj = method_class()
         results = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
         
-        master_key_list   = run_dict['master_key_list']
-        feature_time_list = run_dict['feature_time_list']
+        master_key_list      = run_dict['master_key_list']
+        feature_time_list    = run_dict['feature_time_list']
+        feature_list         = run_dict['args'][0]
+        rotated_feature_list = run_dict['rotated_feature_list']
         trial_keys = set(master_key_list)
         # initialize clustering results to empty_list_dictionaries
         cluster_identities = set(results)
-        trial_results = {}
+        trial_spike_times = {}
+        trial_features = {}
+        trial_rotated_features = {}
         for key in trial_keys:
-            trial_results[key] = []
-            empty_dict = {}
+            trial_spike_times[key] = []
+            trial_features[key] = []
+            trial_rotated_features[key] = []
+            empty_spike_times_dict = {}
+            empty_features_dict = {}
+            empty_rotated_features_dict = {}
             for ci in cluster_identities:
-                empty_dict[ci] = []
-            trial_results[key] = empty_dict
+                empty_spike_times_dict[ci] = []
+                empty_features_dict[ci] = []
+                empty_rotated_features_dict[ci] = []
+            trial_spike_times[key] = empty_spike_times_dict
+            trial_features[key] = empty_features_dict
+            trial_rotated_features[key] = empty_rotated_features_dict
 
-        # unpack results from run back into trial results.
-        for mkey, result, feature_time in \
-                zip(master_key_list, results, feature_time_list):
-            trial_results[mkey][result].append(feature_time)
+        # unpack spike_times from run back into trial results.
+        for mkey, result, feature_time, feature, rotated_feature in \
+                zip(master_key_list, results, feature_time_list, 
+                    feature_list, rotated_feature_list):
+            trial_spike_times[mkey][result].append(feature_time)
+            trial_features[mkey][result].append(feature)
+            trial_rotated_features[mkey][result].append(rotated_feature)
 
+        # save projection information as well.
+        trial_projections = {}
         for key in trial_keys:
+            trial_projections[key] = []
+            for i, j in pu.get_projection_combinations(cluster_identities):
+                c1 = trial_features[key][i]
+                c2 = trial_features[key][j]
+                if len(c1) == 0 or len(c2) == 0:
+                    projection_info = (None, None, (i, j))
+                elif len(c1) == 1 or len(c2) == 1:
+                    projection_info = (-1, pu.projection(c1, c2), (i, j))
+                else:
+                    projection = pu.projection(c1, c2)
+                    projection_info = (pu.get_overlap(*projection),
+                                       projection, (i, j))
+                trial_projections[key].append(projection_info)
+
+        # feed the results queue.
+        for key in trial_keys:
+            trial_results = {'clustered_spike_times':trial_spike_times[key],
+                             'clustered_features':trial_features[key],
+                             'projections':trial_projections[key],
+                             'clustered_pca_rotated_features': 
+                                 trial_rotated_features[key]}
             results_queue.put({'trial_id':key,
-                               'data':trial_results[key]})
+                               'data':trial_results})
 
 class RunManager(object):
     def __init__(self):
@@ -414,21 +460,25 @@ class RunManager(object):
         master_key_list   = []
         feature_set_list  = []
         feature_time_list = []
+        rotated_feature_list = []
         trial_keys = sorted([trial.trial_id for trial in trial_list])
         for key in trial_keys:
             er = self.trials[key].extraction.results
             features = er['features']
             feature_times = er['feature_times']
+            rotated_features = er['pca_rotated_features']
             key_list = [key for i in xrange(len(features))]
             feature_set_list.extend(features)
             feature_time_list.extend(feature_times)
+            rotated_feature_list.extend(rotated_features)
             master_key_list.extend(key_list)
 
         run_dict = {'args':(feature_set_list,),
                     'kwargs':settings,
                     'feature_set_list':feature_set_list,
                     'master_key_list':master_key_list,
-                    'feature_time_list':feature_time_list}
+                    'feature_time_list':feature_time_list,
+                    'rotated_feature_list': rotated_feature_list}
         run_dict_list = [run_dict]
         return run_dict_list
 

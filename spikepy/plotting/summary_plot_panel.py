@@ -42,7 +42,7 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         plot_panel = self._plot_panels[trial_id]
         plot_panel.clear()
         figure = plot_panel.figure
-        num_clusters = len(trial.clustering.results.keys())
+        num_clusters = trial.get_num_clusters()
 
         self._setup_axes(trial, figure, trial_id, num_clusters)
         
@@ -175,7 +175,7 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         isi_sub_axes = self._plot_panels[trial_id].axes['isi_sub']
 
         trial = self._trials[trial_id]
-        times = trial.get_stage_data('clustering').results
+        times = trial.clustering.results['clustered_spike_times']
 
         cluster_numbers = sorted(times.keys())
         for cluster_number, axes, sub_axes in zip(cluster_numbers, 
@@ -225,7 +225,7 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         trace_axes.set_yticklabels(['%d' % i for i in xrange(len(traces))])
 
         # plot rasters
-        spike_times = trial.clustering.results
+        spike_times = trial.clustering.results['clustered_spike_times']
         keys = sorted(spike_times.keys())
         ylim = trace_axes.get_ylim()
         raster_axes.set_ylim(ylim)
@@ -248,8 +248,7 @@ class SummaryPlotPanel(SpikepyPlotPanel):
                       old_ylim[1]+0.20*ysize)
         for axes in [trace_axes, raster_axes]:
             axes.set_ylim(final_ylim)
-
-
+            axes.set_xlim(times[0], times[-1])
 
     def _plot_averages_and_stds(self, trial, figure, trial_id):
         pc = config['gui']['plotting']

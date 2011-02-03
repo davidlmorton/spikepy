@@ -187,7 +187,7 @@ AVERAGE_SPIKE_SHAPES = "Average Spike\nShapes"
 AVERAGE_OF = "Average of %d" # % number_of_spikes_in_cluster
 SPIKE_STDS = "Cluster\nStandard Deviation"
 SPECIFIC_CLUSTER_NUMBER = "Cluster %d" # % cluster_num
-PRO_EMPTY = "Cluster %d vs %d (Cluster %d is Empty)" 
+PRO_EMPTY = "Cluster %d vs %d (Cluster %s Empty)" 
 PRO_UNKNOWN = "Cluster %d vs %d (Unknown Overlap)"
 PRO_OK = "Cluster %d vs %d (%3.1f%s overlap)"
 

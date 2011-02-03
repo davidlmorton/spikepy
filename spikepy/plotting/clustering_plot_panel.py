@@ -26,7 +26,7 @@ from spikepy.plotting.spikepy_plot_panel import SpikepyPlotPanel
 from spikepy.plotting import utils
 from spikepy.common import program_text as pt
 from spikepy.common.config_manager import config_manager as config
-from spikepy import projection_utils as pu
+from spikepy.common import projection_utils as pu
 
 class ClusteringPlotPanel(SpikepyPlotPanel):
     def __init__(self, parent, name):
@@ -77,7 +77,7 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
         # set up projection axes
         plot_panel.axes['pro_feature'] = []
         plot_panel.axes['pro'] = []
-        for k, (i, j) in enumerate(pu.get_projection_combinations(results)):
+        for k in range(num_pros):
             pf_axes = figure.add_subplot(num_srows, 2, 7+2*k)
             plot_panel.axes['pro_feature'].append(pf_axes)
             p_axes = figure.add_subplot(num_srows, 2, 8+2*k)
@@ -137,7 +137,10 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
     def _plot_pcas(self, trial, figure, trial_id):
         pca_axes = self._plot_panels[trial_id].axes['pca']
 
-        features, pc, var = trial.get_clustered_features(pca_rotated=True)
+        results = trial.clustering.results 
+        features = results['clustered_pca_rotated_features']
+        var = trial.extraction.results['pca_variances']
+
         pct_var = [tvar/sum(var)*100.0 for tvar in var]
 
 
@@ -151,7 +154,7 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
                 num_features = len(rotated_features)
                 if len(rotated_features) < 1:
                     continue # don't try to plot empty clusters.
-                trf = rotated_features.T
+                trf = numpy.array(rotated_features).T
 
                 color = config.get_color_from_cycle(feature_number)
                 axes.plot(trf[x-1], trf[y-1], color=color,
@@ -175,7 +178,7 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
         axes.set_ylabel(pt.FEATURE_AMPLITUDE)
         axes.set_xlabel(pt.FEATURE_INDEX)
 
-        features = trial.get_clustered_features()
+        features = trial.clustering.results['clustered_features']
 
         feature_numbers = sorted(features.keys())
         pc = config['gui']['plotting']
@@ -191,57 +194,83 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
                           linewidth=pc['std_trace_linewidth'],
                           color=color, 
                           alpha=0.2) 
-            avg_feature = numpy.average(features[feature_number], axis=0)
             if i == 0:
                 label = pt.CLUSTER_SIZE % num_features
             else:
                 label = '%d' % num_features
-            axes.plot(feature_xs, avg_feature, 
-                      linewidth=pc['bold_linewidth'],
-                      color=color, 
-                      label=label,
-                      alpha=1.0) 
+            axes.plot([-1, -2], [0, 0], linewidth=pc['bold_linewidth'],
+                      color=color, label=label)
             axes.set_xlim(feature_xs[0],feature_xs[-1])
 
+        utils.set_axes_ticker(axes, axis='yaxis')
         canvas_size = self._plot_panels[trial_id].GetMinSize()
         legend_offset = config['gui']['plotting']['spacing']['legend_offset']
-        utils.add_shadow_legend(legend_offset, legend_offset, axes, canvas_size,                                ncol=7, loc='lower left')
-
+        utils.add_shadow_legend(legend_offset, legend_offset, axes, canvas_size,
+                                ncol=7, loc='lower left')
 
     def _plot_pros(self, trial, figure, trial_id):
-        features = trial.get_clustered_features()
+        pc = config['gui']['plotting']
         results = trial.clustering.results
+        features = trial.clustering.results['clustered_features']
+        # find out how long the features sets are and make the xs for plotting
+        efeatures = trial.extraction.results['features'][0]
+        feature_xs = [fx for fx in range(len(efeatures))]
+
+        projections = sorted(results['projections']) 
         plot_panel = self._plot_panels[trial_id]
 
         combos = pu.get_projection_combinations(results.keys())
-        for combo, axes in zip(combos, plot_panel.axes['pro']):
-            i, j = combo
-            pc = config['gui']['plotting']
+        for k, projection_info in enumerate(reversed(projections)):
+            axes = plot_panel.axes['pro'][k]
+            feature_axes = plot_panel.axes['pro_feature'][k]
+            overlap, ps, (i, j) = projection_info
 
-            if len(features[i]) < 1 or len(features[j]) < 1:
-                empty_cluster = j
-                if len(features[i]) < 1:
-                    empty_cluster = i
-                axes.set_xlabel(pt.PRO_EMPTY % (i, j, empty_cluster))
+            # plot pro features
+            for key in (i, j):
+                color = config.get_color_from_cycle(key)
+                for feature in features[key]:
+                    feature_axes.plot(feature_xs, feature, 
+                                      color=color,
+                                      linewidth=pc['std_trace_linewidth'],
+                                      alpha=0.5)
+                if len(features[key]) > 0:
+                    avg_feature = numpy.average(features[key], axis=0)
+                    feature_axes.plot(feature_xs, avg_feature, color=color, 
+                                      linewidth=pc['bold_linewidth'])
+            feature_axes.set_xlim(feature_xs[0], feature_xs[-1])
+            feature_axes.set_xlabel(pt.FEATURE_INDEX)
+            feature_axes.set_ylabel(pt.FEATURE_AMPLITUDE)
+            utils.set_axes_ticker(feature_axes, axis='yaxis')
+    
+            # check for empty clusters
+            if overlap is None:
+                empty_clusters = []
+                if len(features[i]) == 0:
+                    empty_clusters.append(i)
+                if len(features[j]) == 0:
+                    empty_clusters.append(j)
+                axes.set_xlabel(pt.PRO_EMPTY % (i, j, empty_clusters))
                 utils.format_y_axis_hist(axes)
                 axes.text(0.5, 0.5, pt.CLUSTER_EMPTY,
                           fontsize=16,
                           verticalalignment='center',
                           horizontalalignment='center',
                           transform=axes.transAxes)
-                continue # don't try doing gaussian fits on single point or no point clusters.
+                continue
 
-            p1, p2 = pu.projection(features[i], features[j])
+            # plot histograms
+            p1, p2 = ps
             bounds = pu.get_bounds(p1, p2)
-            h1 = axes.hist(p1, range=bounds, bins=23, 
-                          fc=config.get_color_from_cycle(i), ec='k')
-            h2 = axes.hist(p2, range=bounds, bins=23, 
-                          fc=config.get_color_from_cycle(j), ec='k')
+            h1 = axes.hist(p1, range=bounds, bins=29, 
+                          fc=config.get_color_from_cycle(i), ec='w')
+            h2 = axes.hist(p2, range=bounds, bins=29, 
+                          fc=config.get_color_from_cycle(j), ec='w', alpha=0.9)
 
-            if len(features[i]) < 2 or len(features[j]) < 2:
+            # check for clusters of size = 1
+            if overlap == -1:
                 axes.set_xlabel(pt.PRO_UNKNOWN % (i, j))
                 utils.format_y_axis_hist(axes)
-                continue # don't try doing gaussian fits on single point or no point clusters.
+                continue
 
             x, y1, y2 = pu.get_both_gaussians(p1, p2, num_points=300)
             ymax = numpy.max( numpy.hstack([h1[0], h2[0]]) )*1.05
@@ -254,6 +283,5 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
             utils.format_y_axis_hist(axes)
 
             axes.set_ylabel(pt.COUNT_PER_BIN)
-            axes.set_xlabel(pt.PRO_OK % (i, j, 100.0*pu.get_overlap(p1, p2), 
-                                         '%'))
+            axes.set_xlabel(pt.PRO_OK % (i, j, 100.0*overlap, '%'))
 

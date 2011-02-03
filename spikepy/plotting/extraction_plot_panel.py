@@ -110,7 +110,11 @@ class ExtractionPlotPanel(SpikepyPlotPanel):
 
         # plot the pca projections
         trial = self._trials[trial_id]
-        rotated_features, pc, var = trial.get_pca_rotated_features()
+        results = trial.extraction.results
+        features = results['features']
+        rotated_features = results['pca_rotated_features']
+        pc = results['pca_basis_vectors']
+        var = results['pca_variances']
         pct_var = [tvar/sum(var)*100.0 for tvar in var]
         trf = rotated_features.T
 
