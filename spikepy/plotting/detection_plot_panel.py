@@ -45,10 +45,7 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         num_traces = len(trial.raw_traces)
         num_trows = 1 + num_traces
         num_srows = num_trows * 2
-        figheight = self._figsize[1] * num_trows
-        figwidth  = self._figsize[0]
-        plot_panel.set_minsize(figwidth, figheight)
-        self._trial_renamed(trial_id=trial_id)
+        self._resize_canvas(num_trows, trial_id)
 
         # set up the spike windows and isi axes
         figure = plot_panel.figure

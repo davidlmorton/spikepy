@@ -45,10 +45,7 @@ class FilterPlotPanel(SpikepyPlotPanel):
         # set the size of the plot properly.
         num_traces = len(trial.raw_traces)
         num_rows = 1 + num_traces
-        figheight = self._figsize[1] * num_rows
-        figwidth  = self._figsize[0]
-        plot_panel.set_minsize(figwidth, figheight)
-        self._trial_renamed(trial_id=trial_id)
+        self._resize_canvas(num_rows, trial_id)
         
         # set up psd axes and trace axes
         figure = plot_panel.figure

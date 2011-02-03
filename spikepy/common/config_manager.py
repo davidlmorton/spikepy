@@ -19,6 +19,7 @@ import os
 import copy
 
 import wx
+from wx.lib.pubsub import Publisher as pub
 import numpy
 import configobj
 from validate import Validator
@@ -38,6 +39,8 @@ class ConfigManager(object):
         self._current = configobj.ConfigObj()
         self._status_markers = None
         self._control_border = None
+        self._results_frame_size = None
+        pub.subscribe(self._set_results_frame_size, "SET_RESULTS_FRAME_SIZE")
 
     def load_configs(self):
         self.load_builtin_config()
@@ -59,6 +62,14 @@ class ConfigManager(object):
     def __getitem__(self, key):
         return self._current[key]
 
+    def _set_results_frame_size(self, message):
+        size = message.data
+        self._results_frame_size = numpy.array(size)
+
+    @property
+    def results_frame_size(self):
+        return self._results_frame_size
+
     def get_size(self, name):
         if name == 'main_frame':
             height = self['gui']['main_frame']['height']
@@ -67,15 +78,13 @@ class ConfigManager(object):
         elif name == 'pyshell':
             size_ratio = self['gui']['menu_bar']['pyshell_size_ratio']
             return self.get_size('main_frame')*size_ratio
-        elif name == 'results_frame':
-            mfs = self.get_size('main_frame')
-            height = mfs[1]-230 # pixels in menu and such.
-            width = mfs[0]-self['gui']['strategy_pane']['min_width']-20
-            return numpy.array([width, height])       
         elif name == 'figure':
-            base = self.get_size('results_frame')/self['gui']['plotting']['dpi']
+            rfs = copy.copy(self.results_frame_size)
+            rfs[0] -= 15 # compensate for scroll bar
+            rfs[1] -= 40 # compensate for tabs.
+            base = rfs/self['gui']['plotting']['dpi']
             width = base[0]
-            height = width/self['gui']['plotting']['aspect_ratio']
+            height = base[1]/2.0
             return numpy.array([width, height])
 
     # --- COLORS ---

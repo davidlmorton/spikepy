@@ -48,100 +48,125 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
         self._plot_pcas(trial, figure, trial_id)
         self._plot_pros(trial, figure, trial_id)
 
-    def _set_plot_size(self, num_rows, trial_id):
-        plot_panel = self._plot_panels[trial_id]
-        new_min_size = (self._figsize[0],
-                        self._figsize[1] * num_rows)
-        plot_panel.set_minsize(new_min_size[0], new_min_size[1])
-
     def _create_axes(self, trial, figure, trial_id):
+        plot_panel = self._plot_panels[trial_id]
+
         # figure out how large the canvas should be
         results = trial.clustering.results
         if results is not None:
             num_clusters = trial.get_num_clusters()
             num_pros = pu.num_projection_combinations(num_clusters)
-            num_srows = 2 + int(math.ceil(num_pros/2.0))
+            num_srows = 3 + num_pros
         else:
             num_clusters = 1
             num_pros = 0
-            num_srows = 2
+            num_srows = 3
         num_trows = int(math.ceil(num_srows/2.0))
-        num_cols = 2
-        self._set_plot_size(num_trows, trial_id)
+        num_srows = num_trows*2
+        self._resize_canvas(num_trows, trial_id)
         utils.clear_figure(figure)
         self._trial_renamed(trial_id=trial_id)
 
-        # add subplots
-        plot_panel = self._plot_panels[trial_id]
-        pca = plot_panel.axes['pca'] = figure.add_subplot(num_trows, 
-                                                          num_cols, 2)
-        utils.set_axes_ticker(pca, axis='xaxis', prune=None)
-        utils.set_axes_ticker(pca, axis='yaxis')
+        # set up feature axes and pca axes
+        plot_panel.axes['feature'] = fa = figure.add_subplot(num_trows, 1, 1)
+        plot_panel.axes['pca'] = []
+        for i in xrange(3):
+            axes = figure.add_subplot(num_trows, 3, i+4)
+            plot_panel.axes['pca'].append(axes)
 
-        fa = plot_panel.axes['feature'] = figure.add_subplot(num_trows,
-                                                             num_cols,1)
-        utils.set_axes_ticker(fa, axis='yaxis')
-
+        # set up projection axes
+        plot_panel.axes['pro_feature'] = []
         plot_panel.axes['pro'] = []
-        for i in range(num_pros):
-            plot_panel.axes['pro'].append(figure.add_subplot(num_srows, 
-                                                             num_cols, i+5))
+        for k, (i, j) in enumerate(pu.get_projection_combinations(results)):
+            pf_axes = figure.add_subplot(num_srows, 2, 7+2*k)
+            plot_panel.axes['pro_feature'].append(pf_axes)
+            p_axes = figure.add_subplot(num_srows, 2, 8+2*k)
+            plot_panel.axes['pro'].append(p_axes)
 
-        canvas_size = self._plot_panels[trial_id].GetMinSize()
+        canvas_size = plot_panel.GetMinSize()
+        # adjust subplots to spikepy uniform standard
         config.default_adjust_subplots(figure, canvas_size)
 
-        # tweek axes edges
-        axes_left = config['gui']['plotting']['spacing']['axes_left']
-        axes_bottom = config['gui']['plotting']['spacing']['axes_bottom']
-        title_vspace = config['gui']['plotting']['spacing']['title_vspace']
-        #     give room for yticklabels on pca plot
-        utils.adjust_axes_edges(pca, canvas_size,
-                          left=2*axes_left/3, 
-                          top=-title_vspace)
-        utils.adjust_axes_edges(fa, canvas_size,
-                          right=axes_left/3,
-                          top=-title_vspace)
-        #     raise all subplots bottom up a bit, for labels
-        utils.adjust_axes_edges(pca, canvas_size, bottom=axes_bottom)
-        utils.adjust_axes_edges(fa, canvas_size, bottom=axes_bottom)
-        for i, pro_axes in enumerate(plot_panel.axes['pro']):
-            left = 0.0
-            right = 0.0
-            bottom = axes_bottom
-            if i%2==0:
-                right = axes_left/2.0
-            else:
-                left = axes_left/2.0
-            utils.adjust_axes_edges(pro_axes, canvas_size, left=left, 
-                                                     right=right,
-                                                     bottom=bottom)
+        # adjust axes into place.
+        e = 1/4.0
+        utils.adjust_axes_edges(fa, (1.0, num_trows*1.0), bottom=-e)
+        for pca_axes in plot_panel.axes['pca']:
+            utils.adjust_axes_edges(pca_axes, (1.0, num_trows*1.0), 
+                                    top=e, bottom=-2*e)
+
+        # tweek psd axes and trace axes
+        top = -config['gui']['plotting']['spacing']['title_vspace']
+        nl_bottom = config['gui']['plotting']['spacing']['no_label_axes_bottom']
+        bottom = config['gui']['plotting']['spacing']['axes_bottom']
+        utils.adjust_axes_edges(plot_panel.axes['feature'], canvas_size,
+                                bottom=nl_bottom, top=top)
+
+        left = config['gui']['plotting']['spacing']['axes_left']
+        outter = (2.0*left)/3.0
+        inner = left/3.0
+        pca_axes = plot_panel.axes['pca']
+        utils.adjust_axes_edges(pca_axes[0], canvas_size, right=outter, 
+                                top=bottom-nl_bottom, bottom=bottom)
+        utils.adjust_axes_edges(pca_axes[1], canvas_size, right=inner, 
+                                left=inner, top=bottom-nl_bottom,
+                                bottom=bottom)
+        utils.adjust_axes_edges(pca_axes[2], canvas_size, left=outter,
+                                top=bottom-nl_bottom,
+                                bottom=bottom)
+
+        # tweek pro and pro_feature axes
+        for p_axes, pf_axes in zip(plot_panel.axes['pro'], 
+                                   plot_panel.axes['pro_feature']):
+            utils.adjust_axes_edges(pf_axes, canvas_size, right=left/2,
+                                    bottom=bottom)
+            utils.adjust_axes_edges(p_axes, canvas_size, left=left/2,
+                                    bottom=bottom)
+
+        # label axes
+        plot_panel.axes['feature'].set_ylabel(pt.FEATURE_AMPLITUDE)
+
+        self.pc_y = [2,3,3] # which pc is associated with what axis.
+        self.pc_x = [1,1,2]
+        self.pca_colors = config.pca_colors
+        for x, y, axes in zip(self.pc_x, self.pc_y, pca_axes):
+            axes.set_xlabel(pt.PCA_LABEL % (x, 100, '%'), 
+                            color=self.pca_colors[x-1])
+            axes.set_ylabel(pt.PCA_LABEL % (y, 100, '%'),
+                            color=self.pca_colors[y-1])
 
     def _plot_pcas(self, trial, figure, trial_id):
-        axes = self._plot_panels[trial_id].axes['pca']
+        pca_axes = self._plot_panels[trial_id].axes['pca']
 
         features, pc, var = trial.get_clustered_features(pca_rotated=True)
+        pct_var = [tvar/sum(var)*100.0 for tvar in var]
+
+
+        self.pc_y = [2,3,3] # which pc is associated with what axis.
+        self.pc_x = [1,1,2]
 
         feature_numbers = sorted(features.keys())
-        for feature_number in feature_numbers:
-            rotated_features = features[feature_number]
-            num_features = len(rotated_features)
-            if len(rotated_features) < 1:
-                continue # don't try to plot empty clusters.
-            trf = rotated_features.T
+        for x, y, axes in zip(self.pc_x, self.pc_y, pca_axes):
+            for feature_number in feature_numbers:
+                rotated_features = features[feature_number]
+                num_features = len(rotated_features)
+                if len(rotated_features) < 1:
+                    continue # don't try to plot empty clusters.
+                trf = rotated_features.T
 
-            color = config.get_color_from_cycle(feature_number)
-            axes.plot(trf[0], trf[1], color=color,
-                                      linewidth=0,
-                                      marker='o',
-                                      markersize=5,
-                                      markeredgewidth=0)
+                color = config.get_color_from_cycle(feature_number)
+                axes.plot(trf[x-1], trf[y-1], color=color,
+                                          linewidth=0,
+                                          marker='o',
+                                          markersize=5,
+                                          markeredgewidth=0)
+                utils.set_axes_ticker(axes, nbins=4, axis='xaxis', prune=None)
+                utils.set_axes_ticker(axes, axis='yaxis')
 
-        pct_var = [tvar/sum(var)*100.0 for tvar in var]
-        pca_colors = config.pca_colors
-        axes.set_xlabel(pt.PCA_LABEL % (1, pct_var[0], '%'), 
-                        color=pca_colors[0])
-        axes.set_ylabel(pt.PCA_LABEL % (2, pct_var[1], '%'), 
-                        color=pca_colors[1])
+            pca_colors = config.pca_colors
+            axes.set_xlabel(pt.PCA_LABEL % (x, pct_var[x-1], '%'), 
+                            color=pca_colors[x-1])
+            axes.set_ylabel(pt.PCA_LABEL % (y, pct_var[y-1], '%'), 
+                            color=pca_colors[y-1])
 
 
     def _plot_features(self, trial, figure, trial_id):
@@ -180,7 +205,7 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
 
         canvas_size = self._plot_panels[trial_id].GetMinSize()
         legend_offset = config['gui']['plotting']['spacing']['legend_offset']
-        utils.add_shadow_legend(legend_offset, legend_offset, axes, canvas_size,                                ncol=9, loc='lower left')
+        utils.add_shadow_legend(legend_offset, legend_offset, axes, canvas_size,                                ncol=7, loc='lower left')
 
 
     def _plot_pros(self, trial, figure, trial_id):
@@ -197,8 +222,13 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
                 empty_cluster = j
                 if len(features[i]) < 1:
                     empty_cluster = i
-                axes.set_xlabel('Cluster %d vs %d (cluster %d is empty)' %
-                                (i, j, empty_cluster))
+                axes.set_xlabel(pt.PRO_EMPTY % (i, j, empty_cluster))
+                utils.format_y_axis_hist(axes)
+                axes.text(0.5, 0.5, pt.CLUSTER_EMPTY,
+                          fontsize=16,
+                          verticalalignment='center',
+                          horizontalalignment='center',
+                          transform=axes.transAxes)
                 continue # don't try doing gaussian fits on single point or no point clusters.
 
             p1, p2 = pu.projection(features[i], features[j])
@@ -209,8 +239,8 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
                           fc=config.get_color_from_cycle(j), ec='k')
 
             if len(features[i]) < 2 or len(features[j]) < 2:
-                axes.set_xlabel('Cluster %d vs %d (unknown overlap)' %
-                                (i, j))
+                axes.set_xlabel(pt.PRO_UNKNOWN % (i, j))
+                utils.format_y_axis_hist(axes)
                 continue # don't try doing gaussian fits on single point or no point clusters.
 
             x, y1, y2 = pu.get_both_gaussians(p1, p2, num_points=300)
@@ -223,7 +253,7 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
             axes.set_ylim(0, ymax)
             utils.format_y_axis_hist(axes)
 
-            axes.set_ylabel('')
-            axes.set_xlabel('Cluster %d vs %d (%3.1f%s overlap)' %
-                            (i, j, 100.0*pu.get_overlap(p1, p2), '%'))
+            axes.set_ylabel(pt.COUNT_PER_BIN)
+            axes.set_xlabel(pt.PRO_OK % (i, j, 100.0*pu.get_overlap(p1, p2), 
+                                         '%'))
 

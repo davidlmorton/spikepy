@@ -36,45 +36,47 @@ class ExtractionPlotPanel(SpikepyPlotPanel):
         plot_panel.clear()
 
         # set the size of the plot properly.
-        num_rows = 3
-        figheight = self._figsize[1] * (num_rows - 1)
-        figwidth  = self._figsize[0]
-        plot_panel.set_minsize(figwidth, figheight)
-        self._trial_renamed(trial_id=trial_id)
+        num_rows = 2
+        self._resize_canvas(num_rows, trial_id)
 
         # set up feature axes and pca axes
         figure = plot_panel.figure
         plot_panel.axes['feature'] = fa = figure.add_subplot(num_rows, 1, 1)
-        plot_panel.axes['pc'] = figure.add_subplot(num_rows, 1, 2, sharex=fa)
+        plot_panel.axes['pc'] = figure.add_subplot(num_rows*2, 1, 3, sharex=fa)
         plot_panel.axes['pca'] = []
         for i in xrange(3):
-            axes = figure.add_subplot(num_rows, 3, i+7)
+            axes = figure.add_subplot(num_rows, 3, i+4)
             plot_panel.axes['pca'].append(axes)
 
         canvas_size = plot_panel.GetMinSize()
         # adjust subplots to spikepy uniform standard
         config.default_adjust_subplots(figure, canvas_size)
 
+        # adjust axes into place.
+        e = 1/8.0
+        utils.adjust_axes_edges(fa, (1.0, 1.0), bottom=-e)
+        utils.adjust_axes_edges(plot_panel.axes['pc'], (1.0, 1.0),
+                                bottom=-e, top=e)
+        for pca_axes in plot_panel.axes['pca']:
+            utils.adjust_axes_edges(pca_axes, (1.0, 1.0), top=-e)
+
         # tweek psd axes and trace axes
         top = -config['gui']['plotting']['spacing']['title_vspace']
-        bottom = config['gui']['plotting']['spacing']['axes_bottom']
         nl_bottom = config['gui']['plotting']['spacing']['no_label_axes_bottom']
+        bottom = config['gui']['plotting']['spacing']['axes_bottom']
         utils.adjust_axes_edges(plot_panel.axes['feature'], canvas_size,
-                                bottom=-nl_bottom, top=top)
+                                bottom=nl_bottom, top=top)
         utils.adjust_axes_edges(plot_panel.axes['pc'], canvas_size,
-                                bottom=3*bottom/4, top=2*nl_bottom)
+                                bottom=bottom)
 
         left = config['gui']['plotting']['spacing']['axes_left']
         outter = (2.0*left)/3.0
         inner = left/3.0
         pca_axes = plot_panel.axes['pca']
-        utils.adjust_axes_edges(pca_axes[0], canvas_size, right=outter,
-                                top=bottom/4)
+        utils.adjust_axes_edges(pca_axes[0], canvas_size, right=outter)
         utils.adjust_axes_edges(pca_axes[1], canvas_size, right=inner, 
-                                left=inner,
-                                top=bottom/4)
-        utils.adjust_axes_edges(pca_axes[2], canvas_size, left=outter,
-                                top=bottom/4)
+                                left=inner)
+        utils.adjust_axes_edges(pca_axes[2], canvas_size, left=outter)
 
         # label axes
         plot_panel.axes['feature'].set_xticklabels([''], visible=False)

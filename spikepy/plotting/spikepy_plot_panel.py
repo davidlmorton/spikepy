@@ -28,7 +28,7 @@ class SpikepyPlotPanel(MultiPlotPanel):
     def __init__(self, parent, name):
         pc = config['gui']['plotting']
         self._dpi       = pc['dpi']
-        self._figsize   = config.get_size('figure')
+        self._figsize   = (4.0, 6.0)
         self._facecolor = pc['face_color']
         self.name       = name
         MultiPlotPanel.__init__(self, parent, figsize=self._figsize,
@@ -51,6 +51,14 @@ class SpikepyPlotPanel(MultiPlotPanel):
                                  self._pre_run, 
                                  self._post_run]
         self._title_objs = {}
+
+    def _resize_canvas(self, num_rows, trial_id):
+        plot_panel = self._plot_panels[trial_id]
+        fig_size = config.get_size('figure')
+        fig_width = fig_size[0]
+        fig_height = fig_size[1]*num_rows
+        plot_panel.set_minsize(fig_width, fig_height)
+        self._trial_renamed(trial_id=trial_id)
 
     def _basic_setup(self, trial_id):
         pass # override in children

@@ -54,6 +54,7 @@ class ResultsNotebook(wx.Notebook):
         self.AddPage(summary_panel,           pt.SUMMARY)
 
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self._page_changed)
+        self.Bind(wx.EVT_SIZE, self._on_size)
 
         # ---- Setup Subscriptions
         pub.subscribe(self._change_page, 
@@ -71,6 +72,11 @@ class ResultsNotebook(wx.Notebook):
                                'summary':summary_panel}
         pyshell.locals_dict['results_panels'] = self.results_panels
         self._last_page_selected = None
+
+    def _on_size(self, event):
+        current_results_panel_size = self.GetCurrentPage().GetSize()
+        pub.sendMessage("SET_RESULTS_FRAME_SIZE", 
+                        data=current_results_panel_size)
 
     def should_plot(self, stage_name):
         return self.results_panels[stage_name].plot_checkbox.IsChecked()

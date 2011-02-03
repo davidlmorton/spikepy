@@ -58,10 +58,8 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         # make the figure canvas the correct size.
         num_srows = 3 + num_clusters
         num_trows = int(math.ceil(num_srows/2.0))
-        figwidth = self._figsize[0]
-        figheight = self._figsize[1]*(num_trows)
-        plot_panel.set_minsize(figwidth, figheight)
-        self._trial_renamed(trial_id=trial_id)
+        num_srows = num_trows*2
+        self._resize_canvas(num_trows, trial_id)
 
         canvas_size = plot_panel.GetMinSize()
 
@@ -94,14 +92,12 @@ class SummaryPlotPanel(SpikepyPlotPanel):
 
         # --- AVERAGE AND STD AXES ---
         average_axes = figure.add_subplot(num_srows, 2, 5)
-        utils.set_axes_ticker(average_axes, axis='yaxis')
         average_axes.set_ylabel(pt.AVERAGE_SPIKE_SHAPES,
                                 multialignment='center')
         average_axes.set_xlabel(pt.PLOT_TIME)
         plot_panel.axes['average'] = average_axes
         
         std_axes = figure.add_subplot(num_srows, 2, 6, sharex=average_axes)
-        utils.set_axes_ticker(std_axes, axis='yaxis')
         std_axes.set_ylabel(pt.SPIKE_STDS, multialignment='center')
         std_axes.set_xlabel(pt.PLOT_TIME)
         plot_panel.axes['std'] = std_axes
@@ -118,7 +114,6 @@ class SummaryPlotPanel(SpikepyPlotPanel):
                 ca = figure.add_subplot(num_srows, 2, 6+2*i+1, sharex=ca)
                 ia = figure.add_subplot(num_srows, 2, 6+2*i+2, sharex=ia)
                 
-            utils.set_axes_ticker(ca, axis='yaxis')
             ia.set_ylabel(pt.COUNT_PER_BIN)
 
             cluster_axes.append(ca)
@@ -283,7 +278,7 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         std_min = None
         std_max = None
         for cluster_num, (average, stds) in averages_and_stds.items():
-            if len(average) == 0:
+            if average is None:
                 continue # don't try to plot empty clusters
                     
             average_axes.fill_between(times, average+stds, average-stds,
@@ -319,6 +314,8 @@ class SummaryPlotPanel(SpikepyPlotPanel):
                               avg_max+abs(avg_max)*0.1)
         std_axes.set_ylim(std_min-abs(std_min)*0.1,
                           std_max+abs(std_max)*0.1)
+        utils.set_axes_ticker(average_axes, axis='yaxis')
+        utils.set_axes_ticker(std_axes, axis='yaxis')
 
         # plot clustered spike windows
         cluster_axes = self._plot_panels[trial_id].axes['cluster']
@@ -326,7 +323,14 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         for cluster_num, axes in zip(cluster_nums, cluster_axes):
             color = config.get_color_from_cycle(cluster_num)
             num_windows = len(windows[cluster_num])
+            axes.set_ylabel(pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)
             if num_windows < 1:
+                axes.text(0.5, 0.5, pt.CLUSTER_EMPTY,
+                          fontsize=16,
+                          verticalalignment='center',
+                          horizontalalignment='center',
+                          transform=axes.transAxes)
+                axes.set_yticklabels([''], visible=False)
                 continue # don't bother trying to plot empty clusters.
 
             # grey patch behind multi-trode concatinated spike windows
@@ -347,7 +351,6 @@ class SummaryPlotPanel(SpikepyPlotPanel):
                       color=color, 
                       alpha=1.0, 
                       label=pt.CLUSTER_SIZE % num_windows)
-            axes.set_ylabel(pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)
             axes.set_xlim(times[0], times[-1])
             axes.set_ylim(numpy.min(windows[cluster_num])*1.1, 
                           numpy.max(windows[cluster_num])*1.1)
@@ -355,6 +358,7 @@ class SummaryPlotPanel(SpikepyPlotPanel):
             legend_offset = pc['spacing']['legend_offset']
             utils.add_shadow_legend(legend_offset, legend_offset, axes,
                                     canvas_size)
+            utils.set_axes_ticker(axes, axis='yaxis')
 
         axes.set_xlabel(pt.PLOT_TIME)
     
@@ -362,8 +366,11 @@ class SummaryPlotPanel(SpikepyPlotPanel):
     def _get_averages_and_stds(self, windows):
         return_dict = {}
         for key in windows.keys():
-            stds     = numpy.std(windows[key],     axis=0)
-            average  = numpy.average(windows[key], axis=0)
-            return_dict[key] = (average, stds)
+            if len(windows[key]) == 0:
+                return_dict[key] = (None, None)
+            else:
+                stds     = numpy.std(windows[key],     axis=0)
+                average  = numpy.average(windows[key], axis=0)
+                return_dict[key] = (average, stds)
         return return_dict
 
