@@ -15,6 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import gzip
+import cPickle
 
 import numpy
 
@@ -22,22 +23,21 @@ from spikepy.developer_tools.file_interpreter import FileInterpreter
 
 class Wessel_LabView_text(FileInterpreter):
     def __init__(self):
-        self.name = 'Wessel LabView plain text'
-        self.extentions = ['.wpt', '', '.gz']
+        self.name = 'Wessel LabView Pickle'
+        self.extentions = ['.pgz', '.cPickle']
         # higher priority means will be used in ambiguous cases
         self.priority = 10 
-        self.description = '''A plain text file containing one trial.  Data are organized in columns.  Columns: 0=data(mV) 1=pulse_1 2=pulse_2 3=time(ms).'''
+        self.description = '''A pickled version of data acquired in the Wessel lab.'''
 
     def read_data_file(self, fullpath):
-        if fullpath.endswith('.gz'):
+        if fullpath.endswith('.pgz'):
             infile = gzip.open(fullpath)
         else:
             infile = open(fullpath)
-        data = numpy.loadtxt(infile)
-        raw_trace = data.T[0]
-        times = data.T[3]
-        sampling_freq = int((len(times)-1)/
-                            (times[-1]-times[0])*1000) # 1000 kHz->Hz
+        data = cPickle.load(infile)
+        voltage_trace = data['voltage_trace']
+        sampling_freq = data['sampling_freq']
 
-        trials = [self.make_trial_object(sampling_freq, [raw_trace], fullpath)]
+        trials = [self.make_trial_object(sampling_freq, [voltage_trace], 
+                                         fullpath)]
         return trials
