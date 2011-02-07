@@ -108,16 +108,20 @@ def set_axes_ticker(axes, axis='both', nbins=7, steps=[1,2,5,10],
         **kwargs    : passed on to MaxNLocator
     Returns: None
     '''
-    if axis == 'xaxis' or axis == 'both':
-        axes.xaxis.set_major_locator(MaxNLocator(nbins=nbins, 
-                                                 steps=steps, 
-                                                 prune=prune,
-                                                 **kwargs))
-    if axis == 'yaxis' or axis == 'both':
-        axes.yaxis.set_major_locator(MaxNLocator(nbins=nbins,
-                                                 steps=steps,
-                                                 prune=prune,
-                                                 **kwargs))
+    try:
+        if axis == 'xaxis' or axis == 'both':
+            axes.xaxis.set_major_locator(MaxNLocator(nbins=nbins, 
+                                                     steps=steps, 
+                                                     prune=prune,
+                                                     **kwargs))
+        if axis == 'yaxis' or axis == 'both':
+            axes.yaxis.set_major_locator(MaxNLocator(nbins=nbins,
+                                                     steps=steps,
+                                                     prune=prune,
+                                                     **kwargs))
+    except: # more bullshit with Matplotlib versions.
+        pass
+        
 
 def as_fraction(x=None, y=None, canvas_size_in_pixels=None):
     if x is not None and y is not None:
