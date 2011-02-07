@@ -273,7 +273,7 @@ class Trial(object):
                     utils.save_list_txt(fullpath, results, 
                                   delimiter=delimiter)
                 elif file_format == pt.NUMPY_BINARY:
-                    numpy.savez(fullpath, times = times, 
+                    numpy.savez(fullpath, times=times, 
                                 raw_traces=self.raw_traces)
                 elif file_format == pt.MATLAB:
                     results = {'times': times,
@@ -289,70 +289,63 @@ class Trial(object):
                     file_format == pt.PLAIN_TEXT_SPACES or
                     file_format == pt.CSV ):
                     results = [times]
-                    for trace in stage_data.results:
+                    for traces in stage_data.results['traces']:
                         results.append(trace)
                     delimiter = text_delimiters[file_format]
                     utils.save_list_txt(fullpath, results, 
-                                  delimiter=delimiter)
+                                        delimiter=delimiter)
                 elif file_format == pt.NUMPY_BINARY:
-                    numpy.savez(fullpath, times=times,
-                                detection_filtered_traces=stage_data.results)
+                    numpy.savez(fullpath, **stage_data.results)
                 elif file_format == pt.MATLAB:
-                    results = {'times': times,
-                               'filtered_traces': stage_data.results}
-                    scipy.io.savemat(fullpath, results)
+                    scipy.io.savemat(fullpath, stage_data.results)
             # EXPORT DETECTION STAGE
             if stage_name == 'detection':
+                spike_times        = stage_data.results['spike_times']
                 if (file_format == pt.PLAIN_TEXT_TABS or
                     file_format == pt.PLAIN_TEXT_SPACES or
                     file_format == pt.CSV ):
                     delimiter = text_delimiters[file_format]
-                    utils.save_list_txt(fullpath, stage_data.results, 
+                    results = [spike_times]
+                    utils.save_list_txt(fullpath, results, 
                                   delimiter=delimiter)
                 elif file_format == pt.NUMPY_BINARY:
-                    numpy.savez(fullpath, 
-                                spikes_detected=stage_data.results)
+                    numpy.savez(fullpath, **stage_data.results)
                 elif file_format == pt.MATLAB:
-                    results = {'spikes_detected': stage_data.results}
-                    scipy.io.savemat(fullpath, results)
+                    scipy.io.savemat(fullpath, stage_data.results)
             # EXPORT EXTRACTION STAGE
             if stage_name == 'extraction':
                 features = numpy.array(stage_data.results['features'])
-                ft = numpy.array(stage_data.results['feature_times'])
+                feature_times = numpy.array(stage_data.results['feature_times'])
                 feature_times = ft.reshape(1,-1)
                 if (file_format == pt.PLAIN_TEXT_TABS or
                     file_format == pt.PLAIN_TEXT_SPACES or
                     file_format == pt.CSV ):
-                    results = [ft]
-                    for feature_set in features:
-                        results.append(feature_set)
+                    for f, ft in zip(features, feature_times):
+                        results.append([ft, f])
                     delimiter = text_delimiters[file_format]
                     utils.save_list_txt(fullpath, results, 
                                   delimiter=delimiter)
                 elif file_format == pt.NUMPY_BINARY:
-                    numpy.savez(fullpath, feature_sets=features,
-                                          feature_times=feature_times)
+                    numpy.savez(fullpath, **stage_data.results)
                 elif file_format == pt.MATLAB:
-                    results = {'feature_sets': features,
-                               'feature_times': feature_times}
-                    scipy.io.savemat(fullpath, results)
+                    scipy.io.savemat(fullpath, stage_data.results)
             # EXPORT CLUSTERING STAGE
             if stage_name == 'clustering':
-                clusters_keys = sorted(stage_data.results.keys())
-                results = [stage_data.results[key] for key in clusters_keys]
+                sr = stage_data.results
+                clustered_spike_times = sr['clustered_spike_times']
+                cluster_keys = sorted(clustered_spike_times.keys())
+                results = [clustered_spike_times[key] for key in cluster_keys]
                 string_dict = {}
-                for key in clusters_keys:
-                    string_dict['cluster %d' % key] = stage_data.results[key]
                 if (file_format == pt.PLAIN_TEXT_TABS or
                     file_format == pt.PLAIN_TEXT_SPACES or
                     file_format == pt.CSV ):
                     delimiter = text_delimiters[file_format]
                     utils.save_list_txt(fullpath, results, 
-                                  delimiter=delimiter)
+                                        delimiter=delimiter)
                 elif file_format == pt.NUMPY_BINARY:
-                    numpy.savez(fullpath, **string_dict)
+                    numpy.savez(fullpath, **sr)
                 elif file_format == pt.MATLAB:
-                    scipy.io.savemat(fullpath, string_dict)
+                    scipy.io.savemat(fullpath, sr)
 
 
 class StageData(object):
