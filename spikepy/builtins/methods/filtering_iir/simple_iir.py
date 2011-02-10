@@ -18,10 +18,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import numpy
 import scipy.signal as scisig
 
+from .filtfilt import filtfilt
 
 
 def iir_filter(signal, sampling_freq, critical_freq, filter_func,
-                order, kind, **kwargs):
+                order, kind, acausal=False, **kwargs):
     """
     Build a filter_func of type <kind> and apply it to the signal.  
     Returns the filtered signal.
@@ -47,26 +48,28 @@ def iir_filter(signal, sampling_freq, critical_freq, filter_func,
 
     b, a = filter_func(order, normalized_critical_freq, 
                        btype=kind, output='ba', **kwargs)
-
-    return scisig.lfilter(b, a, signal, **kwargs)
+    if acausal:
+        return filtfilt(b, a, signal)
+    else:
+        return scisig.lfilter(b, a, signal, **kwargs)
 
 
 def butterworth(signal, sampling_freq, critical_freq,
-                order=4, kind='high', **kwargs):
+                order=4, kind='high', acausal=False, **kwargs):
     """
     This calls iir_filter with filter_func = scipy.signal.butter.
     """
     return iir_filter(signal, sampling_freq, critical_freq,
-                      scisig.butter, order, kind, **kwargs)
+                      scisig.butter, order, kind, acausal=acausal, **kwargs)
 
 butterworth.__doc__ += '\n--iir_filter docstring--\n%s' % iir_filter.__doc__
 
 def bessel(signal, sampling_freq, critical_freq,
-                order=4, kind='high', **kwargs):
+                order=4, kind='high', acausal=False, **kwargs):
     """
     This calls iir_filter with filter_func = scipy.signal.butter.
     """
     return iir_filter(signal, sampling_freq, critical_freq,
-                      scisig.bessel, order, kind, **kwargs)
+                      scisig.bessel, order, kind, acausal=acausal, **kwargs)
 
 bessel.__doc__ += '\n--iir_filter docstring--\n%s' % iir_filter.__doc__

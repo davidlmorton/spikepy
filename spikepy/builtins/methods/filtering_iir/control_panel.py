@@ -26,6 +26,7 @@ class ControlPanel(wx.Panel):
 
         function_chooser = nc.NamedChoiceCtrl(self, name="Filter function:",
                                            choices=["Butterworth", "Bessel"])
+        acausal_checkbox = wx.CheckBox(self, label="Acausal")
         passband_chooser = nc.NamedChoiceCtrl(self, name="Passband Type:", 
                                            choices=["High Pass", "Low Pass", 
                                                     "Band Pass"])
@@ -41,6 +42,7 @@ class ControlPanel(wx.Panel):
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         flag = wx.ALIGN_LEFT|wx.ALL|wx.EXPAND
         sizer.Add(function_chooser, proportion=0, flag=flag)
+        sizer.Add(acausal_checkbox, proportion=0, flag=flag)
         sizer.Add(passband_chooser, proportion=0, flag=flag)
         sizer.Add(low_cutoff_spinctrl, proportion=0, flag=flag)
         sizer.Add(high_cutoff_spinctrl, proportion=0, flag=flag)
@@ -50,7 +52,10 @@ class ControlPanel(wx.Panel):
 
         self.Bind(wx.EVT_CHOICE, self._passband_choice_made, 
                   passband_chooser.choice)
+        self.Bind(wx.EVT_CHECKBOX, self._acausal_check, 
+                  acausal_checkbox)
         self.low_cutoff_spinctrl = low_cutoff_spinctrl
+        self.acausal_checkbox = acausal_checkbox 
         self.high_cutoff_spinctrl = high_cutoff_spinctrl
         self.cutoff_spinctrl = cutoff_spinctrl
         self.function_chooser = function_chooser
@@ -59,14 +64,24 @@ class ControlPanel(wx.Panel):
 
         # --- SET DEFAULTS ---
         self.function_chooser.SetStringSelection('Butterworth')
+        self._acausal_check(state=True)
         self._passband_choice_made(band_type='High Pass')
         high_cutoff_spinctrl.SetValue(3000)
         low_cutoff_spinctrl.SetValue(300)
         cutoff_spinctrl.SetValue(300)
         order_spinctrl.SetValue(3)
 
-    def set_parameters(self, function_name='Butterworth', critical_freq=300, 
-                             order=3, kind='High Pass'):
+    def _acausal_check(self, event=None, state=None):
+        if state is None:
+            state = event.IsChecked()
+        self.acausal_checkbox.SetValue(state)
+        self._acausal = state
+
+    def set_parameters(self, function_name='Butterworth', 
+                             acausal=True, 
+                             critical_freq=300, 
+                             order=3, 
+                             kind='High Pass'):
         self.function_chooser.SetStringSelection(function_name)
         self._passband_choice_made(band_type=kind)
         if "Band" in kind:
@@ -78,6 +93,7 @@ class ControlPanel(wx.Panel):
 
     def get_parameters(self):
         function_chosen = self.function_chooser.choice.GetStringSelection()
+        acausal = self._acausal
         passband_chosen = self.passband_chooser.choice.GetStringSelection()
         if passband_chosen == "Band Pass":
             low_cutoff_freq = float(self.low_cutoff_spinctrl.GetValue())
@@ -89,6 +105,7 @@ class ControlPanel(wx.Panel):
 
         kind = passband_chosen 
         settings = {'function_name':function_chosen, 
+                    'acausal':acausal,
                     'critical_freq':critical_freq, 
                     'order':order, 
                     'kind':kind}

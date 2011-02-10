@@ -19,10 +19,12 @@ from .simple_iir import butterworth, bessel
 
 def run(trace_list, sampling_freq,
                function_name=None, 
+               acausal=None,
                critical_freq=None,
                order=None,
                kind=None):
     if (function_name is None or
+        acausal is None or
         critical_freq is None or
         order is None or
         kind is None):
@@ -41,6 +43,6 @@ def run(trace_list, sampling_freq,
         for trace in trace_list:
             filtered_trace_list.append(
                 filter_function(trace, sampling_freq, critical_freq,
-                                order, kind))
+                                order, kind, acausal=acausal))
         return filtered_trace_list
 
