@@ -31,6 +31,7 @@ from .view import View
 from .utils import named_color, load_pickle
 from spikepy.common import program_text as pt
 from spikepy.gui.strategy_progress_dialog import StrategyProgressDialog
+from spikepy.gui.matlab_dialog import MatlabDialog
 from .trial_rename_dialog import TrialRenameDialog
 from .pyshell import locals_dict
 from .export_dialog import ExportDialog
@@ -93,6 +94,8 @@ class Controller(object):
         pub.subscribe(self._run_stage_on_marked,  topic="RUN_STAGE_ON_MARKED")
         pub.subscribe(self._aborting_strategy, topic='ABORTING_STRATEGY')
         pub.subscribe(self._processing_finished, topic='PROCESSING_FINISHED')
+        pub.subscribe(self._open_matlab_file_dialog, 
+                      topic='OPEN_MATLAB_FILE_DIALOG')
 
     def start_debug_subscriptions(self):
         pub.subscribe(self._print_messages) # subscribes to all topics
@@ -107,6 +110,17 @@ class Controller(object):
 
     def get_all_trials(self):
         return self.model.trials.values()
+
+    def _open_matlab_file_dialog(self, message):
+        trial_info_dict = message.data
+        fullpath = trial_info_dict['fullpath']
+        dlg = MatlabDialog(self.view.frame, fullpath)
+        if dlg.ShowModal() == wx.ID_OK:
+            print "yay"
+        else:
+            print "boo"
+        trial_info_dict['voltage_traces'] = []
+        dlg.Destroy()
 
     def _run_stage_on_marked(self, message):
         message.data['trial_list'] = self.get_marked_trials()

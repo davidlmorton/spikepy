@@ -321,7 +321,7 @@ class Trial(object):
             if stage_name == 'extraction':
                 features = numpy.array(stage_data.results['features'])
                 feature_times = numpy.array(stage_data.results['feature_times'])
-                feature_times = ft.reshape(1,-1)
+                feature_times = feature_times.reshape(1,-1)
                 if (file_format == pt.PLAIN_TEXT_TABS or
                     file_format == pt.PLAIN_TEXT_SPACES or
                     file_format == pt.CSV ):
@@ -337,6 +337,21 @@ class Trial(object):
             # EXPORT CLUSTERING STAGE
             if stage_name == 'clustering':
                 sr = stage_data.results
+                # store results the way you should for .mat files.
+                results_dict = {}
+                st_dict = sr['clustered_spike_times']
+                for cluster_id, spike_times in st_dict.items():
+                    key = 'cluster_%s_spike_times' % cluster_id
+                    results_dict[key] = spike_times
+                f_dict = sr['clustered_features']
+                for cluster_id, features in f_dict.items():
+                    key = 'cluster_%s_features' % cluster_id
+                    results_dict[key] = features
+                sw_dict = self.get_clustered_spike_windows()
+                for cluster_id, sw in sw_dict.items():
+                    key = 'cluster_%s_spike_windows'% cluster_id
+                    results_dict[key] = sw
+                # format results for .txt files.
                 clustered_spike_times = sr['clustered_spike_times']
                 cluster_keys = sorted(clustered_spike_times.keys())
                 results = [clustered_spike_times[key] for key in cluster_keys]
@@ -350,7 +365,7 @@ class Trial(object):
                 elif file_format == pt.NUMPY_BINARY:
                     numpy.savez(fullpath, **sr)
                 elif file_format == pt.MATLAB:
-                    scipy.io.savemat(fullpath, sr)
+                    scipy.io.savemat(fullpath, results_dict)
 
 class StageData(object):
     def __init__(self, trial, name=None, dependents=[], prereqs=[]):

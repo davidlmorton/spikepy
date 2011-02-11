@@ -14,30 +14,40 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import gzip
-import cPickle
+import os 
 
-import numpy
+from scipy.io import loadmat
+import wx
+from wx.lib.pubsub import Publisher as pub
 
 from spikepy.developer_tools.file_interpreter import FileInterpreter
 
-class WesselLabViewText(FileInterpreter):
+class GenericMatlab(FileInterpreter):
     def __init__(self):
-        self.name = 'Wessel LabView Pickle'
-        self.extentions = ['.pgz', '.cPickle']
+        self.name = 'Generic Matlab(tm) File'
+        self.extentions = ['.mat']
         # higher priority means will be used in ambiguous cases
         self.priority = 10 
-        self.description = '''A pickled version of data acquired in the Wessel lab.'''
+        self.description = '''A Matlab(tm) file, the user will be prompted for further information.'''
 
     def read_data_file(self, fullpath):
-        if fullpath.endswith('.pgz'):
-            infile = gzip.open(fullpath)
-        else:
-            infile = open(fullpath)
-        data = cPickle.load(infile)
-        voltage_trace = data['voltage_trace']
-        sampling_freq = data['sampling_freq']
 
-        trials = [self.make_trial_object(sampling_freq, [voltage_trace], 
+        mat_obj = loadmat(fullpath)
+
+        signal_name = 'raw_traces'
+        times_name = 'times'
+        infer_sampling_freq = True
+        sf = None
+
+        voltage_traces = mat_obj[signal_name]
+        if infer_sampling_freq:
+            times = mat_obj[times_name]
+            # times are assumed to be in ms.
+            sampling_freq = int(len(times)/(times[-1]-times[0]))*1000  
+        else:
+            sampling_freq = sf
+
+        trials = [self.make_trial_object(sampling_freq, voltage_traces, 
                                          fullpath)]
         return trials
+
