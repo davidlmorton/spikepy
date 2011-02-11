@@ -77,7 +77,7 @@ class Trial(object):
                                            dependents=[self.clustering])
         self.detection         = StageData(self, name='detection',        
                                            dependents=[self.extraction])
-        self.extraction_filter = StageData(self, name='extraction_filter',
+        self.extraction_filter = FilterStageData(self, name='extraction_filter',
                                            dependents=[self.extraction])
         self.detection_filter  = StageData(self, name='detection_filter', 
                                            dependents=[self.detection, 
@@ -207,13 +207,18 @@ class Trial(object):
             readyness[stage.name] = can_run
         return readyness
 
-    def would_be_novel(self, stage_name, method_name, settings_dict):
+    def would_be_novel(self, stage_name, method_class, settings_dict):
         '''
         Would running a given stage yield novel results?
         '''
-        stage_data = self.get_data_from_stage(stage_name)
-        return not (method_name == stage_data['method'] and 
-                    settings_dict == stage_data['settings'])
+        method = method_class()
+        method_name = method.name
+        if method._is_stochastic:
+            return True
+        else:
+            stage_data = self.get_data_from_stage(stage_name)
+            return not (method_name == stage_data['method'] and 
+                        settings_dict == stage_data['settings'])
 
     def __hash__(self):
         return hash(self.trial_id)
@@ -347,7 +352,6 @@ class Trial(object):
                 elif file_format == pt.MATLAB:
                     scipy.io.savemat(fullpath, sr)
 
-
 class StageData(object):
     def __init__(self, trial, name=None, dependents=[], prereqs=[]):
         self.trial = trial
@@ -371,5 +375,13 @@ class StageData(object):
             self.method   = None
             for dependent in self.dependents:
                 dependent.reinitialize()
+
+class FilterStageData(StageData):
+    def reinitialize(self):
+        if self.results is not None:
+            # don't get rid of old results.
+            for dependent in self.dependents:
+                dependent.reinitialize()
+
 
 

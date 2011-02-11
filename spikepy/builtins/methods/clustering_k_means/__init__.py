@@ -26,6 +26,7 @@ class ClusteringKMeans(ClusteringMethod):
     def __init__(self):
         self.name = 'K-means'
         self.description = 'Just randomly assigns clusters (TESTING)'
+        self._is_stochastic = True
 
     def make_control_panel(self, parent, **kwargs):
         return ControlPanel(parent, **kwargs)

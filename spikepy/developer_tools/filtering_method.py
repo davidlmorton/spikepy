@@ -39,4 +39,5 @@ Methods that subclasses are REQUIRED to implement:
     __metaclass__ = RegisteringClass
     _skips_registration = True
     _is_base_class = True
+    _is_stochastic = False
 
