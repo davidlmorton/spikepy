@@ -115,8 +115,10 @@ class StrategyPane(ScrolledPanel):
 
         self._should_sync = True
                                 
+        ''' Decouple results notebook and strategy pane
         pub.subscribe(self._results_notebook_page_changed, 
                       topic='RESULTS_NOTEBOOK_PAGE_CHANGED')
+        '''
         pub.subscribe(self._set_run_buttons_state,
                       topic='SET_RUN_BUTTONS_STATE')
 
@@ -258,8 +260,10 @@ class StrategyPane(ScrolledPanel):
             old_page_num = event.GetOldSelection()
             new_page_num = event.GetSelection()
             self.strategy_summary.select_stage(new_page_num+1)
+            ''' Decouple strategy pane from results notebook
             pub.sendMessage(topic='STRATEGY_CHOICEBOOK_PAGE_CHANGED', 
                             data=(new_page_num, old_page_num))
+            '''
 
     def do_layout(self):
         self.SetupScrolling()

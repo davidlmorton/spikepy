@@ -154,22 +154,28 @@ class ButtonsPanel(wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
 
+        # XXX
+        ''' Not Implimented Yet XXX
         make_default_button = wx.Button(self, 
                                         label=pt.MAKE_THESE_SETTINGS_DEFAULT)
         restore_defaults_button = wx.Button(self, 
                                         label=pt.RESTORE_DEFAULT_SETTINGS)
+        '''
         ok_button = wx.Button(self, id=wx.ID_OK)
         cancel_button  = wx.Button(self, id=wx.ID_CANCEL)
          
         flag = wx.ALL
         border = 5
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        # XXX
+        '''
         sizer.Add(make_default_button,     proportion=0, flag=flag, 
                                             border=border)
         sizer.Add(restore_defaults_button, proportion=0, flag=flag, 
                                             border=border)
+        '''
         sizer.Add(cancel_button,           proportion=0, flag=flag, 
                                             border=border)
-        sizer.Add(ok_button,               proportion=0, flag=flag, 
+        sizer.Add(ok_button,               proportion=1, flag=flag, 
                                             border=border)
         self.SetSizer(sizer)

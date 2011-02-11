@@ -294,7 +294,7 @@ class Trial(object):
                     file_format == pt.PLAIN_TEXT_SPACES or
                     file_format == pt.CSV ):
                     results = [times]
-                    for traces in stage_data.results['traces']:
+                    for trace in stage_data.results['traces']:
                         results.append(trace)
                     delimiter = text_delimiters[file_format]
                     utils.save_list_txt(fullpath, results, 
