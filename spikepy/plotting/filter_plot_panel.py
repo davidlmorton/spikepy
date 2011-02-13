@@ -21,7 +21,6 @@ import numpy
 
 from spikepy.plotting.spikepy_plot_panel import SpikepyPlotPanel
 from spikepy.plotting import utils
-from spikepy.plotting import signal_utils 
 from spikepy.common import program_text as pt
 from spikepy.common.config_manager import config_manager as config
 

@@ -74,6 +74,7 @@ class ResultsNotebook(wx.Notebook):
         self._last_page_selected = None
 
     def _on_size(self, event):
+        event.Skip()
         current_results_panel_size = self.GetCurrentPage().GetSize()
         pub.sendMessage("SET_RESULTS_FRAME_SIZE", 
                         data=current_results_panel_size)
