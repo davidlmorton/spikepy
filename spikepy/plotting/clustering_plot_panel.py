@@ -216,11 +216,13 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
         efeatures = trial.extraction.results['features'][0]
         feature_xs = [fx for fx in range(len(efeatures))]
 
-        projections = sorted(results['projections']) 
+        # sort only on overlap.
+        projections = sorted(results['projections'], key=lambda x:x[0], 
+                             reverse=True) 
         plot_panel = self._plot_panels[trial_id]
 
         combos = pu.get_projection_combinations(results.keys())
-        for k, projection_info in enumerate(reversed(projections)):
+        for k, projection_info in enumerate(projections):
             axes = plot_panel.axes['pro'][k]
             feature_axes = plot_panel.axes['pro_feature'][k]
             overlap, ps, (i, j) = projection_info

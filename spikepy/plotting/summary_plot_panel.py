@@ -64,21 +64,11 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         canvas_size = plot_panel.GetMinSize()
 
         # --- RASTER AND TRACE AXES ---
-        raster_axes = figure.add_subplot(num_trows, 1, 1)
-        raster_yaxis = raster_axes.get_yaxis()
-        raster_yaxis.set_ticks_position('left')
-        raster_axes.set_ylabel(pt.CLUSTER_NUMBER)
-        raster_axes.set_xticklabels([''], visible=False)
-        plot_panel.axes['raster'] = raster_axes
-
-        # trace_axes will be on top of raster_axes
-        trace_axes = figure.add_axes(raster_axes.get_position(), 
-                                     axisbg=(1.0, 1.0, 1.0, 0.0),
-                                     sharex=raster_axes)
-
-        trace_axes.set_xlabel(pt.PLOT_TIME)
+        trace_axes = figure.add_subplot(num_trows, 1, 1)
+        trace_axes.set_xticklabels([''], visible=False)
         trace_yaxis = trace_axes.get_yaxis()
         trace_yaxis.set_ticks_position('right')
+
         plot_width = (canvas_size[0] - pc['raster_left'] -
                                        pc['raster_right'])
         text_loc_percent = 1.0 + pc['right_ylabel']/plot_width
@@ -136,12 +126,11 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         right  = pc['raster_right']
         left   = pc['raster_left']
         top = -config['gui']['plotting']['spacing']['title_vspace']
-        for axes in [trace_axes, raster_axes]:
-            utils.adjust_axes_edges(axes, canvas_size_in_pixels=canvas_size, 
-                                    top=top,
-                                    bottom=bottom,
-                                    right=right, 
-                                    left=left)
+        utils.adjust_axes_edges(trace_axes, canvas_size_in_pixels=canvas_size, 
+                                top=top,
+                                bottom=bottom,
+                                right=right, 
+                                left=left)
 
         # tweek edges
         left   = config['gui']['plotting']['spacing']['axes_left']
@@ -168,6 +157,17 @@ class SummaryPlotPanel(SpikepyPlotPanel):
                     bottom=-0.35*total_height*canvas_size[1],
                     right=isi_inset, 
                     top=isi_inset)
+
+        # clone trace_axes: raster_axes will be on top of trace axes.
+        raster_axes = figure.add_axes(trace_axes.get_position(), 
+                                      sharex=trace_axes)
+        utils.make_a_raster_axes(raster_axes)
+        raster_axes.set_frame_on(False)
+        raster_yaxis = raster_axes.get_yaxis()
+        raster_yaxis.set_ticks_position('left')
+        raster_axes.set_xlabel(pt.PLOT_TIME)
+        raster_axes.set_ylabel(pt.CLUSTER_NUMBER)
+        plot_panel.axes['raster'] = raster_axes
 
     def _pot_isis(self, trial_id):
         pc = config['gui']['plotting']
@@ -214,27 +214,31 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         trace_offsets = [-i*2*numpy.max(numpy.abs(traces)) 
                          for i in xrange(len(traces))]
         for trace, trace_offset in zip(traces, trace_offsets):
+            utils.make_a_trace_axes(trace_axes)
             trace_axes.plot(times, trace+trace_offset, 
                             color=config.detection_color, 
                             label=pt.DETECTION_TRACE_GRAPH_LABEL,
                             alpha=pc['summary']['std_alpha'])
             trace_ticks.append(numpy.average(trace+trace_offset))
-        old_ylim = trace_axes.get_ylim()
-        ysize = max(old_ylim) - min(old_ylim) 
         trace_axes.set_yticks(trace_ticks)
         trace_axes.set_yticklabels(['%d' % i for i in xrange(len(traces))])
+        # set xlim for trace and raster axes
+        for axes in [trace_axes, raster_axes]:
+            axes.set_xlim(times[0], times[-1])
+        # set the ylimits for the trace_axes and raster_axes
+        utils.trace_autoset_ylim(trace_axes)
+        final_ylim = trace_axes.get_ylim()
+        raster_axes.set_ylim(*final_ylim, force_set=True)
 
         # plot rasters
         spike_times = trial.clustering.results['clustered_spike_times']
         keys = sorted(spike_times.keys())
-        ylim = trace_axes.get_ylim()
-        raster_axes.set_ylim(ylim)
-        spike_y_list = numpy.linspace(max(ylim), min(ylim), 
+        spike_y_list = numpy.linspace(max(final_ylim), min(final_ylim), 
                                       num_clusters+2)[1:-1]
         for key, spike_y in zip(keys, spike_y_list):
             spike_xs = spike_times[key]
             spike_ys = [spike_y for i in xrange(len(spike_xs))]
-            trace_axes.plot(spike_xs, spike_ys, linewidth=0, marker='|',
+            raster_axes.plot(spike_xs, spike_ys, linewidth=0, marker='|',
                              markersize=pc['detection']['raster_height'],
                              markeredgewidth=pc['detection']['raster_width'],
                              color=config.get_color_from_cycle(key))
@@ -242,13 +246,6 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         raster_axes.set_yticks(spike_y_list)
         raster_axes.set_yticklabels(['%d' % key for key in keys])
     
-        old_ylim = trace_axes.get_ylim()
-        ysize = max(old_ylim) - min(old_ylim) 
-        final_ylim = (old_ylim[0]-0.20*ysize,
-                      old_ylim[1]+0.20*ysize)
-        for axes in [trace_axes, raster_axes]:
-            axes.set_ylim(final_ylim)
-            axes.set_xlim(times[0], times[-1])
 
     def _plot_averages_and_stds(self, trial, figure, trial_id):
         pc = config['gui']['plotting']

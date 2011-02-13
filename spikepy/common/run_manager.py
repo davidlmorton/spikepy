@@ -30,6 +30,7 @@ from spikepy.common.open_data_file import open_data_file
 from spikepy.common import utils
 from spikepy.common import path_utils 
 from spikepy.common import plugin_utils
+from spikepy.common import signal_utils
 from spikepy.common import projection_utils as pu
 from spikepy.common import config_utils
 from spikepy.common.config_manager import config_manager
@@ -42,9 +43,13 @@ def filter_process_worker(run_queue, results_queue):
             method_obj = method_class()
             filtered_traces = method_obj.run(*run_dict['args'], 
                                              **run_dict['kwargs'])
+            filtered_traces = utils.format_traces(filtered_traces)
+            sampling_freq = run_dict['args'][1]
+            # calculate the psd of the filtered traces
+            filtered_psd = signal_utils.psd(filtered_traces.flatten(), 
+                                            sampling_freq, 1.0)
 
             # resample the filtered traces
-            sampling_freq = run_dict['args'][1]
             new_sampling_freq = config_manager['backend']['new_sampling_freq']
             resampled_traces = []
             resampled_traces = utils.resample_signals(filtered_traces, 
@@ -52,7 +57,8 @@ def filter_process_worker(run_queue, results_queue):
                                                       new_sampling_freq)
             resampled_filtered_traces = utils.format_traces(resampled_traces)
 
-            result = {'traces':utils.format_traces(filtered_traces),
+            result = {'traces':filtered_traces,
+                      'psd':filtered_psd,
                       'resampled_traces':resampled_filtered_traces,
                       'new_sampling_freq':new_sampling_freq}
         else:
@@ -171,7 +177,7 @@ def clustering_process_worker(run_queue, results_queue):
                 c1 = trial_features[key][i]
                 c2 = trial_features[key][j]
                 if len(c1) == 0 or len(c2) == 0:
-                    projection_info = (None, None, (i, j))
+                    projection_info = (None, (None, None), (i, j))
                 elif len(c1) == 1 or len(c2) == 1:
                     projection_info = (-1, pu.projection(c1, c2), (i, j))
                 else:

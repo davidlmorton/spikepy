@@ -63,6 +63,11 @@ class Trial(object):
         self.raw_traces    = utils.format_traces(raw_traces)
         self._id = uuid.uuid4() 
 
+        # calculate the psds of the raw_traces
+        from spikepy.common import signal_utils 
+        # imports matplotlib, so can't be at top.
+        self.psd = signal_utils.psd(self.raw_traces.flatten(), sampling_freq, 1.0)
+
         self.sampling_freq = sampling_freq
         self.dt            = (1.0/sampling_freq)*1000.0 # dt in ms
         if len(self.raw_traces):

@@ -91,9 +91,7 @@ class FilterPlotPanel(SpikepyPlotPanel):
         trial = self._trials[trial_id]
 
         # calculate psd to be plotted.
-        Pxx, freqs = signal_utils.psd(trial.raw_traces.flatten(),
-                                      trial.sampling_freq,
-                                      pc['filtering']['psd_freq_resolution'])
+        Pxx, freqs = trial.psd
         plotted_Pxx = 10*numpy.log10(Pxx)
         
         # clear and plot the psd
@@ -108,13 +106,14 @@ class FilterPlotPanel(SpikepyPlotPanel):
         # clear and plot the traces
         num_traces = len(trial.raw_traces)
         for i, trace_axes in enumerate(plot_panel.axes['trace']):
-            clear_tick_labels = False
             utils.clear_axes(trace_axes)
+            utils.make_a_trace_axes(trace_axes)
             trace_axes.plot(trial.times, trial.raw_traces[i],
                             color='k', 
                             linewidth=pc['std_trace_linewidth'], 
                             label=pt.RAW)
             trace_axes.set_xlim(trial.times[0], trial.times[-1])
+            utils.trace_autoset_ylim(trace_axes)
             utils.set_axes_ticker(trace_axes, axis='yaxis')
 
     def _post_run(self, trial_id):
@@ -123,10 +122,9 @@ class FilterPlotPanel(SpikepyPlotPanel):
         trial = self._trials[trial_id]
 
         # calculate psd to be plotted.
-        filtered_traces = trial.get_stage_data(self.name).results['traces']
-        Pxx, freqs = signal_utils.psd(filtered_traces.flatten(),
-                                      trial.sampling_freq,
-                                      pc['filtering']['psd_freq_resolution'])
+        results = trial.get_stage_data(self.name).results
+        filtered_traces = results['traces']
+        Pxx, freqs = results['psd']
         plotted_Pxx = 10*numpy.log10(Pxx)
 
         # clear old filtered psd (if exists) and plot new
@@ -142,14 +140,18 @@ class FilterPlotPanel(SpikepyPlotPanel):
 
         # clear old filtered traces (if they exist) and plot new
         for i, trace_axes in enumerate(plot_panel.axes['trace']):
-            num_lines = len(trace_axes.get_lines())
-            if num_lines == 2:
-                trace_axes.lines[-1].remove()
-            trace_axes.plot(trial.times, filtered_traces[i],
-                            color=self.line_color, 
-                            linewidth=self.line_width, 
-                            label=pt.FILTERED_TRACE_GRAPH_LABEL)
+            if hasattr(trace_axes, '_post_trace_id'):
+                kwargs = {'replace_trace_id':trace_axes._post_trace_id}
+            else:
+                kwargs = {}
+            kwargs['color'] = self.line_color
+            kwargs['linewidth'] = self.line_width
+            kwargs['label'] = pt.FILTERED_TRACE_GRAPH_LABEL
+            t_id = trace_axes.plot(trial.times, filtered_traces[i], **kwargs)
+            trace_axes._post_trace_id = t_id
+            
             trace_axes.set_xlim(trial.times[0], trial.times[-1])
+            utils.trace_autoset_ylim(trace_axes)
             utils.set_axes_ticker(trace_axes, axis='yaxis')
             
 

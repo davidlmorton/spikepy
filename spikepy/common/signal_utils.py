@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import scipy.signal as scisig
 import numpy
-import matplotlib
 from matplotlib import mlab
 import bisect
 

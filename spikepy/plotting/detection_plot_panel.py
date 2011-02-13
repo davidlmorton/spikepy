@@ -96,6 +96,16 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         for trace_axes in plot_panel.axes['trace'][:-1]:
             utils.adjust_axes_edges(trace_axes, canvas_size, bottom=nl_bottom)
 
+        # clone the trace_axes to make a raster_axes.
+        plot_panel.axes['raster'] = []
+        for trace_axes in plot_panel.axes['trace']:
+            raster_axes = figure.add_axes(trace_axes.get_position())
+            raster_axes.set_xticklabels([''], visible=False)
+            raster_axes.set_yticklabels([''], visible=False)
+            raster_axes.set_frame_on(False)
+            plot_panel.axes['raster'].append(raster_axes)
+            utils.make_a_raster_axes(raster_axes)
+
         # label axes
         sa.set_xlabel(pt.PLOT_TIME)
         sa.set_ylabel(pt.SPIKES_GRAPH_LABEL)
@@ -118,6 +128,7 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         num_traces = len(trial.raw_traces)
         for i, trace_axes in enumerate(plot_panel.axes['trace']):
             utils.clear_axes(trace_axes)
+            utils.make_a_trace_axes(trace_axes)
             trace_axes.plot(trial.times, traces[i],
                             color=self.line_color, 
                             linewidth=self.line_width, 
@@ -135,6 +146,7 @@ class DetectionPlotPanel(SpikepyPlotPanel):
                                    linewidth=pc['std_trace_linewidth'], 
                                    linestyle=linestyle)
             trace_axes.set_xlim(trial.times[0], trial.times[-1])
+            utils.trace_autoset_ylim(trace_axes)
             utils.set_axes_ticker(trace_axes, axis='yaxis') 
         top_trace_axes = plot_panel.axes['trace'][0]
         canvas_size = plot_panel.GetMinSize()
@@ -236,15 +248,12 @@ class DetectionPlotPanel(SpikepyPlotPanel):
 
         # clear old rasters, then plot rasters on traces
         raster_pos=pc['detection']['raster_pos_traces']
-        for trace_axes in plot_panel.axes['trace']:
-            if len(trace_axes.lines) == 6:
-                trace_axes.lines[-1].remove()
-            utils.plot_raster_to_axes(spikes, trace_axes,
+        for raster_axes in plot_panel.axes['raster']:
+            utils.clear_axes(raster_axes, clear_tick_labels=True)
+            utils.plot_raster_to_axes(spikes, raster_axes,
                                       bounds=bounds,
                                       raster_pos=raster_pos,
                                       marker_size=marker_size,
                                       markeredgewidth=markeredgewidth,
-                                      color=color)
-            trace_axes.set_xlim(*bounds)
-            utils.set_axes_ticker(trace_axes, axis='yaxis')
+                                      color=color)[0]
         

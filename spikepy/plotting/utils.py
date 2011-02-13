@@ -18,10 +18,161 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 A collection of utility functions for the spikepy plotting.
 """
+import bisect
+from types import MethodType
+import uuid
+
 import wx
 from matplotlib.ticker import MaxNLocator
+import numpy
 
 from spikepy.common.config_manager import config_manager as config
+
+def is_iterable(x):
+    return hasattr(x, '__len__')
+
+def downsample_for_plot(times, signal, tmin, tmax, num_samples=1000):
+    imin = bisect.bisect_left(times, tmin)
+    imax = bisect.bisect_right(times, tmax)
+
+    signal_slice = signal[imin:imax]
+    times_slice = times[imin:imax]
+    slice_len = len(signal_slice)
+
+    if slice_len >= 2*num_samples:
+        chunk_size = slice_len/num_samples
+        times_list = times_slice[::chunk_size]
+        num_chunks = len(times_list)
+        new_times = numpy.empty(num_chunks*2, dtype=numpy.float64)
+        new_signal = numpy.empty(num_chunks*2, dtype=numpy.float64)
+        for i in xrange(num_chunks):
+            start = i*chunk_size
+            end   = start+chunk_size-1
+            chunk_min = numpy.min(signal_slice[start:end])
+            chunk_max = numpy.max(signal_slice[start:end])
+            new_times[2*i]    = times_list[i]
+            new_times[2*i+1]  = times_list[i]
+            new_signal[2*i]   = chunk_min
+            new_signal[2*i+1] = chunk_max
+    else:
+        return times_slice, signal_slice
+
+    return new_times, new_signal
+
+def trace_set_xlim(axes, tmin=None, tmax=None, **kwargs):
+    '''
+    This set_xlim function replaces the usual matplotlib axes set_xlim
+        function.  It will redraw the traces after having downsampled
+        them.
+    '''
+    # don't do anything if locked.
+    if hasattr(axes, '_trace_xlim_locked'):
+        if axes._trace_xlim_locked:
+            return
+
+    # parse inputs
+    if tmax is None and is_iterable(tmin):
+        tmin, tmax = tmin
+
+    if hasattr(axes, '_trace_times'):
+        for t_id in axes._trace_draw_order:
+            # don't replot if bounds didn't actually change.
+            xmin, xmax = axes.get_xlim()
+            if xmin == tmin and xmax == tmax and\
+               t_id in axes._trace_lines.keys():
+                continue
+
+            # delete existing lines
+            if t_id in axes._trace_lines.keys():
+                axes._trace_lines[t_id].remove()
+                del axes._trace_lines[t_id]
+
+            # downsample
+            new_times, new_trace = downsample_for_plot(axes._trace_times, 
+                                                       axes._traces[t_id],
+                                                       tmin, tmax)
+            # lock --> plot --> unlock
+            axes._trace_xlim_locked = True
+            line = axes._old_plot(new_times, new_trace, *axes._trace_args[t_id], 
+                                                  **axes._trace_kwargs[t_id])[0]
+            axes._trace_xlim_locked = False
+
+            # save this line so we can remove it later.
+            axes._trace_lines[t_id] = line
+
+    # actually change the xlimits
+    axes._old_set_xlim(tmin, tmax, **kwargs)
+
+def trace_set_ylim(axes, *args, **kwargs):
+    '''
+    This set_ylim function replaces the normal matplotlib set_ylim function
+     it will not allow the ylimits to change unless you pass force_set=True.
+    '''
+    if 'force_set' in kwargs.keys(): 
+        del kwargs['force_set']
+        axes._old_set_ylim(*args, **kwargs)
+
+def trace_autoset_ylim(axes):
+    if hasattr(axes, '_trace_times'):
+        all_min = 0
+        all_max = 0
+        for t_id in axes._traces.keys():
+            ymin = numpy.min(axes._traces[t_id])
+            ymax = numpy.max(axes._traces[t_id])
+            if ymin < all_min: 
+                all_min = ymin
+            if ymax > all_max:
+                all_max = ymax
+        axes.set_ylim(all_min*1.05, all_max*1.05, force_set=True)
+
+def trace_plot(axes, times, trace, *args, **kwargs):
+    this_trace_id = uuid.uuid4()
+    if 'replace_trace_id' in kwargs:
+        replace_trace_id = kwargs['replace_trace_id']
+        del kwargs['replace_trace_id']
+        if hasattr(axes, '_trace_times'):
+            if replace_trace_id in axes._trace_lines.keys():
+                # delete the line first.
+                axes._trace_lines[replace_trace_id].remove()
+                del axes._trace_lines[replace_trace_id]
+                del axes._traces[replace_trace_id]
+                axes._trace_draw_order.remove(replace_trace_id)
+            else:
+                raise RuntimeError('Cannot replace trace, trace_id %s does not exist' % replace_trace_id)
+        else:
+            raise RuntimeError('Cannot relace a trace because none exist.')
+    else:
+        if not hasattr(axes, '_trace_times'):
+            axes._trace_times = times
+            axes._traces = {}
+            axes._trace_lines = {}
+            axes._trace_kwargs = {}
+            axes._trace_draw_order = []
+            axes._trace_args = {}
+
+    # add the new trace
+    axes._traces[this_trace_id] = trace
+    axes._trace_kwargs[this_trace_id] = kwargs
+    axes._trace_draw_order.append(this_trace_id)
+    axes._trace_args[this_trace_id] = args
+    axes.set_xlim(times[0], times[-1])
+    return this_trace_id
+
+def make_a_trace_axes(axes):
+    # monkey-patch the axes.set_ylim and axes.set_xlim functions
+    if not hasattr(axes, '_old_plot'):
+        axes._old_plot = axes.plot
+        axes.plot      = MethodType(trace_plot, axes, axes.__class__)
+        axes._old_set_xlim = axes.set_xlim
+        axes._old_set_ylim = axes.set_ylim
+        axes.set_xlim = MethodType(trace_set_xlim, axes, axes.__class__)
+        axes.set_ylim = MethodType(trace_set_ylim, axes, axes.__class__)
+
+def make_a_raster_axes(axes):
+    # monkey-patch the axes.set_ylim function
+    if not hasattr(axes, '_old_set_ylim'):
+        axes._old_set_ylim = axes.set_ylim
+        axes.set_ylim = MethodType(trace_set_ylim, axes, axes.__class__)
 
 def clear_figure(figure):
     '''
@@ -43,7 +194,7 @@ def plot_raster_to_axes(spike_times, axes,
     elif raster_pos == 'bottom':  
         spike_y = min(axes.get_ylim())
     elif raster_pos == 'center': 
-        spike_y = 0.0
+        spike_y = numpy.average(axes.get_ylim())
         raster_height_factor = 1.0
     else:
         spike_y = raster_pos # raster_pos is a y value.
@@ -51,10 +202,15 @@ def plot_raster_to_axes(spike_times, axes,
 
     spike_ys = [spike_y for t in spike_times]
 
-    axes.plot(spike_times, spike_ys, marker='|', 
-                                     markersize=marker_size,
-                                     linewidth=0,
-                                     **kwargs)
+    if hasattr(axes, '_old_plot'): # in case is a trace_axes
+        plt_fn = axes._old_plot
+    else:
+        plt_fn = axes.plot
+    return_value = plt_fn(spike_times, spike_ys, 
+                           marker='|', 
+                           markersize=marker_size,
+                           linewidth=0,
+                           **kwargs)
     prev_xlim = axes.get_xlim()
     if force_bounds:
         lb = bounds[0]
@@ -63,6 +219,7 @@ def plot_raster_to_axes(spike_times, axes,
         lb = min(bounds[0], prev_xlim[0])
         ub = max(bounds[1], prev_xlim[1])
     axes.set_xlim(lb, ub)
+    return return_value
 
 def clear_axes(axes, clear_tick_labels=False):
     '''
@@ -80,6 +237,18 @@ def clear_axes(axes, clear_tick_labels=False):
         axes.set_yticklabels([''], visible=False)   
     elif clear_tick_labels == 'x_only':
         axes.set_xticklabels([''], visible=False)   
+    # remove extra data potentially put there by a trace_axes
+    if hasattr(axes, '_trace_times'):
+        del axes._trace_times
+        del axes._traces
+        del axes._trace_lines
+        del axes._trace_kwargs
+        del axes._trace_args
+        del axes._trace_draw_order
+    if hasattr(axes, '_post_trace_id'):
+        del axes._post_trace_id
+    if hasattr(axes, '_trace_xlim_locked'):
+        del axes._trace_xlim_locked
 
 def set_title(figure=None, old_text_obj=None, canvas_size_in_pixels=None, 
               new_name=None):
