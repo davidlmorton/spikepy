@@ -31,6 +31,49 @@ from spikepy.common.config_manager import config_manager as config
 def is_iterable(x):
     return hasattr(x, '__len__')
 
+def signal_fold(times, signal):
+    '''
+    This function will take the signal (assumed longer than times) and
+        flip it back and forth.  It is designed to make matplotlib plot
+        multiple lines faster (since they will be one line after the fold)
+    '''
+    result = []
+    t_result = []
+    if hasattr(signal, 'shape') and len(signal.shape) == 1:
+        num_chunks = int(len(signal)/len(times))
+        if num_chunks > 1:
+            for i in xrange(num_chunks):
+                start = 2*i
+                end   = 2*i+len(times)
+                this_chunk = signal[start:end]
+                if i%2:
+                    result.append(numpy.flipud(this_chunk))
+                    t_result.append(numpy.flipud(times))
+                else:
+                    result.append(this_chunk)
+                    t_result.append(times)
+
+    elif is_iterable(signal[0]):
+        num_chunks = len(signal)
+        if num_chunks > 1:
+            for i in xrange(num_chunks):
+                this_chunk = signal[i]
+                if i%2:
+                    result.append(numpy.flipud(this_chunk))
+                    t_result.append(numpy.flipud(times))
+                else:
+                    result.append(this_chunk)
+                    t_result.append(times)
+    else:
+        raise RuntimeError('Signal must be a 1D array or a 2D array.')
+
+    result = numpy.hstack(result)
+    t_result  = numpy.hstack(t_result)
+        
+    return t_result, result
+
+
+
 def downsample_for_plot(times, signal, tmin, tmax, num_samples=1000):
     imin = bisect.bisect_left(times, tmin)
     imax = bisect.bisect_right(times, tmax)
@@ -88,7 +131,7 @@ def trace_set_xlim(axes, tmin=None, tmax=None, **kwargs):
                 del axes._trace_lines[t_id]
 
             # downsample
-            new_times, new_trace = downsample_for_plot(axes._trace_times, 
+            new_times, new_trace = downsample_for_plot(axes._trace_times[t_id], 
                                                        axes._traces[t_id],
                                                        tmin, tmax)
             # lock --> plot --> unlock
@@ -136,6 +179,9 @@ def trace_plot(axes, times, trace, *args, **kwargs):
                 axes._trace_lines[replace_trace_id].remove()
                 del axes._trace_lines[replace_trace_id]
                 del axes._traces[replace_trace_id]
+                del axes._trace_times[replace_trace_id]
+                del axes._trace_kwargs[replace_trace_id]
+                del axes._trace_args[replace_trace_id]
                 axes._trace_draw_order.remove(replace_trace_id)
             else:
                 raise RuntimeError('Cannot replace trace, trace_id %s does not exist' % replace_trace_id)
@@ -143,7 +189,7 @@ def trace_plot(axes, times, trace, *args, **kwargs):
             raise RuntimeError('Cannot relace a trace because none exist.')
     else:
         if not hasattr(axes, '_trace_times'):
-            axes._trace_times = times
+            axes._trace_times = {}
             axes._traces = {}
             axes._trace_lines = {}
             axes._trace_kwargs = {}
@@ -152,6 +198,7 @@ def trace_plot(axes, times, trace, *args, **kwargs):
 
     # add the new trace
     axes._traces[this_trace_id] = trace
+    axes._trace_times[this_trace_id] = times
     axes._trace_kwargs[this_trace_id] = kwargs
     axes._trace_draw_order.append(this_trace_id)
     axes._trace_args[this_trace_id] = args

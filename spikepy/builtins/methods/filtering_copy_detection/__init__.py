@@ -25,6 +25,7 @@ class FilteringCopyDetection(FilteringMethod):
     def __init__(self):
         self.name = 'Copy Detection Filtering'
         self.description = 'Copy the results of the detection filtering stage.'
+        self._is_stochastic = True # always yields potentially novel results.
 
     def make_control_panel(self, parent, **kwargs):
         return ControlPanel(parent, **kwargs)

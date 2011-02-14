@@ -122,7 +122,8 @@ class FilterPlotPanel(SpikepyPlotPanel):
 
         # calculate psd to be plotted.
         results = trial.get_stage_data(self.name).results
-        filtered_traces = results['traces']
+        filtered_traces = results['resampled_traces']
+        times = results['resampled_times']
         Pxx, freqs = results['psd']
         plotted_Pxx = 10*numpy.log10(Pxx)
 
@@ -146,7 +147,7 @@ class FilterPlotPanel(SpikepyPlotPanel):
             kwargs['color'] = self.line_color
             kwargs['linewidth'] = self.line_width
             kwargs['label'] = pt.FILTERED_TRACE_GRAPH_LABEL
-            t_id = trace_axes.plot(trial.times, filtered_traces[i], **kwargs)
+            t_id = trace_axes.plot(times, filtered_traces[i], **kwargs)
             trace_axes._post_trace_id = t_id
             
             trace_axes.set_xlim(trial.times[0], trial.times[-1])

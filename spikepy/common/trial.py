@@ -29,6 +29,7 @@ import scipy.io
 
 from spikepy.common import program_text as pt
 from spikepy.common import utils
+from spikepy.common.config_manager import config_manager as config
 
 text_delimiters = {pt.PLAIN_TEXT_TABS: '\t',
                    pt.PLAIN_TEXT_SPACES: ' ',
@@ -66,7 +67,9 @@ class Trial(object):
         # calculate the psds of the raw_traces
         from spikepy.common import signal_utils 
         # imports matplotlib, so can't be at top.
-        self.psd = signal_utils.psd(self.raw_traces.flatten(), sampling_freq, 1.0)
+        self.psd = signal_utils.psd(self.raw_traces.flatten(), 
+                                    sampling_freq, 
+                                    config['backend']['psd_freq_resolution'])
 
         self.sampling_freq = sampling_freq
         self.dt            = (1.0/sampling_freq)*1000.0 # dt in ms

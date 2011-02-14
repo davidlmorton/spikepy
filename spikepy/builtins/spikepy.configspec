@@ -41,8 +41,6 @@
             detection=string(default=None)
             extraction=string(default=None)
             pca=list(default=None)
-        [[[filtering]]]
-            psd_freq_resolution=float(default=None)
         [[[detection]]]
             filtered_trace_color=float_list(min=3, max=4, default=None)
             filtered_trace_linewidth=integer(min=0, max=5, default=None)
@@ -86,7 +84,8 @@
     [[control_panel]]
         border=integer(min=0, max=10, default=None)
 [backend]
+    psd_freq_resolution=float(default=None)
     limit_num_processes=integer(min=1, default=None)
-    new_sampling_freq=integer(min=5000, max=50000, default=None)
+    min_sampling_freq=integer(min=5000, max=50000, default=None)
     spike_window_prepad=float(min=0.01, default=None)
     spike_window_postpad=float(min=0.01, default=None)

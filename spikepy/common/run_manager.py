@@ -15,6 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import multiprocessing
+import math
 import traceback 
 import sys
 import copy
@@ -39,69 +40,71 @@ import spikepy.common.program_text as pt
 def filter_process_worker(run_queue, results_queue):
     for run_data in iter(run_queue.get, None):
         method_class, run_dict = run_data
-        if run_dict['novel']:
-            method_obj = method_class()
-            filtered_traces = method_obj.run(*run_dict['args'], 
-                                             **run_dict['kwargs'])
-            filtered_traces = utils.format_traces(filtered_traces)
-            sampling_freq = run_dict['args'][1]
-            # calculate the psd of the filtered traces
-            filtered_psd = signal_utils.psd(filtered_traces.flatten(), 
-                                            sampling_freq, 1.0)
+        method_obj = method_class()
+        filtered_traces = method_obj.run(*run_dict['args'], 
+                                         **run_dict['kwargs'])
+        filtered_traces = utils.format_traces(filtered_traces)
+        sampling_freq = run_dict['args'][1]
+        # calculate the psd of the filtered traces
+        filtered_psd = signal_utils.psd(filtered_traces.flatten(), 
+            sampling_freq, config_manager['backend']['psd_freq_resolution'])
 
-            # resample the filtered traces
-            new_sampling_freq = config_manager['backend']['new_sampling_freq']
-            resampled_traces = []
-            resampled_traces = utils.resample_signals(filtered_traces, 
-                                                      sampling_freq, 
-                                                      new_sampling_freq)
-            resampled_filtered_traces = utils.format_traces(resampled_traces)
+        # resample the filtered traces
+        min_sampling_freq = config_manager['backend']['min_sampling_freq']
+        rate_factor = int(math.ceil(min_sampling_freq/
+                                    float(sampling_freq)))
+        new_sf = sampling_freq*rate_factor
+        # prep the result.
+        resampled_traces = numpy.empty(
+            (len(filtered_traces), len(filtered_traces[0])*rate_factor), 
+            dtype=filtered_traces[0].dtype)
+        for fti, ft in enumerate(filtered_traces):
+            resampled_traces[fti]= utils.resample_signal(ft, 
+                    sampling_freq, min_sampling_freq)
+        resampled_times = numpy.arange(resampled_traces.shape[1],
+                dtype=resampled_traces.dtype)*(1000.0/new_sf)
 
-            result = {'traces':filtered_traces,
-                      'psd':filtered_psd,
-                      'resampled_traces':resampled_filtered_traces,
-                      'new_sampling_freq':new_sampling_freq}
-        else:
-            result = run_dict['previous_results']
-        
+        result = {'traces':filtered_traces,
+                  'psd':filtered_psd,
+                  'resampled_traces':resampled_traces,
+                  'resampled_times':resampled_times,
+                  'new_sampling_freq':new_sf}
+
         results_queue.put({'trial_id':run_dict['trial_id'],
                            'data':result})
 
 def detection_process_worker(run_queue, results_queue):
     for run_data in iter(run_queue.get, None):
         method_class, run_dict = run_data
-        if run_dict['novel']:
-            method_obj = method_class()
-            spikes = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
+        method_obj = method_class()
+        spikes = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
 
-            # make spike windows and store them.
-            window_maker_class = run_dict['window_maker_class']
-            window_maker_obj = window_maker_class()
+        # make spike windows and store them.
+        window_maker_class = run_dict['window_maker_class']
+        window_maker_obj = window_maker_class()
 
-            if len(spikes > 0):
-                traces, sampling_freq = run_dict['args']
-                pre_padding = run_dict['pre_padding']
-                post_padding = run_dict['post_padding']
-                window_dict = window_maker_obj.run(traces, sampling_freq, 
-                                                   spikes,
-                                                   pre_padding=pre_padding,
-                                                   post_padding=post_padding,
-                                                   exclude_overlappers=False)
+        if len(spikes > 0):
+            traces, sampling_freq = run_dict['args']
+            pre_padding = run_dict['pre_padding']
+            post_padding = run_dict['post_padding']
+            window_dict = window_maker_obj.run(traces, sampling_freq, 
+                                               spikes,
+                                               pre_padding=pre_padding,
+                                               post_padding=post_padding,
+                                               exclude_overlappers=False)
 
-                spike_window_ys = window_dict['features']
-                dt_in_ms = 1000.0/sampling_freq
-                spike_window_xs = numpy.arange(len(spike_window_ys[0]))*dt_in_ms
-                spike_window_times = window_dict['feature_times']
-            else:
-                spike_window_xs = []
-                spike_window_times = []
-                spike_window_ys = []
-            result = {'spike_times':spikes,
-                      'spike_window_xs':spike_window_xs,
-                      'spike_window_times':spike_window_times,
-                      'spike_window_ys':spike_window_ys}
+            spike_window_ys = window_dict['features']
+            dt_in_ms = 1000.0/sampling_freq
+            spike_window_xs = numpy.arange(len(spike_window_ys[0]))*dt_in_ms
+            spike_window_times = window_dict['feature_times']
         else:
-            result = run_dict['previous_results']
+            spike_window_xs = []
+            spike_window_times = []
+            spike_window_ys = []
+        result = {'spike_times':spikes,
+                  'spike_window_xs':spike_window_xs,
+                  'spike_window_times':spike_window_times,
+                  'spike_window_ys':spike_window_ys}
         
         results_queue.put({'trial_id':run_dict['trial_id'],
                            'data':result})
@@ -109,23 +112,20 @@ def detection_process_worker(run_queue, results_queue):
 def extraction_process_worker(run_queue, results_queue):
     for run_data in iter(run_queue.get, None):
         method_class, run_dict = run_data
-        if run_dict['novel']:
-            method_obj = method_class()
-            try:
-                result = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
-                rotated_features, pc, var = utils.pca(result['features'])
-                result['pca_rotated_features'] = rotated_features
-                result['pca_basis_vectors'] = pc
-                result['pca_variances'] = var
-            except:
-                result = {'features': [], 'feature_times':[],
-                          'excluded_features':[],
-                          'excluded_feature_times':[],
-                          'pca_rotated_features':[],
-                          'pca_basis_vectors':[],
-                          'pca_variances':[]}
-        else:
-            result = run_dict['previous_results']
+        method_obj = method_class()
+        try:
+            result = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
+            rotated_features, pc, var = utils.pca(result['features'])
+            result['pca_rotated_features'] = rotated_features
+            result['pca_basis_vectors'] = pc
+            result['pca_variances'] = var
+        except:
+            result = {'features': [], 'feature_times':[],
+                      'excluded_features':[],
+                      'excluded_feature_times':[],
+                      'pca_rotated_features':[],
+                      'pca_basis_vectors':[],
+                      'pca_variances':[]}
 
         results_queue.put({'trial_id':run_dict['trial_id'],
                            'data':result})
@@ -342,7 +342,15 @@ class RunManager(object):
         strategy    = message.data['strategy']
         method_name = strategy.methods_used[stage_name]
         settings    = strategy.settings[stage_name]
-        trial_list  = message.data['trial_list']
+        potential_trial_list = message.data['trial_list']
+
+        method_class = plugin_utils.get_method(stage_name, method_name,
+                                               instantiate=False)
+        # ensure results would be novel, otherwise remove from trial_list
+        trial_list = []
+        for trial in potential_trial_list:
+            if trial.would_be_novel(stage_name, method_class, settings):
+                trial_list.append(trial)
 
         # make special case for 'Copy Detection Filtering'
         if stage_name == 'extraction_filter' and\
@@ -353,10 +361,7 @@ class RunManager(object):
         pre_handler = self._pre_handlers[stage_name]
         process_worker = self._process_workers[stage_name]
 
-        method_class = plugin_utils.get_method(stage_name, method_name,
-                                               instantiate=False)
-        run_dict_list = pre_handler(trial_list, stage_name, method_class, 
-                                    settings)
+        run_dict_list = pre_handler(trial_list, stage_name, settings)
 
         self._register_running()
         startWorker(self._run_stage_consumer, self._run_stage_worker,
@@ -384,9 +389,9 @@ class RunManager(object):
 
         jobs = []
         for i in xrange(num_process_workers):
-            # jobs run on run_data_queue and put results into the results_queue
             job = multiprocessing.Process(target=process_worker, 
-                                          args=(run_data_queue, results_queue))
+                                          args=(run_data_queue, 
+                                                results_queue))
             job.start()
             jobs.append(job)
 
@@ -427,23 +432,19 @@ class RunManager(object):
 
 
                 
-    def _pre_filter(self, trial_list, stage_name, method_class, settings):
+    def _pre_filter(self, trial_list, stage_name, settings):
         run_dict_list = []
         for trial in trial_list:
             raw_traces = trial.raw_traces
             sampling_freq = trial.sampling_freq
             args = (raw_traces, sampling_freq)
             kwargs = settings
-            novel = trial.would_be_novel(stage_name, method_class, settings)
-            previous_results = trial.get_stage_data(stage_name).results
             run_dict_list.append({'trial_id':trial.trial_id,
-                                  'previous_results':previous_results,
-                                  'novel':novel,
                                   'args':args, 
                                   'kwargs':kwargs})
         return run_dict_list
 
-    def _pre_detection(self, trial_list, stage_name, method_class, settings):
+    def _pre_detection(self, trial_list, stage_name, settings):
         run_dict_list = []
         for trial in trial_list:
             bc = config_manager['backend']
@@ -457,11 +458,7 @@ class RunManager(object):
             sampling_freq = dfr['new_sampling_freq']
             args = (traces, sampling_freq)
             kwargs = settings
-            novel = trial.would_be_novel(stage_name, method_class, settings)
-            previous_results = trial.get_stage_data(stage_name).results
             run_dict_list.append({'trial_id':trial.trial_id,
-                                  'previous_results':previous_results,
-                                  'novel':novel,
                                   'args':args, 
                                   'kwargs':kwargs,
                                   'window_maker_class':window_maker_class,
@@ -469,7 +466,7 @@ class RunManager(object):
                                   'post_padding':post_padding})
         return run_dict_list
 
-    def _pre_extraction(self, trial_list, stage_name, method_class, settings):
+    def _pre_extraction(self, trial_list, stage_name, settings):
         run_dict_list = []
         for trial in trial_list:
             efr = trial.extraction_filter.results
@@ -478,16 +475,12 @@ class RunManager(object):
             spike_times = trial.detection.results['spike_times']
             args = (traces, sampling_freq, spike_times)
             kwargs = settings
-            novel = trial.would_be_novel(stage_name, method_class, settings)
-            previous_results = trial.get_stage_data(stage_name).results
             run_dict_list.append({'trial_id':trial.trial_id,
-                                  'previous_results':previous_results,
-                                  'novel':novel,
                                   'args':args, 
                                   'kwargs':kwargs})
         return run_dict_list
 
-    def _pre_clustering(self, trial_list, stage_name, method_class, settings):
+    def _pre_clustering(self, trial_list, stage_name, settings):
         # get all feature_sets from all trials in a single long list.
         master_key_list   = []
         feature_set_list  = []
