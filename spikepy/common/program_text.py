@@ -26,19 +26,27 @@ FILE_LISTCTRL_TITLE = 'Opened Files List'
 PREFERENCES_FRAME_TITLE = "Preferences"
 WORKSPACES_MANAGER = "Workspaces Manager"
 
-MATPLOTLIB_VERSION = '''Matplotlib versions less than %s will not
-render all plots optimally.
+UNMARKABLE_TRIAL = '''
+Trial named "%s" is unable to be marked.
+
+This trial has %d voltage signal(s), while the marked trials all have %d voltage signal(s).
+
+Trials with different numbers of voltage signals cannot be marked at the same time.
+''' 
+
+MATPLOTLIB_VERSION = '''
+Matplotlib versions less than %s will not render all plots optimally.
 
 You're running version %s now.  
 Consider upgrading to get better looking plots.''' # % (min_ver, current_ver)
 
-ABOUT_SPIKEPY = ("Spikepy is a python-based spike sorting "
-            "framework. It has been designed to be general enough to implement "
-            "many different spike sorting algorithms. Spikepy can be used by "
-            "electrophysiologists without any additional programming required. "
-            "Additionally, spikepy can be easily extended to include many more "
-            "algorithms, or to mix and match aspects of any existing "
-            "algorithms.")
+ABOUT_SPIKEPY = '''
+Spikepy is a python-based spike sorting framework. 
+
+It has been designed to be general enough to implement many different spike sorting algorithms.  Spikepy can be used by electrophysiologists without any additional programming skill required.  Additionally, spikepy can be easily extended to include many more spike sorting methods.  
+
+For more information visit http://code.google.com/p/spikepy
+'''
 
 # ---- Menu Bar Text ----            
 FILE = "File"

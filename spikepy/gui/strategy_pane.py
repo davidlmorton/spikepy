@@ -121,6 +121,8 @@ class StrategyPane(ScrolledPanel):
         '''
         pub.subscribe(self._set_run_buttons_state,
                       topic='SET_RUN_BUTTONS_STATE')
+        pub.subscribe(self._enact_strategy, 
+                      topic='ENACT_STRATEGY')
 
         self.stage_panels = [detection_filter_panel,
                              detection_panel,

@@ -74,6 +74,7 @@ class TrialGridCtrl(gridlib.Grid):
         self.Bind(wx.EVT_SIZE, self._ensure_fills_space)
 
         self._trial_ids = []
+        self._trials = {}
 
     # --- UTILITIES ---
     def _autosize_cols(self):
@@ -163,6 +164,16 @@ class TrialGridCtrl(gridlib.Grid):
         pub.sendMessage(topic='CLOSE_TRIAL',
                         data=trial_id)
 
+    def _is_markable(self, trial_id):
+        # make sure this trial has same number of traces as
+        #     all other marked trials.
+        num_traces = len(self._trials[trial_id].raw_traces)
+        for tid in self.marked_trial_ids:
+            tnum_traces = len(self._trials[tid].raw_traces)
+            if num_traces != tnum_traces:
+                return False
+        return True
+
     def _on_left_click(self, event):
         row = event.GetRow()
         col = event.GetCol()
@@ -171,6 +182,9 @@ class TrialGridCtrl(gridlib.Grid):
             trial_id = self._get_trial_id_from_row(row)
             if col == 0:
                 marked = self._get_marked_status(row)
+                if not marked and not self._is_markable(trial_id):
+                    pub.sendMessage('CANNOT_MARK_TRIAL', data=trial_id)
+                    return
                 self._set_marked_status(row, not marked)
             else: 
                 self._select_row(row)
@@ -264,6 +278,7 @@ class TrialGridCtrl(gridlib.Grid):
         self.AppendRows()
         self._num_empty_rows += 1
         self._trial_ids.remove(trial_id)
+        del self._trials[trial_id]
 
     def _trial_added(self, message):
         trial = message.data
@@ -271,6 +286,7 @@ class TrialGridCtrl(gridlib.Grid):
             
         new_row = self._num_nonempty_rows
         self._trial_ids.append(trial.trial_id)
+        self._trials[trial.trial_id] = trial
         self._set_trial_name(new_row, trial_name)
         self._set_marked_status(new_row, False)
 
@@ -282,7 +298,7 @@ class TrialGridCtrl(gridlib.Grid):
         assert len(self._trial_ids) == self._num_nonempty_rows
         # make new trial come in already marked.
         row = self._get_row_from_trial_id(trial.trial_id)
-        self._set_marked_status(row, True)
+        self._set_marked_status(row, self._is_markable(trial.trial_id))
 
     def _trial_renamed(self, message):
         trial = message.data

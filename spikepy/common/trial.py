@@ -30,6 +30,7 @@ import scipy.io
 from spikepy.common import program_text as pt
 from spikepy.common import utils
 from spikepy.common.config_manager import config_manager as config
+from spikepy.common.strategy import Strategy
 
 text_delimiters = {pt.PLAIN_TEXT_TABS: '\t',
                    pt.PLAIN_TEXT_SPACES: ' ',
@@ -119,6 +120,21 @@ class Trial(object):
         for stage in self.stages:
             _settings[stage.name] = stage.settings
         return _settings
+
+    def get_strategy(self):
+        '''
+        Return the strategy that describes the processing that has already been
+            performed on this trial.  If any stage is incomplete return None.
+        '''
+        for s in self.settings.values():
+            if s is None:
+                return None
+
+        for m in self.methods_used.values():
+            if m is None:
+                return None
+
+        return Strategy(methods_used=self.methods_used, settings=self.settings)
 
     def get_archive(self, archive_name='archive'):
         return_dict = {}

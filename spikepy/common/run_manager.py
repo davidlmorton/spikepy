@@ -660,6 +660,10 @@ class RunManager(object):
         self._opening_files.remove(fullpath)
         pub.sendMessage(topic='FILE_OPENED', data=fullpath)
 
+        trial_strategy = trial.get_strategy()
+        if trial_strategy is not None:
+            pub.sendMessage(topic='ENACT_STRATEGY', data=trial_strategy)
+
         pub.sendMessage(topic="FILE_OPENING_ENDED")
         self._file_opening_ended()
 

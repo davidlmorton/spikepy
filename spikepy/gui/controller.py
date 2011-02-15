@@ -14,7 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+import gzip
 import os 
 import traceback 
 import sys
@@ -31,7 +31,6 @@ from .view import View
 from .utils import named_color, load_pickle
 from spikepy.common import program_text as pt
 from spikepy.gui.strategy_progress_dialog import StrategyProgressDialog
-from spikepy.gui.matlab_dialog import MatlabDialog
 from .trial_rename_dialog import TrialRenameDialog
 from .pyshell import locals_dict
 from .export_dialog import ExportDialog
@@ -94,8 +93,7 @@ class Controller(object):
         pub.subscribe(self._run_stage_on_marked,  topic="RUN_STAGE_ON_MARKED")
         pub.subscribe(self._aborting_strategy, topic='ABORTING_STRATEGY')
         pub.subscribe(self._processing_finished, topic='PROCESSING_FINISHED')
-        pub.subscribe(self._open_matlab_file_dialog, 
-                      topic='OPEN_MATLAB_FILE_DIALOG')
+        pub.subscribe(self._cannot_mark_trial, 'CANNOT_MARK_TRIAL')
 
     def start_debug_subscriptions(self):
         pub.subscribe(self._print_messages) # subscribes to all topics
@@ -111,15 +109,17 @@ class Controller(object):
     def get_all_trials(self):
         return self.model.trials.values()
 
-    def _open_matlab_file_dialog(self, message):
-        trial_info_dict = message.data
-        fullpath = trial_info_dict['fullpath']
-        dlg = MatlabDialog(self.view.frame, fullpath)
-        if dlg.ShowModal() == wx.ID_OK:
-            print "yay"
-        else:
-            print "boo"
-        trial_info_dict['voltage_traces'] = []
+    def _cannot_mark_trial(self, message):
+        unmarkable_trial = self.model.trials[message.data]
+        num_traces_unmarkable = len(unmarkable_trial.raw_traces)
+        marked_trials = self.get_marked_trials() 
+        num_traces_marked = len(marked_trials[0].raw_traces)
+        msg = pt.UNMARKABLE_TRIAL % (unmarkable_trial.display_name,
+                                     num_traces_unmarkable,
+                                     num_traces_marked)
+        dlg = wx.MessageDialog(self.view.frame, msg, 
+                               style=wx.OK|wx.ICON_EXCLAMATION)
+        dlg.ShowModal()
         dlg.Destroy()
 
     def _run_stage_on_marked(self, message):
@@ -189,8 +189,10 @@ class Controller(object):
         save_filename = os.path.split(save_path)[1]
         trial_archives = [trial.get_archive(archive_name=save_filename) 
                           for trial in trials]
-        with open(save_path, 'w') as ofile:
-            cPickle.dump(trial_archives, ofile, protocol=-1)
+
+        ofile = gzip.open(save_path, 'wb')
+        cPickle.dump(trial_archives, ofile, protocol=-1)
+        ofile.close()
         
     def _print_messages(self, message):
         topic = message.topic
