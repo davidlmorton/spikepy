@@ -14,7 +14,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+import traceback
+import sys
 import os
 
 from wx.lib.pubsub import Publisher as pub
@@ -28,14 +29,31 @@ def open_data_file(fullpath, file_interpreter_name=None):
     Open a datafile given the filename and return a Trial object.
     """
     if file_interpreter_name is None:
-        file_interpreter = guess_file_interpreter(fullpath)
+        file_interpreters = guess_file_interpreters(fullpath)
 
-    return file_interpreter.read_data_file(fullpath)
+    all_e_info = []
+    for fi in file_interpreters:
+        try:
+            return fi.read_data_file(fullpath)
+        except:
+            all_e_info.append((fi, sys.exc_info()))
+
+    # write exception information to files.
+    for fi, exc_info in all_e_info:
+        filename = fi.name.lower().replace(' ', '_') + '.error'
+        with open(filename, 'w') as ofile:
+            traceback.print_exception(exc_info[0], exc_info[1], 
+                                      exc_info[2], 100, ofile)
+
+    raise RuntimeError('File Interpretation of %s failed.  Errors in "*.error" files.'
+                       % fullpath)
 
     
-def guess_file_interpreter(fullpath):
+def guess_file_interpreters(fullpath):
     """
     Guess the file_interpreter, given a data file's fullpath.
+    Returns a list of file_interpreters in descending order of
+        applicability.
     """
     filename = os.path.split(fullpath)[-1]
     extention = os.path.splitext(filename)[-1]
@@ -47,7 +65,7 @@ def guess_file_interpreter(fullpath):
             candidates[fi.priority] = fi
 
     if candidates:
-        high_priority = sorted(candidates.keys())[-1]
-        return candidates[high_priority]
+        return [candidates[key] for key in 
+                sorted(candidates.keys(), reverse=True)]
     
-    return file_interpreters[0]
+    return file_interpreters # try everything!
