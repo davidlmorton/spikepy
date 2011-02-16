@@ -166,7 +166,7 @@ def trace_autoset_ylim(axes):
                 all_min = ymin
             if ymax > all_max:
                 all_max = ymax
-        axes.set_ylim(all_min*1.05, all_max*1.05, force_set=True)
+        axes.set_ylim(all_min*1.05, all_max*1.05)
 
 def trace_plot(axes, times, trace, *args, **kwargs):
     this_trace_id = uuid.uuid4()
@@ -211,9 +211,7 @@ def make_a_trace_axes(axes):
         axes._old_plot = axes.plot
         axes.plot      = MethodType(trace_plot, axes, axes.__class__)
         axes._old_set_xlim = axes.set_xlim
-        axes._old_set_ylim = axes.set_ylim
         axes.set_xlim = MethodType(trace_set_xlim, axes, axes.__class__)
-        axes.set_ylim = MethodType(trace_set_ylim, axes, axes.__class__)
 
 def make_a_raster_axes(axes):
     # monkey-patch the axes.set_ylim function

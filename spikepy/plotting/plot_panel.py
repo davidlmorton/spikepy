@@ -62,7 +62,6 @@ class CustomToolbar(Toolbar):
                            longHelpString="PRINT")
         wx.EVT_TOOL(self, self.PRINT_ID3, self._print_preview)
         '''
-
         self.ENLARGE_CANVAS_ID = wx.NewId()
         self.AddSimpleTool(self.ENLARGE_CANVAS_ID, 
                            get_bitmap_image('arrow_out'),
