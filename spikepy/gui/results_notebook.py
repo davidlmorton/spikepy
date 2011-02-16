@@ -72,6 +72,8 @@ class ResultsNotebook(wx.Notebook):
                                'summary':summary_panel}
         pyshell.locals_dict['results_panels'] = self.results_panels
         self._last_page_selected = None
+        # put user at filtering page.
+        self._page_changed(old_page_num=1, new_page_num=0)
 
     def _on_size(self, event):
         event.Skip()
@@ -83,7 +85,7 @@ class ResultsNotebook(wx.Notebook):
         return self.results_panels[stage_name].plot_checkbox.IsChecked()
 
     def get_current_stage_name(self):
-        return self.GetCurrentPage().name
+        return self.GetPage(self._selected_page_num).name
 
     def _print(self, data=None):
         current_plot_panel = self.get_currently_shown_plot_panel()
@@ -97,20 +99,19 @@ class ResultsNotebook(wx.Notebook):
         current_plot_panel = self.get_currently_shown_plot_panel()
         current_plot_panel.page_setup()
 
-    def _page_changed(self, event=None):
-        old_page_num  = event.GetOldSelection()
-        new_page_num  = event.GetSelection()
-        print "Results panel changing focus from %d to %d" % (old_page_num, new_page_num)
+    def _page_changed(self, event=None, old_page_num=None, new_page_num=None):
+        if event is not None:
+            old_page_num  = event.GetOldSelection()
+            new_page_num  = event.GetSelection()
+        self._selected_page_num = new_page_num
         pub.sendMessage(topic='RESULTS_NOTEBOOK_PAGE_CHANGED', 
                         data=(old_page_num, new_page_num))
-
         try:
             old_page = self.GetPage(old_page_num)
         except ValueError:
             # we're catching an odd behavior of wx on application close.
             event.Skip()
             return
-        print "Results hiding results for '%s'" % (old_page.name)
         pub.sendMessage(topic="HIDE_RESULTS", data=old_page.name)
         event.Skip()
 
