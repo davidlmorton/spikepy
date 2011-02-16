@@ -81,8 +81,8 @@ class ConfigManager(object):
             return self.get_size('main_frame')*size_ratio
         elif name == 'figure':
             rfs = copy.copy(self.results_frame_size)
-            rfs[0] -= 15 # compensate for scroll bar
-            rfs[1] -= 40 # compensate for tabs.
+            rfs[0] -= 25 # compensate for scroll bar
+            rfs[1] -= 60 # compensate for tabs.
             base = rfs/self['gui']['plotting']['dpi']
             width = base[0]
             height = base[1]/2.0
