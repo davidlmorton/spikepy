@@ -39,7 +39,7 @@ class ConfigManager(object):
         self._current = configobj.ConfigObj()
         self._status_markers = None
         self._control_border = None
-        self._results_frame_size = None
+        self._results_frame_size = numpy.array([800, 600])
         pub.subscribe(self._set_results_frame_size, "SET_RESULTS_FRAME_SIZE")
 
     def load_configs(self):
@@ -63,8 +63,9 @@ class ConfigManager(object):
         return self._current[key]
 
     def _set_results_frame_size(self, message):
-        size = message.data
-        self._results_frame_size = numpy.array(size)
+        size = numpy.array(message.data)
+        if size[0] != 0 and size[1] != 0:
+            self._results_frame_size = size
 
     @property
     def results_frame_size(self):
