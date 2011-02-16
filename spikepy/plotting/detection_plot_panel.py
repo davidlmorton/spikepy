@@ -57,8 +57,14 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         plot_panel.axes['rate'] = ra = figure.add_subplot(num_srows, 1, 2)
         plot_panel.axes['trace'] = []
         for i in xrange(len(trial.raw_traces)):
-            trace_axes = figure.add_subplot(num_trows, 1, i+2, 
+            if i == 0:
+                trace_axes = figure.add_subplot(num_trows, 1, i+2, 
                                             sharex=plot_panel.axes['rate'])
+            else:
+                trace_axes = figure.add_subplot(num_trows, 1, i+2, 
+                                            sharex=plot_panel.axes['rate'],
+                                            sharey=trace_axes)
+
             utils.set_axes_ticker(trace_axes, axis='yaxis')
             plot_panel.axes['trace'].append(trace_axes)
 
@@ -98,8 +104,12 @@ class DetectionPlotPanel(SpikepyPlotPanel):
 
         # clone the trace_axes to make a raster_axes.
         plot_panel.axes['raster'] = []
-        for trace_axes in plot_panel.axes['trace']:
-            raster_axes = figure.add_axes(trace_axes.get_position())
+        for i, trace_axes in enumerate(plot_panel.axes['trace']):
+            if i == 0:
+                raster_axes = figure.add_axes(trace_axes.get_position())
+            else:
+                raster_axes = figure.add_axes(trace_axes.get_position(),
+                                              sharex=raster_axes)
             raster_axes.set_xticklabels([''], visible=False)
             raster_axes.set_yticklabels([''], visible=False)
             raster_axes.set_frame_on(False)
@@ -122,18 +132,27 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         pc = config['gui']['plotting']
         plot_panel = self._plot_panels[trial_id]
         trial = self._trials[trial_id]
-        traces = trial.get_stage_data('detection_filter').results['traces']
+        results = trial.get_stage_data('detection_filter').results
+        traces = results['traces']
+        times = trial.times
+        resampled_traces = results['resampled_traces']
+        resampled_times = results['resampled_times']
+
 
         # clear and plot the traces
         num_traces = len(trial.raw_traces)
         for i, trace_axes in enumerate(plot_panel.axes['trace']):
             utils.clear_axes(trace_axes)
             utils.make_a_trace_axes(trace_axes)
-            trace_axes.plot(trial.times, traces[i],
+            trace_axes.plot(times, traces[i],
                             color=self.line_color, 
                             linewidth=self.line_width, 
                             label=pt.FILTERED_TRACE_GRAPH_LABEL)
+            trace_axes.plot(resampled_times, resampled_traces[i],
+                            color=self.line_color,
+                            linewidth=1, alpha=0.5)
             std = numpy.std(traces[i])
+            trace_axes.set_xlim(trial.times[0], trial.times[-1])
 
             for factor, linestyle in [(2,'solid'),(4,'dashed')]:
                 trace_axes.axhline(std*factor, 
@@ -145,7 +164,6 @@ class DetectionPlotPanel(SpikepyPlotPanel):
                                    color='k', 
                                    linewidth=pc['std_trace_linewidth'], 
                                    linestyle=linestyle)
-            trace_axes.set_xlim(trial.times[0], trial.times[-1])
             utils.trace_autoset_ylim(trace_axes)
             utils.set_axes_ticker(trace_axes, axis='yaxis') 
         top_trace_axes = plot_panel.axes['trace'][0]
@@ -256,4 +274,5 @@ class DetectionPlotPanel(SpikepyPlotPanel):
                                       marker_size=marker_size,
                                       markeredgewidth=markeredgewidth,
                                       color=color)[0]
+            raster_axes.set_xticks([])
         

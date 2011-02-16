@@ -56,7 +56,8 @@ class FilterPlotPanel(SpikepyPlotPanel):
                 trace_axes = figure.add_subplot(num_rows, 1, i+2)
             else:
                 trace_axes = figure.add_subplot(num_rows, 1, i+2,
-                                                sharex=trace_axes)
+                                                sharex=trace_axes,
+                                                sharey=trace_axes)
                 
             utils.set_axes_ticker(trace_axes, axis='yaxis')
             plot_panel.axes['trace'].append(trace_axes)

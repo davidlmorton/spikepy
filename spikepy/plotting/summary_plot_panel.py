@@ -222,9 +222,6 @@ class SummaryPlotPanel(SpikepyPlotPanel):
             trace_ticks.append(numpy.average(trace+trace_offset))
         trace_axes.set_yticks(trace_ticks)
         trace_axes.set_yticklabels(['%d' % i for i in xrange(len(traces))])
-        # set xlim for trace and raster axes
-        for axes in [trace_axes, raster_axes]:
-            axes.set_xlim(times[0], times[-1])
         # set the ylimits for the trace_axes and raster_axes
         utils.trace_autoset_ylim(trace_axes)
         final_ylim = trace_axes.get_ylim()
@@ -245,6 +242,10 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         # label raster_axes y ticks
         raster_axes.set_yticks(spike_y_list)
         raster_axes.set_yticklabels(['%d' % key for key in keys])
+
+        # set xlim for trace and raster axes
+        for axes in [trace_axes, raster_axes]:
+            axes.set_xlim(times[0], times[-1])
     
 
     def _plot_averages_and_stds(self, trial, figure, trial_id):
