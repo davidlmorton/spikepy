@@ -159,8 +159,7 @@ class SummaryPlotPanel(SpikepyPlotPanel):
                     top=isi_inset)
 
         # clone trace_axes: raster_axes will be on top of trace axes.
-        raster_axes = figure.add_axes(trace_axes.get_position(), 
-                                      sharex=trace_axes)
+        raster_axes = figure.add_axes(trace_axes.get_position())
         utils.make_a_raster_axes(raster_axes)
         raster_axes.set_frame_on(False)
         raster_yaxis = raster_axes.get_yaxis()
