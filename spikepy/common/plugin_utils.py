@@ -60,7 +60,7 @@ def get_method(stage_name, method_name, instantiate=False):
                 return method
             else:
                 return method_class
-    raise runtimeerror("couldn't find method named '%s' from stage '%s'" %
+    raise RuntimeError("couldn't find method named '%s' from stage '%s'" %
                         (method_name, stage_name))
 
 def get_all_file_interpreters():

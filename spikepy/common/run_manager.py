@@ -203,7 +203,6 @@ def clustering_process_worker(run_queue, results_queue):
 class RunManager(object):
     def __init__(self):
         self.trials = {}
-        plugin_utils.load_all_plugins()
         path_utils.setup_user_directories()
         config_manager.load_configs()
         

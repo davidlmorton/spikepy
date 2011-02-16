@@ -19,7 +19,7 @@ import time
 import gc
 
 import matplotlib
-matplotlib.use('WXAgg') # breaks pep-8 to put code here, but matplotlib 
+matplotlib.use('WXAgg', warn=False) # breaks pep-8 to put code here, but matplotlib 
                         #     requires this before importing wxagg backend
 from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as Canvas,
                                              NavigationToolbar2WxAgg as Toolbar)
