@@ -149,12 +149,8 @@ class ConfigManager(object):
         return self._status_markers[1]
 
     def get_status_markers(self):
-        if path_utils.platform() == 'mac':
-            unmarked = self._current['gui']['trial_list']['unmarked_status_mac']
-            marked = self._current['gui']['trial_list']['marked_status_mac']
-        else:
-            unmarked = self._current['gui']['trial_list']['unmarked_status']
-            marked = self._current['gui']['trial_list']['marked_status']
+        unmarked = self._current['gui']['trial_list']['unmarked_status']
+        marked = self._current['gui']['trial_list']['marked_status']
         return (unichr(unmarked), unichr(marked))
 
     @property

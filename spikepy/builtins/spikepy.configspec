@@ -17,8 +17,6 @@
         start_height=integer(min=100, max=400, default=None) # in pixels
         marked_status=integer(default=None)
         unmarked_status=integer(default=None)
-        marked_status_mac=integer(default=None)
-        unmarked_status_mac=integer(default=None)
         column_width_compensation=integer(default=None)
     [[plotting]]
         dpi=float(min=10, max=150, default=None)

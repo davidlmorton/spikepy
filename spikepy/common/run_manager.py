@@ -82,8 +82,9 @@ def detection_process_worker(run_queue, results_queue):
         spikes = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
 
         # make spike windows and store them.
-        window_maker_class = run_dict['window_maker_class']
-        window_maker_obj = window_maker_class()
+        window_maker_obj = plugin_utils.get_method('extraction',
+                                                   'Spike Window',
+                                                   instantiate=True)
 
         if len(spikes > 0):
             traces, sampling_freq = run_dict['args']
@@ -452,9 +453,6 @@ class RunManager(object):
             pre_padding = bc['spike_window_prepad']
             post_padding = bc['spike_window_postpad']
             dfr = trial.detection_filter.results
-            window_maker_class = plugin_utils.get_method('extraction',
-                                                         'Spike Window',
-                                                         instantiate=False)
             traces = dfr['resampled_traces']
             sampling_freq = dfr['new_sampling_freq']
             args = (traces, sampling_freq)
@@ -462,7 +460,6 @@ class RunManager(object):
             run_dict_list.append({'trial_id':trial.trial_id,
                                   'args':args, 
                                   'kwargs':kwargs,
-                                  'window_maker_class':window_maker_class,
                                   'pre_padding':pre_padding,
                                   'post_padding':post_padding})
         return run_dict_list
