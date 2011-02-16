@@ -39,7 +39,9 @@ import spikepy.common.program_text as pt
 
 def filter_process_worker(run_queue, results_queue):
     for run_data in iter(run_queue.get, None):
-        method_obj, run_dict = run_data
+        stage_name, method_name, run_dict = run_data
+        method_obj = plugin_utils.get_method(stage_name, method_name,
+                                             instantiate=True)
         filtered_traces = method_obj.run(*run_dict['args'], 
                                          **run_dict['kwargs'])
         filtered_traces = utils.format_traces(filtered_traces)
@@ -74,7 +76,9 @@ def filter_process_worker(run_queue, results_queue):
 
 def detection_process_worker(run_queue, results_queue):
     for run_data in iter(run_queue.get, None):
-        method_obj, run_dict = run_data
+        stage_name, method_name, run_dict = run_data
+        method_obj = plugin_utils.get_method(stage_name, method_name,
+                                             instantiate=True)
         spikes = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
 
         # make spike windows and store them.
@@ -109,7 +113,9 @@ def detection_process_worker(run_queue, results_queue):
 
 def extraction_process_worker(run_queue, results_queue):
     for run_data in iter(run_queue.get, None):
-        method_obj, run_dict = run_data
+        stage_name, method_name, run_dict = run_data
+        method_obj = plugin_utils.get_method(stage_name, method_name,
+                                             instantiate=True)
         try:
             result = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
             rotated_features, pc, var = utils.pca(result['features'])
@@ -129,7 +135,9 @@ def extraction_process_worker(run_queue, results_queue):
 
 def clustering_process_worker(run_queue, results_queue):
     for run_data in iter(run_queue.get, None):
-        method_obj, run_dict = run_data
+        stage_name, method_name, run_dict = run_data
+        method_obj = plugin_utils.get_method(stage_name, method_name,
+                                             instantiate=True)
         results = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
         
         master_key_list      = run_dict['master_key_list']
@@ -361,12 +369,12 @@ class RunManager(object):
 
         self._register_running()
         startWorker(self._run_stage_consumer, self._run_stage_worker,
-                    wargs=(trial_list, method_class, run_dict_list, 
+                    wargs=(trial_list, stage_name, method_name, run_dict_list, 
                            process_worker),
                     cargs=(trial_list, stage_name, strategy))
 
-    def _run_stage_worker(self, trial_list, method_class, run_dict_list, 
-                          process_worker):
+    def _run_stage_worker(self, trial_list, stage_name, method_name, 
+                          run_dict_list, process_worker):
         try:
             num_process_workers = multiprocessing.cpu_count()
         except NotImplimentedError:
@@ -378,7 +386,7 @@ class RunManager(object):
         # setup the run and return queues.
         run_data_queue = multiprocessing.Queue()
         for run_dict in run_dict_list:
-            run_data_queue.put((method_class(), run_dict))
+            run_data_queue.put((stage_name, method_name, run_dict))
         for i in xrange(num_process_workers):
             run_data_queue.put(None)
         results_queue = multiprocessing.Queue()
