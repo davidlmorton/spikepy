@@ -203,8 +203,6 @@ def clustering_process_worker(run_queue, results_queue):
 class RunManager(object):
     def __init__(self):
         self.trials = {}
-        path_utils.setup_user_directories()
-        config_manager.load_configs()
         
         self.num_processes = 0
         self.num_files = 0
