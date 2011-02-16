@@ -62,6 +62,7 @@ class TrialGridCtrl(gridlib.Grid):
         self._last_trial_id_selected = None
         self.SetGridCursor(0, 4)
         self.SetRowLabelSize(0)
+        self.SetColLabelSize(0)
         self._autosize_cols()
         
         pub.subscribe(self._trial_added, topic='TRIAL_ADDED')
@@ -279,6 +280,10 @@ class TrialGridCtrl(gridlib.Grid):
         self._num_empty_rows += 1
         self._trial_ids.remove(trial_id)
         del self._trials[trial_id]
+        
+        # if trial was selected, unselect it.
+        if self._last_trial_id_selected == trial_id:
+            self._last_trial_id_selected = None
 
     def _trial_added(self, message):
         trial = message.data
@@ -288,7 +293,6 @@ class TrialGridCtrl(gridlib.Grid):
         self._trial_ids.append(trial.trial_id)
         self._trials[trial.trial_id] = trial
         self._set_trial_name(new_row, trial_name)
-        self._set_marked_status(new_row, False)
 
         self._autosize_cols()
         if self._num_empty_rows > 1:
@@ -298,7 +302,12 @@ class TrialGridCtrl(gridlib.Grid):
         assert len(self._trial_ids) == self._num_nonempty_rows
         # make new trial come in already marked.
         row = self._get_row_from_trial_id(trial.trial_id)
+        self.SetCellRenderer(row, 0, gridlib.GridCellBoolRenderer())
         self._set_marked_status(row, self._is_markable(trial.trial_id))
+
+        # only select new trial if nothing is selected.
+        if self._last_trial_id_selected is None:
+            wx.CallLater(1000, self._select_row, row)
 
     def _trial_renamed(self, message):
         trial = message.data

@@ -149,9 +149,9 @@ class ConfigManager(object):
         return self._status_markers[1]
 
     def get_status_markers(self):
-        unmarked = self._current['gui']['trial_list']['unmarked_status']
-        marked = self._current['gui']['trial_list']['marked_status']
-        return (unichr(unmarked), unichr(marked))
+        unmarked = '0'
+        marked = '1' 
+        return (unmarked, marked)
 
     @property
     def control_border(self):

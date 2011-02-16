@@ -100,6 +100,7 @@ class ResultsNotebook(wx.Notebook):
     def _page_changed(self, event=None):
         old_page_num  = event.GetOldSelection()
         new_page_num  = event.GetSelection()
+        print "Results panel changing focus from %d to %d" % (old_page_num, new_page_num)
         pub.sendMessage(topic='RESULTS_NOTEBOOK_PAGE_CHANGED', 
                         data=(old_page_num, new_page_num))
 
@@ -109,6 +110,7 @@ class ResultsNotebook(wx.Notebook):
             # we're catching an odd behavior of wx on application close.
             event.Skip()
             return
+        print "Results hiding results for '%s'" % (old_page.name)
         pub.sendMessage(topic="HIDE_RESULTS", data=old_page.name)
         event.Skip()
 
