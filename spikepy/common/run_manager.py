@@ -175,12 +175,15 @@ def clustering_process_worker(run_queue, results_queue):
             trial_rotated_features[mkey][result].append(rotated_feature)
 
         # save projection information as well.
-        trial_projections = {}
         for key in trial_keys:
-            trial_projections[key] = []
-            for i, j in pu.get_projection_combinations(cluster_identities):
-                c1 = trial_features[key][i]
-                c2 = trial_features[key][j]
+            trial_projections = []
+            cst, (cf, cprf) = utils.sort_dict_list(trial_spike_times[key],
+                                              trial_features[key],
+                                              trial_rotated_features[key])
+            new_cluster_ids = cst.keys()
+            for i, j in pu.get_projection_combinations(new_cluster_ids):
+                c1 = cf[i]
+                c2 = cf[j]
                 if len(c1) == 0 or len(c2) == 0:
                     projection_info = (None, (None, None), (i, j))
                 elif len(c1) == 1 or len(c2) == 1:
@@ -189,15 +192,13 @@ def clustering_process_worker(run_queue, results_queue):
                     projection = pu.projection(c1, c2)
                     projection_info = (pu.get_overlap(*projection),
                                        projection, (i, j))
-                trial_projections[key].append(projection_info)
+                trial_projections.append(projection_info)
 
-        # feed the results queue.
-        for key in trial_keys:
-            trial_results = {'clustered_spike_times':trial_spike_times[key],
-                             'clustered_features':trial_features[key],
-                             'projections':trial_projections[key],
-                             'clustered_pca_rotated_features': 
-                                 trial_rotated_features[key]}
+            # feed the results queue.
+            trial_results = {'clustered_spike_times':cst,
+                             'clustered_features':cf,
+                             'clustered_pca_rotated_features':cprf,
+                             'projections':trial_projections}
             results_queue.put({'trial_id':key,
                                'data':trial_results})
 

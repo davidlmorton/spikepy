@@ -19,6 +19,7 @@ import math
 import traceback
 import csv
 import sys
+import string
 
 import numpy
 from numpy.linalg import svd
@@ -35,6 +36,29 @@ def format_traces(trace_list):
                         for trace in trace_list]
     traces = numpy.vstack(array_trace_list)
     return traces
+
+def sort_dict_list(dict_list, *args):
+    '''
+    Given a dictionary holding lists, rename the entries such that the sorted
+     keys go with the lists (sorted on their length).
+    '''
+    tmp = {}
+    keys = sorted(dict_list.keys())
+    caps = string.letters.upper()
+    pairs = sorted([(len(value), key) for key, value in dict_list.items()],
+                    reverse=True)
+    for k, p in zip(keys, pairs):
+        new_key = '%s(%s)' % (k, caps[keys.index(p[1])])
+        tmp[new_key] = dict_list[p[1]]
+
+    otmp = []
+    for other_dict_list in args:
+        otmp.append({})
+        for k, p in zip(keys, pairs):
+            new_key = '%s(%s)' % (k, caps[keys.index(p[1])])
+            otmp[-1][new_key] = other_dict_list[p[1]]
+
+    return tmp, otmp
 
 def pool_map(pool, function, iterable):
     if pool is not None:

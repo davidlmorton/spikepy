@@ -186,7 +186,7 @@ NAME_CANNOT_BEGIN_WITH = 'The name cannot begin with "."'
 
 
 # --- Clustering Results ---
-CLUSTER_NUMBER = "Cluster Number"
+CLUSTER_ID = "Cluster Id"
 CLUSTER_SIZE = 'Cluster Size=%d' #% cluster_size
 CLUSTER_EMPTY = 'Cluster Empty'
 ISI = "Interspike Interval (ms)"
@@ -194,10 +194,10 @@ TRACE_NUMBER = "Trace Number"
 AVERAGE_SPIKE_SHAPES = "Average Spike\nShapes"
 AVERAGE_OF = "Average of %d" # % number_of_spikes_in_cluster
 SPIKE_STDS = "Cluster\nStandard Deviation"
-SPECIFIC_CLUSTER_NUMBER = "Cluster %d" # % cluster_num
-PRO_EMPTY = "Cluster %d vs %d (Cluster %s Empty)" 
-PRO_UNKNOWN = "Cluster %d vs %d (Unknown Overlap)"
-PRO_OK = "Cluster %d vs %d (%3.1f%s overlap)"
+SPECIFIC_CLUSTER_ID = "Cluster %s" # % cluster_id
+PRO_EMPTY = "Cluster %s vs %s (Cluster %s Empty)" 
+PRO_UNKNOWN = "Cluster %s vs %s (Unknown Overlap)"
+PRO_OK = "Cluster %s vs %s (%3.1f%s overlap)"
 
 # --- Printing ---
 PRINT = "Print..."

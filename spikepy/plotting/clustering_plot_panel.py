@@ -156,7 +156,8 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
                     continue # don't try to plot empty clusters.
                 trf = numpy.array(rotated_features).T
 
-                color = config.get_color_from_cycle(feature_number)
+                color = config.get_color_from_cycle(
+                        feature_numbers.index(feature_number))
                 axes.plot(trf[x-1], trf[y-1], color=color,
                                           linewidth=0,
                                           marker='o',
@@ -183,7 +184,8 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
         feature_numbers = sorted(features.keys())
         pc = config['gui']['plotting']
         for i, feature_number in enumerate(feature_numbers):
-            color = config.get_color_from_cycle(feature_number)
+            color = config.get_color_from_cycle(
+                    feature_numbers.index(feature_number))
             num_features = len(features[feature_number])
             if num_features < 1:
                 continue # don't bother trying to plot empty clusters.
@@ -212,6 +214,7 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
         pc = config['gui']['plotting']
         results = trial.clustering.results
         features = trial.clustering.results['clustered_features']
+        cluster_ids = sorted(features.keys())
         # find out how long the features sets are and make the xs for plotting
         efeatures = trial.extraction.results['features'][0]
         feature_xs = [fx for fx in range(len(efeatures))]
@@ -229,7 +232,7 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
 
             # plot pro features
             for key in (i, j):
-                color = config.get_color_from_cycle(key)
+                color = config.get_color_from_cycle(cluster_ids.index(key))
                 for feature in features[key]:
                     feature_axes.plot(feature_xs, feature, 
                                       color=color,
@@ -264,9 +267,11 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
             p1, p2 = ps
             bounds = pu.get_bounds(p1, p2)
             h1 = axes.hist(p1, range=bounds, bins=29, 
-                          fc=config.get_color_from_cycle(i), ec='w')
+                          fc=config.get_color_from_cycle(cluster_ids.index(i)),
+                          ec='w')
             h2 = axes.hist(p2, range=bounds, bins=29, 
-                          fc=config.get_color_from_cycle(j), ec='w', alpha=0.9)
+                          fc=config.get_color_from_cycle(cluster_ids.index(j)),
+                          ec='w', alpha=0.9)
 
             # check for clusters of size = 1
             if overlap == -1:

@@ -165,7 +165,7 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         raster_yaxis = raster_axes.get_yaxis()
         raster_yaxis.set_ticks_position('left')
         raster_axes.set_xlabel(pt.PLOT_TIME)
-        raster_axes.set_ylabel(pt.CLUSTER_NUMBER)
+        raster_axes.set_ylabel(pt.CLUSTER_ID)
         plot_panel.axes['raster'] = raster_axes
 
     def _pot_isis(self, trial_id):
@@ -180,7 +180,8 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         for cluster_number, axes, sub_axes in zip(cluster_numbers, 
                                                   isi_axes, 
                                                   isi_sub_axes):
-            color = config.get_color_from_cycle(cluster_number)
+            color = config.get_color_from_cycle(
+                    cluster_numbers.index(cluster_number))
 
             nt = numpy.array(sorted(times[cluster_number]))
             isi = nt[1:]-nt[:-1]
@@ -237,10 +238,10 @@ class SummaryPlotPanel(SpikepyPlotPanel):
             raster_axes.plot(spike_xs, spike_ys, linewidth=0, marker='|',
                              markersize=pc['detection']['raster_height'],
                              markeredgewidth=pc['detection']['raster_width'],
-                             color=config.get_color_from_cycle(key))
+                             color=config.get_color_from_cycle(keys.index(key)))
         # label raster_axes y ticks
         raster_axes.set_yticks(spike_y_list)
-        raster_axes.set_yticklabels(['%d' % key for key in keys])
+        raster_axes.set_yticklabels(['%s' % key for key in keys])
 
         # set xlim for trace and raster axes
         for axes in [trace_axes, raster_axes]:
@@ -250,6 +251,7 @@ class SummaryPlotPanel(SpikepyPlotPanel):
     def _plot_averages_and_stds(self, trial, figure, trial_id):
         pc = config['gui']['plotting']
         windows = trial.get_clustered_spike_windows()
+        keys = sorted(windows.keys())
         averages_and_stds = self._get_averages_and_stds(windows)
         average_axes = self._plot_panels[trial_id].axes['average']
         std_axes = self._plot_panels[trial_id].axes['std']
@@ -278,11 +280,11 @@ class SummaryPlotPanel(SpikepyPlotPanel):
                 continue # don't try to plot empty clusters
                     
             average_axes.fill_between(times, average+stds, average-stds,
-                              color=config.get_color_from_cycle(cluster_num),
-                              alpha=pc['summary']['std_alpha'])
+                    color=config.get_color_from_cycle(keys.index(cluster_num)),
+                    alpha=pc['summary']['std_alpha'])
             line = average_axes.plot(times, average,
-                              color=config.get_color_from_cycle(cluster_num),
-                              label=pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)[0]
+                    color=config.get_color_from_cycle(keys.index(cluster_num)),
+                    label=pt.SPECIFIC_CLUSTER_ID % cluster_num)[0]
             average_axes.set_xlim(times[0], times[-1])
             # figure out min and max for ylims later
             this_avg_min = numpy.min(average-stds)
@@ -297,8 +299,8 @@ class SummaryPlotPanel(SpikepyPlotPanel):
 
 
             std_axes.plot(times, stds, 
-                          color=config.get_color_from_cycle(cluster_num),
-                          label=pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)
+                    color=config.get_color_from_cycle(keys.index(cluster_num)),
+                    label=pt.SPECIFIC_CLUSTER_ID % cluster_num)
             std_axes.set_xlim(times[0], times[-1])
             this_std_min = numpy.min(stds)
             if std_min is None or this_std_min < std_min:
@@ -317,9 +319,9 @@ class SummaryPlotPanel(SpikepyPlotPanel):
         cluster_axes = self._plot_panels[trial_id].axes['cluster']
         cluster_nums = sorted(windows.keys())
         for cluster_num, axes in zip(cluster_nums, cluster_axes):
-            color = config.get_color_from_cycle(cluster_num)
+            color = config.get_color_from_cycle(keys.index(cluster_num))
             num_windows = len(windows[cluster_num])
-            axes.set_ylabel(pt.SPECIFIC_CLUSTER_NUMBER % cluster_num)
+            axes.set_ylabel(pt.SPECIFIC_CLUSTER_ID % cluster_num)
             if num_windows < 1:
                 axes.text(0.5, 0.5, pt.CLUSTER_EMPTY,
                           fontsize=16,
