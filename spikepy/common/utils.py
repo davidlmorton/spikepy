@@ -48,14 +48,14 @@ def sort_dict_list(dict_list, *args):
     pairs = sorted([(len(value), key) for key, value in dict_list.items()],
                     reverse=True)
     for k, p in zip(keys, pairs):
-        new_key = '%s(%s)' % (k, caps[keys.index(p[1])])
+        new_key = '%s' % caps[keys.index(p[1])]
         tmp[new_key] = dict_list[p[1]]
 
     otmp = []
     for other_dict_list in args:
         otmp.append({})
         for k, p in zip(keys, pairs):
-            new_key = '%s(%s)' % (k, caps[keys.index(p[1])])
+            new_key = '%s' % caps[keys.index(p[1])]
             otmp[-1][new_key] = other_dict_list[p[1]]
 
     return tmp, otmp
