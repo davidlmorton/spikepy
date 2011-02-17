@@ -22,5 +22,6 @@ def run(trace_list, sampling_freq=None):
             'Keyword arguments to run() are not optional.')
 
     else:
-        return trace_list
+        return {'std_results':trace_list,
+                'additional_results':None}
 

@@ -54,6 +54,7 @@ def run(trace_list, sampling_freq, threshold_1=None,
         # FIXME return a single list of spike times, regardless of num_traces.
         # figure out how to decide if spikes on multiple channels are
         # the same spike.
-        return spike_list[0]
+        return {'std_results':spike_list[0],
+                'additional_results':None}
 
 

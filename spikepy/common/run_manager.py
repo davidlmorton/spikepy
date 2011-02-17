@@ -21,6 +21,7 @@ import sys
 import copy
 import os
 from collections import defaultdict
+import string
 
 import wx
 from wx.lib.pubsub import Publisher as pub
@@ -42,9 +43,8 @@ def filter_process_worker(run_queue, results_queue):
         stage_name, method_name, run_dict = run_data
         method_obj = plugin_utils.get_method(stage_name, method_name,
                                              instantiate=True)
-        filtered_traces = method_obj.run(*run_dict['args'], 
-                                         **run_dict['kwargs'])
-        filtered_traces = utils.format_traces(filtered_traces)
+        run_results = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
+        filtered_traces = utils.format_traces(run_results['std_results'])
         sampling_freq = run_dict['args'][1]
         # calculate the psd of the filtered traces
         filtered_psd = signal_utils.psd(filtered_traces.flatten(), 
@@ -79,7 +79,8 @@ def detection_process_worker(run_queue, results_queue):
         stage_name, method_name, run_dict = run_data
         method_obj = plugin_utils.get_method(stage_name, method_name,
                                              instantiate=True)
-        spikes = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
+        run_results = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
+        spikes = run_results['std_results']
 
         # make spike windows and store them.
         window_maker_obj = plugin_utils.get_method('extraction',
@@ -90,11 +91,12 @@ def detection_process_worker(run_queue, results_queue):
             traces, sampling_freq = run_dict['args']
             pre_padding = run_dict['pre_padding']
             post_padding = run_dict['post_padding']
-            window_dict = window_maker_obj.run(traces, sampling_freq, 
+            window_results = window_maker_obj.run(traces, sampling_freq, 
                                                spikes,
                                                pre_padding=pre_padding,
                                                post_padding=post_padding,
                                                exclude_overlappers=False)
+            window_dict = window_results['std_results']
 
             spike_window_ys = window_dict['features']
             dt_in_ms = 1000.0/sampling_freq
@@ -118,15 +120,15 @@ def extraction_process_worker(run_queue, results_queue):
         method_obj = plugin_utils.get_method(stage_name, method_name,
                                              instantiate=True)
         try:
-            result = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
+            run_results = method_obj.run(*run_dict['args'], 
+                                         **run_dict['kwargs'])
+            result = run_results['std_results']
             rotated_features, pc, var = utils.pca(result['features'])
             result['pca_rotated_features'] = rotated_features
             result['pca_basis_vectors'] = pc
             result['pca_variances'] = var
         except:
             result = {'features': [], 'feature_times':[],
-                      'excluded_features':[],
-                      'excluded_feature_times':[],
                       'pca_rotated_features':[],
                       'pca_basis_vectors':[],
                       'pca_variances':[]}
@@ -139,15 +141,31 @@ def clustering_process_worker(run_queue, results_queue):
         stage_name, method_name, run_dict = run_data
         method_obj = plugin_utils.get_method(stage_name, method_name,
                                              instantiate=True)
-        results = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
+        run_results = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
+        results = run_results['std_results']
         
+        # these lists will be the way we unpack the results of clustering
         master_key_list      = run_dict['master_key_list']
         feature_time_list    = run_dict['feature_time_list']
         feature_list         = run_dict['args'][0]
         rotated_feature_list = run_dict['rotated_feature_list']
+
+        # assign new ids to the clusters, based on their size
         trial_keys = set(master_key_list)
+        cluster_identities = list(set(results))
+        counts = []
+        results_list = list(results)
+        for ci in cluster_identities:
+            ci_count = results_list.count(ci)
+            counts.append((ci_count, ci))
+        sorted_counts = sorted(counts, reverse=True)
+        caps = string.letters.upper()
+        id_dict = {}
+        for sci, sc in enumerate(sorted_counts):
+            id_dict[sc[1]] = caps[sci]
+
+        # unpack results from clustering
         # initialize clustering results to empty_list_dictionaries
-        cluster_identities = set(results)
         trial_spike_times = {}
         trial_features = {}
         trial_rotated_features = {}
@@ -159,9 +177,10 @@ def clustering_process_worker(run_queue, results_queue):
             empty_features_dict = {}
             empty_rotated_features_dict = {}
             for ci in cluster_identities:
-                empty_spike_times_dict[ci] = []
-                empty_features_dict[ci] = []
-                empty_rotated_features_dict[ci] = []
+                new_cid = id_dict[ci]
+                empty_spike_times_dict[new_cid] = []
+                empty_features_dict[new_cid] = []
+                empty_rotated_features_dict[new_cid] = []
             trial_spike_times[key] = empty_spike_times_dict
             trial_features[key] = empty_features_dict
             trial_rotated_features[key] = empty_rotated_features_dict
@@ -170,20 +189,21 @@ def clustering_process_worker(run_queue, results_queue):
         for mkey, result, feature_time, feature, rotated_feature in \
                 zip(master_key_list, results, feature_time_list, 
                     feature_list, rotated_feature_list):
-            trial_spike_times[mkey][result].append(feature_time)
-            trial_features[mkey][result].append(feature)
-            trial_rotated_features[mkey][result].append(rotated_feature)
+            new_cid = id_dict[result]
+            trial_spike_times[mkey][new_cid].append(feature_time)
+            trial_features[mkey][new_cid].append(feature)
+            trial_rotated_features[mkey][new_cid].append(rotated_feature)
 
         # save projection information as well.
         for key in trial_keys:
             trial_projections = []
-            cst, (cf, cprf) = utils.sort_dict_list(trial_spike_times[key],
-                                              trial_features[key],
-                                              trial_rotated_features[key])
-            new_cluster_ids = cst.keys()
+            tst = trial_spike_times[key]
+            tf = trial_features[key]
+            trf = trial_rotated_features[key]
+            new_cluster_ids = tst.keys()
             for i, j in pu.get_projection_combinations(new_cluster_ids):
-                c1 = cf[i]
-                c2 = cf[j]
+                c1 = tf[i]
+                c2 = tf[j]
                 if len(c1) == 0 or len(c2) == 0:
                     projection_info = (None, (None, None), (i, j))
                 elif len(c1) == 1 or len(c2) == 1:
@@ -195,9 +215,9 @@ def clustering_process_worker(run_queue, results_queue):
                 trial_projections.append(projection_info)
 
             # feed the results queue.
-            trial_results = {'clustered_spike_times':cst,
-                             'clustered_features':cf,
-                             'clustered_pca_rotated_features':cprf,
+            trial_results = {'clustered_spike_times':tst,
+                             'clustered_features':tf,
+                             'clustered_pca_rotated_features':trf,
                              'projections':trial_projections}
             results_queue.put({'trial_id':key,
                                'data':trial_results})

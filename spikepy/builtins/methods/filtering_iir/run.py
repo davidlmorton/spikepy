@@ -44,5 +44,6 @@ def run(trace_list, sampling_freq,
             filtered_trace_list.append(
                 filter_function(trace, sampling_freq, critical_freq,
                                 order, kind, acausal=acausal))
-        return filtered_trace_list
+        return {'std_results':filtered_trace_list,
+                'additional_results':None}
 

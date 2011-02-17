@@ -33,5 +33,6 @@ def run(feature_set_list, iterations=None, threshold=None,
         codebook, distortions = run_kmeans(number_of_clusters, data, 
                                      threshold=threshold, iterations=iterations)
         membership, distortions = vq(data, codebook)
-        return membership
+        return {'std_results':membership,
+                'additional_results':distortions}
 

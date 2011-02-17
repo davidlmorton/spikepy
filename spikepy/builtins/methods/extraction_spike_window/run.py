@@ -75,8 +75,10 @@ def run(trace_list, sampling_freq, spike_list,
             excluded_waveform_list.append(numpy.hstack(waveform))
             excluded_waveform_times.append(spike_index*dt) 
             
-        return {'features':numpy.vstack(waveform_list), 
-                'feature_times':waveform_times,
-                # cannot vstack excluded because their shapes may not match
+        std_results = {'features':numpy.vstack(waveform_list), 
+                'feature_times':waveform_times}
+        additional_results = {
                 'excluded_features':excluded_waveform_list, 
                 'excluded_feature_times':excluded_waveform_times}
+        return {'std_results':std_results,
+                'additional_results':additional_results}

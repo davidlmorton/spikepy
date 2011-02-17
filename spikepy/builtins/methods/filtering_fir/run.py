@@ -38,5 +38,6 @@ def run(trace_list, sampling_freq,
                            kernel_window=window_name,
                            taps=taps, 
                            kind=kind))
-        return filtered_trace_list
+        return {'std_results':filtered_trace_list,
+                'additional_results': None}
 
