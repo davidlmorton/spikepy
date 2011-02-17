@@ -244,13 +244,15 @@ class StrategyPane(ScrolledPanel):
         for stage_panel in self.stage_panels:
             stage_name = stage_panel.stage_name
             method_name = strategy.methods_used[stage_name]        
-            # set method
-            stage_panel.method_choice_made(method_name=method_name)
-            control_panel = stage_panel.methods[method_name]['control_panel'] 
-            stage_settings = strategy.settings[stage_name]
-            non_unicode_stage_settings = strip_unicode(stage_settings)
-            # set parameters
-            control_panel.set_parameters(**non_unicode_stage_settings)
+            if method_name in stage_panel.methods.keys():
+                # set method
+                stage_panel.method_choice_made(method_name=method_name)
+                control_panel = stage_panel.methods[method_name][
+                                                    'control_panel'] 
+                stage_settings = strategy.settings[stage_name]
+                non_unicode_stage_settings = strip_unicode(stage_settings)
+                # set parameters
+                control_panel.set_parameters(**non_unicode_stage_settings)
 
     def _results_notebook_page_changed(self, message=None):
         old_page_num, new_page_num = message.data

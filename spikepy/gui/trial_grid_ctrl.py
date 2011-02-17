@@ -307,6 +307,7 @@ class TrialGridCtrl(gridlib.Grid):
 
         # only select new trial if nothing is selected.
         if self._last_trial_id_selected is None:
+            self._last_trial_id_selected = 'Not-None'
             wx.CallLater(1000, self._select_row, row)
 
     def _trial_renamed(self, message):

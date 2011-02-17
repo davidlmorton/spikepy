@@ -275,4 +275,5 @@ class DetectionPlotPanel(SpikepyPlotPanel):
                                       markeredgewidth=markeredgewidth,
                                       color=color)[0]
             raster_axes.set_xticks([])
+            raster_axes.set_yticks([])
         

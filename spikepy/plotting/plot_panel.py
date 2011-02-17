@@ -173,7 +173,7 @@ class PlotPanel (wx.Panel):
         else:
             self.hide_toolbar()
 
-        self.Bind(wx.EVT_CONTEXT_MENU, self.toggle_toolbar)
+        self.canvas.Bind(wx.EVT_LEFT_DCLICK, self.toggle_toolbar)
         
         # ---- Setup Subscriptions
         pub.subscribe(self._toggle_toolbar, topic="TOGGLE_TOOLBAR")

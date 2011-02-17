@@ -76,7 +76,9 @@ def signal_fold(times, signal):
 
 def downsample_for_plot(times, signal, tmin, tmax, num_samples=1000):
     imin = bisect.bisect_left(times, tmin)
-    imax = bisect.bisect_right(times, tmax)
+    if imin > 0:
+        imin -= 1 # get previous point, even if not plotted
+    imax = bisect.bisect_right(times, tmax) + 1
 
     signal_slice = signal[imin:imax]
     times_slice = times[imin:imax]
