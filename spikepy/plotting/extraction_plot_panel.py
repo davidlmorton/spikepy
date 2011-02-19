@@ -108,7 +108,6 @@ class ExtractionPlotPanel(SpikepyPlotPanel):
         for axes in pca_axes:
             utils.clear_axes(axes)
 
-        # plot the pca projections
         trial = self._trials[trial_id]
         results = trial.extraction.results
         features = results['features']
@@ -118,6 +117,31 @@ class ExtractionPlotPanel(SpikepyPlotPanel):
         pct_var = [tvar/sum(var)*100.0 for tvar in var]
         trf = rotated_features.T
 
+        # plot the features
+        pconfig = config['gui']['plotting']['extraction']
+        trial = self._trials[trial_id]
+        features = trial.extraction.results['features']
+        feature_xs = [i for i in range(len(features[0]))]
+
+        utils.plot_limited_num_spikes(feature_axes, feature_xs, features, 
+                              info_anchor=(0.03, 1.03),
+                              info_ha='left',
+                              linewidth=pconfig['feature_trace_linewidth'],
+                              color='k', 
+                              alpha=pconfig['feature_trace_alpha'])
+        utils.set_axes_ticker(feature_axes, axis='yaxis')
+        feature_axes.set_xlim(feature_xs[0],feature_xs[-1])
+        plot_panel.draw()
+
+        # plot the pc vector components.
+        for i, pc_vector in reversed([i for i in enumerate(pc[:3])]):
+            pc_axes.fill_between(feature_xs, pc_vector, 
+                                 color=self.pca_colors[i],
+                                 alpha=0.8)
+        utils.set_axes_ticker(pc_axes, axis='yaxis', prune=None)
+        plot_panel.draw()
+
+        # plot the pca projections
         for x, y, axes in zip(self.pc_x, self.pc_y, pca_axes):
             axes.set_xlabel(pt.PCA_LABEL % (x, pct_var[x-1], '%'),
                             color=self.pca_colors[x-1])
@@ -130,25 +154,6 @@ class ExtractionPlotPanel(SpikepyPlotPanel):
                                           markeredgewidth=0)
             utils.set_axes_ticker(axes, nbins=4, axis='xaxis', prune=None)
             utils.set_axes_ticker(axes, axis='yaxis')
+            plot_panel.draw()
 
-        # plot the pc vector components.
-        feature_xs = [i for i in range(len(pc[0]))]
-        for i, pc_vector in reversed([i for i in enumerate(pc[:3])]):
-            pc_axes.fill_between(feature_xs, pc_vector, 
-                                 color=self.pca_colors[i],
-                                 alpha=0.8)
-        utils.set_axes_ticker(pc_axes, axis='yaxis', prune=None)
-
-        # plot the features
-        pc = config['gui']['plotting']['extraction']
-        trial = self._trials[trial_id]
-        features = trial.extraction.results['features']
-
-        for feature in features:
-            feature_axes.plot(feature_xs, feature, 
-                              linewidth=pc['feature_trace_linewidth'],
-                              color='k', 
-                              alpha=pc['feature_trace_alpha'])
-        utils.set_axes_ticker(feature_axes, axis='yaxis')
-        feature_axes.set_xlim(feature_xs[0],feature_xs[-1])
 

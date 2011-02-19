@@ -154,18 +154,22 @@ class DetectionPlotPanel(SpikepyPlotPanel):
             std = numpy.std(traces[i])
             trace_axes.set_xlim(trial.times[0], trial.times[-1])
 
+            lines_times = numpy.array([resampled_times[0], 
+                                       resampled_times[-1]])
+            lines_ys = numpy.array([1.0,1.0])
             for factor, linestyle in [(2,'solid'),(4,'dashed')]:
-                trace_axes.axhline(std*factor, 
+                trace_axes.plot(lines_times, lines_ys*(std*factor), 
                                    color='k', 
                                    linewidth=pc['std_trace_linewidth'], 
                                    label=r'$%d\sigma$' % factor,
                                    linestyle=linestyle)
-                trace_axes.axhline(-std*factor, 
+                trace_axes.plot(lines_times, lines_ys*(-std*factor), 
                                    color='k', 
                                    linewidth=pc['std_trace_linewidth'], 
                                    linestyle=linestyle)
             utils.trace_autoset_ylim(trace_axes)
             utils.set_axes_ticker(trace_axes, axis='yaxis') 
+            plot_panel.draw()
         top_trace_axes = plot_panel.axes['trace'][0]
         canvas_size = plot_panel.GetMinSize()
         legend_offset = pc['spacing']['legend_offset']
@@ -190,6 +194,12 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         times = trial.times
         bounds = (times[0], times[-1])
 
+        # print how many spikes were found.
+        rate_axes.text(0.015, 1.025, pt.SPIKES_FOUND % len(spikes), 
+                       verticalalignment='bottom',
+                       horizontalalignment='left',
+                       transform=rate_axes.transAxes)
+
         # plot spike windows
         spike_window_ys = trial.detection.results['spike_window_ys']
         spike_window_xs = trial.detection.results['spike_window_xs']
@@ -202,14 +212,16 @@ class DetectionPlotPanel(SpikepyPlotPanel):
                 sa.axvspan(spike_width*i, spike_width*i+spike_width, 
                            ec='k', fc='k', alpha=0.065)
 
-        for window in spike_window_ys:
-            sa.plot(spike_window_xs, window, color=self.line_color,
-                                             linewidth=0.5,
-                                             alpha=0.3)
-        utils.set_axes_ticker(sa, axis='yaxis')
-        sa.set_xlim(spike_window_xs[0], spike_window_xs[-1])
         sa.set_ylim(numpy.min(spike_window_ys)*1.1, 
                     numpy.max(spike_window_ys)*1.1)
+        utils.set_axes_ticker(sa, axis='yaxis')
+
+        utils.plot_limited_num_spikes(sa, spike_window_xs, spike_window_ys,
+                                      color=self.line_color,
+                                      linewidth=0.5,
+                                      alpha=0.3)
+        sa.set_xlim(spike_window_xs[0], spike_window_xs[-1])
+        plot_panel.draw()
 
         # plot the isi and isi_sub
         isi = spikes[1:] - spikes[:-1]
@@ -226,6 +238,7 @@ class DetectionPlotPanel(SpikepyPlotPanel):
                   fc='k', ec='w')
         utils.format_y_axis_hist(isa, minimum_max=20, fontsize=9)
         isa.set_xlim(-0.15)
+        plot_panel.draw()
 
         # plot the estimated firing rate
         bins = 70
@@ -243,14 +256,8 @@ class DetectionPlotPanel(SpikepyPlotPanel):
                                    ec='w',
                                    fc=self.line_color)
             rate_axes.set_ylabel(pt.SPIKES_PER_BIN)
-
         utils.format_y_axis_hist(rate_axes, minimum_max=10)
-
-        # print how many spikes were found.
-        rate_axes.text(0.015, 1.025, pt.SPIKES_FOUND % len(spikes), 
-                       verticalalignment='bottom',
-                       horizontalalignment='left',
-                       transform=rate_axes.transAxes)
+        plot_panel.draw()
 
         color='k'
         marker_size=pc['detection']['raster_height']
@@ -263,6 +270,7 @@ class DetectionPlotPanel(SpikepyPlotPanel):
                                   marker_size=marker_size,
                                   markeredgewidth=markeredgewidth,
                                   color=color)
+        plot_panel.draw()
 
         # clear old rasters, then plot rasters on traces
         raster_pos=pc['detection']['raster_pos_traces']

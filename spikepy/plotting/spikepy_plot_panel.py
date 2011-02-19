@@ -90,11 +90,12 @@ class SpikepyPlotPanel(MultiPlotPanel):
         if self.name != stage_name:
             return
 
+        pub.sendMessage('SHOW_PLOT', data=trial_id)
+
         if trial_id in self._replot_panels:
             self._replot(trial_id)
             self._replot_panels.remove(trial_id)
 
-        pub.sendMessage('SHOW_PLOT', data=trial_id)
 
     def _clear_results(self, message):
         wx.Yield()

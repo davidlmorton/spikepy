@@ -41,8 +41,10 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
 
     def _post_run(self, trial_id):
         trial = self._trials[trial_id]
-        figure = self._plot_panels[trial_id].figure
+        plot_panel = self._plot_panels[trial_id]
+        figure = plot_panel.figure
         self._create_axes(trial, figure, trial_id)
+        plot_panel.draw()
         
         self._plot_features(trial, figure, trial_id)
         self._plot_pcas(trial, figure, trial_id)
@@ -135,7 +137,8 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
                             color=self.pca_colors[y-1])
 
     def _plot_pcas(self, trial, figure, trial_id):
-        pca_axes = self._plot_panels[trial_id].axes['pca']
+        plot_panel = self._plot_panels[trial_id]
+        pca_axes = plot_panel.axes['pca']
 
         results = trial.clustering.results 
         features = results['clustered_pca_rotated_features']
@@ -171,10 +174,12 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
                             color=pca_colors[x-1])
             axes.set_ylabel(pt.PCA_LABEL % (y, pct_var[y-1], '%'), 
                             color=pca_colors[y-1])
+            plot_panel.draw()
 
 
     def _plot_features(self, trial, figure, trial_id):
-        axes = self._plot_panels[trial_id].axes['feature']
+        plot_panel = self._plot_panels[trial_id]
+        axes = plot_panel.axes['feature']
 
         axes.set_ylabel(pt.FEATURE_AMPLITUDE)
         axes.set_xlabel(pt.FEATURE_INDEX)
@@ -182,27 +187,37 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
         features = trial.clustering.results['clustered_features']
 
         feature_numbers = sorted(features.keys())
+        total_num_features = 0
+        for f_num in feature_numbers:
+            total_num_features += len(features[f_num])
+
         pc = config['gui']['plotting']
+        cluster_count = 0
         for i, feature_number in enumerate(feature_numbers):
             color = config.get_color_from_cycle(
                     feature_numbers.index(feature_number))
             num_features = len(features[feature_number])
+            pct_features = int(num_features/float(total_num_features)*100)
             if num_features < 1:
                 continue # don't bother trying to plot empty clusters.
             feature_xs = [a for a in range(len(features[feature_number][0]))]
 
-            for feature in features[feature_number]:
-                axes.plot(feature_xs, feature, 
-                          linewidth=pc['std_trace_linewidth'],
-                          color=color, 
-                          alpha=0.2) 
+            utils.plot_limited_num_spikes(axes, feature_xs, 
+                                          numpy.array(features[feature_number]),
+                                          set_ranking=cluster_count, 
+                                          linewidth=pc['std_trace_linewidth'],
+                                          color=color, 
+                                          alpha=0.2) 
+            cluster_count += 1
             if i == 0:
-                label = pt.CLUSTER_SIZE % num_features
+                label = pt.CLUSTER_SIZE
             else:
-                label = '%d' % num_features
+                label = ''
+            label += '%d (%d%s)' % (num_features,pct_features,'%')
             axes.plot([-1, -2], [0, 0], linewidth=pc['bold_linewidth'],
                       color=color, label=label)
             axes.set_xlim(feature_xs[0],feature_xs[-1])
+            plot_panel.draw()
 
         utils.set_axes_ticker(axes, axis='yaxis')
         canvas_size = self._plot_panels[trial_id].GetMinSize()
@@ -231,18 +246,18 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
             overlap, ps, (i, j) = projection_info
 
             # plot pro features
+            cluster_count = 0
             for key in (i, j):
                 color = config.get_color_from_cycle(cluster_ids.index(key))
-                for feature in features[key]:
-                    feature_axes.plot(feature_xs, feature, 
-                                      color=color,
-                                      linewidth=pc['std_trace_linewidth'],
-                                      alpha=0.5)
-                if len(features[key]) > 0:
-                    avg_feature = numpy.average(features[key], axis=0)
-                    feature_axes.plot(feature_xs, avg_feature, color=color, 
-                                      linewidth=pc['bold_linewidth'])
-            feature_axes.set_xlim(feature_xs[0], feature_xs[-1])
+                num_features = len(features[key])
+                utils.plot_limited_num_spikes(feature_axes, feature_xs,
+                                            numpy.array(features[key]),
+                                            set_ranking=cluster_count,
+                                            color=color,
+                                            linewidth=pc['std_trace_linewidth'],
+                                            alpha=0.5)
+                cluster_count += 1
+                plot_panel.draw()
             feature_axes.set_xlabel(pt.FEATURE_INDEX)
             feature_axes.set_ylabel(pt.FEATURE_AMPLITUDE)
             utils.set_axes_ticker(feature_axes, axis='yaxis')
@@ -291,4 +306,5 @@ class ClusteringPlotPanel(SpikepyPlotPanel):
 
             axes.set_ylabel(pt.COUNT_PER_BIN)
             axes.set_xlabel(pt.PRO_OK % (i, j, 100.0*overlap, '%'))
+            plot_panel.draw()
 

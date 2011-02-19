@@ -197,6 +197,10 @@ class PlotPanel (wx.Panel):
         utils.clear_figure(self.figure)
         gc.collect()
 
+    def draw(self):
+        self.canvas.draw()
+        wx.Yield()
+
     '''
     def do_print(self, data=None):
         printout = PlotPanelPrintout(self.canvas)

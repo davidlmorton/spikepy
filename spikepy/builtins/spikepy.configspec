@@ -19,6 +19,7 @@
         unmarked_status=integer(default=None)
         column_width_compensation=integer(default=None)
     [[plotting]]
+        trace_limit=integer(min=10, max=10000, default=None)
         dpi=float(min=10, max=150, default=None)
         aspect_ratio=float(min=1.0, max=10.0, default=None)
         face_color=float_list(min=3, max=4, default=None)

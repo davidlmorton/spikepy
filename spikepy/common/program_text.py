@@ -187,8 +187,9 @@ NAME_CANNOT_BEGIN_WITH = 'The name cannot begin with "."'
 
 # --- Clustering Results ---
 CLUSTER_ID = "Cluster Id"
-CLUSTER_SIZE = 'Cluster Size=%d' #% cluster_size
+CLUSTER_SIZE = 'Cluster Size=' #% cluster_size
 CLUSTER_EMPTY = 'Cluster Empty'
+SPIKES_SHOWN = '*%d Spikes Shown'
 ISI = "Interspike Interval (ms)"
 TRACE_NUMBER = "Trace Number"
 AVERAGE_SPIKE_SHAPES = "Average Spike\nShapes"

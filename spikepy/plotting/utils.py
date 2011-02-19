@@ -27,9 +27,44 @@ from matplotlib.ticker import MaxNLocator
 import numpy
 
 from spikepy.common.config_manager import config_manager as config
+from spikepy.common import program_text as pt
 
 def is_iterable(x):
     return hasattr(x, '__len__')
+
+def plot_limited_num_spikes(axes, x, ys, set_ranking=0, 
+                                         info_anchor=(0.97, 0.03),
+                                         info_va='bottom',
+                                         info_ha='right',
+                                         **kwargs):
+    trace_limit = config['gui']['plotting']['trace_limit']
+    num_diff = min(4, trace_limit/2)
+    num_ys = len(ys)
+    if trace_limit < num_ys:
+        # too many traces to plot, find most extreme traces to plot
+        good_indexes = set(numpy.arange(0, len(ys), trace_limit/num_diff))
+        for i in range(num_diff-1):
+            bad_ys = ys[numpy.array(list(good_indexes), dtype=numpy.int32)]
+            resids = numpy.sum(ys-numpy.average(bad_ys, axis=0), axis=1)
+            sorted_indexes = list(numpy.argsort(resids))
+            while len(good_indexes) < (i+2)*trace_limit/num_diff:
+                good_indexes.add(sorted_indexes.pop())
+        plotable_ys = ys[numpy.array(list(good_indexes), dtype=numpy.int32)]
+
+        # print how many were displayed.
+        if 'color' not in kwargs.keys():
+            kwargs['color'] = 'k'
+        axes.text(info_anchor[0], info_anchor[1]+(set_ranking*0.08), 
+                  pt.SPIKES_SHOWN % len(plotable_ys),
+                  fontsize=10,
+                  verticalalignment=info_va,
+                  horizontalalignment=info_ha,
+                  color=kwargs['color'],
+                  transform=axes.transAxes)
+    else:
+        plotable_ys = ys
+    for y in plotable_ys:
+        axes.plot(x, y, **kwargs)
 
 def signal_fold(times, signal):
     '''

@@ -102,6 +102,7 @@ class FilterPlotPanel(SpikepyPlotPanel):
                       linewidth=pc['std_trace_linewidth'], 
                       color='k')
         utils.set_axes_ticker(psd_axes, axis='yaxis')
+        plot_panel.draw()
 
         # clear and plot the traces
         num_traces = len(trial.raw_traces)
@@ -115,6 +116,7 @@ class FilterPlotPanel(SpikepyPlotPanel):
             trace_axes.set_xlim(trial.times[0], trial.times[-1])
             utils.trace_autoset_ylim(trace_axes)
             utils.set_axes_ticker(trace_axes, axis='yaxis')
+            plot_panel.draw()
 
     def _post_run(self, trial_id):
         pc = config['gui']['plotting']
@@ -138,6 +140,7 @@ class FilterPlotPanel(SpikepyPlotPanel):
                       linewidth=self.line_width, 
                       color=self.line_color)
         utils.set_axes_ticker(psd_axes, axis='yaxis')
+        plot_panel.draw()
 
         # clear old filtered traces (if they exist) and plot new
         for i, trace_axes in enumerate(plot_panel.axes['trace']):
@@ -154,6 +157,7 @@ class FilterPlotPanel(SpikepyPlotPanel):
             trace_axes.set_xlim(trial.times[0], trial.times[-1])
             utils.trace_autoset_ylim(trace_axes)
             utils.set_axes_ticker(trace_axes, axis='yaxis')
+            plot_panel.draw()
             
 
         top_trace_axes = plot_panel.axes['trace'][0]
