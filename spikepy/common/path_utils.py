@@ -92,8 +92,8 @@ def get_data_dirs(app_name=None):
 
     return data_dirs
 
-def setup_user_directories():
-    data_dirs = get_data_dirs()
+def setup_user_directories(**kwargs):
+    data_dirs = get_data_dirs(**kwargs)
     for directory in data_dirs['user'].values():
         if not os.path.exists(directory):
             os.makedirs(directory)

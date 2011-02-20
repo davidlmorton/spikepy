@@ -42,21 +42,21 @@ class ConfigManager(object):
         self._results_frame_size = numpy.array([800, 600])
         pub.subscribe(self._set_results_frame_size, "SET_RESULTS_FRAME_SIZE")
 
-    def load_configs(self):
-        self.load_builtin_config()
-        self.load_application_config()
-        self.load_user_config()
+    def load_configs(self, **kwargs):
+        self.load_builtin_config(**kwargs)
+        self.load_application_config(**kwargs)
+        self.load_user_config(**kwargs)
 
-    def load_user_config(self):
-        self._user = config_utils.load_config('user')
+    def load_user_config(self, **kwargs):
+        self._user = config_utils.load_config('user', **kwargs)
         config_utils.noneless_merge(self._current, self._user)
 
-    def load_application_config(self):
-        self._application = config_utils.load_config('application')
+    def load_application_config(self, **kwargs):
+        self._application = config_utils.load_config('application', **kwargs)
         config_utils.noneless_merge(self._current, self._application)
 
-    def load_builtin_config(self):
-        self._builtin = config_utils.load_config('builtins')
+    def load_builtin_config(self, **kwargs):
+        self._builtin = config_utils.load_config('builtins', **kwargs)
         config_utils.noneless_merge(self._current, self._builtin)
 
     def __getitem__(self, key):

@@ -23,19 +23,20 @@ from validate import Validator
 
 from spikepy.common import path_utils
     
-def get_default_configspec():
+def get_default_configspec(**kwargs):
     '''
     Returns the fullpath to the default configspec
     '''
-    data_dirs = path_utils.get_data_dirs()
+    data_dirs = path_utils.get_data_dirs(**kwargs)
     default_config_dir = data_dirs['builtins']['configuration']
     return os.path.join(default_config_dir, 'spikepy.configspec')
 
-def load_config(level):
-    data_dirs = path_utils.get_data_dirs()
+def load_config(level, **kwargs):
+    data_dirs = path_utils.get_data_dirs(**kwargs)
     config_dir = data_dirs[level]['configuration']
     fullpath = os.path.join(config_dir, 'spikepy.ini')
-    config = configobj.ConfigObj(fullpath, configspec=get_default_configspec())
+    config = configobj.ConfigObj(fullpath, 
+                                 configspec=get_default_configspec(**kwargs))
     validator = Validator()
     result = config.validate(validator, preserve_errors=True)
     if result == True:
