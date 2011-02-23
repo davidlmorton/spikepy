@@ -22,6 +22,7 @@ import wx.aui
 from wx.lib.pubsub import Publisher as pub
 from wx.lib.wordwrap import wordwrap
 
+import spikepy
 from spikepy.plotting.utils import PlotPanelPrintout
 from spikepy.gui.pyshell import PyShellDialog
 from spikepy.common import program_text as pt
@@ -197,7 +198,7 @@ class SpikepyMenuBar(wx.MenuBar):
         # FIXME should be better!
         info = wx.AboutDialogInfo()
         info.Name = "Spikepy"
-        info.Version = "0.0"
+        info.Version = spikepy.__version__
         line_width_in_pixels = 350
         info.Description = wordwrap(pt.ABOUT_SPIKEPY, line_width_in_pixels, 
                                     wx.ClientDC(self))

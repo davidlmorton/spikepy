@@ -1,0 +1,3 @@
+include spikepy/builtins/spikepy.*
+include INSTALL
+include LICENSE

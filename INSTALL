@@ -1,0 +1,5 @@
+
+    As with other Python packages, the standard way of installing from source
+    is:
+
+      python setup.py install
