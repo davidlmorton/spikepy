@@ -131,6 +131,7 @@ class StrategyPane(ScrolledPanel):
                              clustering_panel]
 
         self.strategy_manager = StrategyManager()
+        self.strategy_manager.load_all_strategies()
         self._temp_strategies = {}
 
         self.Bind(wx.EVT_IDLE, self._sync)
