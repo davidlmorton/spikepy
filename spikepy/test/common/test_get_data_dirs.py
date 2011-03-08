@@ -21,7 +21,7 @@ import pwd
 
 import wx
 
-from spikepy.common.utils import get_data_dirs
+from spikepy.common.path_utils import get_data_dirs
 
 def get_username():
     return pwd.getpwuid(os.getuid())[0]
@@ -38,7 +38,6 @@ class GetLocalDataDir(unittest.TestCase):
     def data_dirs_correct_structure(self, data_dirs):
         data_dirs_keys = data_dirs.keys()
         for level in ['application', 'user', 'builtins']:
-            print level, data_dirs_keys
             self.assertTrue(level in data_dirs_keys)
         for value in data_dirs.values():
             value_keys = value.keys()

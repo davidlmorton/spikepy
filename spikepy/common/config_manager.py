@@ -41,6 +41,7 @@ class ConfigManager(object):
         self._control_border = None
         self._results_frame_size = numpy.array([800, 600])
         pub.subscribe(self._set_results_frame_size, "SET_RESULTS_FRAME_SIZE")
+        self.load_configs(app_name='spikepy')
 
     def load_configs(self, **kwargs):
         self.load_builtin_config(**kwargs)

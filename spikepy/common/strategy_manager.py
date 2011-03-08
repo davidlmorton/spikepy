@@ -31,12 +31,16 @@ class StrategyManager(object):
     def __init__(self):
         self.strategies = {} # strategies under management
 
+        pub.subscribe(self.save_strategies, 'SAVE_ALL_STRATEGIES')
+
+    def load_all_strategies(self):
+        '''
+        Load all the strategies "builtins", "application", and "user".
+        '''
         # load strategies (first builtins, then application, then user)
         for level in ['builtins', 'application', 'user']:
             strategy_path = get_data_dirs()[level]['strategies']
             self.load_strategies(strategy_path)
-
-        pub.subscribe(self.save_strategies, 'SAVE_ALL_STRATEGIES')
 
     def load_strategies(self, path):
         if os.path.exists(path):
@@ -69,13 +73,10 @@ class StrategyManager(object):
                                (strategy.name, 
                                 self.get_strategy_by_strategy(strategy).name))
 
-        # -- check methods_used_name --
+        # -- check methods_used_name -- (coherse if collision)
         if proposed_methods_used_name != pt.CUSTOM_LC:
             if proposed_methods_used_name != strategy.methods_used_name:
-                raise RuntimeError("Adding '%s': Methods-used already named '%s' NOT '%s'" % 
-                                   (strategy.name,
-                                    proposed_methods_used_name,
-                                    strategy.methods_used_name))
+                strategy.methods_used_name = proposed_methods_used_name
         else:
             forbidden_methods_used_names = [s.methods_used_name
                                             for s in self.strategies.values()]
@@ -84,7 +85,7 @@ class StrategyManager(object):
                 raise RuntimeError("Methods-used name '%s' forbidden." % 
                                    strategy.methods_used_name)
 
-        # -- check settings_name --
+        # -- check settings_name -- (raise RuntimeError if collision)
         if proposed_settings_name != pt.CUSTOM_LC:
             if proposed_settings_name != strategy.settings_name:
                 raise RuntimeError("Adding '%s': Settings already named '%s' NOT '%s'" % 

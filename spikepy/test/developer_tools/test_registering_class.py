@@ -30,33 +30,52 @@ class RegistrationBasics(unittest.TestCase):
         __metaclass__ = RegisteringClass
         _skips_registration = True
         _is_base_class = True
+        def __init__(self):
+            self.name = self.__class__.__name__
 
     class AnotherBase(object):
         __metaclass__ = RegisteringClass
         _skips_registration = True
         _is_base_class = True
+        def __init__(self):
+            self.name = self.__class__.__name__
 
     class SelfRegisteringBase(AnotherBase):
         _skips_registration = False
         _is_base_class = True
+        def __init__(self):
+            self.name = self.__class__.__name__
 
     class Sub(Base):
         _is_base_class = False
+        def __init__(self):
+            self.name = self.__class__.__name__
 
     class Sub2(Sub):
-        pass
+        def __init__(self):
+            self.name = self.__class__.__name__
 
     class UnregisteredSub(Base):
         _skips_registration = True
+        def __init__(self):
+            self.name = self.__class__.__name__
 
     class RegisteredSub(Base):
         _skips_registration = False
+        def __init__(self):
+            self.name = self.__class__.__name__
 
     class AnotherSub(AnotherBase):
-        pass
+        def __init__(self):
+            self.name = self.__class__.__name__
 
     all_classes = [Base, AnotherBase, SelfRegisteringBase, 
                    Sub, Sub2, UnregisteredSub, RegisteredSub, AnotherSub]
+
+    def define_class(self):
+        class AnotherDifferentSub(self.Sub):
+            def __init__(self):
+                self.name = 'Sub'
 
     # -- TESTS --
     def test_bases_registered_as_bases(self):
@@ -77,6 +96,9 @@ class RegistrationBasics(unittest.TestCase):
         self.assertFalse(self.RegisteredSub in _class_registry.keys())
         self.assertFalse(self.AnotherSub in _class_registry.keys())
 
+    def test_unique_name(self):
+        self.assertRaises(RuntimeError, self.define_class)
+
     def test_subclassing(self):
         self.assertTrue( ira(self.Sub, self.Base))
         self.assertFalse(ira(self.Sub, self.AnotherBase))
@@ -95,7 +117,6 @@ class RegistrationBasics(unittest.TestCase):
 
         self.assertTrue( ira(self.SelfRegisteringBase, self.AnotherBase))
         self.assertFalse(ira(self.SelfRegisteringBase, self.Base))
-
 
     def test_namespace_cleanup(self):
         for cls in self.all_classes:

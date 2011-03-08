@@ -48,6 +48,7 @@ class StrategyManagerTests(unittest.TestCase):
         
     def test_add_1(self):
         sm = StrategyManager()
+        self.assertTrue(len(sm.strategies.keys())==0)
         sm.add_strategy(self.saa)
         self.assertTrue(len(sm.strategies.keys())==1)
         self.assertRaises(RuntimeError, sm.add_strategy, self.saa)
@@ -77,6 +78,9 @@ class StrategyManagerTests(unittest.TestCase):
         self.assertTrue(len(sm.strategies.keys())==1)
         sm.add_strategy(self.sabnnn)
         self.assertTrue(len(sm.strategies.keys())==2)
+        # stored strategy is called A(none) and is same as sab
+        smsabnnn = sm.get_strategy_by_name(msn('a','none'))
+        self.assertTrue(smsabnnn == self.sab)
         # because ab is already there, but known as A(none)
         self.assertRaises(RuntimeError, sm.add_strategy, self.sab)
 

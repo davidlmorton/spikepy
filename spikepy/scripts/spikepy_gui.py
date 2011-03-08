@@ -34,7 +34,6 @@ class MySplashScreen(wx.SplashScreen):
                                  parent, **kwargs)
 
 path_utils.setup_user_directories(app_name='spikepy')
-config_manager.load_configs(app_name='spikepy')
 plugin_utils.load_all_plugins(app_name='spikepy')
 
 if __name__ == '__main__':
