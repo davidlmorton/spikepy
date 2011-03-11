@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import wx
 from wx.lib.pubsub import Publisher as pub
 from wx.lib.scrolledpanel import ScrolledPanel
-from wx.lib.buttons import GenButton
+from wx.lib import buttons
 
 from spikepy.developer_tools.named_controls import NamedChoiceCtrl
 from .utils import recursive_layout, strip_unicode
@@ -29,65 +29,90 @@ from spikepy.common.strategy_manager import StrategyManager
 from spikepy.common.strategy import Strategy
 from spikepy.gui.save_strategy_dialog import SaveStrategyDialog
 from spikepy.common import plugin_utils
+from spikepy.gui import utils
 
+stage_names = ['detection_filter', 'detection', 'extraction_filter', 
+               'extraction', 'clustering']
 
-def add_settings(stage_name):
-    return "%s %s" % (stage_name, pt.SETTINGS)
+def load_stages(control_panel_parent):
+    return_dict = {}
+    for stage_name in stage_names:
+        methods = {}
+        ms, mcs = plugin_utils.get_methods_for_stage(stage_name)
+        for method in ms:
+            methods[method.name] = {}
+            methods[method.name]['control_panel'] =\
+                    method.make_control_panel(control_panel_parent, 
+                                              style=wx.BORDER_SUNKEN)
+            methods[method.name]['control_panel'].Show(False)
+            methods[method.name]['description'] = method.description
+        return_dict[stage_name] = methods
+    return return_dict
 
 
 class StrategyPane(ScrolledPanel):
     def __init__(self, parent, **kwargs):
         ScrolledPanel.__init__(self, parent, **kwargs)
+        self.SetBackgroundColour(wx.WHITE)
         
-        self.strategy_chooser = NamedChoiceCtrl(self, name=pt.STRATEGY_NAME)
-        self.strategy_summary = StrategySummary(self)
-        stage_choicebook = wx.Choicebook(self, wx.ID_ANY)
+        self.stages = load_stages(self)
 
-        # ==== PANELS ====
-        detection_filter_panel = DetectionFilterStagePanel(stage_choicebook, 
-                                            stage_num=1,
-                                            display_name=pt.DETECTION_FILTER,
-                                            stage_name='detection_filter')
-        detection_panel = StagePanel(stage_choicebook, 
-                                     stage_num=2,
-                                     display_name=pt.DETECTION,
-                                     stage_name='detection')
-        extraction_filter_panel = StagePanel(stage_choicebook,
-                                             stage_num=3,
-                                             display_name=pt.EXTRACTION_FILTER,
-                                             stage_name='extraction_filter')
-        extraction_panel = StagePanel(stage_choicebook,
-                                      stage_num=4,
-                                      display_name=pt.EXTRACTION,
-                                      stage_name='extraction')
-        clustering_panel = StagePanel(stage_choicebook, 
-                                      stage_num=5,
-                                      display_name=pt.CLUSTERING,
-                                      stage_name='clustering')
+        self.strategy_chooser = NamedChoiceCtrl(self, name=pt.STRATEGY_NAME, 
+                                                background_color=wx.WHITE)
+        self.strategy_summary = StrategySummary(self, self.stages) 
 
-        # ==== CHOICEBOOK PAGES ====
-        stage_choicebook.AddPage(detection_filter_panel, 
-                                 add_settings(pt.DETECTION_FILTER))
-        stage_choicebook.AddPage(detection_panel, 
-                                 add_settings(pt.DETECTION))
-        stage_choicebook.AddPage(extraction_filter_panel, 
-                                 add_settings(pt.EXTRACTION_FILTER))
-        stage_choicebook.AddPage(extraction_panel, 
-                                 add_settings(pt.EXTRACTION))
-        stage_choicebook.AddPage(clustering_panel, 
-                                 add_settings(pt.CLUSTERING))
-        self.stage_choicebook = stage_choicebook 
-        
         # ==== SETUP SIZER ====
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         flag = wx.EXPAND|wx.ALL
         border = config['gui']['strategy_pane']['border']
         sizer.Add(self.strategy_chooser,                proportion=0, 
                   flag=flag|wx.ALIGN_CENTER_HORIZONTAL,  border=border)
+
+        sizer.Add(wx.StaticLine(self), proportion=0, 
+                  flag=flag|wx.ALIGN_CENTER_HORIZONTAL, 
+                                        border=border)
+
         sizer.Add(self.strategy_summary,  proportion=0, 
                                           flag=flag|wx.ALIGN_CENTER_HORIZONTAL, 
                                           border=border)
-        # ++ buttons ++
+
+        self._setup_buttons()
+        sizer.Add(self.button_sizer,        proportion=0,
+                  flag=flag,            border=1)
+
+        # method control panels
+        for stage in self.stages.values():
+            for method in stage.values():
+                sizer.Add(method['control_panel'], 
+                          flag=wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND, 
+                          border=8)
+
+        self.SetSizer(sizer)
+        self.do_layout()
+            
+        # other initialization
+        self.strategy_summary.select_stage(stage_name=stage_names[0])
+        self.strategy_summary.select_stage(stage_name=stage_names[0], 
+                                           results=True)
+        self._should_sync = True
+        self.strategy_manager = StrategyManager()
+        self.strategy_manager.load_all_strategies()
+        self._temp_strategies = {}
+        self._setup_subscriptions()
+        self._setup_bindings()
+                                
+    # -- INITIALIZATION METHODS --
+    def _setup_subscriptions(self):
+        pub.subscribe(self._results_notebook_page_changed, 
+                      topic='RESULTS_NOTEBOOK_PAGE_CHANGED')
+        pub.subscribe(self._set_run_buttons_state,
+                      topic='SET_RUN_BUTTONS_STATE')
+        pub.subscribe(self._method_chosen, topic='METHOD_CHOSEN')
+        pub.subscribe(self._stage_chosen, topic='STAGE_CHOSEN')
+        pub.subscribe(self._enact_strategy, 
+                      topic='ENACT_STRATEGY')
+
+    def _setup_buttons(self):
         button_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         self.run_strategy_button = wx.Button(self, label=pt.RUN_STRATEGY)
         self.run_stage_button    = wx.Button(self, label=pt.RUN_STAGE)
@@ -99,41 +124,10 @@ class StrategyPane(ScrolledPanel):
                          flag=wx.ALL,                 border=3)
         button_sizer.Add(self.run_stage_button,      proportion=0, 
                          flag=wx.ALL,                 border=3)
-        # -- buttons --
+        self.button_sizer = button_sizer
 
-        sizer.Add(button_sizer,        proportion=0,
-                  flag=flag,            border=1)
-        sizer.Add(wx.StaticLine(self), proportion=0, 
-                  flag=flag|wx.ALIGN_CENTER_HORIZONTAL, 
-                                        border=border)
-        sizer.Add(stage_choicebook,    proportion=1, 
-                  flag=flag,            border=border)
 
-        self.strategy_summary.select_stage(1)
-        self.SetSizer(sizer)
-        self.do_layout()
-
-        self._should_sync = True
-                                
-        ''' Decouple results notebook and strategy pane
-        pub.subscribe(self._results_notebook_page_changed, 
-                      topic='RESULTS_NOTEBOOK_PAGE_CHANGED')
-        '''
-        pub.subscribe(self._set_run_buttons_state,
-                      topic='SET_RUN_BUTTONS_STATE')
-        pub.subscribe(self._enact_strategy, 
-                      topic='ENACT_STRATEGY')
-
-        self.stage_panels = [detection_filter_panel,
-                             detection_panel,
-                             extraction_filter_panel,
-                             extraction_panel,
-                             clustering_panel]
-
-        self.strategy_manager = StrategyManager()
-        self.strategy_manager.load_all_strategies()
-        self._temp_strategies = {}
-
+    def _setup_bindings(self):
         self.Bind(wx.EVT_IDLE, self._sync)
         self.Bind(wx.EVT_BUTTON, self._save_button_pressed, self.save_button)
         self.Bind(wx.EVT_BUTTON, self._run_stage, self.run_stage_button)
@@ -141,6 +135,121 @@ class StrategyPane(ScrolledPanel):
         self.Bind(wx.EVT_CHOICEBOOK_PAGE_CHANGED, self._page_changed)
         self.Bind(wx.EVT_CHOICE, self._strategy_choice_made, 
                                  self.strategy_chooser.choice) 
+
+    # -- PUBLIC METHODS --
+    def set_run_buttons_state(self, states=[False, False]):
+        self.run_stage_button.Enable(states[0])
+        self.run_strategy_button.Enable(states[1])
+
+    def get_current_strategy(self):
+        methods_used = self.get_current_methods_used()
+        settings     = self.get_current_settings()
+        strategy = Strategy(methods_used=methods_used, settings=settings)
+        strategy.name = self.strategy_manager.get_strategy_name(strategy)
+        return strategy
+
+    def get_current_methods_used(self):
+        return self.strategy_summary.get_current_methods()
+
+    def get_current_settings(self):
+        methods_used = self.get_current_methods_used()
+        settings     = {}
+        for stage_name, method_name in methods_used.items():
+            control_panel = self.stages[stage_name][method_name][
+                                                    'control_panel']
+            try:
+                _settings = control_panel.get_parameters()
+            except ValueError:
+                _settings = None
+
+            settings[stage_name] = _settings
+        return settings
+
+    def do_layout(self):
+        self.SetupScrolling(scroll_x=False)
+        self.Layout()
+
+    @property
+    def current_stage(self):
+        return self.strategy_summary.current_stage
+
+
+    # -- HELPER METHODS --
+    def _update_strategy_choices(self):
+        '''
+        Adds any strategies in self._temp_strategies to the
+            chooser.
+        '''
+        old_items = self.strategy_chooser.GetItems()
+        new_items = self.strategy_manager.strategies.keys()
+        new_items.extend(self._temp_strategies.keys())
+        if old_items != new_items:
+            self.strategy_chooser.SetItems(new_items)
+
+    def _toggle_should_sync(self):
+        self._should_sync = not self._should_sync 
+
+    # -- MESSAGE HANDLERS --
+    def _method_chosen(self, message):
+        '''
+        Show the appropriate stage's control panel.
+        '''
+        stage_name, method_name = message.data
+        if stage_name == self.current_stage:
+            for sn, stage in self.stages.items():
+                for mn, method in stage.items():
+                    should_show = (sn == stage_name and mn == method_name)
+                    method['control_panel'].Show(should_show)
+            self.do_layout()
+
+    def _stage_chosen(self, message):
+        stage_name = message.data
+        method_name = self.get_current_methods_used()[stage_name]
+        for sn, stage in self.stages.items():
+            for mn, method in stage.items():
+                should_show = (sn == stage_name and mn == method_name)
+                method['control_panel'].Show(should_show)
+        self.do_layout()
+
+    def _enact_strategy(self, message=None, strategy=None):
+        if message is not None:
+            strategy = message.data
+        for stage_name in stage_names:
+            method_name = strategy.methods_used[stage_name]
+            if method_name in self.stages[stage_name].keys():
+                # set method
+                self.strategy_summary.make_method_choice(stage_name, 
+                                                         method_name)
+                control_panel = self.stages[stage_name][method_name][
+                                                'control_panel']
+                settings = strategy.settings[stage_name]
+                non_unicode_settings = strip_unicode(settings)
+                # set settings
+                control_panel.set_parameters(**non_unicode_settings)
+
+    def _results_notebook_page_changed(self, message=None):
+        self.strategy_summary.select_stage(stage_name=message.data, 
+                                           results=True)
+
+    def _set_run_buttons_state(self, message=None):
+        run_state = message.data
+        stage_name = self.current_stage
+
+        run_stage_state    = run_state[stage_name]
+        run_strategy_state = run_state['strategy']
+
+        self.set_run_buttons_state(states=[run_stage_state, 
+                                           run_strategy_state])
+
+    # -- EVENT HANDLERS --
+    def _run_strategy(self, event):
+        # disable run buttons
+        self.set_run_buttons_state()
+        wx.Yield()
+
+        strategy = self.get_current_strategy()
+        pub.sendMessage("RUN_STRATEGY_ON_MARKED", 
+                        data={'strategy':strategy})
 
     def _save_button_pressed(self, event=None):
         current_strategy = self.get_current_strategy()
@@ -156,11 +265,18 @@ class StrategyPane(ScrolledPanel):
             self._update_strategy_choices()
         dlg.Destroy()
 
-    # --- SYNC ---
-    def _toggle_should_sync(self):
-        self._should_sync = not self._should_sync 
+    def _run_stage(self, event):
+        # disable run buttons
+        self.set_run_buttons_state()
+        wx.Yield()
 
-    def _sync(self, event=None):
+        strategy = self.get_current_strategy()
+        stage_name = self.current_stage
+        pub.sendMessage("RUN_STAGE_ON_MARKED", 
+                        data={'strategy':strategy, 
+                              'stage_name':stage_name})
+
+    def _sync(self, event=None): # handles IDLE events.
         '''
         Makes sure the strategy_chooser is syncronized with what the
             control panels are set to.
@@ -169,7 +285,7 @@ class StrategyPane(ScrolledPanel):
             self._should_sync = False
             wx.CallLater(config['gui']['strategy_pane']['wait_time'], 
                          self._toggle_should_sync)
-            current_strategy      = self.get_current_strategy()
+            current_strategy = self.get_current_strategy()
             button_state = pt.CUSTOM_LC in current_strategy.name.lower()
 
             # -- add current_strategy to temp strategies if it is custom
@@ -189,45 +305,6 @@ class StrategyPane(ScrolledPanel):
             data = (current_strategy.methods_used, current_strategy.settings)
             pub.sendMessage(topic='CALCULATE_RUN_BUTTONS_STATE', data=data)
 
-    def _update_strategy_choices(self):
-        old_items = self.strategy_chooser.GetItems()
-        new_items = self.strategy_manager.strategies.keys()
-        new_items.extend(self._temp_strategies.keys())
-        if old_items != new_items:
-            self.strategy_chooser.SetItems(new_items)
-
-    # --- GET CURRENT STRATEGY AND HELPER FNs ---
-    def get_current_strategy(self):
-        methods_used = self.get_current_methods_used()
-        settings     = self.get_current_settings()
-        strategy = Strategy(methods_used=methods_used, settings=settings)
-        strategy.name = self.strategy_manager.get_strategy_name(strategy)
-        return strategy
-
-    def get_current_methods_used(self):
-        methods_used = {}
-        for stage_panel in self.stage_panels:
-            method_chosen = stage_panel.method_name_chosen
-            stage_name = stage_panel.stage_name
-            methods_used[stage_name] = method_chosen
-        return methods_used
-
-    def get_current_settings(self):
-        settings     = {}
-        for stage_panel in self.stage_panels:
-            method_name_chosen = stage_panel.method_name_chosen
-            control_panel = stage_panel.methods[
-                                method_name_chosen]['control_panel']
-            try:
-                _settings = control_panel.get_parameters()
-            except ValueError:
-                _settings = None
-
-            stage_name = stage_panel.stage_name
-            settings[stage_name] = _settings
-        return settings
-
-    # -- STRATEGY CHOOSER --
     def _strategy_choice_made(self, event=None):
         'Update The Strategy Pane based on the choice made.'
         strategy_name = self.strategy_chooser.GetStringSelection()
@@ -239,27 +316,6 @@ class StrategyPane(ScrolledPanel):
         if strategy is not None:
             self._enact_strategy(strategy=strategy)
 
-    def _enact_strategy(self, message=None, strategy=None):
-        if message is not None:
-            strategy = message.data
-        for stage_panel in self.stage_panels:
-            stage_name = stage_panel.stage_name
-            method_name = strategy.methods_used[stage_name]        
-            if method_name in stage_panel.methods.keys():
-                # set method
-                stage_panel.method_choice_made(method_name=method_name)
-                control_panel = stage_panel.methods[method_name][
-                                                    'control_panel'] 
-                stage_settings = strategy.settings[stage_name]
-                non_unicode_stage_settings = strip_unicode(stage_settings)
-                # set parameters
-                control_panel.set_parameters(**non_unicode_stage_settings)
-
-    def _results_notebook_page_changed(self, message=None):
-        old_page_num, new_page_num = message.data
-        if new_page_num < 5: # don't try to change if changing to summary
-            self.stage_choicebook.ChangeSelection(new_page_num)
-
     def _page_changed(self, event=None):
         if event is not None:
             old_page_num = event.GetOldSelection()
@@ -270,233 +326,141 @@ class StrategyPane(ScrolledPanel):
                             data=(new_page_num, old_page_num))
             '''
 
-    def do_layout(self):
-        self.SetupScrolling()
-        self.Layout()
+class StrategyStageChooser(wx.Panel):
+    def __init__(self, parent, stage_name, stage_display_name, 
+                 method_names, **kwargs):
+        wx.Panel.__init__(self, parent, **kwargs)
+        self.SetBackgroundColour(wx.WHITE)
 
-    def get_stage_from_display_name(self, display_name):
-        '''
-        Return the stage with the given display_name
-        '''
-        for stage in self.stages:
-            if stage.display_name == display_name:
-                return stage
-        return None
+        self.stage_name = stage_name
+        self.method_names = method_names
+
+        if stage_name == 'detection_filter':
+            self.method_names.remove('Copy Detection Filtering')
+        
+        stage_icon = buttons.GenBitmapButton(self, wx.ID_ANY, 
+                                     utils.get_bitmap_image('down_bar_arrow'),
+                                     size=(30,30),
+                                     style=wx.NO_BORDER)
+        stage_text = buttons.GenButton(self, 
+                                       wx.ID_ANY, "%s:" % stage_display_name, 
+                                       size=(130,30),
+                                       style=wx.NO_BORDER|wx.ALIGN_RIGHT)
+        method_chooser = wx.Choice(self, choices=method_names)
+        results_icon = buttons.GenBitmapButton(self, wx.ID_ANY, 
+                                     utils.get_bitmap_image('right_arrow'),
+                                     size=(30,30),
+                                     style=wx.NO_BORDER)
+
+        sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        flag = wx.ALL|wx.ALIGN_CENTER_VERTICAL
+        sizer.Add(stage_icon,     flag=flag, border=3)
+        sizer.Add(stage_text,     flag=flag|wx.ALIGN_RIGHT, border=3)
+        sizer.Add(method_chooser, flag=flag|wx.ALIGN_LEFT, border=3,
+                                   proportion=1)
+        sizer.Add(results_icon,   flag=flag, border=3)
+        self.SetSizer(sizer)
+
+        self.Bind(wx.EVT_LEFT_DOWN, self.on_click, self)
+        self.Bind(wx.EVT_CHOICE, self.on_method_choice, method_chooser)
+        self.Bind(wx.EVT_BUTTON, self.on_click, stage_icon)
+        self.Bind(wx.EVT_BUTTON, self.on_click, results_icon)
+        self.Bind(wx.EVT_BUTTON, self.on_click, stage_text)
+
+        self.method_chooser = method_chooser
+        self.stage_icon = stage_icon
+        self.results_icon = results_icon
+
+    def get_current_method(self):
+        return self.method_chooser.GetStringSelection()
+
+    def set_current_method(self, method_name):
+        if method_name in self.method_names:
+            self.method_chooser.SetStringSelection(method_name)
+            pub.sendMessage(topic='METHOD_CHOSEN', 
+                            data=(self.stage_name, method_name))
+        else:
+            raise RuntimeError("Method %s is not a valid choice for stage %s" % (method_name, self.stage_name))
+        
+    def on_method_choice(self, event):
+        event.Skip()
+        method_name = self.get_current_method()
+        pub.sendMessage(topic='METHOD_CHOSEN', 
+                        data=(self.stage_name, method_name))
+        pub.sendMessage(topic='STAGE_CHOSEN', 
+                        data=self.stage_name)
+    
+    def on_click(self, event):
+        event.Skip()
+        pub.sendMessage(topic='STAGE_CHOSEN', 
+                        data=self.stage_name)
+
+    def show_results_icon(self, state):
+        self.results_icon.Show(state)
+
+    def show_stage_icon(self, state):
+        self.stage_icon.Show(state)
+
+class StrategySummary(wx.Panel):
+    def __init__(self, parent, stages, **kwargs):
+        wx.Panel.__init__(self, parent, **kwargs)
+        self.SetBackgroundColour(wx.WHITE)
+
+        self.stage_choosers = []
+        for stage_name in stage_names:
+            methods_dict = stages[stage_name]
+            stage_display_name = eval("pt.%s" % stage_name.upper())
+            method_names = methods_dict.keys()
+            self.stage_choosers.append(StrategyStageChooser(self, stage_name,
+                                                        stage_display_name,
+                                                        sorted(method_names)))
+        
+        pub.subscribe(self._update_methods, "UPDATE_STRATEGY_SUMMARY")
+        pub.subscribe(self.select_stage, "STAGE_CHOSEN")
+
+        sizer = wx.BoxSizer(orient=wx.VERTICAL)
+        for stage_chooser in self.stage_choosers:
+            sizer.Add(stage_chooser, flag=wx.EXPAND)
+
+        self.SetMaxSize((config['gui']['strategy_pane']['min_width']-10,-1))
+        self.SetSizerAndFit(sizer)
+
+    def make_method_choice(self, stage_name, method_name):
+        for stage_chooser in self.stage_choosers:
+            if stage_chooser.stage_name == stage_name:
+                stage_chooser.set_current_method(method_name)
+
+    def get_current_methods(self):
+        return_dict = {}
+        for stage_chooser in self.stage_choosers:
+            current_method = stage_chooser.get_current_method()
+            return_dict[stage_chooser.stage_name] = current_method
+        return return_dict
+
+    def select_stage(self, message=None, stage_name=None, results=False):
+        if stage_name is None:
+            stage_name = message.data
+        for stage_chooser in self.stage_choosers:
+            if results: 
+                show_fn = stage_chooser.show_results_icon
+            else:
+                show_fn = stage_chooser.show_stage_icon
+            show_fn(stage_chooser.stage_name == stage_name)
+
+        if not results:
+            self._current_stage = stage_name
+
+        self.Layout()
 
     @property
     def current_stage(self):
-        return self.stage_choicebook.GetCurrentPage()
-
-    def _run_stage(self, event):
-        # disable run buttons
-        self.set_run_buttons_state()
-        wx.Yield()
-
-        strategy = self.get_current_strategy()
-        stage_name = self.current_stage.stage_name
-        pub.sendMessage("RUN_STAGE_ON_MARKED", 
-                        data={'strategy':strategy, 
-                              'stage_name':stage_name})
-
-    def _run_strategy(self, event):
-        # disable run buttons
-        self.set_run_buttons_state()
-        wx.Yield()
-
-        strategy = self.get_current_strategy()
-        pub.sendMessage("RUN_STRATEGY_ON_MARKED", 
-                        data={'strategy':strategy})
-
-    def set_run_buttons_state(self, states=[False, False]):
-        self.run_stage_button.Enable(states[0])
-        self.run_strategy_button.Enable(states[1])
-
-    def _set_run_buttons_state(self, message=None):
-        run_state = message.data
-        stage_name = self.current_stage.stage_name
-
-        run_stage_state    = run_state[stage_name]
-        run_strategy_state = run_state['strategy']
-
-        self.set_run_buttons_state(states=[run_stage_state, 
-                                           run_strategy_state])
-
-
-class StrategySummary(wx.Panel):
-    def __init__(self, parent, **kwargs):
-        wx.Panel.__init__(self, parent, **kwargs)
-        
-        pub.subscribe(self._update_methods, "UPDATE_STRATEGY_SUMMARY")
-        s = []
-        stages = [pt.DETECTION_FILTER, pt.DETECTION, pt.EXTRACTION_FILTER, 
-                  pt.EXTRACTION, pt.CLUSTERING]
-        self.method_text_list = []
-        for stage in stages:
-            s.append(wx.StaticText(self, label=stage+':',
-                               style=wx.ALIGN_RIGHT))
-            self.method_text_list.append(wx.StaticText(self,label='', 
-                               style=wx.ALIGN_LEFT))
-
-        sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        lsizer = wx.BoxSizer(orient=wx.VERTICAL)
-        rsizer = wx.BoxSizer(orient=wx.VERTICAL)
-        rsizer_flag = wx.ALL|wx.ALIGN_LEFT
-        rsizer_border = config['gui']['strategy_pane']['summary_border']
-
-        for method_text in self.method_text_list:
-            rsizer.Add(method_text, proportion=0, flag=rsizer_flag, 
-                       border=rsizer_border)
-        
-        flag = wx.ALL|wx.ALIGN_RIGHT
-        border = config['gui']['strategy_pane']['summary_border']
-        for stage_text in s:
-            lsizer.Add(stage_text, proportion=0, flag=flag, 
-                                  border=border)
-        sizer.Add(lsizer, proportion=0)
-        sizer.Add(rsizer, proportion=1, flag=wx.EXPAND)
-        self.SetSizer(sizer)
-        self.stage_text_list = s
-        lsizer.SetMinSize(self._get_lsizer_minsize())
-        self._selected_stage = 1
-        self.lsizer = lsizer
-        self.rsizer = rsizer
-
-    def select_stage(self, stage_num):
-        old_stage_text = self.stage_text_list[self._selected_stage-1]
-        old_method_text = self.method_text_list[self._selected_stage-1]
-        stage_font = old_stage_text.GetFont()
-        stage_font.SetWeight(wx.FONTWEIGHT_NORMAL)
-        old_stage_text.SetFont(stage_font)
-        old_method_text.SetFont(stage_font)
-
-        new_stage_text = self.stage_text_list[stage_num-1]
-        new_method_text = self.method_text_list[stage_num-1]
-        stage_font = new_stage_text.GetFont()
-        stage_font.SetWeight(wx.FONTWEIGHT_BOLD)
-        new_stage_text.SetFont(stage_font)
-        new_method_text.SetFont(stage_font)
-        self._selected_stage = stage_num
-        self.Layout()
-
-    def _get_lsizer_minsize(self):
-        stage_text_widths = []
-        for stage_text in self.stage_text_list:
-            font = stage_text.GetFont()
-            font.SetWeight(wx.FONTWEIGHT_BOLD)
-            stage_text.SetFont(font)
-            stage_text_widths.append(stage_text.GetSize()[0])
-            font.SetWeight(wx.FONTWEIGHT_NORMAL)
-            stage_text.SetFont(font)
-        minwidth = max(stage_text_widths)
-        minwidth = minwidth + 2*config['gui']['strategy_pane']['summary_border']
-        minsize = (minwidth, 1)
-        return minsize 
+        return self._current_stage
 
     def _update_methods(self, message):
+        return
         stage_num, method_string = message.data
         method_statictext = self.method_text_list[stage_num-1]
         method_statictext.SetLabel(method_string)
 
         self.Layout()
 
-
-class StagePanel(wx.Panel):
-    def __init__(self, parent, stage_num=None, 
-                               display_name=None,
-                               stage_name=None, 
-                               **kwargs):
-        wx.Panel.__init__(self, parent, **kwargs)
-        self.stage_num = stage_num
-        self.display_name = display_name
-        self.stage_name = stage_name
-
-        # --- METHODS ---
-        self.methods = self.load_methods()
-
-        self.method_names = sorted(self.methods.keys())
-        if self.method_names:
-            self._method_name_chosen = self.method_names[0]
-
-        self.method_chooser = NamedChoiceCtrl(self, name=pt.METHOD+":",
-                                 choices=self.method_names)
-
-        # --- SIZER ---
-        sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        ea_flag = wx.EXPAND|wx.ALL
-        sizer.Add(self.method_chooser,          proportion=0, 
-                      flag=ea_flag,              border=3)
-        for method in self.methods.values():
-            sizer.Add(method['control_panel'],  proportion=0,
-                      flag=ea_flag,              border=6)
-        self.SetSizer(sizer)
-        
-        self.Bind(wx.EVT_CHOICE, self.method_choice_made,
-                  self.method_chooser.choice)
-        
-        pub.subscribe(self._set_stage_parameters, topic='SET_PARAMETERS')
-        self.method_choice_made(method_name=self.method_names[0])
-
-    def load_methods(self):
-        methods = {}
-        ms, mcs = plugin_utils.get_methods_for_stage(self.stage_name)
-        for method in ms:
-            methods[method.name] = {}
-            methods[method.name]['control_panel'] =\
-                    method.make_control_panel(self, style=wx.BORDER_SUNKEN)
-            methods[method.name]['control_panel'].Show(False)
-            methods[method.name]['description'] = method.description
-        return methods
-
-    def _set_stage_parameters(self, message=None):
-        kwargs = message.data
-        stage_name = kwargs['stage_name']
-        if stage_name != self.stage_name:
-            message = "Message sent to incorrect panel.\n"
-            message += "This panel is named: %s\n" % self.stage_name
-            message += "Intended panel is named: %s" % stage_name
-            raise RuntimeError(message)
-            return # not the right stage_panel
-        method_name = kwargs['method_name']
-        parameters = {}
-        for key, value in kwargs.items():
-            if (key != 'stage_name' and 
-                key != 'method_name'):
-                parameters[key] = value
-        self.methods[method_name]['control_panel'].set_parameters(**parameters)
-        self.method_choice_made(method_name=method_name)
-
-    @property
-    def method_name_chosen(self):
-        return self._method_name_chosen 
-
-    def method_choice_made(self, event=None, method_name=None):
-        self.methods[self.method_name_chosen]['control_panel'].Show(False)
-
-        if method_name is not None:
-            self._method_name_chosen = method_name
-            self.method_chooser.SetStringSelection(method_name)
-        else:
-            self._method_name_chosen = self.method_chooser.GetStringSelection()
-
-        self.methods[self.method_name_chosen]['control_panel'].Show(True)
-        self.Layout()
-        pub.sendMessage(topic="UPDATE_STRATEGY_SUMMARY", 
-                        data=(self.stage_num, self.method_name_chosen))
-
-    def run(self):
-        control_panel = self.methods[self.method_name_chosen]['control_panel']
-        settings = control_panel.get_parameters()
-        wx.Yield() # about to let scipy hog cpu, so process all wx events.
-        data = {'stage_name' :self.stage_name,
-                'method_name':self.method_name_chosen,
-                'settings'   :settings}
-
-        pub.sendMessage(topic='RUN_MARKED', data=data)
-
-class DetectionFilterStagePanel(StagePanel):
-    def load_methods(self):
-        methods = StagePanel.load_methods(self)
-        if 'Copy Detection Filtering' in  methods.keys():
-            del methods['Copy Detection Filtering']
-        return methods
-    

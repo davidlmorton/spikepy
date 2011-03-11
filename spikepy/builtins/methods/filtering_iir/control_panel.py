@@ -83,6 +83,7 @@ class ControlPanel(wx.Panel):
                              order=3, 
                              kind='High Pass'):
         self.function_chooser.SetStringSelection(function_name)
+        self._acausal_check(state=acausal)
         self._passband_choice_made(band_type=kind)
         if "Band" in kind:
             self.low_cutoff_spinctrl.SetValue( critical_freq[0])

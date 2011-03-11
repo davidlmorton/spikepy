@@ -23,8 +23,11 @@ from spikepy.gui.validators import FloatValidator
 from spikepy.common.config_manager import config_manager as config
 
 class NamedChoiceCtrl(wx.Panel):
-    def __init__(self, parent, name="", choices=[], bar_width=None, **kwargs):
+    def __init__(self, parent, name="", choices=[], bar_width=None, 
+                               background_color=None, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
+        if background_color is not None:
+            self.SetBackgroundColour(background_color)
 
         self.name = wx.StaticText(self, label=name)
         if bar_width == None and len(choices) > 0:

@@ -55,11 +55,11 @@ class MyFrame(wx.Frame):
 
         strategy_holder = BorderPanel(hsplit, style=wx.BORDER_SUNKEN)
         self.strategy_pane = StrategyPane(strategy_holder)
-        strategy_holder.add_content(self.strategy_pane, 2)
+        strategy_holder.add_content(self.strategy_pane, 0)
 
         trial_list_holder = BorderPanel(hsplit, style=wx.BORDER_SUNKEN)
         self.trial_list = TrialGridCtrl(trial_list_holder)
-        trial_list_holder.add_content(self.trial_list, 2)
+        trial_list_holder.add_content(self.trial_list, 0)
 
         self.results_notebook = results_notebook = ResultsNotebook(
                                                     vsplit)

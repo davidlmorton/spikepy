@@ -120,13 +120,13 @@ class SaveStrategyDialog(wx.Dialog):
         methods_used_name = self.methods_used_textctrl.GetValue()
         settings_name     = self.settings_textctrl.GetValue()
         new_name = make_strategy_name(methods_used_name, settings_name)
-        self.save_as_text.SetLabel(pt.STRATEGY_SAVE_AS + 
-                                   new_name)
         # ZERO LENGTH
         if len(methods_used_name) < 1 or len(settings_name) < 1:
             self.warning_text.SetLabel(pt.AT_LEAST_ONE_CHARACTER)
             self.ok_button.Enable(False)
             return
+        self.save_as_text.SetLabel(pt.STRATEGY_SAVE_AS + 
+                                   new_name)
         new_methods_used_name = make_methods_used_name(new_name)
         new_settings_name     = make_settings_name(new_name)
         # CUSTOM IN NAME

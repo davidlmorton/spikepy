@@ -101,14 +101,15 @@ class ResultsNotebook(wx.Notebook):
         old_page_num  = event.GetOldSelection()
         new_page_num  = event.GetSelection()
         self._selected_page_num = new_page_num
-        pub.sendMessage(topic='RESULTS_NOTEBOOK_PAGE_CHANGED', 
-                        data=(old_page_num, new_page_num))
         try:
             old_page = self.GetPage(old_page_num)
+            new_page = self.GetPage(new_page_num)
         except ValueError:
             # we're catching an odd behavior of wx on application close.
             event.Skip()
             return
+        pub.sendMessage(topic='RESULTS_NOTEBOOK_PAGE_CHANGED', 
+                        data=new_page.name)
         pub.sendMessage(topic="HIDE_RESULTS", data=old_page.name)
         event.Skip()
 
