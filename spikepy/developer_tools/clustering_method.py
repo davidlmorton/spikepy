@@ -38,3 +38,4 @@ Methods that subclasses are REQUIRED to implement:
     _skips_registration = True
     _is_base_class = True
     _is_stochastic = False
+    _requires = ['extraction.features'] 

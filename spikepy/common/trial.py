@@ -65,9 +65,10 @@ class Trial(object):
         self.raw_traces    = utils.format_traces(raw_traces)
         self._id = uuid.uuid4() 
 
-        # calculate the psds of the raw_traces
-        from spikepy.common import signal_utils 
         # imports matplotlib, so can't be at top.
+        from spikepy.common import signal_utils 
+
+        # calculate the psds of the raw_traces
         self.psd = signal_utils.psd(self.raw_traces.flatten(), 
                                     sampling_freq, 
                                     config['backend']['psd_freq_resolution'])
@@ -80,22 +81,25 @@ class Trial(object):
         else:
             self.times = None
 
-        self.clustering        = StageData(self, name='clustering',       
+        self.clustering        = StageData(name='clustering',       
                                            dependents=[])
-        self.extraction        = StageData(self, name='extraction',       
+        self.extraction        = StageData(name='extraction',       
                                            dependents=[self.clustering])
-        self.detection         = StageData(self, name='detection',        
+        self.detection         = StageData(name='detection',        
                                            dependents=[self.extraction])
-        self.extraction_filter = FilterStageData(self, name='extraction_filter',
+        self.extraction_filter = StageData(name='extraction_filter',
                                            dependents=[self.extraction])
-        self.detection_filter  = StageData(self, name='detection_filter', 
+        self.detection_filter  = StageData(name='detection_filter', 
                                            dependents=[self.detection, 
                                                        self.extraction_filter])
+        self.raw_data          = StageData(name='raw_data',
+                                           dependents=[self.detection_filter])
 
         self.clustering.set_prereqs([self.extraction])
         self.extraction.set_prereqs([self.extraction_filter, self.detection])
         self.extraction_filter.set_prereqs([self.detection_filter])
         self.detection.set_prereqs([self.detection_filter])
+        self.detection_filter.set_prereqs([self.raw_data])
 
         self.stages = [self.detection_filter,
                        self.detection,
@@ -137,6 +141,10 @@ class Trial(object):
         return Strategy(methods_used=self.methods_used, settings=self.settings)
 
     def get_archive(self, archive_name='archive'):
+        '''
+        Create and return a dictionary that includes all the data needed to
+        recreate the trial object.
+        '''
         return_dict = {}
         return_dict['raw_traces'] = self.raw_traces
         # obscure the fullpath in archives for security reasons.
@@ -392,15 +400,14 @@ class Trial(object):
                     scipy.io.savemat(fullpath, results_dict)
 
 class StageData(object):
-    def __init__(self, trial, name=None, dependents=[], prereqs=[]):
-        self.trial = trial
+    def __init__(self, name=None, dependents=[], prereqs=[]):
         self.name = name
         self.dependents = dependents
         self.prereqs = prereqs
 
-        self.settings   = None
-        self.method     = None
-        self.results    = None
+        self.settings    = None
+        self.method_name = None
+        self.results     = None
 
         self.reinitialize()
 
@@ -408,19 +415,19 @@ class StageData(object):
         self.prereqs = prereqs
     
     def reinitialize(self):
-        if self.results is not None:
-            self.results  = None
-            self.settings = None
-            self.method   = None
+        if self.settings is not None:
+            self.settings    = None
+            self.method_name = None
+            self.results     = None
             for dependent in self.dependents:
                 dependent.reinitialize()
 
-class FilterStageData(StageData):
+class ExtractionFilterStageData(StageData):
     def reinitialize(self):
-        if self.results is not None:
-            # don't get rid of old results.
+        if (self.settings is not None and
+            self.method_name is 'Copy Detection Filtering'):
+            self.settings    = None
+            self.method_name = None
+            self.results     = None
             for dependent in self.dependents:
                 dependent.reinitialize()
-
-
-

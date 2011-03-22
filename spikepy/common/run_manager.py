@@ -16,11 +16,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import multiprocessing
 import math
-import traceback 
-import sys
-import copy
-import os
-from collections import defaultdict
 import string
 
 import wx
@@ -38,103 +33,17 @@ from spikepy.common import config_utils
 from spikepy.common.config_manager import config_manager
 import spikepy.common.program_text as pt
 
-def filter_process_worker(run_queue, results_queue):
+def process_worker(run_queue, results_queue):
     for run_data in iter(run_queue.get, None):
+        # continue processing from the run_queue until a sentinel is 
+        #  encountered... put results in results_queue.
         stage_name, method_name, run_dict = run_data
         method_obj = plugin_utils.get_method(stage_name, method_name,
                                              instantiate=True)
+
         run_results = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
-        filtered_traces = utils.format_traces(run_results['std_results'])
-        sampling_freq = run_dict['args'][1]
-        # calculate the psd of the filtered traces
-        filtered_psd = signal_utils.psd(filtered_traces.flatten(), 
-            sampling_freq, config_manager['backend']['psd_freq_resolution'])
-
-        # resample the filtered traces
-        min_sampling_freq = config_manager['backend']['min_sampling_freq']
-        rate_factor = int(math.ceil(min_sampling_freq/
-                                    float(sampling_freq)))
-        new_sf = sampling_freq*rate_factor
-        # prep the result.
-        resampled_traces = numpy.empty(
-            (len(filtered_traces), len(filtered_traces[0])*rate_factor), 
-            dtype=filtered_traces[0].dtype)
-        for fti, ft in enumerate(filtered_traces):
-            resampled_traces[fti]= utils.resample_signal(ft, 
-                    sampling_freq, min_sampling_freq)
-        resampled_times = numpy.arange(resampled_traces.shape[1],
-                dtype=resampled_traces.dtype)*(1000.0/new_sf)
-
-        result = {'traces':filtered_traces,
-                  'psd':filtered_psd,
-                  'resampled_traces':resampled_traces,
-                  'resampled_times':resampled_times,
-                  'new_sampling_freq':new_sf}
-
         results_queue.put({'trial_id':run_dict['trial_id'],
-                           'data':result})
-
-def detection_process_worker(run_queue, results_queue):
-    for run_data in iter(run_queue.get, None):
-        stage_name, method_name, run_dict = run_data
-        method_obj = plugin_utils.get_method(stage_name, method_name,
-                                             instantiate=True)
-        run_results = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
-        spikes = run_results['std_results']
-
-        # make spike windows and store them.
-        window_maker_obj = plugin_utils.get_method('extraction',
-                                                   'Spike Window',
-                                                   instantiate=True)
-
-        if len(spikes > 0):
-            traces, sampling_freq = run_dict['args']
-            pre_padding = run_dict['pre_padding']
-            post_padding = run_dict['post_padding']
-            window_results = window_maker_obj.run(traces, sampling_freq, 
-                                               spikes,
-                                               pre_padding=pre_padding,
-                                               post_padding=post_padding,
-                                               exclude_overlappers=False)
-            window_dict = window_results['std_results']
-
-            spike_window_ys = window_dict['features']
-            dt_in_ms = 1000.0/sampling_freq
-            spike_window_xs = numpy.arange(len(spike_window_ys[0]))*dt_in_ms
-            spike_window_times = window_dict['feature_times']
-        else:
-            spike_window_xs = []
-            spike_window_times = []
-            spike_window_ys = []
-        result = {'spike_times':spikes,
-                  'spike_window_xs':spike_window_xs,
-                  'spike_window_times':spike_window_times,
-                  'spike_window_ys':spike_window_ys}
-        
-        results_queue.put({'trial_id':run_dict['trial_id'],
-                           'data':result})
-
-def extraction_process_worker(run_queue, results_queue):
-    for run_data in iter(run_queue.get, None):
-        stage_name, method_name, run_dict = run_data
-        method_obj = plugin_utils.get_method(stage_name, method_name,
-                                             instantiate=True)
-        try:
-            run_results = method_obj.run(*run_dict['args'], 
-                                         **run_dict['kwargs'])
-            result = run_results['std_results']
-            rotated_features, pc, var = utils.pca(result['features'])
-            result['pca_rotated_features'] = rotated_features
-            result['pca_basis_vectors'] = pc
-            result['pca_variances'] = var
-        except:
-            result = {'features': [], 'feature_times':[],
-                      'pca_rotated_features':[],
-                      'pca_basis_vectors':[],
-                      'pca_variances':[]}
-
-        results_queue.put({'trial_id':run_dict['trial_id'],
-                           'data':result})
+                           'run_results':run_results})
 
 def clustering_process_worker(run_queue, results_queue):
     for run_data in iter(run_queue.get, None):
@@ -226,8 +135,8 @@ class RunManager(object):
     def __init__(self):
         self.trials = {}
         
-        self.num_processes = 0
-        self.num_files = 0
+        self.num_processes = 0 # number of running processes
+        self.num_files = 0     # number of files being opened
 
         pub.subscribe(self._open_data_file, "OPEN_DATA_FILE")
         pub.subscribe(self._close_trial,    "CLOSE_TRIAL")
@@ -241,6 +150,7 @@ class RunManager(object):
                            'extraction',
                            'clustering']
                            
+        # state variables
         self._running = False
         self._running_strategy = False
         self._aborting_strategy = False
@@ -255,6 +165,7 @@ class RunManager(object):
                              'extraction_filter':self._pre_filter,
                              'extraction':self._pre_extraction,
                              'clustering':self._pre_clustering}
+
         # post-handlers set the trial.stage_data.results and are in charge of
         #     publishing any messages about the processing  that just happened.
         self._post_handlers = {'detection_filter':self._post_filter,
@@ -262,6 +173,7 @@ class RunManager(object):
                               'extraction_filter':self._post_filter,
                               'extraction':self._post_extraction,
                               'clustering':self._post_clustering}
+
         # process_workers do the actual calling of method.run() and are run
         #     in another process, so cannot communicate except through the
         #     multiprocessing.Queue objects they are passed.
@@ -419,7 +331,7 @@ class RunManager(object):
             jobs.append(job)
 
         results_list = []
-        for i in xrange(len(trial_list)):
+        for i in xrange(len(run_dict_list)):
             results_list.append(results_queue.get())
 
         for job in jobs:
@@ -432,6 +344,7 @@ class RunManager(object):
         # get the results and put them into a list.
         results_list = delayed_result.get()
 
+        
         for trial in trial_list:
             # ensure a result for this trial was processed and returned
             this_result = None
@@ -517,12 +430,11 @@ class RunManager(object):
             rotated_feature_list.extend(rotated_features)
             master_key_list.extend(key_list)
 
+        meta_dict = {'master_key_list':master_key_list}
+
         run_dict = {'args':(feature_set_list,),
                     'kwargs':settings,
-                    'feature_set_list':feature_set_list,
-                    'master_key_list':master_key_list,
-                    'feature_time_list':feature_time_list,
-                    'rotated_feature_list': rotated_feature_list}
+                    'meta':meta_dict
         run_dict_list = [run_dict]
         return run_dict_list
 
@@ -559,7 +471,7 @@ class RunManager(object):
             pub.sendMessage(topic='TRIAL_ALTERED',
                             data=(trial.trial_id, stage_name))
 
-    def _post_clustering(self, trial, result, stage_name, strategy):
+    def _post_clustering(self, trial_list, result, stage_name, strategy):
         stage_data = trial.get_stage_data(stage_name)
         stage_data.reinitialize()
         stage_data.results  = result
