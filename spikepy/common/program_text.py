@@ -154,6 +154,7 @@ RUN_BUTTON_RUNNING_STATUS = "Running"
 SAVE_STRATEGY = "Save Strategy..."
 STRATEGY = "Strategy"
 STRATEGY_PROGRESS_INFO = "Strategy Completion Progress"
+PROCESS_PROGRESS = "Process Progress"
 ABORT = 'Abort'
 ABORTING = 'Aborting...'
 USER_ABORT_MESSAGE = 'You chose to abort.\n\nLast stage completed:%s' # % stage_name

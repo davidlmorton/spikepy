@@ -38,13 +38,13 @@ def plugin_process_worker(input_queue, results_queue):
         # continue processing from the run_queue until a sentinel is 
         #  encountered... put results in results_queue.
         stage_name = job.stage_name
-        method_name = job.process_info
+        method_name = job.method_name
         run_dict = job.run_dict
         method_obj = plugin_utils.get_method(stage_name, method_name,
                                              instantiate=True)
 
         run_results = method_obj.run(*run_dict['args'], **run_dict['kwargs'])
-        results_queue.put({'job':job,
+        results_queue.put({'job_id':job.job_id,
                            'results':run_results})
 
 def standard_process_worker(input_queue, results_queue)
@@ -54,10 +54,10 @@ def standard_process_worker(input_queue, results_queue)
         run_dict = job.run_dict
 
         run_results = function(*run_dict['args'], **run_dict['kwargs'])
-        results_queue.put({'job':job,
+        results_queue.put({'job_id':job.job_id,
                            'results':run_results})
 
-class dc_run_manager(object):
+class DCRunManager(object):
     def run(self, trial_list, pending_jobs_list, message_queue):
         # message_queue is used to communicate with the rest of the
         #  main program.  We will only push onto it from here, never get

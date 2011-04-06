@@ -55,31 +55,14 @@ class Trial(object):
     """This class represents an individual trial consisting of (potentially)
     multiple electrodes recording simultaneously.
     """
-    def __init__(self, sampling_freq=1.0, 
-                       raw_traces=[[0.0]], 
-                       fullpath='FULLPATH NOT SET'):
-        self.fullpath      = fullpath
+    def __init__(self, sampling_freq=None, 
+                       raw_traces=None, 
+                       fullpath='FULLPATH NOT SET',
+                       num_channels=None):
         filename = os.path.split(fullpath)[1]
         self.display_name = get_unique_display_name(filename)
         display_names.add(self.display_name)
-        self.raw_traces    = utils.format_traces(raw_traces)
         self._id = uuid.uuid4() 
-
-        # imports matplotlib, so can't be at top.
-        from spikepy.common import signal_utils 
-
-        # calculate the psds of the raw_traces
-        self.psd = signal_utils.psd(self.raw_traces.flatten(), 
-                                    sampling_freq, 
-                                    config['backend']['psd_freq_resolution'])
-
-        self.sampling_freq = sampling_freq
-        self.dt            = (1.0/sampling_freq)*1000.0 # dt in ms
-        if len(self.raw_traces):
-            trace_length = len(self.raw_traces[0])
-            self.times = numpy.arange(0, trace_length, 1)*self.dt
-        else:
-            self.times = None
 
         self.clustering        = StageData(name='clustering',       
                                            dependents=[])
@@ -106,6 +89,30 @@ class Trial(object):
                        self.extraction_filter,
                        self.extraction,
                        self.clustering]
+
+        # set up the raw_data stage.
+        if sampling_freq is not None and raw_traces is not None:
+            formatted_traces = utils.format_traces(raw_traces)
+            dt = (1.0/sampling_freq)*1000.0 # dt in ms
+            if len(formatted_traces):
+                trace_length = len(formatted_traces[0])
+                times = numpy.arange(0, trace_length, 1)*dt
+            else:
+                times = None
+            self.raw_data.results = {'traces':formatted_traces,
+                                     'sampling_freq':sampling_freq,
+                                     'dt':dt,
+                                     'times':times,
+                                     'fullpath':fullpath}
+        else:
+            self._num_channels = num_channels
+
+    @property
+    def num_channels(self):
+        if self.raw_data.results is not None:
+            return len(self.raw_data.results['traces'])
+        else:
+            return self._num_channels
 
     @property
     def trial_id(self):
@@ -204,6 +211,12 @@ class Trial(object):
         for prereq in stage_data.prereqs:
             prereq_set.add(prereq.name)
             self._get_prereq_stage_names(prereq.name, prereq_set)
+
+    def get_result(self, result_string):
+        stage_name, result_name = result_string.split('.')
+        stage_data = self.get_stage_data(stage_name)
+        result = stage_data.results[result_name]
+        return result
 
     def get_stage_data(self, stage_name):
         if stage_name == pt.DETECTION_FILTER:
@@ -411,8 +424,14 @@ class StageData(object):
 
         self.reinitialize()
 
+    def get_prereqs_as_strings(self):
+        return map(str, self._prereqs)
+
+    def get_prereqs(self):
+        return self._prereqs
+
     def set_prereqs(self, prereqs):
-        self.prereqs = prereqs
+        self._prereqs = prereqs
     
     def reinitialize(self):
         if self.settings is not None:

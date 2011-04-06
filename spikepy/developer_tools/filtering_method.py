@@ -40,5 +40,7 @@ Methods that subclasses are REQUIRED to implement:
     _skips_registration = True
     _is_base_class = True
     _is_stochastic = False
-    _requires = ['raw_traces', 'sampling_freq']
+    _requires = ['raw_data.traces', 'raw_data.sampling_freq']
+    _provides = ['<stage_name>.traces'] 
+    # <stage_name> is one of "detection_filter" or "extraction_filter"
 

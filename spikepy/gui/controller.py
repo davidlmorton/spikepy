@@ -19,18 +19,18 @@ import os
 import traceback 
 import sys
 import cPickle
-from multiprocessing import Pool
+import multiprocessing
 
 import wx
 from wx.lib.pubsub import Publisher as pub
 from wx.lib.delayedresult import startWorker
 
-from spikepy.common.run_manager import RunManager
+from spikepy.common.session_manager import SessionManager
 from ..common.trial import Trial
 from .view import View
 from .utils import named_color, load_pickle
 from spikepy.common import program_text as pt
-from spikepy.gui.strategy_progress_dialog import StrategyProgressDialog
+from spikepy.gui.process_progress_dialog import ProcessProgressDialog
 from .trial_rename_dialog import TrialRenameDialog
 from .pyshell import locals_dict
 from .export_dialog import ExportDialog
@@ -47,11 +47,11 @@ def make_version_float(version_number_string):
 
 class Controller(object):
     def __init__(self):
-        self.model = RunManager()
+        self.model = SessionManager()
         self.view = View()
         self.results_notebook = self.view.frame.results_notebook
         self._selected_trial = None
-        self._strategy_progress_dlg = None
+        self._process_progress_dlg = None
 
         # save for locals in pyshell
         locals_dict['model']      = self.model
@@ -88,10 +88,10 @@ class Controller(object):
         pub.subscribe(self._open_rename_trial_dialog,
                       topic='OPEN_RENAME_TRIAL_DIALOG')
         pub.subscribe(self._export_trials,  topic="EXPORT_TRIALS")
-        pub.subscribe(self._run_strategy_on_marked,  
+        pub.subscribe(self._run_on_marked,  
                       topic="RUN_STRATEGY_ON_MARKED")
-        pub.subscribe(self._run_stage_on_marked,  topic="RUN_STAGE_ON_MARKED")
-        pub.subscribe(self._aborting_strategy, topic='ABORTING_STRATEGY')
+        pub.subscribe(self._run_on_marked,  topic="RUN_STAGE_ON_MARKED")
+        pub.subscribe(self._aborting_processing, topic='ABORTING_PROCESSING')
         pub.subscribe(self._processing_finished, topic='PROCESSING_FINISHED')
         pub.subscribe(self._cannot_mark_trial, 'CANNOT_MARK_TRIAL')
 
@@ -122,15 +122,21 @@ class Controller(object):
         dlg.ShowModal()
         dlg.Destroy()
 
-    def _run_stage_on_marked(self, message):
-        message.data['trial_list'] = self.get_marked_trials()
-        pub.sendMessage(topic='RUN_STAGE', data=message.data) 
-
-    def _run_strategy_on_marked(self, message):
+    def _run_on_marked(self, message):
         trial_list = self.get_marked_trials()
+        message_queue = multiprocessing.Queue()
+        abort_queue = multiprocessing.Queue()
+        locals_dict['mq'] = message_queue
+        self._open_process_progress_dialog(trial_list, message_queue,
+                                           abort_queue)
+
         message.data['trial_list'] = trial_list
-        self._open_strategy_progress_dialog()
-        pub.sendMessage(topic='RUN_STRATEGY', data=message.data) 
+        message.data['message_queue'] = message_queue
+        message.data['abort_queue'] = abort_queue
+        if 'STRATEGY' in message.topic:
+            pub.sendMessage(topic='RUN_STRATEGY', data=message.data) 
+        else:
+            pub.sendMessage(topic='RUN_STAGE', data=message.data)
 
     def _export_trials(self, message):
         export_type = message.data
@@ -246,14 +252,14 @@ class Controller(object):
 
     def _processing_finished(self, message):
         stage_name = message.data
-        if self._strategy_progress_dlg is not None:
-            done = self._strategy_progress_dlg.update_progress(stage_name)
+        if self._process_progress_dlg is not None:
+            done = self._process_progress_dlg.is_done
             if done:
-                self._strategy_progress_dlg = None
+                self._process_progress_dlg = None
 
-    def _aborting_strategy(self, message):
-        self._strategy_progress_dlg.abort()
-        self._strategy_progress_dlg = None
+    def _aborting_processing(self, message):
+        self._process_progress_dlg.abort()
+        self._process_progress_dlg = None
         offending_trials, abort_reasons, last_stage_name_run = message.data
         if 'USER_PRESSED_ABORT' in abort_reasons:
             info = pt.USER_ABORT_MESSAGE % last_stage_name_run
@@ -265,17 +271,18 @@ class Controller(object):
         msg_dlg.ShowModal()
         msg_dlg.Destroy()
         
-
-    def _open_strategy_progress_dialog(self, stage_names=all_stages):
+    def _open_process_progress_dialog(self, trial_list, message_queue, 
+                                       abort_queue):
         main_frame_pos = self.view.frame.GetPosition()
         main_frame_size = self.view.frame.GetSize()
         dlg_pos = (main_frame_pos[0]+main_frame_size[0]/2,
                    main_frame_pos[1]+main_frame_size[1]/2)
-        self._strategy_progress_dlg = StrategyProgressDialog(self.view.frame,
-                                    stage_names, pos=dlg_pos,
-                                    style=wx.STAY_ON_TOP)
-        self._strategy_progress_dlg.Show()
-        done = self._strategy_progress_dlg.update_progress('STARTUP')
+        self._process_progress_dlg = ProcessProgressDialog(self.view.frame,
+                                                           trial_list, 
+                                                           message_queue, 
+                                                           abort_queue,
+                                                           pos=dlg_pos)
+        self._process_progress_dlg.Show()
 
     def _open_open_file_dialog(self, message):
         frame = message.data

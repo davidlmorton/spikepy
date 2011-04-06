@@ -166,12 +166,12 @@ class TrialGridCtrl(gridlib.Grid):
                         data=trial_id)
 
     def _is_markable(self, trial_id):
-        # make sure this trial has same number of traces as
+        # make sure this trial has same number of channels as
         #     all other marked trials.
-        num_traces = len(self._trials[trial_id].raw_traces)
+        num_channels = self._trials[trial_id].num_channels 
         for tid in self.marked_trial_ids:
-            tnum_traces = len(self._trials[tid].raw_traces)
-            if num_traces != tnum_traces:
+            tnum_channels = self._trials[tid].num_channels
+            if num_channels != tnum_channels:
                 return False
         return True
 

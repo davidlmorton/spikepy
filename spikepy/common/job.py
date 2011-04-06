@@ -15,22 +15,49 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import defaultdict
+import time
+
+class NonPluginJob(Job):
+        
+class PluginJob(Job):
 
 class Job(object):
-    def __init__(self, kind='standard', stage_name=None, 
-                       trial_ids=[], depends_on=[],
-                       method_name=None, run_dict={}):
-        self._id = uuid.uuid4()
-        self.kind = kind
+    def __init__(self, stage_name=None, trial_ids=[], requires=[],
+                       run_dict={}, job_name=None, job_id=None):
         self.stage_name = stage_name
         self.trial_ids = trial_ids
-        self.depends_on = depends_on
-        self.method_name = method_name
+        self.requires = requires
+        self.provides = provides
+        self.job_name = job_name
+        self.job_id = job_id
+        self._start_time = None
+        self._end_time = None
         self.run_dict = run_dict
 
-    @property
-    def job_id(self):
-        return self._id
+    def set_start_time(self):
+        self._start_time = time.time()
+
+    def set_end_time(self):
+        self._end_time = time.time()
+
+    def get_run_time(self):
+        if self._start_time is None:
+            return None
+        if self._end_time is not None:
+            return self._end_time - self._start_time
+        else:
+            return time.time() - self._start_time
+
+    def get_run_time_as_string(self):
+        run_time = self.get_run_time()
+        if run_time is None:
+            return ''
+        else:
+            ss = int(run_time * 100) % 100
+            s = int(run_time) % 60
+            m = int(run_time/60) % 60
+            h = int(run_time/3600)
+            return "%2d:%02d:%02d:%02d" % (h, m, s, ss)
 
     def check_dependencies(self, trial_list):
         trial_dict = {}
@@ -53,7 +80,7 @@ class Job(object):
                         satisfied = False
                 else:
                     if (hasattr(trial, dependency) and 
-                        getattr(trial, dependency) is not None):
+                        trial.get_stage_data(dependency).results is not None):
                         satisfied = True
                     else:
                         satisfied = False

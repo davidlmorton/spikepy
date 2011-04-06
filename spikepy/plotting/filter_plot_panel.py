@@ -41,8 +41,12 @@ class FilterPlotPanel(SpikepyPlotPanel):
         plot_panel.clear()
 
         trial = self._trials[trial_id]
+        if trial.raw_data.results is None:
+            print "This trial skips detection filtering."
+            #self._write_skips()
+
         # set the size of the plot properly.
-        num_traces = len(trial.raw_traces)
+        num_traces = len(trial.raw_data.results['traces'])
         num_rows = 1 + num_traces
         self._resize_canvas(num_rows, trial_id)
         
@@ -51,7 +55,7 @@ class FilterPlotPanel(SpikepyPlotPanel):
         plot_panel.axes['psd'] = psd_axes = figure.add_subplot(num_rows, 1, 1)
         utils.set_axes_ticker(psd_axes, axis='yaxis')
         plot_panel.axes['trace'] = []
-        for i in xrange(len(trial.raw_traces)):
+        for i in xrange(num_traces):
             if i == 0:
                 trace_axes = figure.add_subplot(num_rows, 1, i+2)
             else:
@@ -90,30 +94,34 @@ class FilterPlotPanel(SpikepyPlotPanel):
         plot_panel = self._plot_panels[trial_id]
         trial = self._trials[trial_id]
 
-        # calculate psd to be plotted.
-        Pxx, freqs = trial.psd
-        plotted_Pxx = 10*numpy.log10(Pxx)
-        
-        # clear and plot the psd
-        psd_axes = plot_panel.axes['psd']
-        utils.clear_axes(psd_axes)
-        psd_axes.plot(freqs, plotted_Pxx, 
-                      label=pt.RAW,
-                      linewidth=pc['std_trace_linewidth'], 
-                      color='k')
-        utils.set_axes_ticker(psd_axes, axis='yaxis')
-        plot_panel.draw()
+        if (trial.raw_data.results is not None and
+            'psd' in trial.raw_data.results.keys()):
+            # calculate psd to be plotted.
+            Pxx, freqs = trial.raw_data.results['psd']
+            plotted_Pxx = 10*numpy.log10(Pxx)
+            
+            # clear and plot the psd
+            psd_axes = plot_panel.axes['psd']
+            utils.clear_axes(psd_axes)
+            psd_axes.plot(freqs, plotted_Pxx, 
+                          label=pt.RAW,
+                          linewidth=pc['std_trace_linewidth'], 
+                          color='k')
+            utils.set_axes_ticker(psd_axes, axis='yaxis')
+            plot_panel.draw()
 
         # clear and plot the traces
-        num_traces = len(trial.raw_traces)
+        raw_traces = trial.raw_data.results['traces']
+        times = trial.raw_data.results['times']
+        num_traces = len(raw_traces)
         for i, trace_axes in enumerate(plot_panel.axes['trace']):
             utils.clear_axes(trace_axes)
             utils.make_a_trace_axes(trace_axes)
-            trace_axes.plot(trial.times, trial.raw_traces[i],
+            trace_axes.plot(times, raw_traces[i],
                             color='k', 
                             linewidth=pc['std_trace_linewidth'], 
                             label=pt.RAW)
-            trace_axes.set_xlim(trial.times[0], trial.times[-1])
+            trace_axes.set_xlim(times[0], times[-1])
             utils.trace_autoset_ylim(trace_axes)
             utils.set_axes_ticker(trace_axes, axis='yaxis')
             plot_panel.draw()
