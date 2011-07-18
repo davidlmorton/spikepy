@@ -173,8 +173,11 @@ def trace_set_xlim(axes, tmin=None, tmax=None, **kwargs):
                                                        tmin, tmax)
             # lock --> plot --> unlock
             axes._trace_xlim_locked = True
-            line = axes._old_plot(new_times, new_trace, *axes._trace_args[t_id], 
-                                                  **axes._trace_kwargs[t_id])[0]
+            old_ylim = axes.get_ylim()
+            line = axes._old_plot(new_times, new_trace, 
+                    *axes._trace_args[t_id], 
+                    **axes._trace_kwargs[t_id])[0]
+            axes.set_ylim(old_ylim)
             axes._trace_xlim_locked = False
 
             # save this line so we can remove it later.
