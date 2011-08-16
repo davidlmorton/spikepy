@@ -450,3 +450,17 @@ class ExtractionFilterStageData(StageData):
             self.results     = None
             for dependent in self.dependents:
                 dependent.reinitialize()
+
+class Resource(object):
+    def __init__(self, name):
+        self.name = name
+
+    def checkout(self):
+        pass
+
+    def checkin(self, data=None, key=None):
+        pass
+
+    def is_locked(self):
+        pass
+
