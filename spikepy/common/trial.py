@@ -49,20 +49,65 @@ def get_unique_display_name(proposed_display_name):
     while new_display_name in display_names:
         new_display_name = '%s(%d)' % (proposed_display_name, count)
         count += 1
+    display_names.add(new_display_name)
     return new_display_name
 
 class Trial(object):
-    """This class represents an individual trial consisting of (potentially)
+    """
+        This class represents an individual trial consisting of (potentially)
     multiple electrodes recording simultaneously.
     """
     def __init__(self, sampling_freq=None, 
                        raw_traces=None, 
-                       fullpath='FULLPATH NOT SET',
-                       num_channels=None):
-        filename = os.path.split(fullpath)[1]
-        self.display_name = get_unique_display_name(filename)
-        display_names.add(self.display_name)
+                       origin=None,
+                       display_name=None):
+        self.display_name = get_unique_display_name(display_name)
         self._id = uuid.uuid4() 
+
+        self.raw_traces = raw_traces
+        self.sampling_freq = sampling_freq
+        self.origin = origin
+        self.num_channels = len(raw_traces)
+
+        # -------------------------------------
+        # -- main processing stage resources --
+
+        # df_traces is a 2D numpy array where
+        #    len(df_traces) == num_channels
+        self._add_resource(Resource('df_traces'))
+        self._add_resource(Resource('df_sampling_freq')
+
+        # events is a list of "list of indexes" where 
+        #    len(events) == num_channels
+        #    len(events[i]) == number of events on the ith channel
+        #    events[i][j] == index of jth event on the ith channel
+        self._add_resource(Resource('events'))
+
+        # ef_traces is a 2D numpy array where
+        #    len(ef_traces) == num_channels
+        self._add_resource(Resource('ef_traces'))
+        self._add_resource(Resource('ef_sampling_freq')
+
+        # features is 2D numpy array with shape = (n, m) where
+        #    n == the total number of events
+        #    m == the number of features describing each event
+        #    features[k][l] == feature l of event k
+        self._add_resource(Resource('features'))
+
+        # feature_locations is a 1D numpy array of indexes.
+        #    time of kth feature == feature_locations[k]/ef_sampling_freq
+        self._add_resource(Resource('feature_locations'))
+
+        # clusters is a 1D numpy array of integers (cluster ids).
+        #   clusters[k] == id of cluster to which the kth feature belongs.
+        self._add_resource(Resource('clusters'))
+        
+    def _add_resource(self, resource):
+        if hasattr(self, resource.name):
+            raise RuntimeError(pt.RESOURCE_EXISTS % resource.name)
+        else:
+            setattr(self, resource.name, resource)
+
 
         self.clustering        = StageData(name='clustering',       
                                            dependents=[])
@@ -452,15 +497,50 @@ class ExtractionFilterStageData(StageData):
                 dependent.reinitialize()
 
 class Resource(object):
-    def __init__(self, name):
+    def __init__(self, name, data=None):
         self.name = name
+        self._locked = False
+        self._locking_key = None
+
+        self._data = data
 
     def checkout(self):
-        pass
+        '''
+        Check out this resource, locking it so that noone else can check it
+        out until you've checked it in via <checkin>.
+        '''
+        if self.is_locked:
+            raise RuntimeError(pt.RESOURCE_LOCKED % self.name)
+        else:
+            self._locking_key = uuid.uuid4()
+            self._locked = True
+            return {'name':self.name, 
+                    'data':self._data, 
+                    'locking_key':self._locking_key}
 
     def checkin(self, data=None, key=None):
-        pass
+        '''
+        Check in resource so others may use it.
+        '''
+        if not self.is_locked:
+            raise RuntimeError(pt.RESOURCE_NOT_LOCKED % self.name)
+        else:
+            if key == self._locking_key:
+                self._locking_key = None
+                if data is not None:
+                    self._data = data
+                self._locked = False
+            else:
+                raise RuntimeError(pt.RESOURCE_KEY_INVALID % 
+                        (str(key), self.name))
 
+    @property
     def is_locked(self):
-        pass
+        return self._locked
+
+    @property
+    def data(self):
+        return self._data
+
+    
 

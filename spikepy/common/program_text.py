@@ -210,3 +210,10 @@ PAGE_SETUP = "Page Setup..."
 STATUS_IDLE = "Current Status: IDLE"
 STATUS_RUNNING = "Current Status: RUNNING"
 STATUS_OPENING = "Current Status: OPENING FILE(S) [%d]" # % num_files
+
+# --- ERRORS ---
+RESOURCE_LOCKED = 'Resource (%s) is locked.' # % self.name
+RESOURCE_NOT_LOCKED = 'Resource (%s) is not locked and cannot be checked in.' # % self.name
+RESOURCE_KEY_INVALID = 'Invalid key (%s) for Resource (%s), checkin failed.' # % (str(key), self.name)
+RESOURCE_EXISTS = 'Resource (%s) already exists' # % resource.name
+
