@@ -30,12 +30,12 @@ from spikepy.common.config_manager import config_manager as config
 def zero_mean(trace_array):
     return trace_array - numpy.average(trace_array)
 
-
 def format_traces(trace_list):
-    array_trace_list = [zero_mean(numpy.array(trace,dtype=numpy.float64))
-                        for trace in trace_list]
-    traces = numpy.vstack(array_trace_list)
-    return traces
+    result = numpy.empty((len(trace_list), len(trace_list[0])), 
+            dtype=numpy.float64)
+    for i, tl in enumerate(trace_list):
+        result[i,:] = zero_mean(numpy.array(trace, dtype=numpy.float64))
+    return result
 
 def sort_dict_list(dict_list, *args):
     '''

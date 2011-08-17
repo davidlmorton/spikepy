@@ -57,17 +57,17 @@ class Trial(object):
         This class represents an individual trial consisting of (potentially)
     multiple electrodes recording simultaneously.
     """
-    def __init__(self, sampling_freq=None, 
-                       raw_traces=None, 
-                       origin=None,
+    def __init__(self, origin=None,
                        display_name=None):
         self.display_name = get_unique_display_name(display_name)
         self._id = uuid.uuid4() 
-
-        self.raw_traces = raw_traces
-        self.sampling_freq = sampling_freq
         self.origin = origin
-        self.num_channels = len(raw_traces)
+
+    def setup_basic_attributes(self, raw_traces, sampling_freq)
+        self.raw_traces = utils.format_traces(raw_traces)
+        self.raw_times = numpy.arange(0, raw_traces.shape[1])/sampling_freq
+        self.sampling_freq = sampling_freq
+        self.num_channels = raw_traces.shape[0]
 
         # -------------------------------------
         # -- main processing stage resources --
@@ -101,6 +101,24 @@ class Trial(object):
         # clusters is a 1D numpy array of integers (cluster ids).
         #   clusters[k] == id of cluster to which the kth feature belongs.
         self._add_resource(Resource('clusters'))
+
+    @classmethod
+    def from_raw_traces(cls, sampling_freq=None, raw_traces=None, 
+        '''    Create a trial object using the raw voltage traces.'''
+            origin=None, display_name=None):
+        result = cls(origin=origin, display_name=display_name)
+        result.setup_basic_attributes(raw_traces, sampling_freq)
+        return result
+
+    @classmethod
+    def from_spike_windows(cls, sampling_freq=None, spike_windows=None,
+            spike_times=None):
+        '''
+            Create a trial object using just spike_windows and the times when
+        they were gathered.  The only stages which still make sense after
+        that are feature_extraction and clustering.
+        '''
+        raise NotImplementedError
         
     def _add_resource(self, resource):
         if hasattr(self, resource.name):
@@ -108,91 +126,12 @@ class Trial(object):
         else:
             setattr(self, resource.name, resource)
 
-
-        self.clustering        = StageData(name='clustering',       
-                                           dependents=[])
-        self.extraction        = StageData(name='extraction',       
-                                           dependents=[self.clustering])
-        self.detection         = StageData(name='detection',        
-                                           dependents=[self.extraction])
-        self.extraction_filter = StageData(name='extraction_filter',
-                                           dependents=[self.extraction])
-        self.detection_filter  = StageData(name='detection_filter', 
-                                           dependents=[self.detection, 
-                                                       self.extraction_filter])
-        self.raw_data          = StageData(name='raw_data',
-                                           dependents=[self.detection_filter])
-
-        self.clustering.set_prereqs([self.extraction])
-        self.extraction.set_prereqs([self.extraction_filter, self.detection])
-        self.extraction_filter.set_prereqs([self.detection_filter])
-        self.detection.set_prereqs([self.detection_filter])
-        self.detection_filter.set_prereqs([self.raw_data])
-
-        self.stages = [self.detection_filter,
-                       self.detection,
-                       self.extraction_filter,
-                       self.extraction,
-                       self.clustering]
-
-        # set up the raw_data stage.
-        if sampling_freq is not None and raw_traces is not None:
-            formatted_traces = utils.format_traces(raw_traces)
-            dt = (1.0/sampling_freq)*1000.0 # dt in ms
-            if len(formatted_traces):
-                trace_length = len(formatted_traces[0])
-                times = numpy.arange(0, trace_length, 1)*dt
-            else:
-                times = None
-            self.raw_data.results = {'traces':formatted_traces,
-                                     'sampling_freq':sampling_freq,
-                                     'dt':dt,
-                                     'times':times,
-                                     'fullpath':fullpath}
-        else:
-            self._num_channels = num_channels
-
-    @property
-    def num_channels(self):
-        if self.raw_data.results is not None:
-            return len(self.raw_data.results['traces'])
-        else:
-            return self._num_channels
-
     @property
     def trial_id(self):
         return self._id
 
-    @property
-    def methods_used(self):
-        _methods_used = {}
-        for stage in self.stages:
-            _methods_used[stage.name] = stage.method
-        return _methods_used
-
-    @property
-    def settings(self):
-        _settings = {}
-        for stage in self.stages:
-            _settings[stage.name] = stage.settings
-        return _settings
-
-    def get_strategy(self):
-        '''
-        Return the strategy that describes the processing that has already been
-            performed on this trial.  If any stage is incomplete return None.
-        '''
-        for s in self.settings.values():
-            if s is None:
-                return None
-
-        for m in self.methods_used.values():
-            if m is None:
-                return None
-
-        return Strategy(methods_used=self.methods_used, settings=self.settings)
-
     def get_archive(self, archive_name='archive'):
+        # TODO refactor using new resources idea.
         '''
         Create and return a dictionary that includes all the data needed to
         recreate the trial object.
@@ -206,15 +145,9 @@ class Trial(object):
             return_dict[stage.name] = self.get_data_from_stage(stage.name)
         return return_dict
 
-    def set_data_for_stage(self, stage_name, method=None, settings=None, 
-                                             results=None):
-        stage_data = self.get_stage_data(stage_name)
-        stage_data.method   = method
-        stage_data.settings = settings
-        stage_data.results  = results
-
     @classmethod
     def from_archive(cls, archive):
+        # TODO refactor using new resources idea.
         return_trial = Trial(sampling_freq=archive['sampling_freq'],
                              raw_traces=archive['raw_traces'], 
                              fullpath=archive['fullpath'])
@@ -224,122 +157,13 @@ class Trial(object):
                 return_trial.set_data_for_stage(stage.name, **data_for_stage)
         return return_trial
 
-    def get_data_from_stage(self, stage_name):
-        stage_data = self.get_stage_data(stage_name)
-        return_dict = {'method': stage_data.method,
-                       'settings': stage_data.settings,
-                       'results': stage_data.results}
-        return return_dict
-
-    def has_run_stage(self, stage_name):
-        stage_data = self.get_stage_data(stage_name)
-        return stage_data.results is not None
-
-    def can_run_stage(self, stage_name):
-        return self.get_readyness()[stage_name]
-
-    def get_prereq_stage_names(self, stage_name):
-        '''
-        Return a set of stage names which are either direct or 
-        remote prereqs of the given stage_name.
-        '''
-        prereq_set = set()
-        self._get_prereq_stage_names(stage_name, prereq_set)
-        return prereq_set
-
-    def _get_prereq_stage_names(self, stage_name, prereq_set):
-        '''
-        Given 'prereq_set' as an empty set(), this will recursively add
-        all prerequisite stages to 'stage_name'
-        '''
-        stage_data = self.get_stage_data(stage_name)
-        for prereq in stage_data.prereqs:
-            prereq_set.add(prereq.name)
-            self._get_prereq_stage_names(prereq.name, prereq_set)
-
-    def get_result(self, result_string):
-        stage_name, result_name = result_string.split('.')
-        stage_data = self.get_stage_data(stage_name)
-        result = stage_data.results[result_name]
-        return result
-
-    def get_stage_data(self, stage_name):
-        if stage_name == pt.DETECTION_FILTER:
-            return self.detection_filter
-        if stage_name == pt.DETECTION:
-            return self.detection
-        if stage_name == pt.EXTRACTION_FILTER:
-            return self.extraction_filter
-        if stage_name == pt.EXTRACTION:
-            return self.extraction
-        if stage_name == pt.CLUSTERING:
-            return self.clustering
-
-        formatted_stage_name = stage_name.lower().replace(' ', '_')
-        if hasattr(self, formatted_stage_name):
-            return getattr(self, formatted_stage_name)
-        else:
-            raise RuntimeError('Trial does not have a stage by the name of %s' %
-                                formatted_stage_name)
-
-    def get_readyness(self):
-        '''
-        Return a dictionary with keys=stage names and
-            values=True->stage prereqs met
-                  =False->one or more prereqs unmet
-        '''
-        readyness = {}
-        for stage in self.stages:
-            can_run = True
-            for prereq in stage.prereqs:
-                if prereq.results is None:
-                    can_run = False
-            readyness[stage.name] = can_run
-        return readyness
-
-    def would_be_novel(self, stage_name, method_class, settings_dict):
-        '''
-        Would running a given stage yield novel results?
-        '''
-        method = method_class()
-        method_name = method.name
-        if method._is_stochastic:
-            return True
-        else:
-            stage_data = self.get_data_from_stage(stage_name)
-            return not (method_name == stage_data['method'] and 
-                        settings_dict == stage_data['settings'])
-
-    def __hash__(self):
-        return hash(self.trial_id)
-
-    def get_clustered_spike_windows(self):
-        if self.extraction.results is None or self.clustering.results is None:
-            raise RuntimeError('Trial with trial_id:%s does not have extraction or clustering results, so cannot find clustered spike windows.' % self.trial_id)
-        window_times = self.detection.results['spike_window_times']
-        windows = self.detection.results['spike_window_ys']
-        times = self.clustering.results['clustered_spike_times']
-        clustered_windows = defaultdict(list)
-        for cluster_num, time_list in times.items():
-            for time in time_list:
-                window_index = window_times.index(time)
-                clustered_windows[cluster_num].append(windows[window_index])
-            clustered_windows[cluster_num] =\
-                    numpy.array(clustered_windows[cluster_num]) 
-        return clustered_windows
-
-    def get_num_clusters(self):
-        if self.extraction.results is None or self.clustering.results is None:
-            raise RuntimeError('Trial with trial_id:%s does not have extraction or clustering results, so cannot find clustered features.' % self.trial_id)
-        return len(self.clustering.results['clustered_spike_times'].keys())
-
     def rename(self, new_display_name):
         display_names.remove(self.display_name)
-        self.display_name = new_display_name
-        display_names.add(self.display_name)
+        self.display_name = get_unique_display_name(new_display_name)
         pub.sendMessage(topic='TRIAL_RENAMED', data=self)
 
     def export(self, path=None, stages_selected=[], file_format=None):
+        # TODO refactor into another file using the new resources idea.
         '''
         Store the results of the stages in <stage_list> to files in <path>.
         Inputs:
@@ -457,44 +281,6 @@ class Trial(object):
                 elif file_format == pt.MATLAB:
                     scipy.io.savemat(fullpath, results_dict)
 
-class StageData(object):
-    def __init__(self, name=None, dependents=[], prereqs=[]):
-        self.name = name
-        self.dependents = dependents
-        self.prereqs = prereqs
-
-        self.settings    = None
-        self.method_name = None
-        self.results     = None
-
-        self.reinitialize()
-
-    def get_prereqs_as_strings(self):
-        return map(str, self._prereqs)
-
-    def get_prereqs(self):
-        return self._prereqs
-
-    def set_prereqs(self, prereqs):
-        self._prereqs = prereqs
-    
-    def reinitialize(self):
-        if self.settings is not None:
-            self.settings    = None
-            self.method_name = None
-            self.results     = None
-            for dependent in self.dependents:
-                dependent.reinitialize()
-
-class ExtractionFilterStageData(StageData):
-    def reinitialize(self):
-        if (self.settings is not None and
-            self.method_name is 'Copy Detection Filtering'):
-            self.settings    = None
-            self.method_name = None
-            self.results     = None
-            for dependent in self.dependents:
-                dependent.reinitialize()
 
 class Resource(object):
     def __init__(self, name, data=None):
@@ -518,7 +304,7 @@ class Resource(object):
                     'data':self._data, 
                     'locking_key':self._locking_key}
 
-    def checkin(self, data=None, key=None):
+    def checkin(self, data_dict=None, key=None):
         '''
         Check in resource so others may use it.
         '''
@@ -527,8 +313,11 @@ class Resource(object):
         else:
             if key == self._locking_key:
                 self._locking_key = None
-                if data is not None:
-                    self._data = data
+                if data_dict is not None:
+                    self._data = data_dict['data']
+                    self._change_info = data_dict['change_info']
+                    self._change_info['at'] = datetime.datetime.now()
+                    self._change_info['change_id'] = uuid.uuid4()
                 self._locked = False
             else:
                 raise RuntimeError(pt.RESOURCE_KEY_INVALID % 
@@ -541,6 +330,23 @@ class Resource(object):
     @property
     def data(self):
         return self._data
+
+    @property
+    def change_info(self):
+        '''
+            Information describing how this resource was last changed.
+        Keys:
+            by : string, name of the plugin function that changed this resource.
+            at : datetime, the date/time of the last change to this resource.
+            with : dict, a dictionary of keyword args for the <by> function.
+            using : list, a list of (trial_id, resource_name, uuid) that 
+                    were used as arguments to the <by> function.  If any 
+                    arguments to <by> were not resources, then entry will be 
+                    (trial_id, attribute_name) of the attribute which was
+                    used by the <by> function.
+            change_id : a uuid generated when this resource was last changed.
+        '''
+        return self._change_info
 
     
 
