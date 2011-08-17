@@ -30,17 +30,23 @@ Methods that subclasses are REQUIRED to implement:
         -- This method returns a wx.Panel object (or a subclass) that acts as 
            the control panel for the new filtering method.  kwargs should be 
            passed to the wx.Panel constructor.
-    - run(signal_list, sampling_freq, **kwargs)
-        -- This method returns the filtered results.  It should return a list
-           of filtered signals.  The filtered signals should have the same
-           sampling_freq as the input signals.  kwargs are all the arguments
-           to the filtering code.
+    - run(raw_traces, sampling_freq, **kwargs)
+        -- This method returns the filtered results and the new sampling_freq.
+           It should return a list of filtered signals and the sampling_freq 
+           of the new signals.  kwargs are all the arguments to the filtering 
+           code.
     '''
+    # --- CAN OVERWRITE ---
+    _is_stochastic = False
+
+    # --- DO NOT ALTER ---
     __metaclass__ = RegisteringClass
     _skips_registration = True
     _is_base_class = True
-    _is_stochastic = False
-    _requires = ['raw_data.traces', 'raw_data.sampling_freq']
-    _provides = ['<stage_name>.traces'] 
-    # <stage_name> is one of "detection_filter" or "extraction_filter"
+    _requires = ['raw_traces', 'sampling_freq']
+
+    #_provides = ['<stage_name>_traces', '<stage_name>_sampling_freq'] 
+    # <stage_name> is one of "df" or "ef" for detection and extraction.
+    # <stage_name>_traces is a 2D numpy array where
+    #    len(<stage_name>_traces) == num_channels
 

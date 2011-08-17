@@ -30,12 +30,30 @@ Methods that subclasses are REQUIRED to implement:
         -- This method returns a wx.Panel object (or a subclass) that acts as 
            the control panel for the new method.  kwargs should be 
            passed to the wx.Panel constructor.
-    - run(feature_set_list, **kwargs)
+    - run(features, feature_locations, ef_sampling_freq, **kwargs)
         -- This method returns the clustered results.  kwargs 
            are all the arguments to the new method's code.
+    NOTE: Clustering is unique among stages in spikepy because it takes input
+          from multiple trials.  This is so that you can cluster using 
+          data from multiple trials together.  Spikepy automatically compiles
+          features from multiple trials into a list before calling a
+          clustering method.  Spikepy also automatically parses out results
+          to the appropriate trials when clustering methods return.  What this
+          means is that the clustering-method author need not worry about
+          if the provided features are from multiple trials or a single trial.
     '''
+    # --- CAN OVERWRITE ---
+    _is_stochastic = False
+
+    # --- DO NOT ALTER ---
     __metaclass__ = RegisteringClass
     _skips_registration = True
     _is_base_class = True
     _is_stochastic = False
-    _requires = ['extraction.features'] 
+    _requires = ['features', 'feature_locations', 'ef_sampling_freq'] 
+
+    _provides = ['clusters']
+    # clusters is a 1D numpy array of integers (cluster ids).
+    #   clusters[k] == id of cluster to which the kth feature belongs.
+    # NOTE: while you cannot leave features 'unclustered', you may simply
+    #       place all 'unclustered' features in a cluster with id=-1.

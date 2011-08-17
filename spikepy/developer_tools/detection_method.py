@@ -31,12 +31,20 @@ Methods that subclasses are REQUIRED to implement:
            the control panel for the new method.  kwargs should be 
            passed to the wx.Panel constructor.
     - run(signal_list, sampling_freq, **kwargs)
-        -- This method returns the list of spike times (in seconds).  kwargs 
-           are all the arguments to the new method's code.
+        -- This method returns the list of spike locations (index of spike).  
+           kwargs are all the arguments to the new method's code.
     '''
+    # --- CAN OVERWRITE ---
+    _is_stochastic = False
+
+    # --- DO NOT ALTER ---
     __metaclass__ = RegisteringClass
     _skips_registration = True
     _is_base_class = True
-    _is_stochastic = False
-    _requires = ['detection_filter.filtered_traces', 
-                 'detection_filter.sampling_freq']
+    _requires = ['df_traces', 'df_sampling_freq']
+
+    _provides = ['events']
+    # events is a list of "list of indexes" where 
+    #    len(events) == num_channels
+    #    len(events[i]) == number of events on the ith channel
+    #    events[i][j] == index of jth event on the ith channel

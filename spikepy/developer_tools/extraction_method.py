@@ -30,14 +30,23 @@ Methods that subclasses are REQUIRED to implement:
         -- This method returns a wx.Panel object (or a subclass) that acts as 
            the control panel for the new method.  kwargs should be 
            passed to the wx.Panel constructor.
-    - run(signal_list, sampling_freq, spike_list, **kwargs)
+    - run(signal_list, sampling_freq, events, **kwargs)
         -- This method returns the features.  kwargs are all the arguments
            to the feature-extraction code.
     '''
+    # --- CAN OVERWRITE ---
+    _is_stochastic = False
+
+    # --- DO NOT ALTER ---
     __metaclass__ = RegisteringClass
     _skips_registration = True
     _is_base_class = True
-    _is_stochastic = False
-    _requires = ['detection.spike_times', 
-                 'extraction_filter.filtered_traces',
-                 'extraction_filter.sampling_freq']
+    _requires = ['ef_traces', 'ef_sampling_freq', 'events']
+
+    _provides = ['features', 'feature_locations']
+    # features is 2D numpy array with shape = (n, m) where
+    #    n == the total number of kept events
+    #    m == the number of features describing each event
+    #    features[k][l] == feature l of event k
+    # feature_locations is a 1D numpy array of indexes.
+    #    time of kth feature == feature_locations[k]/ef_sampling_freq
