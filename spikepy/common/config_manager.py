@@ -14,22 +14,18 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
-import os
 import copy
 
 import wx
 from wx.lib.pubsub import Publisher as pub
 import numpy
 import configobj
-from validate import Validator
 
 from spikepy.common import path_utils
 from spikepy.common import config_utils
 
 def rgb_int_to_float(*args):
     return [arg/255.0 for arg in args]
-        
 
 class ConfigManager(object):
     def __init__(self):

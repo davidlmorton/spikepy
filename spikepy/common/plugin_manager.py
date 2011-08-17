@@ -28,45 +28,32 @@ from spikepy.developer_tools.filtering_method import FilteringMethod
 from spikepy.developer_tools.detection_method import DetectionMethod
 from spikepy.developer_tools.extraction_method import ExtractionMethod
 from spikepy.developer_tools.clustering_method import ClusteringMethod
+from spikepy.developer_tools.supplemental_method import SupplementalMethod
 from spikepy.common.path_utils import get_data_dirs
 
-base_classes = {'detection_filter':  FilteringMethod,
+base_classes = {'file_interpreter':  FileInterpreter,
+                'supplemental':      SupplementalMethod,
+                'detection_filter':  FilteringMethod,
                 'detection':         DetectionMethod,
                 'extraction_filter': FilteringMethod,
                 'extraction':        ExtractionMethod,
                 'clustering':        ClusteringMethod}
 
-def get_methods_for_stage(stage_name):
+# --- UTILITY FUNCTIONS ---
+def get_methods_with_base(base_name):
     '''
-    Return a list of method objects and a list of method classes, 
-        given the stage_name.
+        Return a list of method objects and a list of method classes, 
+    given the base_name.
     '''
     return_methods = []
     return_classes = []
-    base_class = base_classes[stage_name]
+    base_class = base_classes[base_name]
     for method_class in _class_registry[base_class]:
         method = method_class()
         return_methods.append(method)
         return_classes.append(method_class)
     return (return_methods, return_classes)
 
-def get_method(stage_name, method_name, instantiate=False):
-    '''
-    Return a method object, given the stage_name and method_name.
-    '''
-    for method, method_class in zip(*get_methods_for_stage(stage_name)):
-        if method.name == method_name:
-            if instantiate:
-                return method
-            else:
-                return method_class
-    raise RuntimeError("couldn't find method named '%s' from stage '%s'" %
-                        (method_name, stage_name))
-
-def get_all_file_interpreters():
-    file_interpreter_classes = _class_registry[FileInterpreter]
-    file_interpreters = [f() for f in file_interpreter_classes]
-    return file_interpreters
 
 def should_load(fullpath):
     filename = os.path.split(fullpath)[1]
@@ -111,3 +98,42 @@ def load_all_plugins(data_dirs=None, **kwargs):
 
     return loaded_modules
 
+class PluginManager(object):
+    def __init__(self):
+        self._loaded_modules = None
+
+    def load(self):
+        _class_registry = {} # reset class registry before loading new classes
+        self._loaded_modules = load_all_plugins()
+
+    def get_method(self, base_name, method_name, instantiate=False):
+        '''
+        Return a method object (or class), given the base_name and method_name.
+        '''
+        for method, method_class in zip(*get_methods_with_base(base_name)):
+            if method.name == method_name:
+                if instantiate:
+                    return method
+                else:
+                    return method_class
+        raise RuntimeError("couldn't find method named '%s' with base '%s'" %
+                            (method_name, base_name))
+
+    def get_methods(self, base_name, instantiate=False):
+        if instantiate:
+            index = 0
+        else:
+            index = 1
+        return get_methods_with_base(base_name)[index]
+
+    @property
+    def file_interpreters(self):
+        return get_methods_with_base('file_interpreter')[0]
+
+    @property
+    def loaded_modules(self):
+        return self._loaded_modules
+
+    @property
+    def class_registry(self):
+        return _class_registry
