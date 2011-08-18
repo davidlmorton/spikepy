@@ -14,13 +14,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
-import time
 import datetime
-import json
 import os
 import uuid
-from collections import defaultdict
 
 import wx
 from wx.lib.pubsub import Publisher as pub
@@ -29,8 +25,6 @@ import scipy.io
 
 from spikepy.common import program_text as pt
 from spikepy.common import utils
-from spikepy.common.config_manager import config_manager as config
-from spikepy.common.strategy import Strategy
 
 text_delimiters = {pt.PLAIN_TEXT_TABS: '\t',
                    pt.PLAIN_TEXT_SPACES: ' ',
@@ -41,29 +35,107 @@ format_extentions = {pt.PLAIN_TEXT_SPACES:'txt',
                      pt.MATLAB:'mat',
                      pt.NUMPY_BINARY:'npz'}
 
-display_names = set()
 
-def get_unique_display_name(proposed_display_name):
-    count = 1
-    new_display_name = proposed_display_name
-    while new_display_name in display_names:
-        new_display_name = '%s(%d)' % (proposed_display_name, count)
-        count += 1
-    display_names.add(new_display_name)
-    return new_display_name
+class TrialManager(object):
+    """
+        The TrialManager keeps track of all the trials currently in the
+    session.  It handles marking/unmarking, adding/removing trials, and 
+    assigning unique display names to trials.
+    """
+    def __init__(self):
+        self._trial_index = {}
+        self._display_names = set()
+
+    def mark_trial(self, name, status):
+        """Mark trial with display_name=<name> according to <status>."""
+        trial = self.get_trial_with_name(name)
+        trial.mark(status=status)
+
+    def mark_all_trials(self, status):
+        """Mark all trials according to <status>"""
+        for trial in self._trial_index.values():
+            trial.mark(status=status)
+
+    def add_trials(self, trial_list, proposed_name_list):
+        """
+            Add all the trials in <trial_list> and give them the names from
+        <proposed_name_list>.
+        """
+        for trial, proposed_name in zip(trial_list, proposed_name_list):
+            trial.display_name = self._get_unique_display_name(proposed_name)
+            self._trial_index[trial.trial_id] = trial
+
+    def remove_trial_with_name(self, name):
+        """Remove the trial with display_name=<name>."""
+        trial = self.get_trial_with_name(name)
+        self._remove_trial(trial)
+
+    def _remove_trial(self, trial):
+        self._display_names.remove(trial.display_name)
+        del self._trial_index[trial.trial_id]
+
+    def remove_marked_trials(self):
+        """Remove all currently marked trials."""
+        for trial_id in self.get_marked_trial_ids():
+            trial = self._trial_index[trial_id]
+            self._remove_trial(trial)
+
+    def _get_unique_display_name(self, proposed_display_name):
+        count = 1
+        new_display_name = proposed_display_name
+        while new_display_name in self._display_names:
+            new_display_name = '%s(%d)' % (proposed_display_name, count)
+            count += 1
+        self._display_names.add(new_display_name)
+        return new_display_name
+
+    def rename_trial(self, old_name, proposed_name):
+        """Find trial named <old_name> and rename it to <proposed_name>."""
+        trial = self.get_trial_with_name(old_name)
+        self._display_names.remove(self.display_name)
+        trial.display_name = self._get_unique_display_name(proposed_name)
+        pub.sendMessage(topic='TRIAL_RENAMED', data=trial)
+
+    def get_marked_trial_ids(self):
+        """Return the trial_ids for all currently marked trials"""
+        marked_ids = [trial.trial_id for trial in self._trial_index.values()
+                      if trial.is_marked]
+        return marked_ids
+
+    def get_trial_with_id(self, trial_id):
+        """
+        Find the trial with trial_id=<trial_id> and return it.
+        Raises RuntimeError if trial cannot be found.
+        """
+        try:
+            return self._trial_index[trial_id]
+        except KeyError:
+            raise RuntimeError('No trial with id "%s" found.' % str(trial_id))
+
+    def get_trial_with_name(self, name):
+        """
+        Find the trial with display_name=<name> and return it.
+        Raises RuntimeError if trial cannot be found.
+        """
+        for trial in self._trial_index.values():
+            if trial.display_name == name:
+                return trial
+        raise RuntimeError('No trial named "%s" found.' % name)
+    
 
 class Trial(object):
     """
-        This class represents an individual trial consisting of (potentially)
-    multiple electrodes recording simultaneously.
+        The Trial class carries attributes and resources pertaining to one
+    recording.  The resources can be locked(checked out) and unlocked
+    (checked in) allowing only one process access at a time.
     """
-    def __init__(self, origin=None,
-                       display_name=None):
-        self.display_name = get_unique_display_name(display_name)
+    def __init__(self, origin=None):
+        self._marked = False
+        self.display_name = None
         self._id = uuid.uuid4() 
         self.origin = origin
 
-    def setup_basic_attributes(self, raw_traces, sampling_freq)
+    def _setup_basic_attributes(self, raw_traces, sampling_freq)
         self.raw_traces = utils.format_traces(raw_traces)
         self.raw_times = numpy.arange(0, raw_traces.shape[1])/sampling_freq
         self.sampling_freq = sampling_freq
@@ -104,10 +176,10 @@ class Trial(object):
 
     @classmethod
     def from_raw_traces(cls, sampling_freq=None, raw_traces=None, 
-        '''    Create a trial object using the raw voltage traces.'''
+        '''Create a trial object using the raw voltage traces.'''
             origin=None, display_name=None):
         result = cls(origin=origin, display_name=display_name)
-        result.setup_basic_attributes(raw_traces, sampling_freq)
+        result._setup_basic_attributes(raw_traces, sampling_freq)
         return result
 
     @classmethod
@@ -129,6 +201,14 @@ class Trial(object):
     @property
     def trial_id(self):
         return self._id
+
+    @property
+    def is_marked(self):
+        return self._marked
+
+    def mark(self, status=True):
+        """Mark this trial according to <status>"""
+        self._marked = status
 
     def get_archive(self, archive_name='archive'):
         # TODO refactor using new resources idea.
@@ -156,11 +236,6 @@ class Trial(object):
                 data_for_stage = archive[stage.name]
                 return_trial.set_data_for_stage(stage.name, **data_for_stage)
         return return_trial
-
-    def rename(self, new_display_name):
-        display_names.remove(self.display_name)
-        self.display_name = get_unique_display_name(new_display_name)
-        pub.sendMessage(topic='TRIAL_RENAMED', data=self)
 
     def export(self, path=None, stages_selected=[], file_format=None):
         # TODO refactor into another file using the new resources idea.
@@ -283,6 +358,12 @@ class Trial(object):
 
 
 class Resource(object):
+    """
+        The Resource class handles locking(checkout) and unlocking(checkin)
+    allowing only one process to access the resource at a time.  Additionally,
+    resources store metadata about how and when they were last changed and 
+    by whom.
+    """
     def __init__(self, name, data=None):
         self.name = name
         self._locked = False
@@ -292,7 +373,7 @@ class Resource(object):
 
     def checkout(self):
         '''
-        Check out this resource, locking it so that noone else can check it
+            Check out this resource, locking it so that noone else can check it
         out until you've checked it in via <checkin>.
         '''
         if self.is_locked:
@@ -306,7 +387,13 @@ class Resource(object):
 
     def checkin(self, data_dict=None, key=None):
         '''
-        Check in resource so others may use it.
+            Check in resource so others may use it.  If <data_dict> is
+        supplied it should be a dictionary with:
+            'data': the data 
+            'change_info': see docstring on self.change_info
+                           NOTE: This function adds 'at' and 'change_id' to
+                                 'change_info' automatically, so those can
+                                 be left out of the 'change_info' dictionary.
         '''
         if not self.is_locked:
             raise RuntimeError(pt.RESOURCE_NOT_LOCKED % self.name)
