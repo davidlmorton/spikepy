@@ -15,8 +15,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from spikepy.developer_tools.registering_class import RegisteringClass
-
 class ClusteringMethod(object):
     '''
     This class should be subclassed in order for developers to add a new 
@@ -42,18 +40,22 @@ Methods that subclasses are REQUIRED to implement:
           means is that the clustering-method author need not worry about
           if the provided features are from multiple trials or a single trial.
     '''
-    # --- CAN OVERWRITE ---
-    _is_stochastic = False
+    #     Is this method stochastic in nature (generally gives different results
+    # with the same inputs)?
+    is_stochastic = False
 
-    # --- DO NOT ALTER ---
-    __metaclass__ = RegisteringClass
-    _skips_registration = True
-    _is_base_class = True
-    _is_stochastic = False
-    _requires = ['features', 'feature_locations', 'ef_sampling_freq'] 
+    # what resources or attributes (of Trial objects) does this method need 
+    # in order to run?
+    requires = ['features', 'feature_locations', 'ef_sampling_freq'] 
 
-    _provides = ['clusters']
+    provides = ['clusters']
     # clusters is a 1D numpy array of integers (cluster ids).
     #   clusters[k] == id of cluster to which the kth feature belongs.
     # NOTE: while you cannot leave features 'unclustered', you may simply
     #       place all 'unclustered' features in a cluster with id=-1.
+
+    def make_control_panel(parent, **kwargs):
+        raise NotImplementedError
+
+    def run(*args, **kwargs):
+        raise NotImplementedError 

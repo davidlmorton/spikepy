@@ -15,8 +15,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from spikepy.developer_tools.registering_class import RegisteringClass
-
 class FilteringMethod(object):
     '''
     This class should be subclassed in order for developers to add a new 
@@ -36,13 +34,12 @@ Methods that subclasses are REQUIRED to implement:
            of the new signals.  kwargs are all the arguments to the filtering 
            code.
     '''
-    # --- CAN OVERWRITE ---
-    _is_stochastic = False
+    #     Is this method stochastic in nature (generally gives different results
+    # with the same inputs)?
+    is_stochastic = False
 
-    # --- DO NOT ALTER ---
-    __metaclass__ = RegisteringClass
-    _skips_registration = True
-    _is_base_class = True
+    # what resources or attributes (of Trial objects) does this method need 
+    # in order to run?
     _requires = ['raw_traces', 'sampling_freq']
 
     #_provides = ['<stage_name>_traces', '<stage_name>_sampling_freq'] 
@@ -50,3 +47,8 @@ Methods that subclasses are REQUIRED to implement:
     # <stage_name>_traces is a 2D numpy array where
     #    len(<stage_name>_traces) == num_channels
 
+    def make_control_panel(parent, **kwargs):
+        raise NotImplementedError
+
+    def run(*args, **kwargs):
+        raise NotImplementedError 

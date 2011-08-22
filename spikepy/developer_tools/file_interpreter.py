@@ -15,8 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from spikepy.developer_tools.registering_class import RegisteringClass
-from spikepy.common.trial import Trial
+from spikepy.common.trial_manager import Trial
 
 class FileInterpreter(object):
     '''
@@ -26,10 +25,6 @@ interpreter to spikepy.
 spikepy will handle that internally.  Therefore it is important to have 
 an __init__ method which requires no arguments (asside from 'self' of course).
 
-Methods AVAILABLE to subclasses:
-    - make_trial_object(sampling_freq, raw_traces, fullpath)
-        -- This method returns a new Trial object.  A list of Trial objects
-           is the expected return value of the read_data_file method.
 Methods that subclasses are REQUIRED to implement:
     - read_data_file(fullpath)
         -- This method recieves only a string representation of the
@@ -37,11 +32,12 @@ Methods that subclasses are REQUIRED to implement:
            Trial objects, even if only one was created.  You should use the
            method make_trial_object to create these Trial objects.
     '''
-    __metaclass__ = RegisteringClass
-    _skips_registration = True
-    _is_base_class = True
+    opens_extentions = [] # a list of one or more file extentions.
+    #     Higher priority means that this FileInterpreter will be tried first
+    # if spikepy tries more than one FileInterpreter.
+    priority = 10
 
-    def make_trial_object(self, sampling_freq, raw_traces, fullpath):
-        return Trial(sampling_freq=sampling_freq, raw_traces=raw_traces,
-                     fullpath=fullpath)
+    def read_data_file(fullpath):
+        raise NotImplementedError
+
 

@@ -14,11 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import wx
-from wx.lib.pubsub import Publisher as pub
-
 from spikepy.common.trial_manager import TrialManager
-from spikepy.common.plugin_manager import PluginManager
 from spikepy.common.process_manager import ProcessManager
 from spikepy.common.config_manager import ConfigManager
 from spikepy.common.strategy_manager import StrategyManager
@@ -26,7 +22,6 @@ from spikepy.common.strategy_manager import StrategyManager
 class Session(object):
     def __init__(self):
         self.trial_manager = TrialManager()
-        self.plugin_manager = PluginManager()
         self.process_manager = ProcessManager()
         self.config_manager = ConfigManager()
         self.strategy_manager = StrategyManager()
@@ -63,7 +58,7 @@ class Session(object):
         """Mark trial with display_name=<name> according to <status>."""
         self.trial_manager.mark_trial(name, status=status)
 
-    def mark_all_trials(self, status=True)
+    def mark_all_trials(self, status=True):
         """Mark all trials according to <status>"""
         self.trial_manager.mark_all_trials(status=status)
 

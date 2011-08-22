@@ -17,12 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import imp
 import os
-import uuid
 from collections import defaultdict
 
-import wx
-
-from spikepy.developer_tools.registering_class import _class_registry
 from spikepy.developer_tools.file_interpreter import FileInterpreter
 from spikepy.developer_tools.filtering_method import FilteringMethod
 from spikepy.developer_tools.detection_method import DetectionMethod
@@ -60,7 +56,10 @@ def should_load(fullpath):
     if filename.startswith('.'):
         return False
     if filename.endswith('.py'):
-        return True
+        if filename.startswith('__init__'):
+            return False
+        else:
+            return True
     if os.path.isdir(fullpath):
         module_init = os.path.join(fullpath, '__init__.py')
         return os.path.exists(module_init)
@@ -73,8 +72,8 @@ def load_plugins(plugin_dir):
         for e in entries:
             fullpath_e = os.path.join(plugin_dir, e)
             if should_load(fullpath_e):
-                unique_name = 'spikepy_' + (str(uuid.uuid4())).replace('-','_') 
                 module_name = os.path.splitext(e)[0]
+                unique_name = 'spikepy_plugin_%s' % (module_name)
                 fm_results = None
                 try:
                     fm_results = imp.find_module(module_name, [plugin_dir]) 
@@ -95,7 +94,6 @@ def load_all_plugins(data_dirs=None, **kwargs):
         for plugin_type in ['file_interpreters', 'methods']:
             plugin_dir = data_dirs[level][plugin_type]
             loaded_modules[level][plugin_type] = load_plugins(plugin_dir)
-
     return loaded_modules
 
 class PluginManager(object):
@@ -120,6 +118,9 @@ class PluginManager(object):
                             (method_name, base_name))
 
     def get_methods(self, base_name, instantiate=False):
+        '''
+        Return method objects (or classs), given the base_name and method_name.
+        '''
         if instantiate:
             index = 0
         else:

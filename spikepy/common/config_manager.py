@@ -15,6 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import copy
+import os
 
 import wx
 from wx.lib.pubsub import Publisher as pub
@@ -23,7 +24,6 @@ import configobj
 from validate import Validator
 
 from spikepy.common import path_utils
-from spikepy.common import config_utils
 
 def rgb_int_to_float(*args):
     return [arg/255.0 for arg in args]
@@ -81,16 +81,16 @@ class ConfigManager(object):
         self.load_user_config(**kwargs)
 
     def load_user_config(self, **kwargs):
-        self._user = config_utils.load_config('user', **kwargs)
-        config_utils.noneless_merge(self._current, self._user)
+        self._user = load_config('user', **kwargs)
+        noneless_merge(self._current, self._user)
 
     def load_application_config(self, **kwargs):
-        self._application = config_utils.load_config('application', **kwargs)
-        config_utils.noneless_merge(self._current, self._application)
+        self._application = load_config('application', **kwargs)
+        noneless_merge(self._current, self._application)
 
     def load_builtin_config(self, **kwargs):
-        self._builtin = config_utils.load_config('builtins', **kwargs)
-        config_utils.noneless_merge(self._current, self._builtin)
+        self._builtin = load_config('builtins', **kwargs)
+        noneless_merge(self._current, self._builtin)
 
     def __getitem__(self, key):
         return self._current[key]

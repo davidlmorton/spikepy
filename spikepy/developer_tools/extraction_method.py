@@ -15,8 +15,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from spikepy.developer_tools.registering_class import RegisteringClass
-
 class ExtractionMethod(object):
     '''
     This class should be subclassed in order for developers to add a new 
@@ -34,13 +32,12 @@ Methods that subclasses are REQUIRED to implement:
         -- This method returns the features.  kwargs are all the arguments
            to the feature-extraction code.
     '''
-    # --- CAN OVERWRITE ---
-    _is_stochastic = False
+    #     Is this method stochastic in nature (generally gives different results
+    # with the same inputs)?
+    is_stochastic = False
 
-    # --- DO NOT ALTER ---
-    __metaclass__ = RegisteringClass
-    _skips_registration = True
-    _is_base_class = True
+    # what resources or attributes (of Trial objects) does this method need 
+    # in order to run?
     _requires = ['ef_traces', 'ef_sampling_freq', 'events']
 
     _provides = ['features', 'feature_locations']
@@ -50,3 +47,9 @@ Methods that subclasses are REQUIRED to implement:
     #    features[k][l] == feature l of event k
     # feature_locations is a 1D numpy array of indexes.
     #    time of kth feature == feature_locations[k]/ef_sampling_freq
+
+    def make_control_panel(parent, **kwargs):
+        raise NotImplementedError
+
+    def run(*args, **kwargs):
+        raise NotImplementedError 

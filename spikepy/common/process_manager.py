@@ -14,8 +14,15 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from spikepy.common.plugin_manager import PluginManager
 
-class RegisteringClass(object):
-    def register_self(self, registering_function):
-        registering_function(self) 
+def open_file_worker(fullpath):
+    pass
+    
+class ProcessManager(object):
+    def __init__(self):
+        self.plugin_manager = PluginManager()
+        self.plugin_manager.load()
 
+    def open_file(self, fullpath, created_trials_callback=None):
+        pass

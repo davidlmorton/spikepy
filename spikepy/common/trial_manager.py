@@ -135,7 +135,7 @@ class Trial(object):
         self._id = uuid.uuid4() 
         self.origin = origin
 
-    def _setup_basic_attributes(self, raw_traces, sampling_freq)
+    def _setup_basic_attributes(self, raw_traces, sampling_freq):
         self.raw_traces = utils.format_traces(raw_traces)
         self.raw_times = numpy.arange(0, raw_traces.shape[1])/sampling_freq
         self.sampling_freq = sampling_freq
@@ -147,7 +147,7 @@ class Trial(object):
         # df_traces is a 2D numpy array where
         #    len(df_traces) == num_channels
         self._add_resource(Resource('df_traces'))
-        self._add_resource(Resource('df_sampling_freq')
+        self._add_resource(Resource('df_sampling_freq'))
 
         # events is a list of "list of indexes" where 
         #    len(events) == num_channels
@@ -158,7 +158,7 @@ class Trial(object):
         # ef_traces is a 2D numpy array where
         #    len(ef_traces) == num_channels
         self._add_resource(Resource('ef_traces'))
-        self._add_resource(Resource('ef_sampling_freq')
+        self._add_resource(Resource('ef_sampling_freq'))
 
         # features is 2D numpy array with shape = (n, m) where
         #    n == the total number of events
@@ -176,8 +176,8 @@ class Trial(object):
 
     @classmethod
     def from_raw_traces(cls, sampling_freq=None, raw_traces=None, 
-        '''Create a trial object using the raw voltage traces.'''
             origin=None, display_name=None):
+        '''Create a trial object using the raw voltage traces.'''
         result = cls(origin=origin, display_name=display_name)
         result._setup_basic_attributes(raw_traces, sampling_freq)
         return result
