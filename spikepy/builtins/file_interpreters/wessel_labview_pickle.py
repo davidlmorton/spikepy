@@ -16,10 +16,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import gzip
 import cPickle
+import os
 
 import numpy
 
-from spikepy.developer_tools.file_interpreter import FileInterpreter
+from spikepy.developer_tools.file_interpreter import FileInterpreter, Trial
 
 class WesselLabViewText(FileInterpreter):
     def __init__(self):
@@ -38,6 +39,7 @@ class WesselLabViewText(FileInterpreter):
         voltage_trace = data['voltage_trace']
         sampling_freq = data['sampling_freq']
 
-        trials = [self.make_trial_object(sampling_freq, [voltage_trace], 
-                                         fullpath)]
-        return trials
+        display_name = os.path.splitext(os.path.split(fullpath)[-1])[0]
+        trial = Trial.from_raw_traces(sampling_freq, [voltage_trace], 
+                origin=fullpath, display_name=display_name)
+        return [trial]

@@ -17,29 +17,32 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from spikepy.common.trial_manager import TrialManager
 from spikepy.common.process_manager import ProcessManager
 from spikepy.common.config_manager import ConfigManager
+from spikepy.common.plugin_manager import PluginManager
 from spikepy.common.strategy_manager import StrategyManager
 
 class Session(object):
     def __init__(self):
-        self.trial_manager = TrialManager()
-        self.process_manager = ProcessManager()
-        self.config_manager = ConfigManager()
-        self.strategy_manager = StrategyManager()
+        self.config_manager   = ConfigManager()
+        self.trial_manager    = TrialManager(self.config_manager)
+        self.strategy_manager = StrategyManager(self.config_manager)
+        self.plugin_manager   = PluginManager(self.config_manager)
+        self.process_manager  = ProcessManager(self.config_manager, 
+                self.trial_manager, self.plugin_manager)
 
     # --- OPEN FILE(S) ---
     def open_file(self, fullpath):
         """Open file located at fullpath."""
-        self.process_manager.open_file(fullpath, 
+        return self.process_manager.open_file(fullpath, 
                 created_trials_callback=self._trials_created)
 
     def open_files(self, fullpaths):
         """Open the files located at fullpaths"""
-        self.process_manager.open_files(fullpaths, 
+        return self.process_manager.open_files(fullpaths, 
                 created_trials_callback=self._trials_created)
 
-    def _trials_created(self, trials, proposed_names):
+    def _trials_created(self, trials):
         # Called after process_manager opens a file
-        self.trial_manager.add_trials(trials, proposed_names)
+        self.trial_manager.add_trials(trials)
 
     # --- TRIAL ---
     def rename_trial(self, old_name, proposed_name):

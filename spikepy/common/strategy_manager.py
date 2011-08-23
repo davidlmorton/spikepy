@@ -28,7 +28,8 @@ from spikepy.common.strategy import Strategy
 
 
 class StrategyManager(object):
-    def __init__(self):
+    def __init__(self, config_manager):
+        self.config_manager = config_manager 
         self.strategies = {} # strategies under management
 
         pub.subscribe(self.save_strategies, 'SAVE_ALL_STRATEGIES')

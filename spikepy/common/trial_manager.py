@@ -42,7 +42,8 @@ class TrialManager(object):
     session.  It handles marking/unmarking, adding/removing trials, and 
     assigning unique display names to trials.
     """
-    def __init__(self):
+    def __init__(self, config_manager):
+        self.config_manager = config_manager
         self._trial_index = {}
         self._display_names = set()
 
@@ -56,13 +57,14 @@ class TrialManager(object):
         for trial in self._trial_index.values():
             trial.mark(status=status)
 
-    def add_trials(self, trial_list, proposed_name_list):
+    def add_trials(self, trial_list):
         """
-            Add all the trials in <trial_list> and give them the names from
-        <proposed_name_list>.
+            Add all the trials in <trial_list> and ensure they have unique
+        names.
         """
-        for trial, proposed_name in zip(trial_list, proposed_name_list):
-            trial.display_name = self._get_unique_display_name(proposed_name)
+        for trial in trial_list:
+            new_name = self._get_unique_display_name(trial.display_name)
+            trial.display_name = new_name
             self._trial_index[trial.trial_id] = trial
 
     def remove_trial_with_name(self, name):
@@ -129,17 +131,18 @@ class Trial(object):
     recording.  The resources can be locked(checked out) and unlocked
     (checked in) allowing only one process access at a time.
     """
-    def __init__(self, origin=None):
+    def __init__(self, origin=None, display_name="DEFAULT_DISPLAY_NAME"):
         self._marked = False
-        self.display_name = None
+        self.display_name = display_name
         self._id = uuid.uuid4() 
         self.origin = origin
 
     def _setup_basic_attributes(self, raw_traces, sampling_freq):
         self.raw_traces = utils.format_traces(raw_traces)
-        self.raw_times = numpy.arange(0, raw_traces.shape[1])/sampling_freq
+        self.raw_times = numpy.arange(0, 
+                self.raw_traces.shape[1])/sampling_freq
         self.sampling_freq = sampling_freq
-        self.num_channels = raw_traces.shape[0]
+        self.num_channels = self.raw_traces.shape[0]
 
         # -------------------------------------
         # -- main processing stage resources --

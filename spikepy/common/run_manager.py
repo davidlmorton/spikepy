@@ -306,7 +306,7 @@ class RunManager(object):
 
     def _run_stage_worker(self, trial_list, stage_name, method_name, 
                           run_dict_list, process_worker):
-        try:
+        try
             num_process_workers = multiprocessing.cpu_count()
         except NotImplimentedError:
             num_process_workers = 8

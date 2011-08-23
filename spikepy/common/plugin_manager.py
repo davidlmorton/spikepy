@@ -76,7 +76,6 @@ def load_plugins(plugin_dir):
                     pass
                 if fm_results is not None:
                     module=imp.load_module(unique_name, *fm_results)
-                    print dir(module)
                     loaded_plugins.extend(get_classes_from_module(module, 
                             base_classes.values()))
     return loaded_plugins
@@ -118,8 +117,10 @@ def load_all_plugins(data_dirs=None, **kwargs):
     return loaded_plugins
 
 class PluginManager(object):
-    def __init__(self):
+    def __init__(self, config_manager):
+        self.config_manager = config_manager 
         self._loaded_plugins = None
+        self.load()
 
     def load(self, **kwargs):
         '''

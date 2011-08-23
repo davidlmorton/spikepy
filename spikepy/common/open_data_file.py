@@ -18,18 +18,11 @@ import traceback
 import sys
 import os
 
-from wx.lib.pubsub import Publisher as pub
-
-from .trial import Trial
-from spikepy.common.plugin_utils import get_all_file_interpreters
-
-
-def open_data_file(fullpath, file_interpreter_name=None):
+def open_data_file(fullpath, file_interpreters):
     """
-    Open a datafile given the filename and return a Trial object.
+    Open a datafile given the <fullpath> and a list of <file_interpreters>.
     """
-    if file_interpreter_name is None:
-        file_interpreters = guess_file_interpreters(fullpath)
+    file_interpreters = guess_file_interpreters(fullpath, file_interpreters)
 
     all_e_info = []
     for fi in file_interpreters:
@@ -49,15 +42,14 @@ def open_data_file(fullpath, file_interpreter_name=None):
                        % fullpath)
 
     
-def guess_file_interpreters(fullpath):
+def guess_file_interpreters(fullpath, file_interpreters):
     """
-    Guess the file_interpreter, given a data file's fullpath.
+        Guess the file_interpreter, given a data file's <fullpath>.
     Returns a list of file_interpreters in descending order of
         applicability.
     """
     filename = os.path.split(fullpath)[-1]
     extention = os.path.splitext(filename)[-1]
-    file_interpreters = get_all_file_interpreters()
 
     candidates = {}
     for fi in  file_interpreters:

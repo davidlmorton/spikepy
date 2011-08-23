@@ -33,7 +33,7 @@ def zero_mean(trace_array):
 def format_traces(trace_list):
     result = numpy.empty((len(trace_list), len(trace_list[0])), 
             dtype=numpy.float64)
-    for i, tl in enumerate(trace_list):
+    for i, trace in enumerate(trace_list):
         result[i,:] = zero_mean(numpy.array(trace, dtype=numpy.float64))
     return result
 
