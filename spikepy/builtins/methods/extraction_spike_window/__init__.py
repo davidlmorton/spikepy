@@ -32,3 +32,5 @@ class ExtractionSpikeWindow(ExtractionMethod):
 
     def run(self, signal_list, sampling_freq, spike_list, **kwargs):
         return runner(signal_list, sampling_freq, spike_list, **kwargs)
+
+del ControlPanel

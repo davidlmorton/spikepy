@@ -29,28 +29,18 @@ from spikepy.common.path_utils import get_data_dirs
 
 base_classes = {'file_interpreter':  FileInterpreter,
                 'supplemental':      SupplementalMethod,
-                'detection_filter':  FilteringMethod,
+                'filtering':         FilteringMethod,
                 'detection':         DetectionMethod,
-                'extraction_filter': FilteringMethod,
                 'extraction':        ExtractionMethod,
                 'clustering':        ClusteringMethod}
 
+def get_base_class_name(base_class):
+    for name, class_ in base_classes.items():
+        if base_class is class_:
+            return name
+    raise RuntimeError("Couldn't fine the name for %s" % base_class)
+
 # --- UTILITY FUNCTIONS ---
-def get_methods_with_base(base_name):
-    '''
-        Return a list of method objects and a list of method classes, 
-    given the base_name.
-    '''
-    return_methods = []
-    return_classes = []
-    base_class = base_classes[base_name]
-    for method_class in _class_registry[base_class]:
-        method = method_class()
-        return_methods.append(method)
-        return_classes.append(method_class)
-    return (return_methods, return_classes)
-
-
 def should_load(fullpath):
     filename = os.path.split(fullpath)[1]
     if filename.startswith('.'):
@@ -66,7 +56,10 @@ def should_load(fullpath):
     return False
 
 def load_plugins(plugin_dir):
-    loaded_modules = {}
+    '''
+    Load all the plugins in the given <plugin_dir>.
+    '''
+    loaded_plugins = []
     if os.path.exists(plugin_dir):
         entries = os.listdir(plugin_dir)
         for e in entries:
@@ -74,67 +67,74 @@ def load_plugins(plugin_dir):
             if should_load(fullpath_e):
                 module_name = os.path.splitext(e)[0]
                 unique_name = 'spikepy_plugin_%s' % (module_name)
+
+                # load the module
                 fm_results = None
                 try:
                     fm_results = imp.find_module(module_name, [plugin_dir]) 
                 except ImportError:
                     pass
                 if fm_results is not None:
-                    loaded_modules[module_name]=imp.load_module(unique_name,
-                                                                *fm_results)
-                    loaded_modules[module_name+'_name'] = unique_name
-    return loaded_modules
+                    module=imp.load_module(unique_name, *fm_results)
+                    print dir(module)
+                    loaded_plugins.extend(get_classes_from_module(module, 
+                            base_classes.values()))
+    return loaded_plugins
 
+def get_classes_from_module(module, class_list):
+    '''
+        Return the classes defined in the <module> which inherit from
+    any of the classes in <class_list>.
+    Returns: A list of tuples...
+        [(new_class, class_it_inherited_from), ...]
+    '''
+    CLASS_TYPE = type(class_list[0])
+    classes = []
+    for name in dir(module):
+        thing = getattr(module, name)
+        if isinstance(thing, CLASS_TYPE) and thing not in class_list:
+            #   thing should instantiate with no arguments, if not, it isn't
+            # what we're looking for.
+            try: 
+                instance = thing()
+            except TypeError:
+                continue
+            classes.extend([(thing(), cl) for cl in class_list if 
+                    isinstance(thing(), cl)])
+    return classes
+    
 def load_all_plugins(data_dirs=None, **kwargs):
     if data_dirs is None:
         data_dirs = get_data_dirs(**kwargs)
 
-    loaded_modules = defaultdict(dict)
+    loaded_plugins = defaultdict(lambda :defaultdict(list))
     for level in data_dirs.keys():
         for plugin_type in ['file_interpreters', 'methods']:
             plugin_dir = data_dirs[level][plugin_type]
-            loaded_modules[level][plugin_type] = load_plugins(plugin_dir)
-    return loaded_modules
+            plugins = load_plugins(plugin_dir)
+            for new_class, base_class in plugins:
+                loaded_plugins[get_base_class_name(base_class)][level].append(
+                        new_class)
+    return loaded_plugins
 
 class PluginManager(object):
     def __init__(self):
-        self._loaded_modules = None
+        self._loaded_plugins = None
 
-    def load(self):
-        _class_registry = {} # reset class registry before loading new classes
-        self._loaded_modules = load_all_plugins()
-
-    def get_method(self, base_name, method_name, instantiate=False):
+    def load(self, **kwargs):
         '''
-        Return a method object (or class), given the base_name and method_name.
+        Load or reload all plugins.
         '''
-        for method, method_class in zip(*get_methods_with_base(base_name)):
-            if method.name == method_name:
-                if instantiate:
-                    return method
-                else:
-                    return method_class
-        raise RuntimeError("couldn't find method named '%s' with base '%s'" %
-                            (method_name, base_name))
-
-    def get_methods(self, base_name, instantiate=False):
-        '''
-        Return method objects (or classs), given the base_name and method_name.
-        '''
-        if instantiate:
-            index = 0
-        else:
-            index = 1
-        return get_methods_with_base(base_name)[index]
+        self._loaded_plugins = load_all_plugins(**kwargs)
 
     @property
     def file_interpreters(self):
-        return get_methods_with_base('file_interpreter')[0]
+        result = []
+        for level, plugins in self.loaded_plugins['file_interpreter'].items():
+            result.extend(plugins)
+        return result
 
     @property
-    def loaded_modules(self):
-        return self._loaded_modules
+    def loaded_plugins(self):
+        return self._loaded_plugins
 
-    @property
-    def class_registry(self):
-        return _class_registry

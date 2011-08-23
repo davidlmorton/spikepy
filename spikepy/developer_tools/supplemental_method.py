@@ -15,8 +15,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from spikepy.developer_tools.registering_class import RegisteringClass
-
 class SupplementalMethod(object):
     '''
     This class should be subclassed in order for developers to add a new 
@@ -37,14 +35,16 @@ Method that subclasses are REQUIRED to implement:
            storing the result if the name(s) provided do not already correspond
            to resources previously defined.
     '''
-    # --- CAN OVERWRITE ---
-    _is_stochastic = False
+    #     Is this method stochastic in nature (generally gives different results
+    # with the same inputs)?
+    is_stochastic = False
+
+    # what resources or attributes (of Trial objects) does this method need 
+    # in order to run?
     _requires = []
     _provides = []
 
-    # --- DO NOT ALTER ---
-    __metaclass__ = RegisteringClass
-    _skips_registration = True
-    _is_base_class = True
+    def run(*args, **kwargs):
+        raise NotImplementedError 
 
 

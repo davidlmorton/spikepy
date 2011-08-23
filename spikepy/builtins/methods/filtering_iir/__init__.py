@@ -33,3 +33,4 @@ class FilteringIIR(FilteringMethod):
     def run(self, signal_list, sampling_freq, **kwargs):
         return runner(signal_list, sampling_freq, **kwargs)
     
+del ControlPanel

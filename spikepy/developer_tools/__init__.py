@@ -15,10 +15,3 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from file_interpreter import FileInterpreter
-from registering_class import _class_registry as class_registry
-
-file_interpreters = class_registry[FileInterpreter]
-
-del class_registry
-

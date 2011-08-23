@@ -33,3 +33,5 @@ class ClusteringKMeans(ClusteringMethod):
 
     def run(self, feature_set_list, **kwargs):
         return runner(feature_set_list, **kwargs)
+
+del ControlPanel
