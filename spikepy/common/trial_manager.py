@@ -371,6 +371,7 @@ class Resource(object):
         self.name = name
         self._locked = False
         self._locking_key = None
+        self._change_info = None
 
         self._data = data
 

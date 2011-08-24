@@ -20,7 +20,7 @@ import os
 import wx
 from wx.lib.pubsub import Publisher as pub
 
-from . import program_text as pt
+from spikepy.common import program_text as pt
 from strategy import (make_strategy_name, make_methods_used_name, 
                       make_settings_name)
 from spikepy.common.path_utils import get_data_dirs
@@ -28,7 +28,7 @@ from spikepy.common.strategy import Strategy
 
 
 class StrategyManager(object):
-    def __init__(self, config_manager):
+    def __init__(self, config_manager=None):
         self.config_manager = config_manager 
         self.strategies = {} # strategies under management
 
