@@ -68,4 +68,20 @@ class ResourceTests(unittest.TestCase):
         self.r_2.checkin(key=checkout_2['locking_key'])
         self.assertEqual(self.r_2.is_locked, False)
 
-        #TODO test checkin with data
+    def test_checkin2(self):
+        checkout_2 = self.r_2.checkout()
+
+        data_dict = {'data':'checkin_data',
+                     'change_info':{'with':{},
+                                    'using':[]}}
+        self.assertRaises(AssertionError, self.r_2.checkin, data_dict=data_dict,
+                key=checkout_2['locking_key'])
+        # since checkin failed, data should be unchanged...
+        self.assertEqual(self.r_2.data, self.data_2)
+
+        # fix the incomplete data_dict's 'change_info' and checkin
+        data_dict['change_info']['by'] = 'test' # add last needed thing
+        self.r_2.checkin(data_dict=data_dict, key=checkout_2['locking_key'])
+        self.assertEqual(self.r_2.data, 'checkin_data')
+        self.assertTrue('at' in self.r_2.change_info.keys())
+        self.assertTrue('change_id' in self.r_2.change_info.keys())

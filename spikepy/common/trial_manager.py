@@ -403,16 +403,22 @@ class Resource(object):
             raise RuntimeError(pt.RESOURCE_NOT_LOCKED % self.name)
         else:
             if key == self._locking_key:
-                self._locking_key = None
                 if data_dict is not None:
+                    self._commit_change_info(data_dict['change_info'])
                     self._data = data_dict['data']
-                    self._change_info = data_dict['change_info']
-                    self._change_info['at'] = datetime.datetime.now()
-                    self._change_info['change_id'] = uuid.uuid4()
+                self._locking_key = None
                 self._locked = False
             else:
                 raise RuntimeError(pt.RESOURCE_KEY_INVALID % 
                         (str(key), self.name))
+
+    def _commit_change_info(self, change_info):
+        assert "by" in change_info.keys()
+        assert isinstance(change_info['with'], dict)
+        assert isinstance(change_info['using'], list)
+        change_info['at'] = datetime.datetime.now()
+        change_info['change_id'] = uuid.uuid4()
+        self._change_info = change_info
 
     @property
     def is_locked(self):

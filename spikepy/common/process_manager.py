@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import multiprocessing
 
 from spikepy.common.open_data_file import open_data_file
+from spikepy.common.trial_manager import Resource 
 
 def get_num_workers(config_manager):
     try:
@@ -76,3 +77,55 @@ class ProcessManager(object):
             created_trials_callback(result)
 
         return results_list
+
+class ProcessOrganizer(object):
+    def __init__(self):
+        self.process_index = {}
+
+    def add_process(self, )
+        # TODO finish
+
+class Process(object):
+    def __init__(self, trial, plugin, plugin_kwargs={}):
+        self.trial = trial
+        self.plugin = plugin
+        self.plugin_kwargs = plugin_kwargs
+        self._arg_locking_keys = {}
+
+    def is_ready(self):
+        # once all the plugin's requirements are ready, we're ready.
+        for requirement_name in self.plugin.requires:
+            requirement = getattr(self.trial, requirement_name)
+            if (hasattr(requirement, 'is_locked') and
+                requirement.is_locked):
+                return False
+
+    def get_run_info(self):
+        run_info = {}
+        run_info['plugin'] = self.plugin
+        run_info['args'] = self._get_args()
+        run_info['kwargs'] = self.plugin_kwargs
+        return run_info
+
+    def _get_args(self):
+        args = []
+        for requirement_name in self.plugin.requires:
+            requirement = getattr(self.trial, requirement_name)
+            if hasattr(requirement, 'checkout'):
+                co = requirement.checkout()
+                self._arg_locking_keys[requirement_name] = co['locking_key']
+                arg = co['data']
+            else:
+                arg = requirement
+            args.append(arg)
+        return args
+
+    def release_args(self):
+        for requirement_name, key in self._arg_locking_keys.items():
+            requirement = getattr(self.trial, requirement_name)
+            requirement.checkin(key=key)
+        
+        
+            
+        
+    
