@@ -27,6 +27,8 @@ class FauxPlugin(object):
 
 plugin_1 = FauxPlugin(requires=['ra', 'rb'],
                       provides=['pb', 'pa'])
+plugin_2 = FauxPlugin(requires=['rb'],
+                      provides=['ra', 'pa'])
 
 trial_1 = Trial()
 trial_1.ra = 'some_data'
@@ -49,6 +51,12 @@ class TaskTests(unittest.TestCase):
         self.assertTrue(isinstance(trial.pb, Resource))
 
     def test_constructor_2(self):
+        '''Plugin.provides cannot be read-only attributes of trial.'''
+        trial = Trial()
+        trial.ra = 'some_data'
+        self.assertRaises(RuntimeError, Task, trial, plugin_2)
+
+    def test_constructor_3(self):
         '''task_id is constructed correctly.'''
         task_1 = Task(trial_1, plugin_1)
         self.assertEquals(task_1.task_id, (trial_1.trial_id, ('pa', 'pb')))
@@ -90,6 +98,20 @@ class TaskTests(unittest.TestCase):
         # are keys stored?
         self.assertEqual(len(task_1._arg_locking_keys.keys()), 1)
         self.assertTrue('rb' in task_1._arg_locking_keys.keys())
+
+    def test_get_run_info(self):
+        trial = Trial()
+        trial.ra = 'some_data'
+        trial.add_resource(Resource('rb'))
+        task_1 = Task(trial, plugin_1)
+
+        self.assertTrue(task_1.is_ready)
+        result = task_1.get_run_info()
+        self.assertFalse(task_1.is_ready)
+
+        self.assertEqual(len(task_1._results_locking_keys.keys()), 2)
+        self.assertTrue('pa' in task_1._results_locking_keys.keys())
+        self.assertTrue('pb' in task_1._results_locking_keys.keys())
 
     def test_release_args(self):
         trial = Trial()

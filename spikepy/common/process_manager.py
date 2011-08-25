@@ -84,19 +84,22 @@ class TaskOrganizer(object):
 
     @property
     def all_provided_items(self):
+        result = []
         for task in self._task_index.values():
             result.extend(task.provides)
+        return result
 
     def get_runnable_tasks(self):
-        if not self.__task_index.keys():
+        if not self._task_index.keys():
             return None # No tasks left.
         # begin with all tasks, then eliminate ineligible tasks.
         available_tasks = self._task_index.values()
+        results = []
         for task in available_tasks:
             can_run = True
 
             # do you require something that someone here will later provide?
-            if set(task.requires).intersect(set(self.all_provided_items())):
+            if set(task.requires).intersection(set(self.all_provided_items)):
                 can_run = False
 
             # do you require something that is locked?
@@ -112,15 +115,19 @@ class TaskOrganizer(object):
             # all tests have passed, so get ready to run.
             if can_run:
                 del self._task_index[task.task_id]
-                results.append(task.get_run_info)
+                results.append((task, task.get_run_info()))
             
         return results
 
     def add_task(self, new_task):
-        if new_task.task_id in self._task_index.keys():
-            raise RuntimeError(
-                    'Cannot add task %s as it conflicts with existing task %s.'
-                    % (new_task, self._task_index[new_task.task_id]))
+        if self.all_provided_items:
+            intersection = set(new_task.provides).intersection(
+                    set(self.all_provided_items))
+        else:
+            intersection = False
+
+        if intersection:
+            raise RuntimeError('Cannot add task %s as it provides (%s) which is(are) already provided.' % (new_task, intersection))
         else:
             self._task_index[new_task.task_id] = new_task
 
@@ -136,6 +143,7 @@ class Task(object):
         self.plugin = plugin
         self.plugin_kwargs = plugin_kwargs
         self._arg_locking_keys = {}
+        self._results_locking_keys = {}
         self._prepare_trial_for_task()
 
     def _prepare_trial_for_task(self):
@@ -146,6 +154,8 @@ class Task(object):
         for item in self.plugin.provides:
             if not hasattr(self.trial, item):
                 self.trial.add_resource(Resource(item))
+            elif not isinstance(getattr(self.trial, item), Resource):
+                raise RuntimeError('This plugin provides %s, but that is a read-only attribute on trial %s.' % (item, self.trial.trial_id))
 
     @property
     def is_ready(self):
@@ -183,6 +193,11 @@ class Task(object):
         run_info['plugin'] = self.plugin
         run_info['args'] = self._get_args()
         run_info['kwargs'] = self.plugin_kwargs
+
+        # check out and keep track of locking keys for what task provides.
+        for item in self.provides:
+            co = item.checkout()
+            self._results_locking_keys[item.name] = co['locking_key']
         return run_info
 
     def _get_args(self):
