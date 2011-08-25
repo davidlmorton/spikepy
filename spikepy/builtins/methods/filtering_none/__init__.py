@@ -19,13 +19,12 @@ from spikepy.developer_tools.filtering_method import FilteringMethod
 from .control_panel import ControlPanel
 from .run import run as runner
 
-class FilteringNone(FilteringMethod):
+class NoFiltering(FilteringMethod):
     '''
     This class implements a NULL filtering method.
     '''
-    def __init__(self):
-        self.name = 'None'
-        self.description = 'No Filtering, will simply use the raw trace.'
+    display_name = "No Filtering"
+    description = "No Filtering, simply use the raw traces."
 
     def make_control_panel(self, parent, **kwargs):
         return ControlPanel(parent, **kwargs)

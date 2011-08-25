@@ -149,33 +149,33 @@ class Trial(object):
 
         # df_traces is a 2D numpy array where
         #    len(df_traces) == num_channels
-        self._add_resource(Resource('df_traces'))
-        self._add_resource(Resource('df_sampling_freq'))
+        self.add_resource(Resource('df_traces'))
+        self.add_resource(Resource('df_sampling_freq'))
 
         # events is a list of "list of indexes" where 
         #    len(events) == num_channels
         #    len(events[i]) == number of events on the ith channel
         #    events[i][j] == index of jth event on the ith channel
-        self._add_resource(Resource('events'))
+        self.add_resource(Resource('events'))
 
         # ef_traces is a 2D numpy array where
         #    len(ef_traces) == num_channels
-        self._add_resource(Resource('ef_traces'))
-        self._add_resource(Resource('ef_sampling_freq'))
+        self.add_resource(Resource('ef_traces'))
+        self.add_resource(Resource('ef_sampling_freq'))
 
         # features is 2D numpy array with shape = (n, m) where
         #    n == the total number of events
         #    m == the number of features describing each event
         #    features[k][l] == feature l of event k
-        self._add_resource(Resource('features'))
+        self.add_resource(Resource('features'))
 
         # feature_locations is a 1D numpy array of indexes.
         #    time of kth feature == feature_locations[k]/ef_sampling_freq
-        self._add_resource(Resource('feature_locations'))
+        self.add_resource(Resource('feature_locations'))
 
         # clusters is a 1D numpy array of integers (cluster ids).
         #   clusters[k] == id of cluster to which the kth feature belongs.
-        self._add_resource(Resource('clusters'))
+        self.add_resource(Resource('clusters'))
 
     @classmethod
     def from_raw_traces(cls, sampling_freq=None, raw_traces=None, 
@@ -195,7 +195,7 @@ class Trial(object):
         '''
         raise NotImplementedError
         
-    def _add_resource(self, resource):
+    def add_resource(self, resource):
         if hasattr(self, resource.name):
             raise RuntimeError(pt.RESOURCE_EXISTS % resource.name)
         else:

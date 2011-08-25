@@ -136,6 +136,41 @@ class PluginManager(object):
         return result
 
     @property
+    def detection_filters(self):
+        return self._get_filters_of_type('df')
+
+    @property
+    def extraction_filters(self):
+        return self._get_filters_of_type('ef')
+
+    def _get_filters_of_type(self, provides_prefix):
+        typed_filters = defaultdict(list)
+        for category, filters in self.loaded_plugins['filtering'].items():
+            for filter_ in filters:
+                typed_filter = filter_.__class__()
+                new_items = [item.replace('<stage_name>', provides_prefix)
+                        for item in typed_filter.provides]
+                typed_filter.provides = new_items
+                typed_filters[category].append(typed_filter)
+        return typed_filters
+
+    @property
+    def detectors(self):
+        return self.loaded_plugins['detection']
+
+    @property
+    def extractors(self):
+        return self.loaded_plugins['extraction']
+
+    @property
+    def clusterers(self):
+        return self.loaded_plugins['clustering']
+
+    @property
+    def supplementors(self):
+        return self.loaded_plugins['supplemental']
+
+    @property
     def loaded_plugins(self):
         return self._loaded_plugins
 

@@ -40,9 +40,9 @@ Methods that subclasses are REQUIRED to implement:
 
     # what resources or attributes (of Trial objects) does this method need 
     # in order to run?
-    _requires = ['raw_traces', 'sampling_freq']
+    requires = ['raw_traces', 'sampling_freq']
 
-    #_provides = ['<stage_name>_traces', '<stage_name>_sampling_freq'] 
+    provides = ['<stage_name>_traces', '<stage_name>_sampling_freq'] 
     # <stage_name> is one of "df" or "ef" for detection and extraction.
     # <stage_name>_traces is a 2D numpy array where
     #    len(<stage_name>_traces) == num_channels

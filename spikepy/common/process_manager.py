@@ -78,36 +78,118 @@ class ProcessManager(object):
 
         return results_list
 
-class ProcessOrganizer(object):
+class TaskOrganizer(object):
     def __init__(self):
-        self.process_index = {}
+        self._task_index = {}
 
-    def add_process(self, )
-        # TODO finish
+    @property
+    def all_provided_items(self):
+        for task in self._task_index.values():
+            result.extend(task.provides)
 
-class Process(object):
+    def get_runnable_tasks(self):
+        if not self.__task_index.keys():
+            return None # No tasks left.
+        # begin with all tasks, then eliminate ineligible tasks.
+        available_tasks = self._task_index.values()
+        for task in available_tasks:
+            can_run = True
+
+            # do you require something that someone here will later provide?
+            if set(task.requires).intersect(set(self.all_provided_items())):
+                can_run = False
+
+            # do you require something that is locked?
+            if not task.is_ready:
+                can_run = False
+
+            # do you require something not provided and never set?
+            if can_run:
+                for item in task.requires:
+                    if hasattr(item, 'data') and item.data is None:
+                        raise RuntimeError('Cannot execute task %s because it requires something that will not be set by any task in this set.' % task)
+
+            # all tests have passed, so get ready to run.
+            if can_run:
+                del self._task_index[task.task_id]
+                results.append(task.get_run_info)
+            
+        return results
+
+    def add_task(self, new_task):
+        if new_task.task_id in self._task_index.keys():
+            raise RuntimeError(
+                    'Cannot add task %s as it conflicts with existing task %s.'
+                    % (new_task, self._task_index[new_task.task_id]))
+        else:
+            self._task_index[new_task.task_id] = new_task
+
+
+class Task(object):
+    '''
+        Task objects combine a trial with a plugin and the kwargs that the 
+    plugin needs to run.
+    '''
     def __init__(self, trial, plugin, plugin_kwargs={}):
         self.trial = trial
+        self.task_id = (trial.trial_id, tuple(sorted(plugin.provides)))
         self.plugin = plugin
         self.plugin_kwargs = plugin_kwargs
         self._arg_locking_keys = {}
+        self._prepare_trial_for_task()
 
+    def _prepare_trial_for_task(self):
+        '''
+            If the trial does not have one of the resources that the plugin
+        provides, create it.
+        '''
+        for item in self.plugin.provides:
+            if not hasattr(self.trial, item):
+                self.trial.add_resource(Resource(item))
+
+    @property
     def is_ready(self):
+        '''Return True if this task's requirements are all unlocked'''
         # once all the plugin's requirements are ready, we're ready.
         for requirement_name in self.plugin.requires:
             requirement = getattr(self.trial, requirement_name)
             if (hasattr(requirement, 'is_locked') and
                 requirement.is_locked):
                 return False
+        return True
+
+    @property
+    def provides(self):
+        '''Return the trial attributes we provide after running.'''
+        result = []
+        for item in self.plugin.provides:
+            result.append(getattr(self.trial, item))
+        return result
+
+    @property
+    def requires(self):
+        '''Return the trial attributes we require to run.'''
+        result = []
+        for item in self.plugin.requires:
+            result.append(getattr(self.trial, item))
+        return result
 
     def get_run_info(self):
+        '''
+        Return a dictionary with the stuff needed to run.
+        '''
         run_info = {}
+        run_info['task_id'] = self.task_id
         run_info['plugin'] = self.plugin
         run_info['args'] = self._get_args()
         run_info['kwargs'] = self.plugin_kwargs
         return run_info
 
     def _get_args(self):
+        '''
+            Return the data we require as arguments to run.  Check out
+        data from the trial if it is a resource.
+        '''
         args = []
         for requirement_name in self.plugin.requires:
             requirement = getattr(self.trial, requirement_name)
@@ -121,7 +203,10 @@ class Process(object):
         return args
 
     def release_args(self):
-        for requirement_name, key in self._arg_locking_keys.items():
+        '''Check in the requirements we checked out from the trial.'''
+        for requirement_name in self._arg_locking_keys.keys():
+            key = self._arg_locking_keys[requirement_name]
+            del self._arg_locking_keys[requirement_name]
             requirement = getattr(self.trial, requirement_name)
             requirement.checkin(key=key)
         
