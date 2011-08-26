@@ -14,40 +14,31 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
 import os
 import sys
 
 import wx
 
 def platform():
+    '''Return the platform 'windows/mac/linux' currently running.'''
     if sys.platform.startswith('win'):
         return 'windows'
     elif sys.platform.startswith('darwin'):
         return 'mac'
     return 'linux'
 
-def is_package():
-    return not sys.argv[0].endswith('.py')
-
-def get_python_setup():
-    if hasattr(sys, 'frozen'):
-        return 'frozen'
-    elif is_package():
-        return 'package'
-    return 'source'
-
 def get_base_path():
+    '''Return the path to the spikepy source directory.'''
     path = __file__
     common_path = os.path.split(path)[0]
     return os.path.split(common_path)[0]
 
 def get_data_dirs(app_name=None):
     '''
-    This function returns the proper directory for storing application data.
+        Return the proper directory for storing spikepy data/plugins.
     If a wx.App() is running, it pulls info from it to determine the
-        proper directory for storing application data.
-    If a wx.App() is not runnining, it creates one temporarily.
+    proper directory for storing application data. If a wx.App() is not 
+    runnining, it creates one temporarily.
     '''
     file_interpreters_dir = 'file_interpreters'
     methods_dir = 'methods'
@@ -93,6 +84,7 @@ def get_data_dirs(app_name=None):
     return data_dirs
 
 def setup_user_directories(**kwargs):
+    '''Create (if necessary) the spikepy user directories'''
     data_dirs = get_data_dirs(**kwargs)
     for directory in data_dirs['user'].values():
         if not os.path.exists(directory):

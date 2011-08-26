@@ -26,17 +26,17 @@ from validate import Validator
 from spikepy.common import path_utils
 
 def rgb_int_to_float(*args):
+    '''Return the normalized rgb representation of integer rgb values.'''
     return [arg/255.0 for arg in args]
 
 def get_default_configspec(**kwargs):
-    '''
-    Returns the fullpath to the default configspec
-    '''
+    '''Return the fullpath to the default configspec.'''
     data_dirs = path_utils.get_data_dirs(**kwargs)
     default_config_dir = data_dirs['builtins']['configuration']
     return os.path.join(default_config_dir, 'spikepy.configspec')
 
 def load_config(level, **kwargs):
+    '''Return the configuration if it passes validation.'''
     data_dirs = path_utils.get_data_dirs(**kwargs)
     config_dir = data_dirs[level]['configuration']
     fullpath = os.path.join(config_dir, 'spikepy.ini')
@@ -51,10 +51,9 @@ def load_config(level, **kwargs):
 
 def noneless_merge(config1, config2):
     '''
-    merges config2 into config1 ignoring values 
-    that are None.
-    That is, config2's values, if present and not None will overwrite 
-    the values of config1.
+        Merge config2 into config1 ignoring values that are None.  That is, 
+    config2's values, if present and not None will overwrite the values 
+    of config1.
     '''
     for key, value in config2.items():
         if (key in config1 and isinstance(config1[key], dict) and
@@ -64,6 +63,13 @@ def noneless_merge(config1, config2):
             config1[key] = value
 
 class ConfigManager(object):
+    '''
+        ConfigManager contains the configuration as well as the methods needed
+    to load configuration options from config files.
+
+        ConfigManager objects can be indexed just like dictionaries where the
+    keys are the names of configuration options.
+    '''
     def __init__(self):
         self._builtin = None
         self._application = None
@@ -76,21 +82,15 @@ class ConfigManager(object):
         self.load_configs(app_name='spikepy')
 
     def load_configs(self, **kwargs):
-        self.load_builtin_config(**kwargs)
-        self.load_application_config(**kwargs)
-        self.load_user_config(**kwargs)
-
-    def load_user_config(self, **kwargs):
-        self._user = load_config('user', **kwargs)
-        noneless_merge(self._current, self._user)
-
-    def load_application_config(self, **kwargs):
-        self._application = load_config('application', **kwargs)
-        noneless_merge(self._current, self._application)
-
-    def load_builtin_config(self, **kwargs):
-        self._builtin = load_config('builtins', **kwargs)
-        noneless_merge(self._current, self._builtin)
+        '''
+            Load the configuration files for the three levels of plugin:
+        builtin, application and user.
+        **kwargs passed on to the load_config function.
+        '''
+        for level in ['builtin', 'application', 'user']:
+            loaded_config = load_config(level, **kwargs)
+            setattr(self, '_%s' % level, loaded_config)
+            noneless_merge(self._current, loaded_config)
 
     def __getitem__(self, key):
         return self._current[key]
@@ -217,7 +217,6 @@ class ConfigManager(object):
         figure.subplots_adjust(hspace=0.00, wspace=0.00, 
                                left=left, right=right, 
                                bottom=bottom, top=top)
-
 
     def get_color_from_cycle(self, num):
         cycle = self['gui']['plotting']['colors']['cycle']

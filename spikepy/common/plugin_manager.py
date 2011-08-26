@@ -34,14 +34,16 @@ base_classes = {'file_interpreter':  FileInterpreter,
                 'extraction':        ExtractionMethod,
                 'clustering':        ClusteringMethod}
 
+# --- UTILITY FUNCTIONS ---
 def get_base_class_name(base_class):
+    '''Return the base_class's simple name given the class.'''
     for name, class_ in base_classes.items():
         if base_class is class_:
             return name
     raise RuntimeError("Couldn't fine the name for %s" % base_class)
 
-# --- UTILITY FUNCTIONS ---
 def should_load(fullpath):
+    '''Return True if we should load fullpath as a plugin.'''
     filename = os.path.split(fullpath)[1]
     if filename.startswith('.'):
         return False
@@ -56,9 +58,7 @@ def should_load(fullpath):
     return False
 
 def load_plugins(plugin_dir):
-    '''
-    Load all the plugins in the given <plugin_dir>.
-    '''
+    ''' Load all the plugins in the given <plugin_dir>.'''
     loaded_plugins = []
     if os.path.exists(plugin_dir):
         entries = os.listdir(plugin_dir)
@@ -103,6 +103,7 @@ def get_classes_from_module(module, class_list):
     return classes
     
 def load_all_plugins(data_dirs=None, **kwargs):
+    '''Load file_interpreters and methods from all levels.'''
     if data_dirs is None:
         data_dirs = get_data_dirs(**kwargs)
 
@@ -117,19 +118,19 @@ def load_all_plugins(data_dirs=None, **kwargs):
     return loaded_plugins
 
 class PluginManager(object):
+    '''PluginManager is used to load and access spikepy plugins.'''
     def __init__(self, config_manager):
         self.config_manager = config_manager 
         self._loaded_plugins = None
         self.load()
 
     def load(self, **kwargs):
-        '''
-        Load or reload all plugins.
-        '''
+        '''Load or reload all plugins.'''
         self._loaded_plugins = load_all_plugins(**kwargs)
 
     @property
     def file_interpreters(self):
+        '''All file_interpreters, regardles of level.'''
         result = []
         for level, plugins in self.loaded_plugins['file_interpreter'].items():
             result.extend(plugins)
@@ -137,10 +138,12 @@ class PluginManager(object):
 
     @property
     def detection_filters(self):
+        """Plugins stored in a dict by level 'builtins'/'application'/'user'"""
         return self._get_filters_of_type('df')
 
     @property
     def extraction_filters(self):
+        """Plugins stored in a dict by level 'builtins'/'application'/'user'"""
         return self._get_filters_of_type('ef')
 
     def _get_filters_of_type(self, provides_prefix):
@@ -156,21 +159,26 @@ class PluginManager(object):
 
     @property
     def detectors(self):
+        """Plugins stored in a dict by level 'builtins'/'application'/'user'"""
         return self.loaded_plugins['detection']
 
     @property
     def extractors(self):
+        """Plugins stored in a dict by level 'builtins'/'application'/'user'"""
         return self.loaded_plugins['extraction']
 
     @property
     def clusterers(self):
+        """Plugins stored in a dict by level 'builtins'/'application'/'user'"""
         return self.loaded_plugins['clustering']
 
     @property
     def supplementors(self):
+        """Plugins stored in a dict by level 'builtins'/'application'/'user'"""
         return self.loaded_plugins['supplemental']
 
     @property
     def loaded_plugins(self):
+        '''All loaded plugins, stored in a dict by type then level'''
         return self._loaded_plugins
 

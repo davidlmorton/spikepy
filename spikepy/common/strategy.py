@@ -20,16 +20,12 @@ import copy
 
 
 def make_methods_used_name(strategy_name):
-    '''
-    From a full strategy-name return just the method-used-name
-    '''
+    '''From a full strategy-name return just the method-used-name.'''
     return strategy_name.split('(')[0].lower()
 
 
 def make_settings_name(strategy_name):
-    '''
-    From a full strategy-name return just the settings-name
-    '''
+    '''From a full strategy-name return just the settings-name.'''
     return strategy_name.split('(')[1][:-1].lower()
 
 

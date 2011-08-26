@@ -24,29 +24,30 @@ def open_data_file(fullpath, file_interpreters):
     """
     file_interpreters = guess_file_interpreters(fullpath, file_interpreters)
 
-    all_e_info = []
+    exception_info_list = []
     for fi in file_interpreters:
         try:
             return fi.read_data_file(fullpath)
         except:
-            all_e_info.append((fi, sys.exc_info()))
+            exception_info_list.append((fi, sys.exc_info()))
 
     # write exception information to files.
-    for fi, exc_info in all_e_info:
+    for fi, exc_info in exception_info_list:
         filename = fi.name.lower().replace(' ', '_') + '.error'
         with open(filename, 'w') as ofile:
             traceback.print_exception(exc_info[0], exc_info[1], 
                                       exc_info[2], 100, ofile)
 
-    raise RuntimeError('File Interpretation of %s failed.  Errors in "*.error" files.'
-                       % fullpath)
+    raise RuntimeError(
+            'File Interpretation of %s failed.  Errors in "*.error" files.'
+            % fullpath)
 
     
 def guess_file_interpreters(fullpath, file_interpreters):
     """
         Guess the file_interpreter, given a data file's <fullpath>.
     Returns a list of file_interpreters in descending order of
-        applicability.
+    applicability.
     """
     filename = os.path.split(fullpath)[-1]
     extention = os.path.splitext(filename)[-1]
@@ -60,4 +61,5 @@ def guess_file_interpreters(fullpath, file_interpreters):
         return [candidates[key] for key in 
                 sorted(candidates.keys(), reverse=True)]
     
-    return file_interpreters # try everything!
+    # no good matches found, so try everything.
+    return file_interpreters

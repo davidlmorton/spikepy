@@ -20,6 +20,11 @@ from spikepy.common.open_data_file import open_data_file
 from spikepy.common.trial_manager import Resource 
 
 def get_num_workers(config_manager):
+    '''
+        Return the number of worker processes to spawn.  Number is
+    determined based on cpu_count and the configuration variable:
+    ['backend']['limit_num_processes']
+    '''
     try:
         num_process_workers = multiprocessing.cpu_count()
     except NotImplimentedError:
@@ -30,20 +35,35 @@ def get_num_workers(config_manager):
     return num_process_workers
 
 def open_file_worker(input_queue, results_queue):
+    '''Worker process to handle open_file operations.'''
     for run_data in iter(input_queue.get, None):
         fullpath, file_interpreters = run_data
         results_queue.put(open_data_file(fullpath, file_interpreters))
     
 class ProcessManager(object):
+    '''
+        ProcessManager handles all the multi-processing and task
+    creation and management.
+    '''
     def __init__(self, config_manager, trial_manager, plugin_manager):
         self.config_manager = config_manager
         self.trial_manager  = trial_manager
         self.plugin_manager = plugin_manager
 
     def open_file(self, fullpath, created_trials_callback):
+        '''
+            Open a single data file.  Calls <created_trials_callback> after 
+        the file is opened with the list of trials created.
+        Returns the list of trials created.
+        '''
         return self.open_files([fullpath], created_trials_callback)[0]
 
     def open_files(self, fullpaths, created_trials_callback):
+        '''
+            Open a multiple data files.  Calls <created_trials_callback> after 
+        the files are opened with the list of trials created.
+        Returns a list of 'list of trials created'.
+        '''
         num_process_workers = get_num_workers(self.config_manager)
         if len(fullpaths) < num_process_workers:
             num_process_workers = len(fullpaths)
@@ -58,6 +78,7 @@ class ProcessManager(object):
             input_queue.put(None)
         results_queue = multiprocessing.Queue()
 
+        # start the jobs
         jobs = []
         for i in xrange(num_process_workers):
             job = multiprocessing.Process(target=open_file_worker, 
@@ -66,6 +87,7 @@ class ProcessManager(object):
             job.start()
             jobs.append(job)
 
+        # collate the results, waiting for all the jobs to complete
         results_list = []
         for i in xrange(len(fullpaths)):
             results_list.append(results_queue.get())
@@ -79,17 +101,25 @@ class ProcessManager(object):
         return results_list
 
 class TaskOrganizer(object):
+    '''
+        TaskOrganizers take a number of Tasks and allow you to get the ones
+    ready to run.
+    '''
     def __init__(self):
         self._task_index = {}
 
     @property
     def all_provided_items(self):
+        '''All the items provided by all the tasks.'''
         result = []
         for task in self._task_index.values():
             result.extend(task.provides)
         return result
 
     def get_runnable_tasks(self):
+        '''
+        Return a list of (task, task_info) tuples.
+        '''
         if not self._task_index.keys():
             return None # No tasks left.
         # begin with all tasks, then eliminate ineligible tasks.
@@ -120,6 +150,10 @@ class TaskOrganizer(object):
         return results
 
     def add_task(self, new_task):
+        '''
+            Add a task to the TaskOrganizer.  Tasks must not provide anything
+        that other tasks already provide.
+        '''
         if self.all_provided_items:
             intersection = set(new_task.provides).intersection(
                     set(self.all_provided_items))
