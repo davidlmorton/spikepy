@@ -87,7 +87,7 @@ class ProcessManager(object):
             job.start()
             jobs.append(job)
 
-        # collate the results, waiting for all the jobs to complete
+        # collect the results, waiting for all the jobs to complete
         results_list = []
         for i in xrange(len(fullpaths)):
             results_list.append(results_queue.get())

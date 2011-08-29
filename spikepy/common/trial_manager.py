@@ -194,6 +194,37 @@ class Trial(object):
         that are feature_extraction and clustering.
         '''
         raise NotImplementedError
+
+    @classmethod
+    def from_dict(cls, info_dict):
+        new_trial = cls()
+        for key, value in info_dict.items():
+            if not isinstance(value, dict):
+                setattr(new_trial, key, value)
+            else: # is a resource
+                setattr(new_trial, key, Resource.from_dict(value))
+
+    @property
+    def as_dict(self):
+        info_dict = {}
+        if hasattr(self, 'raw_traces'):
+            info_dict['raw_traces'] = self.raw_traces
+        if hasattr(self, 'sampling_freq'):
+            info_dict['sampling_freq'] = sampling_freq
+        info_dict['_id'] = self.trial_id
+        info_dict['origin'] = origin
+        info_dict['display_name'] = display_name
+        for resource in self.resources:
+            info_dict[resource.name] = resource.as_dict
+        return info_dict
+
+    @property
+    def resources(self):
+        result = []
+        for key, value in self.__dict__.items():
+            if isinstance(value, Resource):
+                result.append(value)
+        return result
         
     def add_resource(self, resource):
         if hasattr(self, resource.name):
@@ -374,6 +405,22 @@ class Resource(object):
         self._change_info = None
 
         self._data = data
+
+    @classmethod
+    def from_dict(cls, info_dict):
+        name = info_dict['name']
+        data = info_dict['data']
+        change_info = info_dict['change_info']
+        new_resource = cls(name, data=data)
+        new_resource._change_info = change_info
+        return new_resource
+
+    @property
+    def as_dict(self):
+        info_dict = {'name':self.name}
+        info_dict['data'] = self.data
+        info_dict['change_info'] = self.change_info
+        return info_dict
 
     def checkout(self):
         '''
