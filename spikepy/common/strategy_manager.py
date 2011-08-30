@@ -17,9 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
 
-import wx
-from wx.lib.pubsub import Publisher as pub
-
 from spikepy.common import program_text as pt
 from strategy import (make_strategy_name, make_methods_used_name, 
                       make_settings_name)
@@ -31,8 +28,22 @@ class StrategyManager(object):
     def __init__(self, config_manager=None):
         self.config_manager = config_manager 
         self.strategies = {} # strategies under management
+        self._current_strategy = None
 
-        pub.subscribe(self.save_strategies, 'SAVE_ALL_STRATEGIES')
+    @property
+    def current_strategy(self):
+        '''Return the currently selected strategy.'''
+        return self._current_strategy
+
+    @current_strategy.setter
+    def current_strategy(self, value):
+        '''Set the current strategy with either a name or a Strategy object.'''
+        if isinstance(value, Strategy):
+            self._current_strategy = value
+        elif isinstance(value, type('')):
+            self._current_strategy = self.get_strategy_name(value)
+        else:
+            raise RuntimeError('Current Strategy must be set with either a string or a Strategy object, not %s' % type(value))
 
     def load_all_strategies(self):
         '''
@@ -52,7 +63,7 @@ class StrategyManager(object):
                     strategy = Strategy.from_file(fullpath)
                     self.add_strategy(strategy)
 
-    def save_strategies(self, message=None):
+    def save_strategies(self):
         strategy_path = get_data_dirs()['user']['strategies']
         for strategy in self.strategies.values():
             if strategy.fullpath is None:
@@ -105,8 +116,6 @@ class StrategyManager(object):
 
         # -- checks passed, so add to manager --
         self.strategies[strategy.name] = strategy
-        pub.sendMessage(topic='STRATEGY_ADDED_TO_MANAGER',
-                        data=strategy)
 
     def remove_strategy(self, strategy):
         try:  
@@ -114,8 +123,6 @@ class StrategyManager(object):
         except KeyError:
             raise ValueError('This strategy (%s) is not under management.' %
                              strategy.name)
-        pub.sendMessage(topic='STRATEGY_REMOVED_FROM_MANAGER',
-                        data=strategy)
 
     # --- GET STRATEGIES UNDER MANAGEMENT ---
     def get_strategy_by_strategy(self, strategy):

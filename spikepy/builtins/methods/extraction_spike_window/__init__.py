@@ -23,12 +23,19 @@ class ExtractionSpikeWindow(ExtractionMethod):
     '''
     This class implements a spike-window feature-extraction method.
     '''
-    def __init__(self):
-        self.name = "Spike Window"
-        self.description = "Extract the waveform of spikes in a temporal window around the spike event."
+    name = "Spike Window"
+    description = "Extract the waveform of spikes in a temporal window around the spike event."
+    is_stochastic = False
 
     def make_control_panel(self, parent, **kwargs):
         return ControlPanel(parent, **kwargs)
+
+    def get_run_defaults(self):
+        kwargs = {}
+        kwargs['pre_padding'] = 2.0
+        kwargs['post_padding'] = 4.0
+        kwargs['exclude_overlappers'] = False
+        return kwargs
 
     def run(self, signal_list, sampling_freq, spike_list, **kwargs):
         return runner(signal_list, sampling_freq, spike_list, **kwargs)

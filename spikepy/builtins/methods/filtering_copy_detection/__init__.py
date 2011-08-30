@@ -22,13 +22,15 @@ class FilteringCopyDetection(FilteringMethod):
     '''
     This class represents using the results of detection filtering.
     '''
-    def __init__(self):
-        self.name = 'Copy Detection Filtering'
-        self.description = 'Copy the results of the detection filtering stage.'
-        self._is_stochastic = True # always yields potentially novel results.
+    name = 'Copy Detection Filtering'
+    description = 'Copy the results of the detection filtering stage.'
+    is_stochastic = False
 
     def make_control_panel(self, parent, **kwargs):
         return ControlPanel(parent, **kwargs)
+
+    def get_run_defaults(self):
+        return {}
 
     def run(self, signal_list, sampling_freq, **kwargs):
         return None

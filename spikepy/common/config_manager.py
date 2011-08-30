@@ -87,7 +87,7 @@ class ConfigManager(object):
         builtin, application and user.
         **kwargs passed on to the load_config function.
         '''
-        for level in ['builtin', 'application', 'user']:
+        for level in ['builtins', 'application', 'user']:
             loaded_config = load_config(level, **kwargs)
             setattr(self, '_%s' % level, loaded_config)
             noneless_merge(self._current, loaded_config)

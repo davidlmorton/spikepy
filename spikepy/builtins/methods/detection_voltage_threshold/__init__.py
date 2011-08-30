@@ -23,12 +23,21 @@ class VoltageThreshold(DetectionMethod):
     '''
     This class implements a voltage threshold spike detection method.
     '''
-    def __init__(self):
-        self.name = "Voltage Threshold"
-        self.description = "Spike detection using voltage threshold(s)"
+    name = "Voltage Threshold"
+    description = "Spike detection using voltage threshold(s)"
+    is_stochastic = False
 
     def make_control_panel(self, parent, **kwargs):
         return ControlPanel(parent, **kwargs)
+
+    def get_run_defaults(self):
+        kwargs = {}
+        kwargs['threshold_1'] = 6.0
+        kwargs['threshold_2'] = -6.0
+        kwargs['refractory_time'] = 0.5
+        kwargs['max_spike_duration'] = 4.0
+        kwargs['using_sd_units'] = True
+        return kwargs
 
     def run(self, signal_list, sampling_freq, **kwargs):
         return runner(signal_list, sampling_freq, **kwargs)

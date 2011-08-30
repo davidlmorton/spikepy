@@ -25,9 +25,13 @@ class NoFiltering(FilteringMethod):
     '''
     display_name = "No Filtering"
     description = "No Filtering, simply use the raw traces."
+    is_stochastic = False
 
     def make_control_panel(self, parent, **kwargs):
         return ControlPanel(parent, **kwargs)
+
+    def get_run_defaults(self):
+        return {}
 
     def run(self, signal_list, sampling_freq, **kwargs):
         return runner(signal_list, sampling_freq, **kwargs)

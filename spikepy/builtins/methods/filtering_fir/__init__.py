@@ -23,13 +23,21 @@ class FilteringFIR(FilteringMethod):
     '''
     This class implements a finite impulse response filtering method.
     '''
-    def __init__(self):
-        self.name = 'Finite Impulse Response'
-        self.description = 'Sinc type filters with a windowing function.'
+    name = 'Finite Impulse Response'
+    description = 'Sinc type filters with a windowing function.'
+    is_stochastic = False
 
     def make_control_panel(self, parent, **kwargs):
         return ControlPanel(parent, **kwargs)
 
+    def get_run_defaults(self):
+        kwargs = {}
+        kwargs['window_name'] = 'Hamming'
+        kwargs['critical_freq'] = (300, 3000)
+        kwargs['kind'] = 'band'
+        kwargs['taps'] = 101
+        return kwargs
+        
     def run(self, signal_list, sampling_freq, **kwargs):
         return runner(signal_list, sampling_freq, **kwargs)
 

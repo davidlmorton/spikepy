@@ -23,13 +23,19 @@ class ClusteringKMeans(ClusteringMethod):
     '''
     This class implements a k-means clustering method.
     '''
-    def __init__(self):
-        self.name = 'K-means'
-        self.description = 'Just randomly assigns clusters (TESTING)'
-        self._is_stochastic = True
+    name = 'K-means'
+    description = 'K-means clustering algorithm with random initial centroids.'
+    is_stochastic = True
 
     def make_control_panel(self, parent, **kwargs):
         return ControlPanel(parent, **kwargs)
+
+    def get_run_defaults(self):
+        kwargs = {}
+        kwargs['iterations'] = 30
+        kwargs['threshold'] = 1e-10
+        kwargs['number_of_clusters'] = 2
+        return kwargs
 
     def run(self, feature_set_list, **kwargs):
         return runner(feature_set_list, **kwargs)

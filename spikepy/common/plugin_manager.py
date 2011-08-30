@@ -182,3 +182,20 @@ class PluginManager(object):
         '''All loaded plugins, stored in a dict by type then level'''
         return self._loaded_plugins
 
+    def get_plugin_by_stage(self, stage_name, level=None):
+        '''
+            Return a list of plugins from the stage with <stage_name>.  If level
+        is not None, return only those plugins of that level.
+        '''
+        lsn = stage_name.lower().replace(' ', '_')
+        lookup_index = {'detection_filtering':self.detection_filters,
+                        'detection':self.detectors,
+                        'extraction_filtering':self.extraction_filters,
+                        'extraction':self.extractors,
+                        'clustering':self.clusterers}
+        if level is not None:
+            return lookup_index[lsn][level]
+        else:
+            return lookup_index[lsn]
+
+

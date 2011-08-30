@@ -23,12 +23,21 @@ class FilteringIIR(FilteringMethod):
     '''
     This class implements an infinte impulse response filtering method.
     '''
-    def __init__(self):
-        self.name = 'Infinite Impulse Response'
-        self.description = 'Butterworth and bessel filters.  Can be high/low/band pass types.'
+    name = 'Infinite Impulse Response'
+    description = 'Butterworth and bessel filters.  Can be high/low/band pass types.'
+    is_stochastic = False
 
     def make_control_panel(self, parent, **kwargs):
         return ControlPanel(parent, **kwargs)
+
+    def get_run_defaults(self):
+        kwargs = {}
+        kwargs['function_name'] = 'Butterworth'
+        kwargs['acausal'] = True
+        kwargs['critical_freq'] = (300, 3000)
+        kwargs['kind'] = 'band'
+        kwargs['order'] = 3
+        return kwargs
 
     def run(self, signal_list, sampling_freq, **kwargs):
         return runner(signal_list, sampling_freq, **kwargs)

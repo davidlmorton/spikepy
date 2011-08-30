@@ -18,7 +18,7 @@ from spikepy.common.trial_manager import TrialManager
 from spikepy.common.process_manager import ProcessManager
 from spikepy.common.config_manager import ConfigManager
 from spikepy.common.plugin_manager import PluginManager
-from spikepy.common.strategy_manager import StrategyManager
+from spikepy.common.strategy_manager import StrategyManager, Strategy
 
 class Session(object):
     def __init__(self):
@@ -26,8 +26,32 @@ class Session(object):
         self.trial_manager    = TrialManager(self.config_manager)
         self.strategy_manager = StrategyManager(self.config_manager)
         self.plugin_manager   = PluginManager(self.config_manager)
+        self.strategy_manager.current_strategy = self._make_default_strategy()
         self.process_manager  = ProcessManager(self.config_manager, 
                 self.trial_manager, self.plugin_manager)
+
+    def _make_default_strategy(self):
+        methods_used = {'detection_filtering':'Infinite Impulse Response',
+                        'detection':'Voltage Threshold',
+                        'extraction_filtering':'Copy Detection Filtering',
+                        'extraction':'Spike Window',
+                        'clustering':'K-means'}
+        settings = {}
+        for key, value in methods_used.items():
+            possible_plugins = self.plugin_manager.get_plugin_by_stage(key,
+                    level='builtins')
+            default_settings = None
+            for plugin in possible_plugins:
+                if plugin.name == value:
+                    default_settings = plugin.get_run_defaults()
+                    break
+            if default_settings is not None:
+                settings[key] = default_settings
+            else:
+                raise RuntimeError('Cannot find plugin with name %s.' % value)
+        default_strategy = Strategy(methods_used=methods_used, 
+                settings=settings)
+        return default_strategy 
 
     # --- OPEN FILE(S) ---
     def open_file(self, fullpath):
