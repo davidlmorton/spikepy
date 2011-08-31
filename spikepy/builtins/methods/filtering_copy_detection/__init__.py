@@ -25,6 +25,7 @@ class FilteringCopyDetection(FilteringMethod):
     name = 'Copy Detection Filtering'
     description = 'Copy the results of the detection filtering stage.'
     is_stochastic = False
+    requires = ['df_traces', 'df_sampling_freq'] # different from defaults.
 
     def make_control_panel(self, parent, **kwargs):
         return ControlPanel(parent, **kwargs)

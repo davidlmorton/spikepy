@@ -38,9 +38,9 @@ Methods that subclasses are REQUIRED to implement:
 
     # what resources or attributes (of Trial objects) does this method need 
     # in order to run?
-    _requires = ['ef_traces', 'ef_sampling_freq', 'events']
+    requires = ['ef_traces', 'ef_sampling_freq', 'events']
 
-    _provides = ['features', 'feature_locations']
+    provides = ['features', 'feature_locations']
     # features is 2D numpy array with shape = (n, m) where
     #    n == the total number of kept events
     #    m == the number of features describing each event

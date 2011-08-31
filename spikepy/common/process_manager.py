@@ -50,6 +50,17 @@ class ProcessManager(object):
         self.trial_manager  = trial_manager
         self.plugin_manager = plugin_manager
 
+    def get_tasks_for_strategy(self, strategy):
+        '''Create a task for each stage of the strategy.'''
+        tasks = []
+        for trial in self.trial_manager.get_marked_trials():
+            for stage_name, plugin_name in strategy.methods_used.items():
+                plugin = self.plugin_manager.find_plugin(stage_name, 
+                        plugin_name)
+                plugin_kwargs = strategy.settings[stage_name]
+                tasks.append(Task(trial, plugin, plugin_kwargs)) 
+        return tasks 
+
     def open_file(self, fullpath, created_trials_callback):
         '''
             Open a single data file.  Calls <created_trials_callback> after 
@@ -129,8 +140,10 @@ class TaskOrganizer(object):
             can_run = True
 
             # do you require something that someone here will later provide?
-            if set(task.requires).intersection(set(self.all_provided_items)):
-                can_run = False
+            for pi in self.all_provided_items:
+                for req in task.requires:
+                    if req is pi:
+                        can_run = False
 
             # do you require something that is locked?
             if not task.is_ready:

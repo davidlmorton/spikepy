@@ -23,7 +23,7 @@ class NoFiltering(FilteringMethod):
     '''
     This class implements a NULL filtering method.
     '''
-    display_name = "No Filtering"
+    name = "No Filtering"
     description = "No Filtering, simply use the raw traces."
     is_stochastic = False
 
