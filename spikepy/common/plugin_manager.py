@@ -198,4 +198,18 @@ class PluginManager(object):
         else:
             return lookup_index[lsn]
 
+    def find_plugin(self, stage_name, plugin_name):
+        possible_match = None
+        for level in ['builtins', 'application', 'user']:
+            plugins = self.get_plugin_by_stage(stage_name, level=level)
+            for plugin in plugins:
+                if plugin.name == plugin_name:
+                    possible_match = plugin
+                    break
+
+        if possible_match is not None:
+            return possible_match
+        else:
+            raise RuntimeError('No plugin named %s could be found in stage %s'%
+                    (plugin_name, stage_name))
 

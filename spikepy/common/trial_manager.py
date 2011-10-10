@@ -57,16 +57,20 @@ class TrialManager(object):
         for trial in self._trial_index.values():
             trial.mark(status=status)
 
-    def add_trials(self, trial_list):
+    def add_trials(self, trial_list, marked=True):
         """
             Add all the trials in <trial_list> and ensure they have unique
         names.
         """
-        print trial_list
+        new_names = []
         for trial in trial_list:
             new_name = self._get_unique_display_name(trial.display_name)
             trial.display_name = new_name
+            new_names.append(new_name)
             self._trial_index[trial.trial_id] = trial
+
+        for name in new_names:
+            self.mark_trial(name, marked)
 
     def remove_trial_with_name(self, name):
         """Remove the trial with display_name=<name>."""
@@ -99,10 +103,14 @@ class TrialManager(object):
         trial.display_name = self._get_unique_display_name(proposed_name)
         pub.sendMessage(topic='TRIAL_RENAMED', data=trial)
 
+    def get_marked_trials(self):
+        '''Return all currently marked trials.'''
+        return [trial for trial in self._trial_index.values()
+                if trial.is_marked]
+
     def get_marked_trial_ids(self):
         """Return the trial_ids for all currently marked trials"""
-        marked_ids = [trial.trial_id for trial in self._trial_index.values()
-                      if trial.is_marked]
+        marked_ids = [trial.trial_id for trial in self.get_marked_trials()]
         return marked_ids
 
     def get_trial_with_id(self, trial_id):
@@ -218,6 +226,7 @@ class Trial(object):
 
     @classmethod
     def from_dict(cls, info_dict):
+        '''Create a trial from a dictionary, likely from an archive.'''
         new_trial = cls()
         for key, value in info_dict.items():
             if not isinstance(value, dict):
@@ -227,6 +236,10 @@ class Trial(object):
 
     @property
     def as_dict(self):
+        '''
+            Create the dictionary that has all data from this trial, 
+        for archiving.
+        '''
         info_dict = {}
         if hasattr(self, 'raw_traces'):
             info_dict['raw_traces'] = self.raw_traces
@@ -241,6 +254,7 @@ class Trial(object):
 
     @property
     def resources(self):
+        '''Return all resources this trial contains in a list.'''
         result = []
         for key, value in self.__dict__.items():
             if isinstance(value, Resource):
@@ -248,6 +262,7 @@ class Trial(object):
         return result
         
     def add_resource(self, resource):
+        '''Add <resource> to this trial.'''
         if hasattr(self, resource.name):
             raise RuntimeError(pt.RESOURCE_EXISTS % resource.name)
         else:
@@ -264,33 +279,6 @@ class Trial(object):
     def mark(self, status=True):
         """Mark this trial according to <status>"""
         self._marked = status
-
-    def get_archive(self, archive_name='archive'):
-        # TODO refactor using new resources idea.
-        '''
-        Create and return a dictionary that includes all the data needed to
-        recreate the trial object.
-        '''
-        return_dict = {}
-        return_dict['raw_traces'] = self.raw_traces
-        # obscure the fullpath in archives for security reasons.
-        return_dict['fullpath'] = os.path.join(archive_name, self.display_name)
-        return_dict['sampling_freq'] = self.sampling_freq
-        for stage in self.stages:
-            return_dict[stage.name] = self.get_data_from_stage(stage.name)
-        return return_dict
-
-    @classmethod
-    def from_archive(cls, archive):
-        # TODO refactor using new resources idea.
-        return_trial = Trial(sampling_freq=archive['sampling_freq'],
-                             raw_traces=archive['raw_traces'], 
-                             fullpath=archive['fullpath'])
-        for stage in return_trial.stages:
-            if stage.name in archive.keys():
-                data_for_stage = archive[stage.name]
-                return_trial.set_data_for_stage(stage.name, **data_for_stage)
-        return return_trial
 
     def export(self, path=None, stages_selected=[], file_format=None):
         # TODO refactor into another file using the new resources idea.
