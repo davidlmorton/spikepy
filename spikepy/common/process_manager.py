@@ -16,6 +16,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import multiprocessing
 
+from callbacks import supports_callbacks
+
 from spikepy.common.open_data_file import open_data_file
 from spikepy.common.trial_manager import Resource 
 
@@ -50,19 +52,17 @@ class ProcessManager(object):
         self.trial_manager  = trial_manager
         self.plugin_manager = plugin_manager
 
-    def open_file(self, fullpath, created_trials_callback):
+    def open_file(self, fullpath):
         '''
-            Open a single data file.  Calls <created_trials_callback> after 
-        the file is opened with the list of trials created.
-        Returns the list of trials created.
+            Open a single data file. Returns the list of trials created.
         '''
-        return self.open_files([fullpath], created_trials_callback)[0]
+        return self.open_files([fullpath])[0]
 
-    def open_files(self, fullpaths, created_trials_callback):
+    @supports_callbacks
+    def open_files(self, fullpaths):
         '''
-            Open a multiple data files.  Calls <created_trials_callback> after 
-        the files are opened with the list of trials created.
-        Returns a list of 'list of trials created'.
+            Open a multiple data files. Returns a list of 
+        'list of trials created'.
         '''
         num_process_workers = get_num_workers(self.config_manager)
         if len(fullpaths) < num_process_workers:
@@ -90,13 +90,11 @@ class ProcessManager(object):
         # collect the results, waiting for all the jobs to complete
         results_list = []
         for i in xrange(len(fullpaths)):
-            results_list.append(results_queue.get())
+            # file_interpreters return list of trial objects.
+            results_list.extend(results_queue.get())
 
         for job in jobs:
             job.join() # halt this thread until processes are all complete.
-
-        for result in results_list:
-            created_trials_callback(result)
 
         return results_list
 

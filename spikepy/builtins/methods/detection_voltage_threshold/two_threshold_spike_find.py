@@ -43,7 +43,7 @@ def spike_find(input_array, t, max_spike_width):
             for p, n in itertools.izip( crossings[first_p::2], 
                                         crossings[first_p+1::2] ):
                 if abs(p - n) <= max_spike_width:
-                    peak_index = numpy.argsort(input_array[p:n])[-1]+p
+                    peak_index = numpy.argsort(input_array[p:n+1])[-1]+p
                     spikes.append(peak_index)
         else:
             # find first negative crossing then pair up crossings
@@ -51,7 +51,7 @@ def spike_find(input_array, t, max_spike_width):
             for n, p in itertools.izip( crossings[first_n::2], 
                                         crossings[first_n+1::2] ):
                 if abs(p - n) <= max_spike_width:
-                    peak_index = numpy.argsort(input_array[n:p])[0]+n
+                    peak_index = numpy.argsort(input_array[n:p+1])[0]+n
                     spikes.append(peak_index)
     return numpy.array(spikes)
     

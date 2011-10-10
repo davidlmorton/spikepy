@@ -188,9 +188,9 @@ class PluginManager(object):
         is not None, return only those plugins of that level.
         '''
         lsn = stage_name.lower().replace(' ', '_')
-        lookup_index = {'detection_filtering':self.detection_filters,
+        lookup_index = {'detection_filter':self.detection_filters,
                         'detection':self.detectors,
-                        'extraction_filtering':self.extraction_filters,
+                        'extraction_filter':self.extraction_filters,
                         'extraction':self.extractors,
                         'clustering':self.clusterers}
         if level is not None:
