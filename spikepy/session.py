@@ -30,10 +30,14 @@ class Session(object):
         self.process_manager  = ProcessManager(self.config_manager, 
                 self.trial_manager, self.plugin_manager)
 
+        # register callback for open_files
+        self.process_manager.open_files.add_callback(self._trials_created,
+                takes_target_results=True)
+
     def _make_default_strategy(self):
-        methods_used = {'detection_filtering':'Infinite Impulse Response',
+        methods_used = {'detection_filter':'Infinite Impulse Response',
                         'detection':'Voltage Threshold',
-                        'extraction_filtering':'Copy Detection Filtering',
+                        'extraction_filter':'Copy Detection Filtering',
                         'extraction':'Spike Window',
                         'clustering':'K-means'}
         settings = {}
@@ -56,13 +60,11 @@ class Session(object):
     # --- OPEN FILE(S) ---
     def open_file(self, fullpath):
         """Open file located at fullpath."""
-        return self.process_manager.open_file(fullpath, 
-                created_trials_callback=self._trials_created)
+        return self.process_manager.open_file(fullpath)
 
     def open_files(self, fullpaths):
         """Open the files located at fullpaths"""
-        return self.process_manager.open_files(fullpaths, 
-                created_trials_callback=self._trials_created)
+        return self.process_manager.open_files(fullpaths)
 
     def _trials_created(self, trials):
         # Called after process_manager opens a file

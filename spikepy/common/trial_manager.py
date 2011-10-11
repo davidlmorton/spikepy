@@ -99,7 +99,7 @@ class TrialManager(object):
     def rename_trial(self, old_name, proposed_name):
         """Find trial named <old_name> and rename it to <proposed_name>."""
         trial = self.get_trial_with_name(old_name)
-        self._display_names.remove(self.display_name)
+        self._display_names.remove(trial.display_name)
         trial.display_name = self._get_unique_display_name(proposed_name)
         pub.sendMessage(topic='TRIAL_RENAMED', data=trial)
 
@@ -131,7 +131,26 @@ class TrialManager(object):
         for trial in self._trial_index.values():
             if trial.display_name == name:
                 return trial
+        else:
+            # check if name is a unique part of a trial's display_name
+            trials = []
+            for trial in self._trial_index.values():
+                if name in trial.display_name:
+                    trials.append(trial)
+            if len(trials) == 1:
+                return trials[0]
+
         raise RuntimeError('No trial named "%s" found.' % name)
+
+    def __str__(self):
+        return_str =     ['Trial Manager with trials:']
+        return_str.append('    Marked  Display Name')
+        return_str.append('    ------  ------------')
+        marked = {False:' ', True:'X'}
+        for trial in self._trial_index.values():
+            return_str.append('       [%s]  %s' % 
+                    (marked[trial.is_marked], trial.display_name))
+        return '\n'.join(return_str) 
     
 
 class Trial(object):
@@ -149,7 +168,8 @@ class Trial(object):
     def _setup_basic_attributes(self, raw_traces, sampling_freq):
         self.raw_traces = utils.format_traces(raw_traces)
         self.raw_times = numpy.arange(0, 
-                self.raw_traces.shape[1])/sampling_freq
+                self.raw_traces.shape[1], 
+                dtype=self.raw_traces.dtype)/sampling_freq
         self.sampling_freq = sampling_freq
         self.num_channels = self.raw_traces.shape[0]
 
