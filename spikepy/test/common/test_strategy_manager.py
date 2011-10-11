@@ -18,9 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import unittest
 import os
 
-from spikepy.common.strategy import Strategy, make_strategy_name
 from spikepy.common import program_text as pt
-from spikepy.common.strategy_manager import StrategyManager
+from spikepy.common.strategy_manager import StrategyManager, \
+        Strategy, make_strategy_name
 
 msn = make_strategy_name
 
@@ -41,6 +41,7 @@ class StrategyManagerTests(unittest.TestCase):
     sabnba = Strategy(methods_used=a, settings=b)
     sabnba.name = msn('b','a')
     sabnnn = Strategy(methods_used=a, settings=b)
+    sabnnn.name = msn('none', 'none')
     
     def test_constructor(self):
         sm = StrategyManager()
@@ -79,7 +80,7 @@ class StrategyManagerTests(unittest.TestCase):
         sm.add_strategy(self.sabnnn)
         self.assertTrue(len(sm.strategies.keys())==2)
         # stored strategy is called A(none) and is same as sab
-        smsabnnn = sm.get_strategy_by_name(msn('a','none'))
+        smsabnnn = sm.get_strategy(msn('a','none'))
         self.assertTrue(smsabnnn == self.sab)
         # because ab is already there, but known as A(none)
         self.assertRaises(RuntimeError, sm.add_strategy, self.sab)
@@ -106,7 +107,7 @@ class StrategyManagerTests(unittest.TestCase):
         sm.add_strategy(self.saa)
         sm.add_strategy(self.sab)
         sm.add_strategy(self.sba)
-        sab_managed = sm.get_strategy_by_strategy(self.sab)
+        sab_managed = sm.get_strategy(self.sab)
 
         self.assertTrue(sab_managed is not self.sab)
         self.assertTrue(sab_managed == self.sab)
@@ -115,14 +116,14 @@ class StrategyManagerTests(unittest.TestCase):
         sm = StrategyManager()
         sm.add_strategy(self.saa)
         sm.add_strategy(self.sba)
-        self.assertRaises(ValueError, sm.get_strategy_by_strategy, self.sab)
+        self.assertRaises(ValueError, sm.get_strategy, self.sab)
 
     def test_get_strategy_by_name(self):
         sm = StrategyManager()
         sm.add_strategy(self.saa)
         sm.add_strategy(self.sab)
         sm.add_strategy(self.sba)
-        sab_managed = sm.get_strategy_by_name(self.sab.name)
+        sab_managed = sm.get_strategy(self.sab.name)
 
         self.assertTrue(sab_managed is not self.sab)
         self.assertTrue(sab_managed == self.sab)
@@ -132,7 +133,7 @@ class StrategyManagerTests(unittest.TestCase):
         sm.add_strategy(self.saa)
         sm.add_strategy(self.sab)
         sm.add_strategy(self.sba)
-        self.assertRaises(ValueError, sm.get_strategy_by_name, 'Fail-lolz')
+        self.assertRaises(ValueError, sm.get_strategy, 'Fail-lolz')
 
     def test_get_strategy_by_name_and_by_strategy(self):
         sm = StrategyManager()
@@ -140,8 +141,8 @@ class StrategyManagerTests(unittest.TestCase):
         sm.add_strategy(self.sab)
         sm.add_strategy(self.sba)
 
-        sab_by_name = sm.get_strategy_by_name(self.sab.name)
-        sab_by_strategy = sm.get_strategy_by_strategy(self.sab)
+        sab_by_name = sm.get_strategy(self.sab.name)
+        sab_by_strategy = sm.get_strategy(self.sab)
 
         self.assertTrue(sab_by_name is not self.sab)
         self.assertTrue(sab_by_name is sab_by_strategy)
@@ -170,7 +171,7 @@ class StrategyManagerTests(unittest.TestCase):
         self.assertTrue(len(sm.strategies.keys())==3)
         sm.remove_strategy(self.sab)
         self.assertTrue(len(sm.strategies.keys())==2)
-        self.assertRaises(ValueError, sm.get_strategy_by_strategy, self.sab)
+        self.assertRaises(ValueError, sm.get_strategy, self.sab)
 
     def test_remove_strategy_2(self):
         sm = StrategyManager()

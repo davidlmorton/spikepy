@@ -18,7 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import unittest
 import os
 
-from spikepy.common.strategy import Strategy
+from spikepy.common.strategy_manager import Strategy
+import spikepy.common.program_text as pt
 
 class StrategyClassTests(unittest.TestCase):
     a = Strategy()
@@ -29,7 +30,8 @@ class StrategyClassTests(unittest.TestCase):
     b.settings={'settings_key':42}
 
     def test_constructor(self):
-        self.assertTrue(self.a.name=='None(none)')
+        custom_name = "%s(%s)" % (pt.CUSTOM_SC, pt.CUSTOM_LC)
+        self.assertTrue(self.a.name==custom_name)
         self.assertTrue(self.a.methods_used==None)
         self.assertTrue(self.a.settings==None)
         
@@ -60,7 +62,7 @@ class StrategyClassTests(unittest.TestCase):
         self.assertTrue(self.a!=c)
 
     def test_as_dict(self):
-        adict = self.a.as_dict()
+        adict = self.a.as_dict
         self.assertTrue(len(adict.keys())==3)
         self.assertTrue('name' in adict.keys())
         self.assertTrue('methods_used' in adict.keys())

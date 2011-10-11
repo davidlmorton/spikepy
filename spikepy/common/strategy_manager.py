@@ -49,7 +49,7 @@ class StrategyManager(object):
         '''Set the current strategy with either a name or a Strategy object.'''
         if isinstance(value, Strategy):
             self._current_strategy = value
-        elif isinstance(value, type('')):
+        elif isinstance(value, str):
             self._current_strategy = self.get_strategy_name(value)
         else:
             raise RuntimeError('Current Strategy must be set with either a string or a Strategy object, not %s' % type(value))
@@ -92,7 +92,7 @@ class StrategyManager(object):
         if strategy in self.strategies.values():
             raise RuntimeError("Strategy (%s/%s) already under management." % 
                                (strategy.name, 
-                                self.get_strategy_by_strategy(strategy).name))
+                                self._get_strategy_by_strategy(strategy).name))
 
         # -- check methods_used_name -- (coherse if collision)
         if proposed_methods_used_name != pt.CUSTOM_LC:
@@ -134,7 +134,7 @@ class StrategyManager(object):
                              strategy.name)
 
     # --- GET STRATEGIES UNDER MANAGEMENT ---
-    def get_strategy_by_strategy(self, strategy):
+    def _get_strategy_by_strategy(self, strategy):
         '''
         If argument 'strategy' is a currently managed strategy, return the
             managed strategy.  Otherwise raise a ValueError.
@@ -145,12 +145,18 @@ class StrategyManager(object):
         raise ValueError('This strategy (%s) is not under management.' %
                              strategy.name)
 
-    def get_strategy_by_name(self, strategy_name):
+    def _get_strategy_by_name(self, strategy_name):
         for managed_strategy in self.strategies.values():
             if managed_strategy.name == strategy_name:
                 return managed_strategy
         raise ValueError('No strategy named "%s" under management.' % 
                            strategy_name)
+
+    def get_strategy(self, strategy):
+        if isinstance(strategy, str):
+            return self._get_strategy_by_name(strategy)
+        else:
+            return self._get_strategy_by_strategy(strategy)
 
     def get_strategies_with_same_methods_used(self, strategy):
         return_strategies = []
@@ -166,7 +172,7 @@ class StrategyManager(object):
             its name.  Otherwise give this strategy an appropriate name.
         '''
         if strategy in self.strategies.values():
-            managed_strategy = self.get_strategy_by_strategy(strategy)
+            managed_strategy = self._get_strategy_by_strategy(strategy)
             return managed_strategy.name
 
         cousin_strategies = self.get_strategies_with_same_methods_used(strategy)
@@ -199,8 +205,8 @@ def make_strategy_name(methods_used_name, settings_name):
         
 
 class Strategy(object):
-    def __init__(self, methods_used=None, methods_used_name="None", 
-                       settings=None, settings_name="None"):
+    def __init__(self, methods_used=None, methods_used_name=pt.CUSTOM_SC, 
+                       settings=None, settings_name=pt.CUSTOM_LC):
         self.methods_used = methods_used
         self.methods_used_name = methods_used_name
         self.settings = settings
@@ -219,47 +225,33 @@ class Strategy(object):
         return '\n'.join(return_str)
 
 
+    # NAME
     @property
     def name(self):
         return make_strategy_name(self.methods_used_name,
                                   self.settings_name)
-
     @name.setter
     def name(self, value):
         self.methods_used_name = make_methods_used_name(value)
         self.settings_name = make_settings_name(value)
 
-    @property
-    def methods_used(self):
-        return self._methods_used
-    
-    @methods_used.setter
-    def methods_used(self, value):
-        self._methods_used = value
-
+    # METHODS USED NAME
     @property
     def methods_used_name(self):
         return self._methods_used_name.lower()
 
     @methods_used_name.setter
     def methods_used_name(self, value):
-        self._methods_used_name = value
+        self._methods_used_name = value.lower()
 
-    @property
-    def settings(self):
-        return self._settings
-
-    @settings.setter
-    def settings(self, value):
-        self._settings = value
-
+    # SETTINGS NAME
     @property
     def settings_name(self):
         return self._settings_name.lower()
 
     @settings_name.setter
     def settings_name(self, value):
-        self._settings_name = value
+        self._settings_name = value.lower()
 
     # --- COMPARISON OPERATORS ---
     def __eq__(self, other):
@@ -277,13 +269,14 @@ class Strategy(object):
         return False # least likely of all
 
     # --- ARCHIVING METHODS ---
+    @property
     def as_dict(self):
         return {'name':self.name, 'methods_used':self.methods_used,
                 'settings':self.settings}
 
     def save(self, fullpath):
         with open(fullpath, 'w') as ofile:
-            json.dump(self.as_dict(), ofile, indent=4)
+            json.dump(self.as_dict, ofile, indent=4)
 
     def load(self, fullpath):
         with open(fullpath, 'r') as infile:
@@ -302,14 +295,47 @@ class Strategy(object):
     def copy(self):
         return copy.deepcopy(self)
 
-def AttributeClass(object):
-    def __getattribute__(self, name):
-        if name in self.__dict__.keys():
-            return self.__dict__[name]
-        elif name in self._attributes:
-            return self._attributes[name]
+class AuxiliaryStrategy(Strategy):
+    def __str__(self):
+        return_str = [self.name]
+        for method, settings in zip(self.methods_used, self.settings):
+            return_str.append('    %s:' % repr(method))
+            for setting_name, value in settings.items():
+                return_str.append('        %s: %s' % 
+                        (setting_name, repr(value)))
+        return '\n'.join(return_str)
 
-    def __dir__(self):
-        return self.__dict__.keys() + self._attributes.keys()
+class AuxiliaryStrategyManager(StrategyManager):
+    @property
+    def current_strategy(self):
+        '''Return the currently selected strategy.'''
+        return self._current_strategy
 
+    @current_strategy.setter
+    def current_strategy(self, value):
+        '''Set with either a name or an AuxiliaryStrategy object.'''
+        if isinstance(value, AuxiliaryStrategy):
+            self._current_strategy = value
+        elif isinstance(value, str):
+            self._current_strategy = self.get_strategy_name(value)
+        else:
+            raise RuntimeError('Current Strategy must be set with either a string or an AuxiliaryStrategy object, not %s' % type(value))
+
+    def load_strategies(self, path):
+        if os.path.exists(path):
+            files = os.listdir(path)
+            for f in files:
+                if f.endswith('.auxiliary_strategy'):
+                    fullpath = os.path.join(path, f)
+                    strategy = AuxiliaryStrategy.from_file(fullpath)
+                    self.add_strategy(strategy)
+
+    def save_strategies(self):
+        strategy_path = get_data_dirs()['user']['strategies']
+        for strategy in self.strategies.values():
+            if strategy.fullpath is None:
+                fullpath = os.path.join(strategy_path, 
+                                        '%s.auxiliary_strategy' % strategy.name)
+                strategy.fullpath = fullpath
+                strategy.save(fullpath)
     

@@ -52,9 +52,6 @@ class ProcessManager(object):
         self.trial_manager  = trial_manager
         self.plugin_manager = plugin_manager
 
-<<<<<<< HEAD
-    def open_file(self, fullpath):
-=======
     def get_tasks_for_strategy(self, strategy):
         '''Create a task for each stage of the strategy.'''
         tasks = []
@@ -67,7 +64,6 @@ class ProcessManager(object):
         return tasks 
 
     def open_file(self, fullpath, created_trials_callback):
->>>>>>> 06af7b8f4f2cb28517390dd4c1b9cfebb04e5085
         '''
             Open a single data file. Returns the list of trials created.
         '''
