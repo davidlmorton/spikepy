@@ -187,7 +187,6 @@ class Task(object):
         self.task_id = (trial.trial_id, tuple(sorted(plugin.provides)))
         self.plugin = plugin
         self.plugin_kwargs = plugin_kwargs
-        self._arg_locking_keys = {}
         self._results_locking_keys = {}
         self._prepare_trial_for_task()
 
@@ -204,12 +203,14 @@ class Task(object):
 
     @property
     def is_ready(self):
-        '''Return True if this task's requirements are all unlocked'''
+        '''
+            Return True if this task's requirements and resources it provides
+        are all unlocked.
+        '''
         # once all the plugin's requirements are ready, we're ready.
-        for requirement_name in self.plugin.requires:
-            requirement = getattr(self.trial, requirement_name)
-            if (hasattr(requirement, 'is_locked') and
-                requirement.is_locked):
+        items = self.requires + self.provides
+        for item in items:
+            if (hasattr(item, 'is_locked') and item.is_locked):
                 return False
         return True
 
@@ -242,35 +243,109 @@ class Task(object):
         # check out and keep track of locking keys for what task provides.
         for item in self.provides:
             co = item.checkout()
-            self._results_locking_keys[item.name] = co['locking_key']
+            self._results_locking_keys[item] = co['locking_key']
         return run_info
 
     def _get_args(self):
-        '''
-            Return the data we require as arguments to run.  Check out
-        data from the trial if it is a resource.
-        '''
+        '''Return the data we require as arguments to run.'''
         args = []
         for requirement_name in self.plugin.requires:
             requirement = getattr(self.trial, requirement_name)
-            if hasattr(requirement, 'checkout'):
-                co = requirement.checkout()
-                self._arg_locking_keys[requirement_name] = co['locking_key']
-                arg = co['data']
+            if isinstance(requirement, Resource):
+                arg = requirement.data
             else:
                 arg = requirement
             args.append(arg)
         return args
 
-    def release_args(self):
-        '''Check in the requirements we checked out from the trial.'''
-        for requirement_name in self._arg_locking_keys.keys():
-            key = self._arg_locking_keys[requirement_name]
-            del self._arg_locking_keys[requirement_name]
-            requirement = getattr(self.trial, requirement_name)
-            requirement.checkin(key=key)
-        
-        
-            
+
+class PoolingTask(object):
+    '''
+        PoolingTask objects combine a list of trials with a plugin and
+    the kwargs that the plugin needs to run.
+    '''
+    def __init__(self, trials, plugin, plugin_kwargs={}):
+        self.trials = trials
+        trial_ids = [t.trial_id for t in trials]
+        self.task_id = (tuple(trial_ids), tuple(sorted(plugin.provides)))
+        self.plugin = plugin
+        self.plugin_kwargs = plugin_kwargs
+        self._arg_locking_keys = {}
+        self._results_locking_keys = {}
+        self._prepare_trials_for_task()
+
+    def _prepare_trials_for_task(self):
+        '''
+            If the trials do not have one of the resources that the plugin
+        provides, create it.
+        '''
+        for trial in self.trials:
+            for item in self.plugin.provides:
+                if not hasattr(trial, item):
+                    trial.add_resource(Resource(item))
+                elif not isinstance(getattr(trial, item), Resource):
+                    raise RuntimeError('This plugin provides %s, but that is a read-only attribute on trial %s.' % (item, trial.trial_id))
+
+    @property
+    def is_ready(self):
+        '''
+            Return True if this task's requirements and resources it provides
+        are all unlocked.
+        '''
+        # once all the plugin's requirements are ready, we're ready.
+        items = self.requires + self.provides
+        for item in items:
+            if (hasattr(item, 'is_locked') and item.is_locked):
+                return False
+        return True
+
+    @property
+    def provides(self):
+        '''Return the trial attributes we provide after running.'''
+        result = []
+        for trial in self.trials:
+            for item in self.plugin.provides:
+                result.append(getattr(trial, item))
+        return result
+
+    @property
+    def requires(self):
+        '''Return the trial attributes we require to run.'''
+        result = []
+        for trial in self.trials:
+            for item in self.plugin.requires:
+                result.append(getattr(trial, item))
+        return result
+
+    def get_run_info(self):
+        '''
+        Return a dictionary with the stuff needed to run.
+        '''
+        run_info = {}
+        run_info['task_id'] = self.task_id
+        run_info['plugin'] = self.plugin
+        run_info['args'] = self._get_args()
+        run_info['kwargs'] = self.plugin_kwargs
+
+        # check out and keep track of locking keys for what task provides.
+        for item in self.provides:
+            co = item.checkout()
+            self._results_locking_keys[item] = co['locking_key']
+        return run_info
+
+    def _get_args(self):
+        '''Return the data we require as arguments to run.'''
+        arg_list = []
+        for requirement_name in self.plugin.requires:
+            args = []
+            for trial in self.trials:
+                requirement = getattr(trial, requirement_name)
+                if isinstance(requirement, Resource):
+                    arg = requirement.data
+                else:
+                    arg = requirement
+                args.append(arg)
+            arg_list.append(args)
+        return arg_list
         
     

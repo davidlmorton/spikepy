@@ -409,11 +409,15 @@ class Resource(object):
     """
     def __init__(self, name, data=None):
         self.name = name
+        self._id = uuid.uuid4()
         self._locked = False
         self._locking_key = None
         self._change_info = None
 
         self._data = data
+
+    def __hash__(self):
+        return hash(self._id)
 
     @classmethod
     def from_dict(cls, info_dict):

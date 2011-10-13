@@ -88,16 +88,11 @@ class TaskTests(unittest.TestCase):
 
         result = task_1._get_args()
 
-        # is no longer ready since things were checked out.
-        self.assertFalse(task_1.is_ready)
+        self.assertTrue(task_1.is_ready)
         
         self.assertTrue('some_data' in result)
         self.assertTrue(trial.rb.data in result)
         self.assertEqual(len(result), 2)
-
-        # are keys stored?
-        self.assertEqual(len(task_1._arg_locking_keys.keys()), 1)
-        self.assertTrue('rb' in task_1._arg_locking_keys.keys())
 
     def test_get_run_info(self):
         trial = Trial()
@@ -110,24 +105,11 @@ class TaskTests(unittest.TestCase):
         self.assertFalse(task_1.is_ready)
 
         self.assertEqual(len(task_1._results_locking_keys.keys()), 2)
-        self.assertTrue('pa' in task_1._results_locking_keys.keys())
-        self.assertTrue('pb' in task_1._results_locking_keys.keys())
+        self.assertTrue(task_1.provides[0] in 
+                task_1._results_locking_keys.keys())
+        self.assertTrue(task_1.provides[1] in 
+                task_1._results_locking_keys.keys())
 
-    def test_release_args(self):
-        trial = Trial()
-        trial.ra = 'some_data'
-        trial.add_resource(Resource('rb'))
-        task_1 = Task(trial, plugin_1)
-
-        self.assertTrue(task_1.is_ready)
-        result = task_1.get_run_info()
-        self.assertFalse(task_1.is_ready)
-
-        task_1.release_args()
-        self.assertTrue(task_1.is_ready)
-
-        # are keys deleted?
-        self.assertEqual(len(task_1._arg_locking_keys.keys()), 0)
 
         
         

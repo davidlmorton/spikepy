@@ -104,8 +104,7 @@ class TaskOrganizerTests(unittest.TestCase):
         # checkin results and requirements
         self.assertEqual(result1[0][0], self.t1_task)
         for item in self.t1_task.provides:
-            item.checkin(key=self.t1_task._results_locking_keys[item.name])
-        self.t1_task.release_args()
+            item.checkin(key=self.t1_task._results_locking_keys[item])
 
         # still cannot get other task out, because we didn't check in any DATA.
         self.assertRaises(RuntimeError, to.get_runnable_tasks)
