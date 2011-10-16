@@ -6,6 +6,21 @@ class SpikepyError(Exception):
     '''
     pass
 
+class InvalidOptionError(SpikepyError):
+    pass
+
+class UnknownStageError(SpikepyError):
+    pass
+
+class MissingPluginError(SpikepyError):
+    pass
+
+class PluginDefinitionError(SpikepyError):
+    pass
+
+class UnknownCategoryError(SpikepyError):
+    pass
+
 class DuplicateStrategyError(SpikepyError):
     pass
 

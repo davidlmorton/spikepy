@@ -15,8 +15,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from spikepy.developer_tools.detection_method import DetectionMethod
-from .control_panel import ControlPanel
+from spikepy.developer_tools.methods import DetectionMethod
+from spikepy.common.valid_types import ValidFloat, ValidBoolean
 from .run import run as runner
 
 class VoltageThreshold(DetectionMethod):
@@ -27,22 +27,15 @@ class VoltageThreshold(DetectionMethod):
     description = "Spike detection using voltage threshold(s)"
     is_stochastic = False
 
-    def make_control_panel(self, parent, **kwargs):
-        return ControlPanel(parent, **kwargs)
-
-    def get_run_defaults(self):
-        kwargs = {}
-        kwargs['threshold_1'] = 6.0
-        kwargs['threshold_2'] = -6.0
-        kwargs['refractory_time'] = 0.5
-        kwargs['max_spike_duration'] = 4.0
-        kwargs['using_sd_units'] = True
-        return kwargs
+    threshold_1 = ValidFloat(default=6.0)
+    threshold_2 = ValidFloat(default=-6.0)
+    refractory_time = ValidFloat(min=0.0, default=0.50)
+    max_spike_duration = ValidFloat(min=0.0, default=4.0)
+    using_sd_units = ValidBoolean(default=True)
 
     def run(self, signal_list, sampling_freq, **kwargs):
         return runner(signal_list, sampling_freq, **kwargs)
 
-del ControlPanel
 
 
 

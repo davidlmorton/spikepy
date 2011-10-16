@@ -15,8 +15,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from spikepy.developer_tools.extraction_method import ExtractionMethod
-from .control_panel import ControlPanel
+from spikepy.developer_tools.methods import ExtractionMethod
+from spikepy.common.valid_types import ValidFloat, ValidBoolean
 from .run import run as runner
 
 class ExtractionSpikeWindow(ExtractionMethod):
@@ -27,17 +27,10 @@ class ExtractionSpikeWindow(ExtractionMethod):
     description = "Extract the waveform of spikes in a temporal window around the spike event."
     is_stochastic = False
 
-    def make_control_panel(self, parent, **kwargs):
-        return ControlPanel(parent, **kwargs)
-
-    def get_run_defaults(self):
-        kwargs = {}
-        kwargs['pre_padding'] = 2.0
-        kwargs['post_padding'] = 4.0
-        kwargs['exclude_overlappers'] = False
-        return kwargs
+    pre_padding = ValidFloat(min=0.0, default=2.0)
+    post_padding = ValidFloat(min=0.0, default=4.0)
+    exclude_overlappers = ValidBoolean(default=False)
 
     def run(self, signal_list, sampling_freq, spike_list, **kwargs):
         return runner(signal_list, sampling_freq, spike_list, **kwargs)
 
-del ControlPanel

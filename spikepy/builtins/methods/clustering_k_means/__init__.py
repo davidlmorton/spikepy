@@ -15,8 +15,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from spikepy.developer_tools.clustering_method import ClusteringMethod
-from .control_panel import ControlPanel
+from spikepy.developer_tools.methods import ClusteringMethod
+from spikepy.common.valid_types import ValidInteger, ValidFloat
 from .run import run as runner
 
 class ClusteringKMeans(ClusteringMethod):
@@ -27,17 +27,10 @@ class ClusteringKMeans(ClusteringMethod):
     description = 'K-means clustering algorithm with random initial centroids.'
     is_stochastic = True
 
-    def make_control_panel(self, parent, **kwargs):
-        return ControlPanel(parent, **kwargs)
-
-    def get_run_defaults(self):
-        kwargs = {}
-        kwargs['iterations'] = 30
-        kwargs['threshold'] = 1e-10
-        kwargs['number_of_clusters'] = 2
-        return kwargs
+    iterations = ValidInteger(1, 10000, default=30)
+    threshold = ValidFloat(1e-50, 1e10, default=1e-10)
+    number_of_clusters = ValidInteger(1, 15, default=2)
 
     def run(self, feature_set_list, **kwargs):
         return runner(feature_set_list, **kwargs)
 
-del ControlPanel

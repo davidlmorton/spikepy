@@ -14,33 +14,35 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+import types
 import imp
 import os
 from collections import defaultdict
 
 from spikepy.developer_tools.file_interpreter import FileInterpreter
-from spikepy.developer_tools.filtering_method import FilteringMethod
-from spikepy.developer_tools.detection_method import DetectionMethod
-from spikepy.developer_tools.extraction_method import ExtractionMethod
-from spikepy.developer_tools.clustering_method import ClusteringMethod
-from spikepy.developer_tools.supplemental_method import SupplementalMethod
-from spikepy.common.path_utils import get_data_dirs
+from spikepy.developer_tools.methods import FilteringMethod, \
+        DetectionMethod, ExtractionMethod, \
+        ClusteringMethod, AuxiliaryMethod
 
-base_classes = {'file_interpreter':  FileInterpreter,
-                'supplemental':      SupplementalMethod,
-                'filtering':         FilteringMethod,
-                'detection':         DetectionMethod,
-                'extraction':        ExtractionMethod,
-                'clustering':        ClusteringMethod}
+from spikepy.common.path_utils import get_data_dirs
+from spikepy.common.errors import *
+from spikepy.common.warnings import warn
+
+base_class_index = {'file_interpreter':  FileInterpreter,
+                    'auxiliary':         AuxiliaryMethod,
+                    'filtering':         FilteringMethod,
+                    'detection':         DetectionMethod,
+                    'extraction':        ExtractionMethod,
+                    'clustering':        ClusteringMethod}
 
 # --- UTILITY FUNCTIONS ---
-def get_base_class_name(base_class):
-    '''Return the base_class's simple name given the class.'''
-    for name, class_ in base_classes.items():
-        if base_class is class_:
+def get_plugin_category(plugin):
+    '''Return the base_class's category name given the class.'''
+    for name, base_class in base_class_index.items():
+        if issubclass(plugin.__class__, base_class):
             return name
-    raise RuntimeError("Couldn't fine the name for %s" % base_class)
+    raise UnknownCategoryError("Couldn't find the category for %s" % 
+            plugin.name)
 
 def should_load(fullpath):
     '''Return True if we should load fullpath as a plugin.'''
@@ -57,7 +59,7 @@ def should_load(fullpath):
         return os.path.exists(module_init)
     return False
 
-def load_plugins(plugin_dir):
+def load_plugins_from_dir(plugin_dir):
     ''' Load all the plugins in the given <plugin_dir>.'''
     loaded_plugins = []
     if os.path.exists(plugin_dir):
@@ -76,140 +78,136 @@ def load_plugins(plugin_dir):
                     pass
                 if fm_results is not None:
                     module=imp.load_module(unique_name, *fm_results)
-                    loaded_plugins.extend(get_classes_from_module(module, 
-                            base_classes.values()))
+                    loaded_plugins.extend(get_plugins_from_module(module, 
+                            class_list=base_class_index.values()))
     return loaded_plugins
 
-def get_classes_from_module(module, class_list):
+def get_plugins_from_module(module, class_list=[]):
     '''
-        Return the classes defined in the <module> which inherit from
+        Return the plugins defined in the <module> which inherit from
     any of the classes in <class_list>.
-    Returns: A list of tuples...
-        [(new_class, class_it_inherited_from), ...]
+    Returns: A list of plugins
     '''
-    CLASS_TYPE = type(class_list[0])
-    classes = []
+    results = []
     for name in dir(module):
         thing = getattr(module, name)
-        if isinstance(thing, CLASS_TYPE) and thing not in class_list:
-            #   thing should instantiate with no arguments, if not, it isn't
-            # what we're looking for.
-            try: 
-                instance = thing()
-            except TypeError:
-                continue
-            classes.extend([(thing(), cl) for cl in class_list if 
-                    isinstance(thing(), cl)])
-    return classes
+        is_class = isinstance(thing, types.TypeType)
+        if is_class:
+            is_subclass = issubclass(thing, tuple(class_list))
+            if is_subclass and (thing not in class_list):
+                try: 
+                    plugin = thing()
+                except TypeError:
+                    raise PluginDefinitionError('Spikepy plugins must be instantiable with no arguments. %s violates this requirement.' % thing.name)
+                results.append(plugin)
+    return results
     
 def load_all_plugins(data_dirs=None, **kwargs):
     '''Load file_interpreters and methods from all levels.'''
     if data_dirs is None:
         data_dirs = get_data_dirs(**kwargs)
 
-    loaded_plugins = defaultdict(lambda :defaultdict(list))
-    for level in data_dirs.keys():
+    plugin_levels = {}
+    loaded_plugins = defaultdict(dict)
+    for level in ['builtins', 'application', 'user']:
         for plugin_type in ['file_interpreters', 'methods']:
             plugin_dir = data_dirs[level][plugin_type]
-            plugins = load_plugins(plugin_dir)
-            for new_class, base_class in plugins:
-                loaded_plugins[get_base_class_name(base_class)][level].append(
-                        new_class)
+            plugins = load_plugins_from_dir(plugin_dir)
+            for plugin in plugins:
+                plugin_levels[plugin] = level
+                category = get_plugin_category(plugin)
+                try:
+                    existing_plugin = loaded_plugins[category][plugin.name]
+                    existing_level = plugin_levels[existing_plugin]
+                    warn('plugin "%s" loaded from "%s level" is replacing one loaded from "%s level".' % (plugin.name, level, existing_level))
+                except KeyError:
+                    pass # not replacing previously loaded plugin
+
+                loaded_plugins[category][plugin.name] = plugin
     return loaded_plugins
 
 class PluginManager(object):
     '''PluginManager is used to load and access spikepy plugins.'''
-    def __init__(self, config_manager):
+    def __init__(self, config_manager, **kwargs):
         self.config_manager = config_manager 
         self._loaded_plugins = None
-        self.load()
+        self.load_plugins(**kwargs)
 
-    def load(self, **kwargs):
+    def load_plugins(self, **kwargs):
         '''Load or reload all plugins.'''
         self._loaded_plugins = load_all_plugins(**kwargs)
 
     @property
     def file_interpreters(self):
-        '''All file_interpreters, regardles of level.'''
-        result = []
-        for level, plugins in self.loaded_plugins['file_interpreter'].items():
-            result.extend(plugins)
-        return result
+        return self.loaded_plugins['file_interpreter']
 
     @property
     def detection_filters(self):
-        """Plugins stored in a dict by level 'builtins'/'application'/'user'"""
         return self._get_filters_of_type('df')
 
     @property
     def extraction_filters(self):
-        """Plugins stored in a dict by level 'builtins'/'application'/'user'"""
         return self._get_filters_of_type('ef')
 
     def _get_filters_of_type(self, provides_prefix):
-        typed_filters = defaultdict(list)
-        for category, filters in self.loaded_plugins['filtering'].items():
-            for filter_ in filters:
-                typed_filter = filter_.__class__()
-                new_items = [item.replace('<stage_name>', provides_prefix)
-                        for item in typed_filter.provides]
-                typed_filter.provides = new_items
-                typed_filters[category].append(typed_filter)
+        typed_filters = {}
+        for filter_ in self.loaded_plugins['filtering'].values():
+            typed_filter = filter_.__class__() # new instance
+            new_items = [item.replace('<stage_name>', provides_prefix)
+                    for item in typed_filter.provides]
+            typed_filter.provides = new_items
+            typed_filters[typed_filter.name] = typed_filter
         return typed_filters
 
     @property
     def detectors(self):
-        """Plugins stored in a dict by level 'builtins'/'application'/'user'"""
         return self.loaded_plugins['detection']
 
     @property
     def extractors(self):
-        """Plugins stored in a dict by level 'builtins'/'application'/'user'"""
         return self.loaded_plugins['extraction']
 
     @property
     def clusterers(self):
-        """Plugins stored in a dict by level 'builtins'/'application'/'user'"""
         return self.loaded_plugins['clustering']
 
     @property
     def supplementors(self):
-        """Plugins stored in a dict by level 'builtins'/'application'/'user'"""
-        return self.loaded_plugins['supplemental']
+        return self.loaded_plugins['auxiliary']
 
     @property
     def loaded_plugins(self):
-        '''All loaded plugins, stored in a dict by type then level'''
+        '''
+        All loaded plugins, stored in a nested dict by category then name.
+        '''
         return self._loaded_plugins
 
-    def get_plugin_by_stage(self, stage_name, level=None):
-        '''
-            Return a list of plugins from the stage with <stage_name>.  If level
-        is not None, return only those plugins of that level.
-        '''
+    def get_plugins_by_stage(self, stage_name):
+        ''' Return a list of plugins from the stage with <stage_name>.  '''
         lsn = stage_name.lower().replace(' ', '_')
         lookup_index = {'detection_filter':self.detection_filters,
                         'detection':self.detectors,
                         'extraction_filter':self.extraction_filters,
                         'extraction':self.extractors,
                         'clustering':self.clusterers}
-        if level is not None:
-            return lookup_index[lsn][level]
-        else:
-            return lookup_index[lsn]
+        if lsn not in lookup_index.keys():
+            raise UnknownStageError(
+                    'There is no stage "%s" (parsed from "%s").' % 
+                    (lsn, stage_name))
+        return lookup_index[lsn]
 
     def find_plugin(self, stage_name, plugin_name):
         possible_match = None
-        for level in ['builtins', 'application', 'user']:
-            plugins = self.get_plugin_by_stage(stage_name, level=level)
-            for plugin in plugins:
-                if plugin.name == plugin_name:
-                    possible_match = plugin
-                    break
+        plugins = self.get_plugins_by_stage(stage_name)
+        for name, plugin in plugins.items():
+            if name == plugin_name:
+                possible_match = plugin
+                break
 
         if possible_match is not None:
             return possible_match
         else:
-            raise RuntimeError('No plugin named %s could be found in stage %s'%
+            raise MissingPluginError(
+                    'No plugin named "%s" could be found in stage "%s"'%
                     (plugin_name, stage_name))
 

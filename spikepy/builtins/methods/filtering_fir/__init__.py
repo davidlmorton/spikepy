@@ -15,8 +15,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from spikepy.developer_tools.filtering_method import FilteringMethod
-from .control_panel import ControlPanel
+from spikepy.developer_tools.methods import FilteringMethod
+from spikepy.common.valid_types import ValidOption, ValidIntegerList, \
+        ValidInteger
 from .run import run as runner
 
 class FilteringFIR(FilteringMethod):
@@ -27,18 +28,15 @@ class FilteringFIR(FilteringMethod):
     description = 'Sinc type filters with a windowing function.'
     is_stochastic = False
 
-    def make_control_panel(self, parent, **kwargs):
-        return ControlPanel(parent, **kwargs)
+    # method parameters
+    window_name = ValidOption('boxcar', 'triang', 'blackman', 'hamming', 
+            'hanning', 'bartlett', 'parzen', 'bohman', 'blackmanharris', 
+            'nuttal', 'barthann', default='hamming')
+    critical_freq = ValidIntegerList(1, 2, default=[300, 3000])
+    kind = ValidOption('low pass', 'high pass', 'band pass', 
+            default='band pass')
+    taps = ValidInteger(min=31, default=101)
 
-    def get_run_defaults(self):
-        kwargs = {}
-        kwargs['window_name'] = 'Hamming'
-        kwargs['critical_freq'] = (300, 3000)
-        kwargs['kind'] = 'band'
-        kwargs['taps'] = 101
-        return kwargs
-        
     def run(self, signal_list, sampling_freq, **kwargs):
         return runner(signal_list, sampling_freq, **kwargs)
 
-del ControlPanel

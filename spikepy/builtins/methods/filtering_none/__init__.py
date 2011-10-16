@@ -15,25 +15,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from spikepy.developer_tools.filtering_method import FilteringMethod
-from .control_panel import ControlPanel
+from spikepy.developer_tools.methods import FilteringMethod
 from .run import run as runner
 
 class NoFiltering(FilteringMethod):
-    '''
-    This class implements a NULL filtering method.
-    '''
+    ''' This class implements a NULL filtering method.  '''
     name = "No Filtering"
     description = "No Filtering, simply use the raw traces."
     is_stochastic = False
 
-    def make_control_panel(self, parent, **kwargs):
-        return ControlPanel(parent, **kwargs)
-
-    def get_run_defaults(self):
-        return {}
-
     def run(self, signal_list, sampling_freq, **kwargs):
         return runner(signal_list, sampling_freq, **kwargs)
 
-del ControlPanel

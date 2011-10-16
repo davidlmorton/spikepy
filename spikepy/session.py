@@ -24,8 +24,10 @@ class Session(object):
     def __init__(self):
         self.config_manager   = ConfigManager()
         self.trial_manager    = TrialManager(self.config_manager)
-        self.strategy_manager = StrategyManager(self.config_manager)
-        self.plugin_manager   = PluginManager(self.config_manager)
+        self.plugin_manager   = PluginManager(self.config_manager, 
+                app_name='spikepy')
+        self.strategy_manager = StrategyManager(self.config_manager, 
+                self.plugin_manager)
         self.strategy_manager.current_strategy = self._make_default_strategy()
         self.process_manager  = ProcessManager(self.config_manager, 
                 self.trial_manager, self.plugin_manager)
@@ -42,12 +44,11 @@ class Session(object):
                         'clustering':'K-means'}
         settings = {}
         for key, value in methods_used.items():
-            possible_plugins = self.plugin_manager.get_plugin_by_stage(key,
-                    level='builtins')
+            possible_plugins = self.plugin_manager.get_plugins_by_stage(key)
             default_settings = None
-            for plugin in possible_plugins:
-                if plugin.name == value:
-                    default_settings = plugin.get_run_defaults()
+            for name, plugin in possible_plugins.items():
+                if name == value:
+                    default_settings = plugin.get_parameter_defaults()
                     break
             if default_settings is not None:
                 settings[key] = default_settings

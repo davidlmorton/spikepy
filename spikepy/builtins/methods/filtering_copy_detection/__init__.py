@@ -15,8 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from spikepy.developer_tools.filtering_method import FilteringMethod
-from .control_panel import ControlPanel
+from spikepy.developer_tools.methods import FilteringMethod
 
 class FilteringCopyDetection(FilteringMethod):
     '''
@@ -27,13 +26,6 @@ class FilteringCopyDetection(FilteringMethod):
     is_stochastic = False
     requires = ['df_traces', 'df_sampling_freq'] # different from defaults.
 
-    def make_control_panel(self, parent, **kwargs):
-        return ControlPanel(parent, **kwargs)
-
-    def get_run_defaults(self):
-        return {}
-
     def run(self, signal_list, sampling_freq, **kwargs):
         return None
 
-del ControlPanel
