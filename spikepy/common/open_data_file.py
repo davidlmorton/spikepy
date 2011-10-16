@@ -53,7 +53,7 @@ def guess_file_interpreters(fullpath, file_interpreters):
     extention = os.path.splitext(filename)[-1]
 
     candidates = {}
-    for fi in  file_interpreters:
+    for fi in file_interpreters.values():
         if extention in fi.extentions:
             candidates[fi.priority] = fi
 

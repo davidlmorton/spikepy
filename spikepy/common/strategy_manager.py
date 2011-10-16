@@ -122,9 +122,8 @@ class StrategyManager(object):
     _managed_class = Strategy
     _managed_file_type = '.strategy'
 
-    def __init__(self, config_manager=None, plugin_manager=None):
+    def __init__(self, config_manager=None):
         self.config_manager = config_manager 
-        self.plugin_manager = plugin_manager
         self.strategies = {} # strategies under management
         self._current_strategy = None
 
@@ -136,17 +135,6 @@ class StrategyManager(object):
                 is_current = ' (Currently Selected)'
             return_str.append('    %s%s' % (strategy_name, is_current))
         return '\n'.join(return_str)
-
-    def validate_strategy(self, strategy):
-        '''
-            Check to make sure all methods are valid plugins and that all
-        settings are valid for those plugins.  Returns None if successful, 
-        raises error if strategy is invalid.
-        '''
-        for stage_name, method_name in strategy.methods_used.items():
-            plugin = self.plugin_manager.find_plugin(stage_name, method_name)
-            settings = strategy.settings[stage_name]
-            plugin.validate_parameters(settings)
 
     @property
     def current_strategy(self):
@@ -178,8 +166,7 @@ class StrategyManager(object):
             for f in files:
                 if f.endswith(self._managed_file_type):
                     fullpath = os.path.join(path, f)
-                    strategy = self._managed_class.from_file(fullpath, 
-                            plugin_manager)
+                    strategy = self._managed_class.from_file(fullpath)
                     self.add_strategy(strategy)
 
     def save_strategies(self):

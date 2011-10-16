@@ -133,6 +133,17 @@ class PluginManager(object):
         self._loaded_plugins = None
         self.load_plugins(**kwargs)
 
+    def validate_strategy(self, strategy):
+        '''
+            Check to make sure all methods are valid plugins and that all
+        settings are valid for those plugins.  Returns None if successful, 
+        raises error if strategy is invalid.
+        '''
+        for stage_name, method_name in strategy.methods_used.items():
+            plugin = self.find_plugin(stage_name, method_name)
+            settings = strategy.settings[stage_name]
+            plugin.validate_parameters(settings)
+
     def load_plugins(self, **kwargs):
         '''Load or reload all plugins.'''
         self._loaded_plugins = load_all_plugins(**kwargs)

@@ -26,8 +26,7 @@ class Session(object):
         self.trial_manager    = TrialManager(self.config_manager)
         self.plugin_manager   = PluginManager(self.config_manager, 
                 app_name='spikepy')
-        self.strategy_manager = StrategyManager(self.config_manager, 
-                self.plugin_manager)
+        self.strategy_manager = StrategyManager(self.config_manager)
         self.strategy_manager.current_strategy = self._make_default_strategy()
         self.process_manager  = ProcessManager(self.config_manager, 
                 self.trial_manager, self.plugin_manager)

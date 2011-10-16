@@ -51,19 +51,30 @@ class ProcessManager(object):
         self.config_manager = config_manager
         self.trial_manager  = trial_manager
         self.plugin_manager = plugin_manager
+        self._task_organizer = TaskOrganizer()
 
-    def get_tasks_for_strategy(self, strategy):
+    def build_tasks_from_strategy(self, strategy):
         '''Create a task for each stage of the strategy.'''
         tasks = []
-        for trial in self.trial_manager.get_marked_trials():
-            for stage_name, plugin_name in strategy.methods_used.items():
-                plugin = self.plugin_manager.find_plugin(stage_name, 
-                        plugin_name)
-                plugin_kwargs = strategy.settings[stage_name]
-                tasks.append(Task(trial, plugin, plugin_kwargs)) 
+        marked_trials = self.trial_manager.get_marked_trials()
+        for stage_name, plugin_name in strategy.methods_used.items():
+            plugin = self.plugin_manager.find_plugin(stage_name, 
+                    plugin_name)
+            plugin_kwargs = strategy.settings[stage_name]
+            if stage_name == 'clustering':
+                tasks.append(PoolingTask(marked_trials, plugin, plugin_kwargs))
+            else:
+                for trial in marked_trials:
+                    tasks.append(Task(trial, plugin, plugin_kwargs)) 
         return tasks 
 
-    def open_file(self, fullpath, created_trials_callback):
+    def prepare_to_run_strategy(self, strategy):
+        self.plugin_manager.validate_strategy(strategy)
+        tasks = self.build_tasks_from_strategy(strategy)
+        for task in tasks:
+            self._task_organizer.add_task(task)
+
+    def open_file(self, fullpath):
         '''
             Open a single data file. Returns the list of trials created.
         '''
@@ -117,6 +128,12 @@ class TaskOrganizer(object):
     def __init__(self):
         self._task_index = {}
 
+    def __str__(self):
+        str_list = ['TaskOrganizer:']
+        for task in self._task_index.values():
+            str_list.append('    %s' % str(task))
+        return '\n'.join(str_list)
+
     @property
     def all_provided_items(self):
         '''All the items provided by all the tasks.'''
@@ -126,9 +143,7 @@ class TaskOrganizer(object):
         return result
 
     def get_runnable_tasks(self):
-        '''
-        Return a list of (task, task_info) tuples.
-        '''
+        ''' Return a list of tasks that are ready to be run.  '''
         if not self._task_index.keys():
             return None # No tasks left.
         # begin with all tasks, then eliminate ineligible tasks.
@@ -151,13 +166,23 @@ class TaskOrganizer(object):
             if can_run:
                 for item in task.requires:
                     if hasattr(item, 'data') and item.data is None:
-                        raise RuntimeError('Cannot execute task %s because it requires something that will not be set by any task in this set.' % task)
+                        raise ImpossibleTaskError('Cannot execute %s because it requires something that will not be set by any task in this set.' % task)
 
+            if can_run:
+                results.append(task)
+        return results
+
+    def pull_runnable_tasks(self):
+        '''
+            Return a list of (task, task_info) tuples for each runnable task 
+        and remove those tasks from the organizer.
+        '''
+        results = []
+        for task in self.get_runnable_tasks():
             # all tests have passed, so get ready to run.
             if can_run:
                 del self._task_index[task.task_id]
                 results.append((task, task.get_run_info()))
-            
         return results
 
     def add_task(self, new_task):
@@ -189,6 +214,10 @@ class Task(object):
         self.plugin_kwargs = plugin_kwargs
         self._results_locking_keys = {}
         self._prepare_trial_for_task()
+
+    def __str__(self):
+        return 'Task: plugin="%s" trial="%s"' % (self.plugin.name,
+                self.trial.display_name)
 
     def _prepare_trial_for_task(self):
         '''
@@ -273,6 +302,12 @@ class PoolingTask(object):
         self._arg_locking_keys = {}
         self._results_locking_keys = {}
         self._prepare_trials_for_task()
+
+    def __str__(self):
+        str_list = ['PoolingTask: plugin="%s"' % self.plugin.name]
+        for trial in self.trials:
+            str_list.append('        trial="%s"' % trial.display_name)
+        return '\n'.join(str_list)
 
     def _prepare_trials_for_task(self):
         '''
