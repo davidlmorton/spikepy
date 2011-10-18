@@ -412,7 +412,8 @@ class Resource(object):
         self._id = uuid.uuid4()
         self._locked = False
         self._locking_key = None
-        self._change_info = None
+        self._change_info = {'by':None, 'with':None,
+                'using':None, 'change_id':None}
 
         self._data = data
 
@@ -496,7 +497,7 @@ class Resource(object):
             by : string, name of the plugin function that changed this resource.
             at : datetime, the date/time of the last change to this resource.
             with : dict, a dictionary of keyword args for the <by> function.
-            using : list, a list of (trial_id, resource_name, uuid) that 
+            using : list, a list of (trial_id, resource_name, change_id) that 
                     were used as arguments to the <by> function.  If any 
                     arguments to <by> were not resources, then entry will be 
                     (trial_id, attribute_name) of the attribute which was

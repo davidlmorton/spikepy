@@ -15,6 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import multiprocessing
+import time
 
 from callbacks import supports_callbacks
 
@@ -41,6 +42,20 @@ def open_file_worker(input_queue, results_queue):
     for run_data in iter(input_queue.get, None):
         fullpath, file_interpreters = run_data
         results_queue.put(open_data_file(fullpath, file_interpreters))
+
+def task_worker(input_queue, results_queue):
+    '''Worker process to handle task operations.'''
+    for task_info in iter(input_queue.get, None):
+        args = task_info['args']
+        kwargs = task_info['kwargs']
+        plugin = task_info['plugin']
+
+        results_dict = {}
+        #results_dict['result'] = plugin.run(*args, **kwargs)
+        results_dict['result'] = [time.time() for i in plugin.provides]
+        results_dict['task_id'] = task_info['task_id']
+
+        results_queue.put(results_dict)
     
 class ProcessManager(object):
     '''
@@ -69,10 +84,85 @@ class ProcessManager(object):
         return tasks 
 
     def prepare_to_run_strategy(self, strategy):
+        '''
+            Validate strategy, build tasks for it and put them in a 
+        TaskOrganizer self._task_organizer. (see self.run_tasks()).
+        '''
         self.plugin_manager.validate_strategy(strategy)
         tasks = self.build_tasks_from_strategy(strategy)
         for task in tasks:
             self._task_organizer.add_task(task)
+
+    def run_tasks(self, message_queue=multiprocessing.Queue()):
+        '''
+            Run all the tasks in self._task_organizer 
+        (see self.prepare_to_run_strategy()).
+        '''
+        num_process_workers = get_num_workers(self.config_manager)
+        num_tasks = self._task_organizer.num_tasks
+        if num_tasks < num_process_workers:
+            num_process_workers = num_tasks
+
+        input_queue = multiprocessing.Queue()
+        results_queue = multiprocessing.Queue()
+
+        # start the jobs
+        jobs = []
+        results_list = []
+        for i in xrange(num_process_workers):
+            job = multiprocessing.Process(target=task_worker, 
+                                          args=(input_queue, 
+                                                results_queue))
+            job.start()
+            jobs.append(job)
+
+        task_index = {}
+        for task in self._task_organizer.tasks:
+            task_index[task.task_id] = task
+            
+        results_index = {}
+        while True:
+            # queue up ready tasks
+            for task, task_info in self._task_organizer.pull_runnable_tasks():
+                message_queue.put(('Added task to input_queue.', task))
+                input_queue.put(task_info)
+
+            # wait for one result
+            result = results_queue.get()
+            finished_task_id = result['task_id']
+            finished_task = task_index[finished_task_id]
+            results_index[finished_task_id] = result['result']
+            message_queue.put(('Recieved task results', finished_task))
+            self._recieve_result(result['result'], finished_task)
+
+            # are we done queueing up tasks? then add in the sentinals.
+            if self._task_organizer.num_tasks == 0:
+                for i in xrange(num_process_workers):
+                    input_queue.put(None)
+            
+            # are we done getting results? then exit.
+            if len(results_index.keys()) == num_tasks:
+                break
+
+        for job in jobs:
+            job.join() # halt this thread until processes are all complete.
+
+        return task_index, results_index
+
+    def _recieve_result(self, result, task):
+        if isinstance(task, PoolingTask):
+            pass
+        else:
+            change_info = task.change_info
+            if len(task.plugin.provides) == 1:
+                result = [result]
+            for pname, presult in zip(task.plugin.provides, result):
+                key = task.locking_keys[pname]
+                data_dict = {'data':presult,
+                             'change_info':change_info}
+                resource = getattr(task.trial, pname)
+                resource.checkin(data_dict, key=key) 
+
 
     def open_file(self, fullpath):
         '''
@@ -92,7 +182,7 @@ class ProcessManager(object):
 
         file_interpreters = self.plugin_manager.file_interpreters
 
-        # setup the run and return queues.
+        # setup the input and return queues.
         input_queue = multiprocessing.Queue()
         for fullpath in fullpaths:
             input_queue.put((fullpath, file_interpreters))
@@ -127,6 +217,14 @@ class TaskOrganizer(object):
     '''
     def __init__(self):
         self._task_index = {}
+
+    @property
+    def num_tasks(self):
+        return len(self._task_index.keys())
+
+    @property
+    def tasks(self):
+        return self._task_index.values()
 
     def __str__(self):
         str_list = ['TaskOrganizer:']
@@ -179,10 +277,8 @@ class TaskOrganizer(object):
         '''
         results = []
         for task in self.get_runnable_tasks():
-            # all tests have passed, so get ready to run.
-            if can_run:
-                del self._task_index[task.task_id]
-                results.append((task, task.get_run_info()))
+            del self._task_index[task.task_id]
+            results.append((task, task.get_run_info()))
         return results
 
     def add_task(self, new_task):
@@ -212,7 +308,7 @@ class Task(object):
         self.task_id = (trial.trial_id, tuple(sorted(plugin.provides)))
         self.plugin = plugin
         self.plugin_kwargs = plugin_kwargs
-        self._results_locking_keys = {}
+        self.locking_keys = {}
         self._prepare_trial_for_task()
 
     def __str__(self):
@@ -244,6 +340,22 @@ class Task(object):
         return True
 
     @property
+    def change_info(self):
+        return_dict = {}
+        return_dict['by'] = self.plugin.name
+        return_dict['with'] = self.plugin_kwargs
+        u = []
+        for rname in self.plugin.requires:
+            r = getattr(self.trial, rname)
+            if not hasattr(r, 'change_info'):
+                u.append((self.trial.trial_id, rname))
+            else:
+                rchange_id = r.change_info['change_id']
+                u.append((self.trial.trial_id, rname, rchange_id))
+        return_dict['using'] = u
+        return return_dict
+
+    @property
     def provides(self):
         '''Return the trial attributes we provide after running.'''
         result = []
@@ -272,7 +384,7 @@ class Task(object):
         # check out and keep track of locking keys for what task provides.
         for item in self.provides:
             co = item.checkout()
-            self._results_locking_keys[item] = co['locking_key']
+            self.locking_keys[item.name] = co['locking_key']
         return run_info
 
     def _get_args(self):
@@ -299,8 +411,7 @@ class PoolingTask(object):
         self.task_id = (tuple(trial_ids), tuple(sorted(plugin.provides)))
         self.plugin = plugin
         self.plugin_kwargs = plugin_kwargs
-        self._arg_locking_keys = {}
-        self._results_locking_keys = {}
+        self.locking_keys = {}
         self._prepare_trials_for_task()
 
     def __str__(self):
@@ -365,7 +476,7 @@ class PoolingTask(object):
         # check out and keep track of locking keys for what task provides.
         for item in self.provides:
             co = item.checkout()
-            self._results_locking_keys[item] = co['locking_key']
+            self.locking_keys[item.name] = co['locking_key']
         return run_info
 
     def _get_args(self):
