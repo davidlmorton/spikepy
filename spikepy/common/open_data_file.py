@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import traceback
 import sys
 import os
+from spikepy.common.errors import *
 
 def open_data_file(fullpath, file_interpreters):
     """
@@ -38,7 +39,7 @@ def open_data_file(fullpath, file_interpreters):
             traceback.print_exception(exc_info[0], exc_info[1], 
                                       exc_info[2], 100, ofile)
 
-    raise RuntimeError(
+    raise FileInterpretationError(
             'File Interpretation of %s failed.  Errors in "*.error" files.'
             % fullpath)
 

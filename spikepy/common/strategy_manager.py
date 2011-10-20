@@ -26,14 +26,17 @@ from spikepy.common.errors import *
 
 
 class Strategy(object):
-    def __init__(self, methods_used=None, 
+    def __init__(self, methods_used={}, 
                 methods_used_name=pt.CUSTOM_SC, 
-                settings=None, 
-                settings_name=pt.CUSTOM_LC):
+                settings={}, 
+                settings_name=pt.CUSTOM_LC,
+                auxiliary_stages={}):
         self.methods_used = methods_used
         self.methods_used_name = methods_used_name
         self.settings = settings
         self.settings_name = settings_name
+        self.auxiliary_stages = auxiliary_stages
+            
         self.fullpath = None
 
     def __str__(self):
@@ -45,6 +48,14 @@ class Strategy(object):
             for setting_name, value in settings.items():
                 return_str.append('        %s: %s' % 
                         (setting_name, repr(value)))
+
+        for aux_plugin_name, aux_settings in self.auxiliary_stages.items():
+            return_str.append('    %s: %s' % ('auxiliary_stage', 
+                    repr(aux_plugin_name)))
+            for setting_name, value in aux_settings.items():
+                return_str.append('        %s: %s' % 
+                        (setting_name, repr(value)))
+            
         return '\n'.join(return_str)
 
     # NAME
@@ -298,19 +309,5 @@ def make_strategy_name(methods_used_name, settings_name):
         return new_name
 
 
-class AuxiliaryStrategy(Strategy):
-    def __str__(self):
-        return_str = [self.name]
-        for method, settings in zip(self.methods_used, self.settings):
-            return_str.append('    %s:' % repr(method))
-            for setting_name, value in settings.items():
-                return_str.append('        %s: %s' % 
-                        (setting_name, repr(value)))
-        return '\n'.join(return_str)
-
-
-class AuxiliaryStrategyManager(StrategyManager):
-    _managed_class = AuxiliaryStrategy
-    _managed_file_type = '.auxiliary_strategy'
 
     

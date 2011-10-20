@@ -6,7 +6,28 @@ class SpikepyError(Exception):
     '''
     pass
 
-class ImpossibleTaskError(SpikepyError):
+class TaskCreationError(SpikepyError):
+    pass
+
+class FileInterpretationError(SpikepyError):
+    pass
+
+class ConfigError(SpikepyError):
+    pass
+
+class ResourceLockedError(SpikepyError):
+    pass
+
+class ResourceNotLockedError(SpikepyError):
+    pass
+
+class InvalidLockingKeyError(SpikepyError):
+    pass
+
+class AddResourceError(SpikepyError):
+    pass
+
+class MissingTrialError(SpikepyError):
     pass
 
 class InvalidOptionError(SpikepyError):

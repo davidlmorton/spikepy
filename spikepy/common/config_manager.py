@@ -24,6 +24,7 @@ import configobj
 from validate import Validator
 
 from spikepy.common import path_utils
+from spikepy.common.errors import *
 
 def rgb_int_to_float(*args):
     '''Return the normalized rgb representation of integer rgb values.'''
@@ -47,7 +48,7 @@ def load_config(level, **kwargs):
     if result == True:
         return config
     else:
-        raise RuntimeError("Reading in configuration file at %s has failed!\nFailure status: %s" % (fullpath, configobj.flatten_errors(config, result)))
+        raise ConfigError("Reading in configuration file at %s has failed!\nFailure status: %s" % (fullpath, configobj.flatten_errors(config, result)))
 
 def noneless_merge(config1, config2):
     '''

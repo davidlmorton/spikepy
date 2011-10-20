@@ -19,6 +19,7 @@ import unittest
 import uuid
 
 from spikepy.common.trial_manager import Resource
+from spikepy.common.errors import *
 
 class ResourceTests(unittest.TestCase):
     name_1 = 'name_1'
@@ -50,18 +51,18 @@ class ResourceTests(unittest.TestCase):
 
         # checkout status
         self.assertEqual(self.r_2.is_locked, True)
-        self.assertRaises(RuntimeError, self.r_2.checkout)
+        self.assertRaises(ResourceLockedError, self.r_2.checkout)
 
 
     def test_checkin(self):
         # checkin before checkout raises error.
-        self.assertRaises(RuntimeError, self.r_2.checkin)
+        self.assertRaises(ResourceNotLockedError, self.r_2.checkin)
 
         # perform checkout
         checkout_2 = self.r_2.checkout()
 
         # checkin without a key, rasies error
-        self.assertRaises(RuntimeError, self.r_2.checkin)
+        self.assertRaises(InvalidLockingKeyError, self.r_2.checkin)
 
         # checkin with key works
         self.assertEqual(self.r_2.is_locked, True)

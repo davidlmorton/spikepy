@@ -32,33 +32,34 @@ class StrategyClassTests(unittest.TestCase):
     def test_constructor(self):
         custom_name = "%s(%s)" % (pt.CUSTOM_SC, pt.CUSTOM_LC)
         self.assertTrue(self.a.name==custom_name)
-        self.assertTrue(self.a.methods_used==None)
-        self.assertTrue(self.a.settings==None)
+        self.assertTrue(self.a.methods_used=={})
+        self.assertTrue(self.a.settings=={})
+        self.assertTrue(self.a.auxiliary_stages=={})
         
     def test_equality(self):
         c = Strategy()
         self.assertTrue(self.a==c)
 
-        c.methods_used = {}
+        c.methods_used = None
         self.assertFalse(self.a==c)
 
-        c.methods_used = None
+        c.methods_used = {}
         self.assertTrue(self.a==c)
 
-        c.settings = {}
+        c.settings = None
         self.assertFalse(self.a==c)
 
     def test_inequality(self):
         c = Strategy()
         self.assertFalse(self.a!=c)
 
-        c.methods_used = {}
+        c.methods_used = None
         self.assertTrue(self.a!=c)
 
-        c.methods_used = None
+        c.methods_used = {}
         self.assertFalse(self.a!=c)
 
-        c.settings = {}
+        c.settings = None
         self.assertTrue(self.a!=c)
 
     def test_as_dict(self):

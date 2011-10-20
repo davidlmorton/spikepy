@@ -20,6 +20,7 @@ import unittest
 from spikepy.common.process_manager import Task, TaskOrganizer
 from spikepy.common.trial_manager import Trial, Resource
 from spikepy.test.common.test_task import FauxPlugin
+from spikepy.common.errors import *
 
 class TaskOrganizerTests(unittest.TestCase):
     def setUp(self):
@@ -31,43 +32,23 @@ class TaskOrganizerTests(unittest.TestCase):
 
         plugin_1 = FauxPlugin(requires=['a', 'b'], provides=['c'])
         plugin_2 = FauxPlugin(requires=['a', 'c'], provides=['d'])
-        plugin_bad_1 = FauxPlugin(requires=['a', 'b'], provides=['d'])
-        plugin_bad_2 = FauxPlugin(requires=['a'], provides=['c', 'd', 'e'])
 
         t1_task = Task(trial_1, plugin_1)
         t2_task = Task(trial_1, plugin_2)
-        bad_task_1 = Task(trial_1, plugin_bad_1)
-        bad_task_2 = Task(trial_1, plugin_bad_2)
 
         self.trial_1 = trial_1 
         self.plugin_1 = plugin_1
         self.plugin_2 = plugin_2 
         self.t1_task = t1_task
         self.t2_task = t2_task
-        self.bad_task_1 = bad_task_1
-        self.bad_task_2 = bad_task_2
 
     def test_add_task_1(self):
-        '''Add one task, then adding it again raises RuntimeError'''
+        '''Add one task'''
         to = TaskOrganizer()
         self.assertEquals(len(to._task_index.keys()), 0)
 
         to.add_task(self.t1_task)
         self.assertTrue(self.t1_task in to._task_index.values())
-        
-        self.assertRaises(RuntimeError, to.add_task, self.t1_task)
-
-    def test_add_task_2(self):
-        '''Add multiple tasks, then adding bad tasks raises RuntimeError'''
-        to = TaskOrganizer()
-        to.add_task(self.t1_task)
-        to.add_task(self.t2_task)
-        self.assertTrue(self.t1_task in to._task_index.values())
-        self.assertTrue(self.t2_task in to._task_index.values())
-        self.assertEquals(len(to._task_index.values()), 2)
-        
-        self.assertRaises(RuntimeError, to.add_task, self.bad_task_1)
-        self.assertRaises(RuntimeError, to.add_task, self.bad_task_2)
 
     def test_all_provided_items(self):
         "all_provided_items returns a list of all the items plugins provide."
@@ -95,25 +76,10 @@ class TaskOrganizerTests(unittest.TestCase):
 
         result1 = to.get_runnable_tasks()
         self.assertEqual(len(result1), 1)
-        self.assertEqual(result1[0][1]['plugin'], self.plugin_1)
+        self.assertEqual(result1[0].plugin, self.plugin_1)
 
         # cannot get more runnable_tasks since haven't checked in results yet.
         result2 = to.get_runnable_tasks()
-        self.assertEqual(len(result2), 0)
+        self.assertEqual(len(result2), 1)
 
-        # checkin results and requirements
-        self.assertEqual(result1[0][0], self.t1_task)
-        for item in self.t1_task.provides:
-            item.checkin(key=self.t1_task._results_locking_keys[item])
-
-        # still cannot get other task out, because we didn't check in any DATA.
-        self.assertRaises(RuntimeError, to.get_runnable_tasks)
-
-        # update the data in trial_1.c
-        self.trial_1.c._data = 'something'
-
-        # now can get other task out
-        result3 = to.get_runnable_tasks()
-        self.assertEqual(len(result3), 1)
-        self.assertEqual(result3[0][1]['plugin'], self.plugin_2)
-
+        # TODO WRITE TESTS FOR PULL RUNNABLE TASKS 

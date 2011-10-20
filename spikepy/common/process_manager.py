@@ -21,6 +21,16 @@ from callbacks import supports_callbacks
 
 from spikepy.common.open_data_file import open_data_file
 from spikepy.common.trial_manager import Resource 
+from spikepy.common.errors import *
+
+def build_tasks(marked_trials, plugin, plugin_kwargs):
+    tasks = []
+    if plugin.pooling:
+        tasks.append(PoolingTask(marked_trials, plugin, plugin_kwargs))
+    else:
+        for trial in marked_trials:
+            tasks.append(Task(trial, plugin, plugin_kwargs)) 
+    return tasks 
 
 def get_num_workers(config_manager):
     '''
@@ -68,19 +78,30 @@ class ProcessManager(object):
         self.plugin_manager = plugin_manager
         self._task_organizer = TaskOrganizer()
 
-    def build_tasks_from_strategy(self, strategy):
+    def build_tasks_from_strategy(self, strategy, stage_name=None):
         '''Create a task for each stage of the strategy.'''
         tasks = []
         marked_trials = self.trial_manager.get_marked_trials()
-        for stage_name, plugin_name in strategy.methods_used.items():
-            plugin = self.plugin_manager.find_plugin(stage_name, 
-                    plugin_name)
-            plugin_kwargs = strategy.settings[stage_name]
-            if stage_name == 'clustering':
-                tasks.append(PoolingTask(marked_trials, plugin, plugin_kwargs))
-            else:
-                for trial in marked_trials:
-                    tasks.append(Task(trial, plugin, plugin_kwargs)) 
+
+        if stage_name == 'auxiliary' or stage_name is None:
+            for plugin_name, plugin_kwargs in strategy.auxiliary_stages.items():
+                plugin = self.plugin_manager.find_plugin('auxiliary', 
+                        plugin_name)
+                tasks.extend(build_tasks(marked_trials, plugin, plugin_kwargs))
+
+        if stage_name is not None: 
+            if stage != 'auxiliary':
+                plugin_name = strategy.methods_used[stage_name]
+                plugin = self.plugin_manager.find_plugin(stage_name,
+                        plugin_name)
+                plugin_kwargs = strategy.settings[stage_name]
+                tasks.extend(build_tasks(marked_trials, plugin, plugin_kwargs))
+        else: # do for all stages
+            for stage_name, plugin_name in strategy.methods_used.items():
+                plugin = self.plugin_manager.find_plugin(stage_name, 
+                        plugin_name)
+                plugin_kwargs = strategy.settings[stage_name]
+                tasks.extend(build_tasks(marked_trials, plugin, plugin_kwargs))
         return tasks 
 
     def prepare_to_run_strategy(self, strategy):
@@ -286,16 +307,7 @@ class TaskOrganizer(object):
             Add a task to the TaskOrganizer.  Tasks must not provide anything
         that other tasks already provide.
         '''
-        if self.all_provided_items:
-            intersection = set(new_task.provides).intersection(
-                    set(self.all_provided_items))
-        else:
-            intersection = False
-
-        if intersection:
-            raise RuntimeError('Cannot add task %s as it provides (%s) which is(are) already provided.' % (new_task, intersection))
-        else:
-            self._task_index[new_task.task_id] = new_task
+        self._task_index[new_task.task_id] = new_task
 
 
 class Task(object):
@@ -324,7 +336,7 @@ class Task(object):
             if not hasattr(self.trial, item):
                 self.trial.add_resource(Resource(item))
             elif not isinstance(getattr(self.trial, item), Resource):
-                raise RuntimeError('This plugin provides %s, but that is a read-only attribute on trial %s.' % (item, self.trial.trial_id))
+                raise TaskCreationError('This plugin provides %s, but that is a read-only attribute on trial %s.' % (item, self.trial.trial_id))
 
     @property
     def is_ready(self):
@@ -430,7 +442,7 @@ class PoolingTask(object):
                 if not hasattr(trial, item):
                     trial.add_resource(Resource(item))
                 elif not isinstance(getattr(trial, item), Resource):
-                    raise RuntimeError('This plugin provides %s, but that is a read-only attribute on trial %s.' % (item, trial.trial_id))
+                    raise PluginPreparationError('This plugin provides %s, but that is a read-only attribute on trial %s.' % (item, trial.trial_id))
 
     @property
     def is_ready(self):

@@ -183,7 +183,7 @@ class PluginManager(object):
         return self.loaded_plugins['clustering']
 
     @property
-    def supplementors(self):
+    def auxiliary_plugins(self):
         return self.loaded_plugins['auxiliary']
 
     @property
@@ -200,7 +200,8 @@ class PluginManager(object):
                         'detection':self.detectors,
                         'extraction_filter':self.extraction_filters,
                         'extraction':self.extractors,
-                        'clustering':self.clusterers}
+                        'clustering':self.clusterers,
+                        'auxiliary':self.auxiliary_plugins}
         if lsn not in lookup_index.keys():
             raise UnknownStageError(
                     'There is no stage "%s" (parsed from "%s").' % 

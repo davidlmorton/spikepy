@@ -17,6 +17,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from spikepy.common.valid_types import ValidType
 
 class SpikepyMethod(object):
+    #     If True, this method will pool all the inputs from multiple trials
+    # and run on the pooled data, otherwise, the method is run on each trial
+    # separately. (i.e. clustering_method has pooling=True by default)
+    pooling = False
+
     #     Is this method stochastic in nature (generally gives different results
     # with the same inputs)?
     is_stochastic = False
@@ -64,7 +69,7 @@ Methods that subclasses are REQUIRED to implement:
            of the new signals.  kwargs are all the arguments to the filtering 
            code.
     '''
-    requires = ['raw_traces', 'sampling_freq']
+    requires = ['pf_traces', 'pf_sampling_freq']
     provides = ['<stage_name>_traces', '<stage_name>_sampling_freq'] 
     # <stage_name> is one of "df" or "ef" for detection and extraction.
     # <stage_name>_traces is a 2D numpy array where
@@ -148,6 +153,7 @@ Methods that subclasses are REQUIRED to implement:
           means is that the clustering-method author need not worry about
           if the provided features are from multiple trials or a single trial.
     '''
+    pooling = True
     requires = ['features', 'feature_locations', 'ef_sampling_freq'] 
     provides = ['clusters']
     # clusters is a 1D numpy array of integers (cluster ids).

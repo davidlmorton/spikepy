@@ -19,6 +19,7 @@ import unittest
 
 from spikepy.common.process_manager import Task
 from spikepy.common.trial_manager import Trial, Resource
+from spikepy.common.errors import *
 
 class FauxPlugin(object):
     def __init__(self, requires, provides):
@@ -54,7 +55,7 @@ class TaskTests(unittest.TestCase):
         '''Plugin.provides cannot be read-only attributes of trial.'''
         trial = Trial()
         trial.ra = 'some_data'
-        self.assertRaises(RuntimeError, Task, trial, plugin_2)
+        self.assertRaises(TaskCreationError, Task, trial, plugin_2)
 
     def test_constructor_3(self):
         '''task_id is constructed correctly.'''
@@ -104,11 +105,11 @@ class TaskTests(unittest.TestCase):
         result = task_1.get_run_info()
         self.assertFalse(task_1.is_ready)
 
-        self.assertEqual(len(task_1._results_locking_keys.keys()), 2)
-        self.assertTrue(task_1.provides[0] in 
-                task_1._results_locking_keys.keys())
-        self.assertTrue(task_1.provides[1] in 
-                task_1._results_locking_keys.keys())
+        self.assertEqual(len(task_1.locking_keys.keys()), 2)
+        self.assertTrue(task_1.plugin.provides[0] in 
+                task_1.locking_keys.keys())
+        self.assertTrue(task_1.plugin.provides[1] in 
+                task_1.locking_keys.keys())
 
 
         

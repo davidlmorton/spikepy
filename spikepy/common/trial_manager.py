@@ -19,12 +19,13 @@ import os
 import uuid
 
 import wx
-from wx.lib.pubsub import Publisher as pub
 import numpy
 import scipy.io
 
 from spikepy.common import program_text as pt
 from spikepy.common import utils
+from spikepy.common.errors import *
+from callbacks import supports_callbacks
 
 text_delimiters = {pt.PLAIN_TEXT_TABS: '\t',
                    pt.PLAIN_TEXT_SPACES: ' ',
@@ -96,12 +97,12 @@ class TrialManager(object):
         self._display_names.add(new_display_name)
         return new_display_name
 
+    @supports_callbacks
     def rename_trial(self, old_name, proposed_name):
         """Find trial named <old_name> and rename it to <proposed_name>."""
         trial = self.get_trial_with_name(old_name)
         self._display_names.remove(trial.display_name)
         trial.display_name = self._get_unique_display_name(proposed_name)
-        pub.sendMessage(topic='TRIAL_RENAMED', data=trial)
 
     def get_marked_trials(self):
         '''Return all currently marked trials.'''
@@ -116,17 +117,18 @@ class TrialManager(object):
     def get_trial_with_id(self, trial_id):
         """
         Find the trial with trial_id=<trial_id> and return it.
-        Raises RuntimeError if trial cannot be found.
+        Raises MissingTrialError if trial cannot be found.
         """
         try:
             return self._trial_index[trial_id]
         except KeyError:
-            raise RuntimeError('No trial with id "%s" found.' % str(trial_id))
+            raise MissingTrialError('No trial with id "%s" found.' % 
+                    str(trial_id))
 
     def get_trial_with_name(self, name):
         """
         Find the trial with display_name=<name> and return it.
-        Raises RuntimeError if trial cannot be found.
+        Raises MissingTrialError if trial cannot be found.
         """
         for trial in self._trial_index.values():
             if trial.display_name == name:
@@ -140,7 +142,7 @@ class TrialManager(object):
             if len(trials) == 1:
                 return trials[0]
 
-        raise RuntimeError('No trial named "%s" found.' % name)
+        raise MissingTrialError('No trial named "%s" found.' % name)
 
     def __str__(self):
         return_str =     ['Trial Manager with trials:']
@@ -175,11 +177,15 @@ class Trial(object):
 
         # -------------------------------------
         # -- main processing stage resources --
+        # pf_traces is a 2D numpy array where (pre-filtering)
+        #    len(pf_traces) == num_channels
+        self.add_resource(Resource('pf_traces'))
+        self.add_resource(Resource('pf_sampling_freq'))
 
-        # df_traces is a 2D numpy array where
+        # df_traces is a 2D numpy array where (detection-filtering)
         #    len(df_traces) == num_channels
-        self.add_resource(Resource('df_traces'))
-        self.add_resource(Resource('df_sampling_freq'))
+        self.add_resource(Resource('df_traces', data=self.raw_traces))
+        self.add_resource(Resource('df_sampling_freq', data=self.sampling_freq))
 
         # events is a list of "list of indexes" where 
         #    len(events) == num_channels
@@ -187,7 +193,7 @@ class Trial(object):
         #    events[i][j] == index of jth event on the ith channel
         self.add_resource(Resource('events'))
 
-        # ef_traces is a 2D numpy array where
+        # ef_traces is a 2D numpy array where (extraction-filtering)
         #    len(ef_traces) == num_channels
         self.add_resource(Resource('ef_traces'))
         self.add_resource(Resource('ef_sampling_freq'))
@@ -264,7 +270,7 @@ class Trial(object):
     def add_resource(self, resource):
         '''Add <resource> to this trial.'''
         if hasattr(self, resource.name):
-            raise RuntimeError(pt.RESOURCE_EXISTS % resource.name)
+            raise AddResourceError(pt.RESOURCE_EXISTS % resource.name)
         else:
             setattr(self, resource.name, resource)
 
@@ -412,8 +418,8 @@ class Resource(object):
         self._id = uuid.uuid4()
         self._locked = False
         self._locking_key = None
-        self._change_info = {'by':None, 'with':None,
-                'using':None, 'change_id':None}
+        self._change_info = {'by':None, 'at':datetime.datetime.now(), 
+                'with':None, 'using':None, 'change_id':None}
 
         self._data = data
 
@@ -442,7 +448,7 @@ class Resource(object):
         out until you've checked it in via <checkin>.
         '''
         if self.is_locked:
-            raise RuntimeError(pt.RESOURCE_LOCKED % self.name)
+            raise ResourceLockedError(pt.RESOURCE_LOCKED % self.name)
         else:
             self._locking_key = uuid.uuid4()
             self._locked = True
@@ -461,7 +467,7 @@ class Resource(object):
                                  be left out of the 'change_info' dictionary.
         '''
         if not self.is_locked:
-            raise RuntimeError(pt.RESOURCE_NOT_LOCKED % self.name)
+            raise ResourceNotLockedError(pt.RESOURCE_NOT_LOCKED % self.name)
         else:
             if key == self._locking_key:
                 if data_dict is not None:
@@ -470,7 +476,7 @@ class Resource(object):
                 self._locking_key = None
                 self._locked = False
             else:
-                raise RuntimeError(pt.RESOURCE_KEY_INVALID % 
+                raise InvalidLockingKeyError(pt.RESOURCE_KEY_INVALID % 
                         (str(key), self.name))
 
     def _commit_change_info(self, change_info):
