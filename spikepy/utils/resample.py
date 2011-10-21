@@ -15,13 +15,19 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import numpy
+import scipy.signal as scisig
 
-def run(trace_list, sampling_freq=None):
-    if (sampling_freq is None):
-        raise RuntimeError(
-            'Keyword arguments to run() are not optional.')
+def resample(signal, prev_sample_rate, new_sample_rate):
+    if prev_sample_rate == new_sample_rate:
+        return signal
 
+    rate_factor = new_sample_rate/float(prev_sample_rate)
+    num_samples = int(len(signal.T)*rate_factor)
+    if signal.ndim == 2:
+        result = numpy.empty((len(signal), num_samples), dtype=signal.dtype)
+        for si, s in enumerate(signal):
+            result[si] = scisig.resample(s, num_samples)
+        return result
     else:
-        return {'std_results':trace_list,
-                'additional_results':None}
-
+        return scisig.resample(signal, num_samples)    

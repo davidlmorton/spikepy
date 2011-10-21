@@ -19,42 +19,38 @@ import numpy
 
 from .two_threshold_spike_find import two_threshold_spike_find
 
-def run(trace_list, sampling_freq, threshold_1=None, 
+def run(signal, sampling_freq, threshold_1=None, 
                                    threshold_2=None,
-                                   using_sd_units=None,
+                                   thrshold_units=None,
                                    refractory_time=None,
                                    max_spike_duration=None):
     
-    if(threshold_1        is None or
-       threshold_2        is None or
-       using_sd_units     is None or
-       refractory_time    is None or
-       max_spike_duration is None):
-        raise RuntimeError("keyword arguments to run are NOT optional.")
+    if threshold_units.lower() == 'standard deviation':
+        factor = numpy.std(signal)
+    elif threshold_units.lower() == 'median':
+        factor = numpy.median(signal)
     else:
-        if using_sd_units:
-            std = numpy.std(trace_list)
-        else:
-            std = 1
-        threshold_1 *= std 
-        threshold_2 *= std 
-        
-        # convert times to samples (times in ms)
-        refractory_period = (refractory_time/1000.0)*sampling_freq
-        max_spike_width  = (max_spike_duration/1000.0)*sampling_freq
-        dt = (1.0/sampling_freq)*1000.0 # in ms
-        spike_list = []
-        for trace in trace_list:
-            result = two_threshold_spike_find(trace, threshold_1, 
-                                              threshold_2=threshold_2,
-                                            refractory_period=refractory_period,
-                                            max_spike_width=max_spike_width)
-            result = numpy.array(result)*dt
-            spike_list.append(result)
-        # FIXME return a single list of spike times, regardless of num_traces.
-        # figure out how to decide if spikes on multiple channels are
-        # the same spike.
-        return {'std_results':spike_list[0],
-                'additional_results':None}
+        factor = 1.0
 
+    threshold_1 *= factor
+    threshold_2 *= factor
+    
+    # convert times to samples (times in ms)
+    refractory_period = (refractory_time/1000.0)*sampling_freq
+    max_spike_width  = (max_spike_duration/1000.0)*sampling_freq
+    dt = (1.0/sampling_freq)*1000.0 # in ms
+    if signal.ndim == 2:
+        results = []
+        for i in len(signal):
+            spikes = two_threshold_spike_find(signal, threshold_1,
+                    threshold_2=threshold_2,
+                    refractory_period=refractory_period,
+                    max_spike_width=max_spike_width)
+            results.append(spikes)
+    else:
+        results = two_threshold_spike_find(signal, threshold_1,
+                threshold_2=threshold_2,
+                refractory_period=refractory_period,
+                max_spike_width=max_spike_width)
+    return results
 

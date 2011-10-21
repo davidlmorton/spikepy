@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from spikepy.developer_tools.methods import FilteringMethod
 from spikepy.common.valid_types import ValidOption, ValidIntegerList, \
         ValidInteger
-from .run import run as runner
+from .simple_fir import fir_filter
 
 class FilteringFIR(FilteringMethod):
     '''
@@ -29,7 +29,7 @@ class FilteringFIR(FilteringMethod):
     is_stochastic = False
 
     # method parameters
-    window_name = ValidOption('boxcar', 'triang', 'blackman', 'hamming', 
+    kernel_window = ValidOption('boxcar', 'triang', 'blackman', 'hamming', 
             'hanning', 'bartlett', 'parzen', 'bohman', 'blackmanharris', 
             'nuttal', 'barthann', default='hamming')
     critical_freq = ValidIntegerList(1, 2, default=[300, 3000])
@@ -37,6 +37,8 @@ class FilteringFIR(FilteringMethod):
             default='band pass')
     taps = ValidInteger(min=31, default=101)
 
-    def run(self, signal_list, sampling_freq, **kwargs):
-        return runner(signal_list, sampling_freq, **kwargs)
+    def run(self, signal, sampling_freq, **kwargs):
+        kwargs['kind'] = kwargs['kind'].lower().split()[0]
+        results = fir_filter(signal, sampling_freq, **kwargs)
+        return results
 

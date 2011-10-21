@@ -31,10 +31,11 @@ class VoltageThreshold(DetectionMethod):
     threshold_2 = ValidFloat(default=-6.0)
     refractory_time = ValidFloat(min=0.0, default=0.50)
     max_spike_duration = ValidFloat(min=0.0, default=4.0)
-    using_sd_units = ValidBoolean(default=True)
+    threshold_units = ValidOption('Standard Deviation', 'Median', 'Signal', 
+            default='Standard Deviation')
 
-    def run(self, signal_list, sampling_freq, **kwargs):
-        return runner(signal_list, sampling_freq, **kwargs)
+    def run(self, signal, sampling_freq, **kwargs):
+        return runner(signal, sampling_freq, **kwargs)
 
 
 

@@ -59,8 +59,15 @@ def butterworth(signal, sampling_freq, critical_freq,
     """
     This calls iir_filter with filter_func = scipy.signal.butter.
     """
-    return iir_filter(signal, sampling_freq, critical_freq,
-                      scisig.butter, order, kind, acausal=acausal, **kwargs)
+    if signal.ndim == 2:
+        result = numpy.empty(signal.shape, dtype=signal.dtype)
+        for i in range(len(signal)):
+            result[i] = iir_filter(signal[i], sampling_freq, critical_freq,
+                    scisig.butter, order, kind, **kwargs)
+    else:
+        result = iir_filter(signal, sampling_freq, critical_freq,
+                      scisig.butter, order, kind, **kwargs)
+    return result
 
 butterworth.__doc__ += '\n--iir_filter docstring--\n%s' % iir_filter.__doc__
 
@@ -69,7 +76,14 @@ def bessel(signal, sampling_freq, critical_freq,
     """
     This calls iir_filter with filter_func = scipy.signal.butter.
     """
-    return iir_filter(signal, sampling_freq, critical_freq,
-                      scisig.bessel, order, kind, acausal=acausal, **kwargs)
+    if signal.ndim == 2:
+        result = numpy.empty(signal.shape, dtype=signal.dtype)
+        for i in range(len(signal)):
+            result[i] = iir_filter(signal[i], sampling_freq, critical_freq,
+                    scisig.bessel, order, kind, **kwargs)
+    else:
+        result = iir_filter(signal, sampling_freq, critical_freq,
+                      scisig.bessel, order, kind, **kwargs)
+    return result
 
 bessel.__doc__ += '\n--iir_filter docstring--\n%s' % iir_filter.__doc__

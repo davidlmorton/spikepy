@@ -15,14 +15,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from spikepy.developer_tools.methods import FilteringMethod
+from spikepy.developer_tools.methods import AuxiliaryMethod
+from spikepy.common.valid_types import ValidInteger
+from spikepy.utils.resample import resample_signal
 
-class NoFiltering(FilteringMethod):
-    ''' This class implements a NULL filtering method.  '''
-    name = "No Filtering"
-    description = "No Filtering, simply use the raw traces."
+class ResampleADF(AuxiliaryMethod):
+    name = 'Resample after Detection Filter'
+    description = 'Resample the signal after running the Detection Filter stage.'
+    requires = ['df_traces', 'df_sampling_freq']
+    provides = ['df_traces', 'df_sampling_freq']
     is_stochastic = False
 
-    def run(self, signal_list, sampling_freq, **kwargs):
-        return (signal, sampling_freq)
+    new_sampling_freq = ValidInteger(10, 100000, default=30000)
 
+    def run(self, signal, sampling_freq, **kwargs):
+        return resample_signal(signal, sampling_freq, 
+                kwargs['new_sampling_freq'])
+    

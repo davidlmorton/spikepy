@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from spikepy.developer_tools.methods import FilteringMethod
 from spikepy.common.valid_types import ValidOption, ValidIntegerList, \
         ValidInteger, ValidBoolean
-from .run import run as runner
+from .simple_iir import butterworth, bessel
 
 class FilteringIIR(FilteringMethod):
     '''
@@ -35,6 +35,12 @@ class FilteringIIR(FilteringMethod):
             default='band pass')
     order = ValidInteger(2, 8, default=3)
 
-    def run(self, signal_list, sampling_freq, **kwargs):
-        return runner(signal_list, sampling_freq, **kwargs)
+    def run(self, signal, sampling_freq, **kwargs):
+        if kwargs['function_name'].lower() == 'butterworth':
+            filter_function = butterworth
+        elif kwargs['function_name'].lower() == 'bessel':
+            filter_function = bessel
+        kwargs['kind'] = kwargs['kind'].lower().split()[0]
+        results = filter_function(signal, sampling_freq, **kwargs)
+        return results
     
