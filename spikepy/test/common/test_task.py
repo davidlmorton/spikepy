@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import unittest
+import uuid
 
 from spikepy.common.process_manager import Task
 from spikepy.common.trial_manager import Trial, Resource
@@ -60,7 +61,7 @@ class TaskTests(unittest.TestCase):
     def test_constructor_3(self):
         '''task_id is constructed correctly.'''
         task_1 = Task(trial_1, plugin_1)
-        self.assertEquals(task_1.task_id, (trial_1.trial_id, ('pa', 'pb')))
+        self.assertTrue(isinstance(task_1.task_id, type(uuid.uuid4())))
 
     def test_provides(self):
         '''task.provides returns trial attributes in a list.'''

@@ -14,6 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import uuid
 import multiprocessing
 import time
 
@@ -170,21 +171,6 @@ class ProcessManager(object):
 
         return task_index, results_index
 
-    def _recieve_result(self, result, task):
-        if isinstance(task, PoolingTask):
-            pass
-        else:
-            change_info = task.change_info
-            if len(task.plugin.provides) == 1:
-                result = [result]
-            for pname, presult in zip(task.plugin.provides, result):
-                key = task.locking_keys[pname]
-                data_dict = {'data':presult,
-                             'change_info':change_info}
-                resource = getattr(task.trial, pname)
-                resource.checkin(data_dict, key=key) 
-
-
     def open_file(self, fullpath):
         '''
             Open a single data file. Returns the list of trials created.
@@ -237,59 +223,25 @@ class TaskOrganizer(object):
     ready to run.
     '''
     def __init__(self):
-        self._task_index = {}
+        self._non_stationary_tasks = {}
+        self._stationary_tasks = {}
 
     @property
     def num_tasks(self):
-        return len(self._task_index.keys())
+        num_ns = len(self._non_stationary_tasks.keys())
+        num_s = len(self._stationary_tasks.keys())
+        return num_ns + num_s
 
     @property
     def tasks(self):
-        return self._task_index.values()
+        return (self._non_stationary_tasks.values() + 
+                self._stationary_tasks.values())
 
     def __str__(self):
         str_list = ['TaskOrganizer:']
-        for task in self._task_index.values():
+        for task in self.tasks:
             str_list.append('    %s' % str(task))
         return '\n'.join(str_list)
-
-    @property
-    def all_provided_items(self):
-        '''All the items provided by all the tasks.'''
-        result = []
-        for task in self._task_index.values():
-            result.extend(task.provides)
-        return result
-
-    def get_runnable_tasks(self):
-        ''' Return a list of tasks that are ready to be run.  '''
-        if not self._task_index.keys():
-            return None # No tasks left.
-        # begin with all tasks, then eliminate ineligible tasks.
-        available_tasks = self._task_index.values()
-        results = []
-        for task in available_tasks:
-            can_run = True
-
-            # do you require something that someone here will later provide?
-            for pi in self.all_provided_items:
-                for req in task.requires:
-                    if req is pi:
-                        can_run = False
-
-            # do you require something that is locked?
-            if not task.is_ready:
-                can_run = False
-
-            # do you require something not provided and never set?
-            if can_run:
-                for item in task.requires:
-                    if hasattr(item, 'data') and item.data is None:
-                        raise ImpossibleTaskError('Cannot execute %s because it requires something that will not be set by any task in this set.' % task)
-
-            if can_run:
-                results.append(task)
-        return results
 
     def pull_runnable_tasks(self):
         '''
@@ -297,17 +249,66 @@ class TaskOrganizer(object):
         and remove those tasks from the organizer.
         '''
         results = []
-        for task in self.get_runnable_tasks():
-            del self._task_index[task.task_id]
-            results.append((task, task.get_run_info()))
+        all_provided_items = []
+        for task in self._non_stationary_tasks.values():
+            all_provided_items.extend(task.provides)
+
+        task_list = [task for task in self._stationary_tasks.values()]
+        task_list += [task for task in self._non_stationary_tasks.values()]
+        for task in task_list:
+            can_run = True
+
+            # do you require something that someone here will later provide?
+            for req in task.requires:
+                if req in all_provided_items:
+                    can_run = False
+
+            # do you require or provide something that is locked?
+            if not task.is_ready:
+                can_run = False
+
+            # do you require something never set?
+            if can_run:
+                for item in task.requires:
+                    if item.data is None:
+                        raise ImpossibleTaskError('Cannot execute %s because it requires something that will not be set by any task in this set.' % task)
+
+            if can_run:
+                results.append(self.checkout_task(task))
         return results
 
+    def checkout_task(self, task):
+        task_id = task.task_id
+        if task_id in self._stationary_tasks.keys():
+            del self._stationary_tasks[task_id]
+        if task_id in self._non_stationary_tasks.keys():
+            del self._non_stationary_tasks[task_id]
+        return (task, task.get_run_info())
+
+
+    def complete_task(self, task, result):
+        if isinstance(task, PoolingTask):
+            # unpool the result and check it into the resources.
+            # TODO
+            pass
+        else:
+            change_info = task.change_info
+            if len(task.plugin.provides) == 1:
+                result = [result]
+            for pname, presult in zip(task.plugin.provides, result):
+                key = task.locking_keys[pname]
+                data_dict = {'data':presult,
+                             'change_info':change_info}
+                resource = getattr(task.trial, pname)
+                resource.checkin(data_dict, key=key) 
+
+
     def add_task(self, new_task):
-        '''
-            Add a task to the TaskOrganizer.  Tasks must not provide anything
-        that other tasks already provide.
-        '''
-        self._task_index[new_task.task_id] = new_task
+        ''' Add a task to the TaskOrganizer.  '''
+        if set(new_task.provides).intersection(set(new_task.requires)):
+            self._stationary_tasks[new_task.task_id] = new_task
+        else:
+            self._non_stationary_tasks[new_task.task_id] = new_task
 
 
 class Task(object):
@@ -317,7 +318,7 @@ class Task(object):
     '''
     def __init__(self, trial, plugin, plugin_kwargs={}):
         self.trial = trial
-        self.task_id = (trial.trial_id, tuple(sorted(plugin.provides)))
+        self.task_id = uuid.uuid4()
         self.plugin = plugin
         self.plugin_kwargs = plugin_kwargs
         self.locking_keys = {}
@@ -420,7 +421,7 @@ class PoolingTask(object):
     def __init__(self, trials, plugin, plugin_kwargs={}):
         self.trials = trials
         trial_ids = [t.trial_id for t in trials]
-        self.task_id = (tuple(trial_ids), tuple(sorted(plugin.provides)))
+        self.task_id = uuid.uuid4()
         self.plugin = plugin
         self.plugin_kwargs = plugin_kwargs
         self.locking_keys = {}

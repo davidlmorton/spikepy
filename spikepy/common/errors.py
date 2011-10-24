@@ -6,6 +6,9 @@ class SpikepyError(Exception):
     '''
     pass
 
+class ImpossibleTaskError(SpikepyError):
+    pass
+
 class TaskCreationError(SpikepyError):
     pass
 
