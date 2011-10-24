@@ -21,9 +21,11 @@ import numpy
 
 from .window_spikes import window_spikes
 
-def run(trace_list, sampling_freq, spike_list,
+def run(signal, sampling_freq, event_times,
             pre_padding=None,
             post_padding=None,
+            min_num_channels=3,
+            peak_drift
             exclude_overlappers=None):
             # TODO MAKE ACCEPT LIST OF (LIST OF SPIKE TIMES).
     pre_padding_percent = pre_padding/float(pre_padding+post_padding)

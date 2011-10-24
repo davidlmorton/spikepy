@@ -19,7 +19,7 @@ import itertools
 
 import numpy
 
-from fast_thresh_detect import fast_thresh_detect
+from spikepy.utils.fast_thresh_detect import fast_thresh_detect
 
 def spike_find(input_array, t, max_spike_width):
     '''
