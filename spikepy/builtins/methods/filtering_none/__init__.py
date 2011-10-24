@@ -23,6 +23,6 @@ class NoFiltering(FilteringMethod):
     description = "No Filtering, simply use the raw traces."
     is_stochastic = False
 
-    def run(self, signal_list, sampling_freq, **kwargs):
-        return (signal, sampling_freq)
+    def run(self, signal, sampling_freq, **kwargs):
+        return [signal, sampling_freq]
 

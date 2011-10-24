@@ -27,10 +27,10 @@ from spikepy.common.errors import *
 def build_tasks(marked_trials, plugin, plugin_kwargs):
     tasks = []
     if plugin.pooling:
-        tasks.append(PoolingTask(marked_trials, plugin, plugin_kwargs))
+        tasks.append(Task(marked_trials, plugin, plugin_kwargs))
     else:
         for trial in marked_trials:
-            tasks.append(Task(trial, plugin, plugin_kwargs)) 
+            tasks.append(Task([trial], plugin, plugin_kwargs)) 
     return tasks 
 
 def get_num_workers(config_manager):
@@ -262,6 +262,7 @@ class TaskOrganizer(object):
             for req in task.requires:
                 if req in all_provided_items:
                     can_run = False
+                    break
 
             # do you require or provide something that is locked?
             if not task.is_ready:
@@ -287,20 +288,14 @@ class TaskOrganizer(object):
 
 
     def complete_task(self, task, result):
-        if isinstance(task, PoolingTask):
-            # unpool the result and check it into the resources.
-            # TODO
-            pass
-        else:
-            change_info = task.change_info
-            if len(task.plugin.provides) == 1:
-                result = [result]
-            for pname, presult in zip(task.plugin.provides, result):
-                key = task.locking_keys[pname]
-                data_dict = {'data':presult,
+        change_info = task.change_info
+        for pname, presult in zip(task.plugin.provides, result):
+            for trial, tresult in zip(task.trials, presult):
+                item = getattr(trial, pname)
+                key = task.locking_keys[item]
+                data_dict = {'data':tresult,
                              'change_info':change_info}
-                resource = getattr(task.trial, pname)
-                resource.checkin(data_dict, key=key) 
+                item.checkin(data_dict, key=key) 
 
 
     def add_task(self, new_task):
@@ -313,109 +308,7 @@ class TaskOrganizer(object):
 
 class Task(object):
     '''
-        Task objects combine a trial with a plugin and the kwargs that the 
-    plugin needs to run.
-    '''
-    def __init__(self, trial, plugin, plugin_kwargs={}):
-        self.trial = trial
-        self.task_id = uuid.uuid4()
-        self.plugin = plugin
-        self.plugin_kwargs = plugin_kwargs
-        self.locking_keys = {}
-        self._prepare_trial_for_task()
-
-    def __str__(self):
-        return 'Task: plugin="%s" trial="%s"' % (self.plugin.name,
-                self.trial.display_name)
-
-    def _prepare_trial_for_task(self):
-        '''
-            If the trial does not have one of the resources that the plugin
-        provides, create it.
-        '''
-        for item in self.plugin.provides:
-            if not hasattr(self.trial, item):
-                self.trial.add_resource(Resource(item))
-            elif not isinstance(getattr(self.trial, item), Resource):
-                raise TaskCreationError('This plugin provides %s, but that is a read-only attribute on trial %s.' % (item, self.trial.trial_id))
-
-    @property
-    def is_ready(self):
-        '''
-            Return True if this task's requirements and resources it provides
-        are all unlocked.
-        '''
-        # once all the plugin's requirements are ready, we're ready.
-        items = self.requires + self.provides
-        for item in items:
-            if (hasattr(item, 'is_locked') and item.is_locked):
-                return False
-        return True
-
-    @property
-    def change_info(self):
-        return_dict = {}
-        return_dict['by'] = self.plugin.name
-        return_dict['with'] = self.plugin_kwargs
-        u = []
-        for rname in self.plugin.requires:
-            r = getattr(self.trial, rname)
-            if not hasattr(r, 'change_info'):
-                u.append((self.trial.trial_id, rname))
-            else:
-                rchange_id = r.change_info['change_id']
-                u.append((self.trial.trial_id, rname, rchange_id))
-        return_dict['using'] = u
-        return return_dict
-
-    @property
-    def provides(self):
-        '''Return the trial attributes we provide after running.'''
-        result = []
-        for item in self.plugin.provides:
-            result.append(getattr(self.trial, item))
-        return result
-
-    @property
-    def requires(self):
-        '''Return the trial attributes we require to run.'''
-        result = []
-        for item in self.plugin.requires:
-            result.append(getattr(self.trial, item))
-        return result
-
-    def get_run_info(self):
-        '''
-        Return a dictionary with the stuff needed to run.
-        '''
-        run_info = {}
-        run_info['task_id'] = self.task_id
-        run_info['plugin'] = self.plugin
-        run_info['args'] = self._get_args()
-        run_info['kwargs'] = self.plugin_kwargs
-
-        # check out and keep track of locking keys for what task provides.
-        for item in self.provides:
-            co = item.checkout()
-            self.locking_keys[item.name] = co['locking_key']
-        return run_info
-
-    def _get_args(self):
-        '''Return the data we require as arguments to run.'''
-        args = []
-        for requirement_name in self.plugin.requires:
-            requirement = getattr(self.trial, requirement_name)
-            if isinstance(requirement, Resource):
-                arg = requirement.data
-            else:
-                arg = requirement
-            args.append(arg)
-        return args
-
-
-class PoolingTask(object):
-    '''
-        PoolingTask objects combine a list of trials with a plugin and
+        Task objects combine a list of trials with a plugin and
     the kwargs that the plugin needs to run.
     '''
     def __init__(self, trials, plugin, plugin_kwargs={}):
@@ -428,7 +321,7 @@ class PoolingTask(object):
         self._prepare_trials_for_task()
 
     def __str__(self):
-        str_list = ['PoolingTask: plugin="%s"' % self.plugin.name]
+        str_list = ['Task: plugin="%s"' % self.plugin.name]
         for trial in self.trials:
             str_list.append('        trial="%s"' % trial.display_name)
         return '\n'.join(str_list)
@@ -443,7 +336,26 @@ class PoolingTask(object):
                 if not hasattr(trial, item):
                     trial.add_resource(Resource(item))
                 elif not isinstance(getattr(trial, item), Resource):
-                    raise PluginPreparationError('This plugin provides %s, but that is a read-only attribute on trial %s.' % (item, trial.trial_id))
+                    raise TaskCreationError('This plugin provides %s, but that is a read-only attribute on trial %s.' % (item, trial.trial_id))
+
+    @property
+    def change_info(self):
+        return_dict = {}
+        return_dict['by'] = self.plugin.name
+        return_dict['with'] = self.plugin_kwargs
+        u = []
+        for rname in self.plugin.requires:
+            pu = []
+            for trial in self.trials:
+                r = getattr(trial, rname)
+                if not hasattr(r, 'change_info'):
+                    pu.append((trial.trial_id, rname))
+                else:
+                    rchange_id = r.change_info['change_id']
+                    pu.append((trial.trial_id, rname, rchange_id))
+            u.append(pu)
+        return_dict['using'] = u
+        return return_dict
 
     @property
     def is_ready(self):
@@ -489,7 +401,7 @@ class PoolingTask(object):
         # check out and keep track of locking keys for what task provides.
         for item in self.provides:
             co = item.checkout()
-            self.locking_keys[item.name] = co['locking_key']
+            self.locking_keys[item] = co['locking_key']
         return run_info
 
     def _get_args(self):

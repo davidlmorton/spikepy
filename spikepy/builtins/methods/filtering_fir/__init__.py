@@ -39,6 +39,6 @@ class FilteringFIR(FilteringMethod):
 
     def run(self, signal, sampling_freq, **kwargs):
         kwargs['kind'] = kwargs['kind'].lower().split()[0]
-        results = fir_filter(signal, sampling_freq, **kwargs)
-        return results
+        filtered_signal = fir_filter(signal, sampling_freq, **kwargs)
+        return [filtered_signal, sampling_freq]
 

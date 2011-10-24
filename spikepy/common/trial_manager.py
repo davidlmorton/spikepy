@@ -187,11 +187,11 @@ class Trial(object):
         self.add_resource(Resource('df_traces', data=self.raw_traces))
         self.add_resource(Resource('df_sampling_freq', data=self.sampling_freq))
 
-        # events is a list of "list of indexes" where 
-        #    len(events) == num_channels
-        #    len(events[i]) == number of events on the ith channel
-        #    events[i][j] == index of jth event on the ith channel
-        self.add_resource(Resource('events'))
+        # events is a list of "list of times" where 
+        #    len(event_times) == num_channels
+        #    len(event_times[i]) == number of events on the ith channel
+        #    events[i][j] == time of jth event on the ith channel
+        self.add_resource(Resource('event_times'))
 
         # ef_traces is a 2D numpy array where (extraction-filtering)
         #    len(ef_traces) == num_channels
@@ -199,14 +199,11 @@ class Trial(object):
         self.add_resource(Resource('ef_sampling_freq'))
 
         # features is 2D numpy array with shape = (n, m) where
-        #    n == the total number of events
+        #    n == the total number of events with features
         #    m == the number of features describing each event
         #    features[k][l] == feature l of event k
         self.add_resource(Resource('features'))
-
-        # feature_locations is a 1D numpy array of indexes.
-        #    time of kth feature == feature_locations[k]/ef_sampling_freq
-        self.add_resource(Resource('feature_locations'))
+        self.add_resource(Resource('feature_times'))
 
         # clusters is a 1D numpy array of integers (cluster ids).
         #   clusters[k] == id of cluster to which the kth feature belongs.

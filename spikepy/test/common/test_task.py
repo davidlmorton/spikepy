@@ -26,6 +26,7 @@ class FauxPlugin(object):
     def __init__(self, requires, provides):
         self.requires = requires
         self.provides = provides
+        self.pooling = False
 
 plugin_1 = FauxPlugin(requires=['ra', 'rb'],
                       provides=['pb', 'pa'])
@@ -46,7 +47,7 @@ class TaskTests(unittest.TestCase):
         self.assertFalse(hasattr(trial, 'pa'))
         self.assertFalse(hasattr(trial, 'pb'))
 
-        task_1 = Task(trial, plugin_1)
+        task_1 = Task([trial], plugin_1)
         self.assertTrue(hasattr(trial, 'pa'))
         self.assertTrue(isinstance(trial.pa, Resource))
         self.assertTrue(hasattr(trial, 'pb'))
@@ -56,16 +57,16 @@ class TaskTests(unittest.TestCase):
         '''Plugin.provides cannot be read-only attributes of trial.'''
         trial = Trial()
         trial.ra = 'some_data'
-        self.assertRaises(TaskCreationError, Task, trial, plugin_2)
+        self.assertRaises(TaskCreationError, Task, [trial], plugin_2)
 
     def test_constructor_3(self):
         '''task_id is constructed correctly.'''
-        task_1 = Task(trial_1, plugin_1)
+        task_1 = Task([trial_1], plugin_1)
         self.assertTrue(isinstance(task_1.task_id, type(uuid.uuid4())))
 
     def test_provides(self):
         '''task.provides returns trial attributes in a list.'''
-        task_1 = Task(trial_1, plugin_1)
+        task_1 = Task([trial_1], plugin_1)
         provides = task_1.provides
         self.assertTrue(trial_1.pb in provides)
         self.assertTrue(trial_1.pa in provides)
@@ -73,7 +74,7 @@ class TaskTests(unittest.TestCase):
 
     def test_requires(self):
         '''task.requires returns trial attributes in a list.'''
-        task_1 = Task(trial_1, plugin_1)
+        task_1 = Task([trial_1], plugin_1)
         requires = task_1.requires
         self.assertTrue(trial_1.rb in requires)
         self.assertTrue(trial_1.ra in requires)
@@ -84,7 +85,7 @@ class TaskTests(unittest.TestCase):
         trial = Trial()
         trial.ra = 'some_data'
         trial.add_resource(Resource('rb'))
-        task_1 = Task(trial, plugin_1)
+        task_1 = Task([trial], plugin_1)
 
         self.assertTrue(task_1.is_ready)
 
@@ -92,24 +93,24 @@ class TaskTests(unittest.TestCase):
 
         self.assertTrue(task_1.is_ready)
         
-        self.assertTrue('some_data' in result)
-        self.assertTrue(trial.rb.data in result)
+        self.assertTrue('some_data' in result[0])
+        self.assertTrue(trial.rb.data in result[1])
         self.assertEqual(len(result), 2)
 
     def test_get_run_info(self):
         trial = Trial()
         trial.ra = 'some_data'
         trial.add_resource(Resource('rb'))
-        task_1 = Task(trial, plugin_1)
+        task_1 = Task([trial], plugin_1)
 
         self.assertTrue(task_1.is_ready)
         result = task_1.get_run_info()
         self.assertFalse(task_1.is_ready)
 
         self.assertEqual(len(task_1.locking_keys.keys()), 2)
-        self.assertTrue(task_1.plugin.provides[0] in 
+        self.assertTrue(task_1.provides[0] in 
                 task_1.locking_keys.keys())
-        self.assertTrue(task_1.plugin.provides[1] in 
+        self.assertTrue(task_1.provides[1] in 
                 task_1.locking_keys.keys())
 
 

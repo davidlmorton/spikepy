@@ -17,13 +17,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
 
-from spikepy.common.process_manager import Task, PoolingTask, TaskOrganizer
+from spikepy.common.process_manager import Task, TaskOrganizer, build_tasks
 from spikepy.common.trial_manager import Trial, Resource
 from spikepy.test.common.test_task import FauxPlugin
 from spikepy.common.errors import *
 
 def return_fake_results(to, task):
-    fake_results = [1 for i in task.plugin.provides]
+    fake_results = []
+    for p in task.plugin.provides:
+        pr = []
+        for t in task.trials:
+            pr.append(1)
+        fake_results.append(pr)
     to.complete_task(task, fake_results)
     
 
@@ -32,7 +37,7 @@ class TaskOrganizerTests(unittest.TestCase):
         trials = [Trial() for i in range(2)]
         for trial in trials:
             trial.add_resource(Resource('pf', 1))
-        dfp = FauxPlugin(requires=['pf'],       provides=['df'])
+        dfp = FauxPlugin(requires=['pf'],       provides=['df', 'blah'])
         dfp.name = 'dfp'
         sdp = FauxPlugin(requires=['df'],       provides=['ev'])
         sdp.name = 'sdp'
@@ -58,12 +63,7 @@ class TaskOrganizerTests(unittest.TestCase):
         
         tasks = []
         for plugin in plugins:
-            if not hasattr(plugin, 'pooling'):
-                for trial in trials:
-                    tasks.append(Task(trial, plugin))
-            else:
-                tasks.append(PoolingTask(trials, plugin))
-                
+            tasks.extend(build_tasks(trials, plugin, {}))
                     
         self.dfp = dfp
         self.sdp = sdp
@@ -93,7 +93,7 @@ class TaskOrganizerTests(unittest.TestCase):
         to.add_task(self.tasks[0])
         self.assertEquals(len(to.tasks), len(self.tasks))
 
-    def test_pull_runnable_tasks(self):
+    def test_full_run(self):
         to = TaskOrganizer()
         for task in self.tasks:
             to.add_task(task)
@@ -182,6 +182,24 @@ class TaskOrganizerTests(unittest.TestCase):
 
         for task, info in results:
             return_fake_results(to, task)
+
+        # batch 7 should be summary plot stuff.
+        results = to.pull_runnable_tasks()
+
+        pp = [task.plugin for task, info in results]
+        print '7', [p.name for p in pp]
+        self.assertTrue(self.spp in pp)
+        self.assertEquals(len(pp), 2) # 2 for each trial.
+
+        no_results = to.pull_runnable_tasks()
+        self.assertEquals(no_results, [])
+
+        for task, info in results:
+            return_fake_results(to, task)
+
+        # all done
+        no_results = to.pull_runnable_tasks()
+        self.assertEquals(no_results, [])
 
 
         

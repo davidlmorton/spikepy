@@ -41,6 +41,6 @@ class FilteringIIR(FilteringMethod):
         elif kwargs['function_name'].lower() == 'bessel':
             filter_function = bessel
         kwargs['kind'] = kwargs['kind'].lower().split()[0]
-        results = filter_function(signal, sampling_freq, **kwargs)
-        return results
+        filtered_signal = filter_function(signal, sampling_freq, **kwargs)
+        return [filtered_signal, sampling_freq]
     

@@ -52,5 +52,5 @@ def run(signal, sampling_freq, threshold_1=None,
                 threshold_2=threshold_2,
                 refractory_period=refractory_period,
                 max_spike_width=max_spike_width)
-    return results
+    return [results]
 
