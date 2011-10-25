@@ -93,8 +93,8 @@ class TaskTests(unittest.TestCase):
 
         self.assertTrue(task_1.is_ready)
         
-        self.assertTrue('some_data' in result[0])
-        self.assertTrue(trial.rb.data in result[1])
+        self.assertTrue('some_data' in result)
+        self.assertTrue(trial.rb.data in result)
         self.assertEqual(len(result), 2)
 
     def test_get_run_info(self):

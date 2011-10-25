@@ -14,8 +14,39 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
 import numpy
+
+from spikepy.utils.collapse_event_times import collapse_event_times 
+
+def generate_spike_windows(signal, sampling_freq, event_times,
+            pre_padding=None,
+            post_padding=None,
+            min_num_channels=None,
+            peak_drift=None,
+            exclude_overlappers=None):
+
+    collapsed_event_times = collapse_event_times(signal, sampling_freq, 
+            event_times, min_num_channels, peak_drift)
+
+    pre_padding_percent = pre_padding/float(pre_padding+post_padding)
+    # from sampling frequency (in Hz) and pre/post_padding (in ms) determine
+    #     window_size (in samples)
+    window_duration = (pre_padding + post_padding) / 1000.0 # now in secs
+    # +1 to account for the sample itself.
+    window_size = int(window_duration * sampling_freq) + 1 
+
+    spike_index_list = collapsed_event_times*sampling_freq
+    spike_index_list = numpy.array(spike_index_list, dtype=numpy.int32)
+    (spike_windows, spike_indexes, excluded_windows, excluded_indexes) =\
+            window_spikes(signal, spike_index_list, 
+                    window_size=window_size, 
+                    pre_padding=pre_padding_percent, 
+                    exclude_overlappers=exclude_overlappers)
+        
+    return [numpy.vstack(spike_windows), 
+            numpy.array(spike_indexes)/float(sampling_freq), 
+            excluded_windows, 
+            numpy.array(excluded_indexes)/float(sampling_freq)]
 
 def window_spikes(signal, spike_index_list, window_size=40, 
                                             pre_padding=0.50, 

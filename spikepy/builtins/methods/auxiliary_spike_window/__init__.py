@@ -15,19 +15,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from spikepy.developer_tools.methods import ExtractionMethod
+from spikepy.developer_tools.methods import AuxiliaryMethod
 from spikepy.common.valid_types import ValidFloat, ValidBoolean, ValidInteger
 from spikepy.utils.generate_spike_windows import generate_spike_windows
 
-class ExtractionSpikeWindow(ExtractionMethod):
+class DetectionSpikeWindow(AuxiliaryMethod):
     '''
-    This class implements a spike-window feature-extraction method.
+    This class implements a spike-window method.
     '''
-    name = "Spike Window"
+    name = "Detection Spike Window"
     description = "Extract the waveform of spikes in a temporal window around the spike event."
     is_stochastic = False
-    provides = ['features', 'feature_times', 'excluded_features', 
-            'excluded_feature_times']
+    pooling = False
+    requires = ['df_traces', 'df_sampling_freq', 'events']
+    provides = ['df_spike_windows', 'df_spike_window_times']
 
     pre_padding = ValidFloat(min=0.0, default=2.0)
     post_padding = ValidFloat(min=0.0, default=4.0)
@@ -37,5 +38,11 @@ class ExtractionSpikeWindow(ExtractionMethod):
 
     def run(self, signal, sampling_freq, event_times, **kwargs):
         return generate_spike_windows(signal, sampling_freq, event_times, 
-                **kwargs)
+                **kwargs)[:2]
+
+class ExtractionSpikeWindow(DetectionSpikeWindow):
+    name = 'Extraction Spike Window'
+    requires = ['ef_traces', 'ef_sampling_freq', 'events']
+    provides = ['ef_spike_windows', 'ef_spike_window_times']
+
 

@@ -424,7 +424,7 @@ class Task(object):
         '''Return the data we require as arguments to run.'''
         arg_list = []
         for requirement_name in self.plugin.requires:
-            if len(self.trials) == 1:
+            if not self.plugin.pooling:
                 trial = self.trials[0]
                 requirement = getattr(trial, requirement_name)
                 if isinstance(requirement, Resource):

@@ -53,8 +53,26 @@ class Session(object):
                 settings[key] = default_settings
             else:
                 raise RuntimeError('Cannot find plugin with name %s.' % value)
+        # add auxiliary stages
+        auxiliary_stages = {}
+        auxiliary_stages['Detection Spike Window'] = \
+                {'pre_padding':5.0,
+                 'post_padding':5.0,
+                 'exclude_overlappers':False,
+                 'min_num_channels':3,
+                 'peak_drift':0.3}
+        auxiliary_stages['Extraction Spike Window'] = \
+                {'pre_padding':3.0,
+                 'post_padding':6.0,
+                 'exclude_overlappers':False,
+                 'min_num_channels':3,
+                 'peak_drift':0.3}
+        #auxiliary_stages['Resample after Detection Filter'] = \
+        #        {'new_sampling_freq':25000}
+        auxiliary_stages['Resample after Extraction Filter'] = \
+                {'new_sampling_freq':25000}
         default_strategy = Strategy(methods_used=methods_used, 
-                settings=settings)
+                settings=settings, auxiliary_stages=auxiliary_stages)
         return default_strategy 
 
     # --- OPEN FILE(S) ---

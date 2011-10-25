@@ -31,4 +31,10 @@ class ResampleAEF(AuxiliaryMethod):
     def run(self, signal, sampling_freq, **kwargs):
         return [resample(signal, sampling_freq, 
                 kwargs['new_sampling_freq']), kwargs['new_sampling_freq']]
+
+class ResampleADF(ResampleAEF):
+    name = 'Resample after Detection Filter'
+    description = 'Resample the signal after running the Detection Filter stage.'
+    requires = ['df_traces', 'df_sampling_freq']
+    provides = ['df_traces', 'df_sampling_freq']
     
