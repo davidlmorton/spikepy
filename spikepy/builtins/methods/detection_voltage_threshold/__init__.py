@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from spikepy.developer_tools.methods import DetectionMethod
-from spikepy.common.valid_types import ValidFloat, ValidBoolean
+from spikepy.common.valid_types import ValidFloat, ValidBoolean, ValidOption
 from .run import run as runner
 
 class VoltageThreshold(DetectionMethod):

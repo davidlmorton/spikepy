@@ -21,7 +21,7 @@ from .two_threshold_spike_find import two_threshold_spike_find
 
 def run(signal, sampling_freq, threshold_1=None, 
                                    threshold_2=None,
-                                   thrshold_units=None,
+                                   threshold_units=None,
                                    refractory_time=None,
                                    max_spike_duration=None):
     
@@ -38,19 +38,19 @@ def run(signal, sampling_freq, threshold_1=None,
     # convert times to samples (times in ms)
     refractory_period = (refractory_time/1000.0)*sampling_freq
     max_spike_width  = (max_spike_duration/1000.0)*sampling_freq
-    dt = (1.0/sampling_freq)*1000.0 # in ms
     if signal.ndim == 2:
         results = []
-        for i in len(signal):
-            spikes = two_threshold_spike_find(signal, threshold_1,
+        for i in range(len(signal)):
+            spikes = two_threshold_spike_find(signal[i], threshold_1,
                     threshold_2=threshold_2,
                     refractory_period=refractory_period,
                     max_spike_width=max_spike_width)
-            results.append(spikes)
+            results.append(spikes/float(sampling_freq))
     else:
         results = two_threshold_spike_find(signal, threshold_1,
                 threshold_2=threshold_2,
                 refractory_period=refractory_period,
                 max_spike_width=max_spike_width)
+        results /= float(sampling_freq)
     return [results]
 

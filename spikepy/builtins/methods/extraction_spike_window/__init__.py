@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from spikepy.developer_tools.methods import ExtractionMethod
-from spikepy.common.valid_types import ValidFloat, ValidBoolean
+from spikepy.common.valid_types import ValidFloat, ValidBoolean, ValidInteger
 from .run import run as runner
 
 class ExtractionSpikeWindow(ExtractionMethod):
@@ -26,11 +26,15 @@ class ExtractionSpikeWindow(ExtractionMethod):
     name = "Spike Window"
     description = "Extract the waveform of spikes in a temporal window around the spike event."
     is_stochastic = False
+    provides = ['features', 'feature_times', 'excluded_features', 
+            'excluded_feature_times']
 
     pre_padding = ValidFloat(min=0.0, default=2.0)
     post_padding = ValidFloat(min=0.0, default=4.0)
     exclude_overlappers = ValidBoolean(default=False)
+    min_num_channels = ValidInteger(min=1, default=3)
+    peak_drift = ValidFloat(min=0.01, default=0.3) # ms
 
-    def run(self, signal_list, sampling_freq, spike_list, **kwargs):
-        return runner(signal_list, sampling_freq, spike_list, **kwargs)
+    def run(self, signal, sampling_freq, event_times, **kwargs):
+        return runner(signal, sampling_freq, event_times, **kwargs)
 

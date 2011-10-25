@@ -40,6 +40,7 @@ class FilteringIIR(FilteringMethod):
             filter_function = butterworth
         elif kwargs['function_name'].lower() == 'bessel':
             filter_function = bessel
+        del kwargs['function_name']
         kwargs['kind'] = kwargs['kind'].lower().split()[0]
         filtered_signal = filter_function(signal, sampling_freq, **kwargs)
         return [filtered_signal, sampling_freq]

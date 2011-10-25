@@ -52,36 +52,40 @@ def window_spikes(signal, spike_index_list, window_size=40,
     '''
     pre_i = int(window_size * pre_padding)
     post_i = window_size - pre_i
+    print 'pre/post', pre_i, post_i
 
-    classified_spike_index_lists = determine_excluded_spikes(signal, 
-                                                             spike_index_list, 
-                                                             window_size,
-                                                             pre_padding,
-                                                             pre_i,
-                                                             post_i)
-    good_spike_index_list      = classified_spike_index_lists[0]
-    excluded_spike_index_list  = classified_spike_index_lists[1]
-    truncated_spike_index_list = classified_spike_index_lists[2]
+    good, excluded, truncated = determine_excluded_spikes(signal.shape[1], 
+            spike_index_list, window_size, pre_padding, pre_i, post_i)
+
     if not exclude_overlappers: 
-        good_spike_index_list.extend(excluded_spike_index_list)
-        excluded_spike_index_list = truncated_spike_index_list
+        good.extend(excluded)
+        excluded = truncated
     else:
-        excluded_spike_index_list.extend(truncated_spike_index_list)
+        excluded.extend(truncated)
+
+    good.sort()
+    excluded.sort()
 
     # ------------------------------------------------------------------------
     # -- make the spike windows from the good_spike_index_list
     # ------------------------------------------------------------------------
-    excluded_windows = [0 for i in xrange(len(excluded_spike_index_list))]
-    spike_windows = [0 for i in xrange(len(good_spike_index_list))]
-    for i, si in enumerate(good_spike_index_list):
-        spike_windows[i] = signal[si-pre_i:si+post_i]
-    for i, si in enumerate(excluded_spike_index_list):
-        excluded_windows[i] = signal[si-pre_i:si+post_i]
+    excluded_windows = [0 for i in xrange(len(excluded))]
+    spike_windows = [0 for i in xrange(len(good))]
+    if signal.ndim == 2:
+        for i, si in enumerate(good):
+            spike_windows[i] = numpy.hstack(signal[:, si-pre_i:si+post_i])
+        for i, si in enumerate(excluded):
+            excluded_windows[i] = numpy.hstack(signal[:, si-pre_i:si+post_i])
+    else:
+        for i, si in enumerate(good):
+            spike_windows[i] = signal[si-pre_i:si+post_i]
+        for i, si in enumerate(excluded):
+            excluded_windows[i] = signal[si-pre_i:si+post_i]
     
-    return (spike_windows, good_spike_index_list,
-            excluded_windows, excluded_spike_index_list)
+    return (spike_windows, good,
+            excluded_windows, excluded)
 
-def determine_excluded_spikes(signal, spike_index_list, window_size, 
+def determine_excluded_spikes(signal_len, spike_index_list, window_size, 
                               pre_padding, pre_i, post_i):
     """
     determine which (if any) indexes will be excluded due to overlapping
@@ -97,7 +101,7 @@ def determine_excluded_spikes(signal, spike_index_list, window_size,
         bi = si - pre_i   # proposed begining index
         ei = si + post_i  # proposed ending index
         # test for spike too close to begining or end of signal
-        if bi > 0 and ei < len(signal)-1:
+        if bi > 0 and ei < signal_len-1:
             # test for begining overlapping with end of last spike
             if i > 0 and bi < (spike_index_list[i-1] + post_i):
                 excluded_spike_index_set.add(si)

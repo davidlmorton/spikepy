@@ -119,7 +119,7 @@ Methods that subclasses are REQUIRED to implement:
            to the feature-extraction code.
     '''
     requires = ['ef_traces', 'ef_sampling_freq', 'events']
-    provides = ['features', 'feature_locations']
+    provides = ['features', 'feature_times']
     # features is 2D numpy array with shape = (n, m) where
     #    n == the total number of kept events
     #    m == the number of features describing each event
@@ -154,7 +154,7 @@ Methods that subclasses are REQUIRED to implement:
           if the provided features are from multiple trials or a single trial.
     '''
     pooling = True
-    requires = ['features', 'feature_locations', 'ef_sampling_freq'] 
+    requires = ['features', 'feature_times', 'ef_sampling_freq'] 
     provides = ['clusters']
     # clusters is a 1D numpy array of integers (cluster ids).
     #   clusters[k] == id of cluster to which the kth feature belongs.

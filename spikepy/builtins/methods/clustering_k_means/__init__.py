@@ -31,6 +31,6 @@ class ClusteringKMeans(ClusteringMethod):
     threshold = ValidFloat(1e-50, 1e10, default=1e-10)
     number_of_clusters = ValidInteger(1, 15, default=2)
 
-    def run(self, feature_set_list, **kwargs):
-        return runner(feature_set_list, **kwargs)
+    def run(self, features, feature_times, ef_sampling_freq, **kwargs):
+        return runner(features, **kwargs)
 

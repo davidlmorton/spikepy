@@ -42,7 +42,7 @@ def run(features_list, iterations=None, threshold=None,
         for num_features in map(len, features_list):
             end = start + num_features
             unpacked_membership = membership[start:end]
-            unpacked_distortion = distortion[start:end]
+            unpacked_distortion = distortions[start:end]
             start += num_features
 
         return [unpacked_membership, unpacked_distortion]

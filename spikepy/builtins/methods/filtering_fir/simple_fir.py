@@ -97,7 +97,7 @@ def fir_filter(signal, sampling_freq, critical_freq, kernel_window='hamming',
         result = numpy.empty(signal.shape, dtype=signal.dtype)
         for i in range(len(signal)):
             result[i] = numpy.roll(scisig.lfilter(kernel, [1], signal[i]), 
-                    -taps/2+1
+                    -taps/2+1)
     else:
         result = numpy.roll(scisig.lfilter(kernel, [1], signal), -taps/2+1)
     return result

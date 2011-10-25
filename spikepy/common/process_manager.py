@@ -61,9 +61,20 @@ def task_worker(input_queue, results_queue):
         kwargs = task_info['kwargs']
         plugin = task_info['plugin']
 
+        print "Plugin %s:" % plugin.name
+        for rname, arg in zip(plugin.requires, args):
+            if hasattr(arg, 'shape'):
+                arg_len = arg.shape
+            elif hasattr(arg, '__iter__'):
+                arg_len = len(arg)
+            else:
+                arg_len = 'N/A'
+            print "    arg '%s' has len %s and is type %s." % (rname, arg_len, type(arg))
+            
+
         results_dict = {}
-        #results_dict['result'] = plugin.run(*args, **kwargs)
-        results_dict['result'] = [time.time() for i in plugin.provides]
+        results_dict['result'] = plugin.run(*args, **kwargs)
+        #results_dict['result'] = [time.time() for i in plugin.provides]
         results_dict['task_id'] = task_info['task_id']
 
         results_queue.put(results_dict)
@@ -147,6 +158,8 @@ class ProcessManager(object):
             # queue up ready tasks
             for task, task_info in self._task_organizer.pull_runnable_tasks():
                 message_queue.put(('Added task to input_queue.', task))
+                print "started task %s" % task
+                print task_info['args']
                 input_queue.put(task_info)
 
             # wait for one result
@@ -155,7 +168,8 @@ class ProcessManager(object):
             finished_task = task_index[finished_task_id]
             results_index[finished_task_id] = result['result']
             message_queue.put(('Recieved task results', finished_task))
-            self._recieve_result(result['result'], finished_task)
+            print "finished task %s" % finished_task 
+            self._task_organizer.complete_task(finished_task, result['result'])
 
             # are we done queueing up tasks? then add in the sentinals.
             if self._task_organizer.num_tasks == 0:
@@ -290,6 +304,8 @@ class TaskOrganizer(object):
     def complete_task(self, task, result):
         change_info = task.change_info
         for pname, presult in zip(task.plugin.provides, result):
+            if len(task.trials) == 1:
+                presult = [presult]
             for trial, tresult in zip(task.trials, presult):
                 item = getattr(trial, pname)
                 key = task.locking_keys[item]
@@ -408,15 +424,24 @@ class Task(object):
         '''Return the data we require as arguments to run.'''
         arg_list = []
         for requirement_name in self.plugin.requires:
-            args = []
-            for trial in self.trials:
+            if len(self.trials) == 1:
+                trial = self.trials[0]
                 requirement = getattr(trial, requirement_name)
                 if isinstance(requirement, Resource):
                     arg = requirement.data
                 else:
                     arg = requirement
-                args.append(arg)
-            arg_list.append(args)
+                arg_list.append(arg)
+            else:
+                args = []
+                for trial in self.trials:
+                    requirement = getattr(trial, requirement_name)
+                    if isinstance(requirement, Resource):
+                        arg = requirement.data
+                    else:
+                        arg = requirement
+                    args.append(arg)
+                arg_list.append(args)
         return arg_list
         
     

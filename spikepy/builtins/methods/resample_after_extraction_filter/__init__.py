@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from spikepy.developer_tools.methods import AuxiliaryMethod
 from spikepy.common.valid_types import ValidInteger
-from spikepy.utils.resample import resample_signal
+from spikepy.utils.resample import resample
 
 class ResampleADF(AuxiliaryMethod):
     name = 'Resample after Detection Filter'
@@ -29,6 +29,6 @@ class ResampleADF(AuxiliaryMethod):
     new_sampling_freq = ValidInteger(10, 100000, default=30000)
 
     def run(self, signal, sampling_freq, **kwargs):
-        return [resample_signal(signal, sampling_freq, 
-                kwargs['new_sampling_freq']), kwargs['new_sampling_freq'])
+        return [resample(signal, sampling_freq, 
+                kwargs['new_sampling_freq']), kwargs['new_sampling_freq']]
     

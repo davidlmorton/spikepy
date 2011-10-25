@@ -179,8 +179,8 @@ class Trial(object):
         # -- main processing stage resources --
         # pf_traces is a 2D numpy array where (pre-filtering)
         #    len(pf_traces) == num_channels
-        self.add_resource(Resource('pf_traces'))
-        self.add_resource(Resource('pf_sampling_freq'))
+        self.add_resource(Resource('pf_traces', data=self.raw_traces))
+        self.add_resource(Resource('pf_sampling_freq', data=self.sampling_freq))
 
         # df_traces is a 2D numpy array where (detection-filtering)
         #    len(df_traces) == num_channels
