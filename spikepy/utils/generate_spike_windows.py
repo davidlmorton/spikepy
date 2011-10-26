@@ -83,7 +83,6 @@ def window_spikes(signal, spike_index_list, window_size=40,
     '''
     pre_i = int(window_size * pre_padding)
     post_i = window_size - pre_i
-    print 'pre/post', pre_i, post_i
 
     good, excluded, truncated = determine_excluded_spikes(signal.shape[1], 
             spike_index_list, window_size, pre_padding, pre_i, post_i)

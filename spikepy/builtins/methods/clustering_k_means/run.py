@@ -34,15 +34,11 @@ def run(features, iterations=None, threshold=None,
     start = 0
     unpacked_membership = []
     unpacked_distortion = []
-    print 'featues', features
-    print 'membership', membership
     for num_features in map(len, features):
         end = start + num_features
-        unpacked_membership = membership[start:end]
-        unpacked_distortion = distortions[start:end]
+        unpacked_membership.append(membership[start:end])
+        unpacked_distortion.append(distortions[start:end])
         start += num_features
-
-    print 'len_features', map(len, features)
 
     return [unpacked_membership, unpacked_distortion]
 

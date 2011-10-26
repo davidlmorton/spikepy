@@ -61,17 +61,6 @@ def task_worker(input_queue, results_queue):
         kwargs = task_info['kwargs']
         plugin = task_info['plugin']
 
-        print "Plugin %s:" % plugin.name
-        for rname, arg in zip(plugin.requires, args):
-            if hasattr(arg, 'shape'):
-                arg_len = arg.shape
-            elif hasattr(arg, '__iter__'):
-                arg_len = len(arg)
-            else:
-                arg_len = 'N/A'
-            print "    arg '%s' has len %s and is type %s." % (rname, arg_len, type(arg))
-            
-
         results_dict = {}
         results_dict['result'] = plugin.run(*args, **kwargs)
         #results_dict['result'] = [time.time() for i in plugin.provides]
@@ -158,8 +147,6 @@ class ProcessManager(object):
             # queue up ready tasks
             for task, task_info in self._task_organizer.pull_runnable_tasks():
                 message_queue.put(('Added task to input_queue.', task))
-                print "started task %s" % task
-                print task_info['args']
                 input_queue.put(task_info)
 
             # wait for one result
@@ -168,7 +155,6 @@ class ProcessManager(object):
             finished_task = task_index[finished_task_id]
             results_index[finished_task_id] = result['result']
             message_queue.put(('Recieved task results', finished_task))
-            print "finished task %s" % finished_task 
             self._task_organizer.complete_task(finished_task, result['result'])
 
             # are we done queueing up tasks? then add in the sentinals.
