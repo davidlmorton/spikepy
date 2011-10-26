@@ -265,8 +265,7 @@ class TaskOrganizer(object):
         for task in task_list:
             all_provided_items = []
             for ttask in self._non_stationary_tasks.values():
-                if ttask.would_generate_unique_results:
-                    all_provided_items.extend(ttask.provides)
+                all_provided_items.extend(ttask.provides)
             can_run = True
 
             # do you require something that someone here will later provide?
