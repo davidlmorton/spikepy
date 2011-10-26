@@ -26,6 +26,7 @@ class FauxPlugin(object):
     def __init__(self, requires, provides):
         self.requires = requires
         self.provides = provides
+        self.is_stochastic = False
         self.pooling = False
 
 plugin_1 = FauxPlugin(requires=['ra', 'rb'],

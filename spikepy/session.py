@@ -69,8 +69,8 @@ class Session(object):
                  'peak_drift':0.3}
         #auxiliary_stages['Resample after Detection Filter'] = \
         #        {'new_sampling_freq':25000}
-        auxiliary_stages['Resample after Extraction Filter'] = \
-                {'new_sampling_freq':25000}
+        #auxiliary_stages['Resample after Extraction Filter'] = \
+        #        {'new_sampling_freq':25000}
         default_strategy = Strategy(methods_used=methods_used, 
                 settings=settings, auxiliary_stages=auxiliary_stages)
         return default_strategy 

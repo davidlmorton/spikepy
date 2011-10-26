@@ -29,7 +29,7 @@ def return_fake_results(to, task):
         for t in task.trials:
             pr.append(1)
         fake_results.append(pr)
-    to.complete_task(task, fake_results)
+    task.complete(fake_results)
     
 
 class TaskOrganizerTests(unittest.TestCase):

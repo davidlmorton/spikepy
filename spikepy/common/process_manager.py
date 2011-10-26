@@ -143,11 +143,15 @@ class ProcessManager(object):
             task_index[task.task_id] = task
             
         results_index = {}
+        queued_tasks = 0
         while True:
             # queue up ready tasks
             for task, task_info in self._task_organizer.pull_runnable_tasks():
                 message_queue.put(('Added task to input_queue.', task))
+                print "RUNNING: %s on %s" % (task.plugin.name,
+                        [t.display_name for t in task.trials])
                 input_queue.put(task_info)
+                queued_tasks += 1
 
             # wait for one result
             result = results_queue.get()
@@ -155,16 +159,16 @@ class ProcessManager(object):
             finished_task = task_index[finished_task_id]
             results_index[finished_task_id] = result['result']
             message_queue.put(('Recieved task results', finished_task))
-            self._task_organizer.complete_task(finished_task, result['result'])
+            finished_task.complete(result['result'])
 
             # are we done queueing up tasks? then add in the sentinals.
             if self._task_organizer.num_tasks == 0:
                 for i in xrange(num_process_workers):
                     input_queue.put(None)
             
-            # are we done getting results? then exit.
-            if len(results_index.keys()) == num_tasks:
-                break
+                # are we done getting results? then exit.
+                if len(results_index.keys()) == queued_tasks:
+                    break
 
         for job in jobs:
             job.join() # halt this thread until processes are all complete.
@@ -249,13 +253,14 @@ class TaskOrganizer(object):
         and remove those tasks from the organizer.
         '''
         results = []
-        all_provided_items = []
-        for task in self._non_stationary_tasks.values():
-            all_provided_items.extend(task.provides)
 
         task_list = [task for task in self._stationary_tasks.values()]
         task_list += [task for task in self._non_stationary_tasks.values()]
         for task in task_list:
+            all_provided_items = []
+            for ttask in self._non_stationary_tasks.values():
+                if ttask.would_generate_unique_results:
+                    all_provided_items.extend(ttask.provides)
             can_run = True
 
             # do you require something that someone here will later provide?
@@ -275,7 +280,12 @@ class TaskOrganizer(object):
                         raise ImpossibleTaskError('Cannot execute %s because it requires something that will not be set by any task in this set.' % task)
 
             if can_run:
-                results.append(self.checkout_task(task))
+                (co_task, co_task_info) = self.checkout_task(task)
+                if co_task.would_generate_unique_results:
+                    results.append((co_task, co_task_info))
+                else:
+                    co_task.skip()
+                
         return results
 
     def checkout_task(self, task):
@@ -285,20 +295,6 @@ class TaskOrganizer(object):
         if task_id in self._non_stationary_tasks.keys():
             del self._non_stationary_tasks[task_id]
         return (task, task.get_run_info())
-
-
-    def complete_task(self, task, result):
-        change_info = task.change_info
-        for pname, presult in zip(task.plugin.provides, result):
-            if len(task.trials) == 1:
-                presult = [presult]
-            for trial, tresult in zip(task.trials, presult):
-                item = getattr(trial, pname)
-                key = task.locking_keys[item]
-                data_dict = {'data':tresult,
-                             'change_info':change_info}
-                item.checkin(data_dict, key=key) 
-
 
     def add_task(self, new_task):
         ''' Add a task to the TaskOrganizer.  '''
@@ -339,6 +335,37 @@ class Task(object):
                     trial.add_resource(Resource(item))
                 elif not isinstance(getattr(trial, item), Resource):
                     raise TaskCreationError('This plugin provides %s, but that is a read-only attribute on trial %s.' % (item, trial.trial_id))
+
+    @property
+    def would_generate_unique_results(self):
+        if self.plugin.is_stochastic:
+            return True
+        else:
+            old_results = self.provides
+            # if by is different, return True
+            for old_result in old_results:
+                if old_result.change_info['by'] != self.plugin.name:
+                    return True
+
+            # if kwargs are different, return True
+            for old_result in old_results:
+                w = old_result.change_info['with']
+                if self.change_info['with'] != w:
+                    return True
+
+            # if any of the args are different, return True
+            for old_result in old_results:
+                using = old_result.change_info['using']
+                for arg_name in self.plugin.requires:
+                    arg_info = []
+                    for trial in self.trials:
+                        arg = getattr(trial, arg_name)
+                        arg_info.append((trial.trial_id, arg_name, 
+                                arg.change_info['change_id']))
+
+                    if arg_info not in using:
+                        return True
+            return False
 
     @property
     def change_info(self):
@@ -389,6 +416,25 @@ class Task(object):
             for item in self.plugin.requires:
                 result.append(getattr(trial, item))
         return result
+
+    def skip(self):
+        for pname in self.plugin.provides:
+            for trial in self.trials:
+                item = getattr(trial, pname)
+                key = self.locking_keys[item]
+                item.checkin(key=key)
+
+    def complete(self, result):
+        change_info = self.change_info
+        for pname, presult in zip(self.plugin.provides, result):
+            if len(self.trials) == 1 and not self.plugin.pooling:
+                presult = [presult]
+            for trial, tresult in zip(self.trials, presult):
+                item = getattr(trial, pname)
+                key = self.locking_keys[item]
+                data_dict = {'data':tresult,
+                             'change_info':change_info}
+                item.checkin(data_dict, key=key) 
 
     def get_run_info(self):
         '''

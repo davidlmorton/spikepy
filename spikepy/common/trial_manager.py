@@ -503,8 +503,7 @@ class Resource(object):
             using : list, a list of (trial_id, resource_name, change_id) that 
                     were used as arguments to the <by> function.  If any 
                     arguments to <by> were not resources, then entry will be 
-                    (trial_id, attribute_name) of the attribute which was
-                    used by the <by> function.
+                    (trial_id, attribute_name).
             change_id : a uuid generated when this resource was last changed.
         '''
         return self._change_info
