@@ -14,6 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from collections import defaultdict
 import copy
 import datetime
 import os
@@ -276,6 +277,24 @@ class Trial(object):
         for resource in self.resources:
             info_dict[resource.name] = resource.as_dict
         return info_dict
+
+    def cluster_data(self, data):
+        results = defaultdict(list)
+        if self.clusters.data is not None:
+            clusters = self.clusters.data
+            for cluster_id, feature_time in zip(clusters, data):
+                results[cluster_id].append(feature_time)
+        else:
+            raise NoClustersError('Cannot fetch clustered data, clustering not yet run.')
+        return results
+        
+    @property
+    def clustered_features(self):
+        return self.cluster_data(self.features.data)
+
+    @property
+    def clustered_feature_times(self):
+        return self.cluster_data(self.feature_times.data)
 
     @property
     def resources(self):

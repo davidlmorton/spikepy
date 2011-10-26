@@ -6,6 +6,9 @@ class SpikepyError(Exception):
     '''
     pass
 
+class NoClustersError(SpikepyError):
+    pass
+
 class NoTasksError(SpikepyError):
     pass
 
