@@ -14,6 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import copy
 import datetime
 import os
 import uuid
@@ -51,12 +52,20 @@ class TrialManager(object):
     def mark_trial(self, name, status):
         """Mark trial with display_name=<name> according to <status>."""
         trial = self.get_trial_with_name(name)
+
+        if self.marked_trials:
+            num_channels = self.marked_trials[0].num_channels
+            if trial.num_channels != num_channels and status:
+                raise CannotMarkTrialError('Cannot mark a trial with %d channels, since trials with %d channels are already marked.' % (trial.num_channels, num_channels))
         trial.mark(status=status)
 
     def mark_all_trials(self, status):
         """Mark all trials according to <status>"""
         for trial in self._trial_index.values():
-            trial.mark(status=status)
+            try:
+                self.mark_trial(trial.name, status)
+            except CannotMarkTrialError:
+                pass
 
     def add_trials(self, trial_list, marked=True):
         """
@@ -104,15 +113,22 @@ class TrialManager(object):
         self._display_names.remove(trial.display_name)
         trial.display_name = self._get_unique_display_name(proposed_name)
 
-    def get_marked_trials(self):
+    @property
+    def marked_trials(self):
         '''Return all currently marked trials.'''
         return [trial for trial in self._trial_index.values()
                 if trial.is_marked]
 
-    def get_marked_trial_ids(self):
+    @property
+    def marked_trial_ids(self):
         """Return the trial_ids for all currently marked trials"""
         marked_ids = [trial.trial_id for trial in self.get_marked_trials()]
         return marked_ids
+
+    @property
+    def trials(self):
+        '''Return all currently marked and unmarked trials.'''
+        return self._trial_index.values()
 
     def get_trial_with_id(self, trial_id):
         """
@@ -167,13 +183,19 @@ class Trial(object):
         self._id = uuid.uuid4() 
         self.origin = origin
 
+    @property
+    def num_channels(self):
+        if hasattr(self, 'raw_traces'):
+            return self.raw_traces.shape[0]
+        else:
+            return 0
+
     def _setup_basic_attributes(self, raw_traces, sampling_freq):
         self.raw_traces = utils.format_traces(raw_traces)
         self.raw_times = numpy.arange(0, 
                 self.raw_traces.shape[1], 
                 dtype=self.raw_traces.dtype)/sampling_freq
         self.sampling_freq = sampling_freq
-        self.num_channels = self.raw_traces.shape[0]
 
         # -------------------------------------
         # -- main processing stage resources --
@@ -480,6 +502,9 @@ class Resource(object):
         assert "by" in change_info.keys()
         assert isinstance(change_info['with'], dict)
         assert isinstance(change_info['using'], list)
+        # so doesn't point back to strategy's settings dict.
+        change_info['with'] = copy.copy(change_info['with']) 
+
         change_info['at'] = datetime.datetime.now()
         change_info['change_id'] = uuid.uuid4()
         self._change_info = change_info

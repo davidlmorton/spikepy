@@ -26,6 +26,9 @@ from spikepy.common.errors import *
 
 def build_tasks(marked_trials, plugin, plugin_kwargs):
     tasks = []
+    if not marked_trials:
+        return tasks
+
     if plugin.pooling:
         tasks.append(Task(marked_trials, plugin, plugin_kwargs))
     else:
@@ -82,7 +85,7 @@ class ProcessManager(object):
     def build_tasks_from_strategy(self, strategy, stage_name=None):
         '''Create a task for each stage of the strategy.'''
         tasks = []
-        marked_trials = self.trial_manager.get_marked_trials()
+        marked_trials = self.trial_manager.marked_trials
 
         if stage_name == 'auxiliary' or stage_name is None:
             for plugin_name, plugin_kwargs in strategy.auxiliary_stages.items():
@@ -91,7 +94,7 @@ class ProcessManager(object):
                 tasks.extend(build_tasks(marked_trials, plugin, plugin_kwargs))
 
         if stage_name is not None: 
-            if stage != 'auxiliary':
+            if stage_name != 'auxiliary':
                 plugin_name = strategy.methods_used[stage_name]
                 plugin = self.plugin_manager.find_plugin(stage_name,
                         plugin_name)
@@ -105,13 +108,13 @@ class ProcessManager(object):
                 tasks.extend(build_tasks(marked_trials, plugin, plugin_kwargs))
         return tasks 
 
-    def prepare_to_run_strategy(self, strategy):
+    def prepare_to_run_strategy(self, strategy, stage_name=None):
         '''
             Validate strategy, build tasks for it and put them in a 
         TaskOrganizer self._task_organizer. (see self.run_tasks()).
         '''
         self.plugin_manager.validate_strategy(strategy)
-        tasks = self.build_tasks_from_strategy(strategy)
+        tasks = self.build_tasks_from_strategy(strategy, stage_name=stage_name)
         for task in tasks:
             self._task_organizer.add_task(task)
 
@@ -122,6 +125,8 @@ class ProcessManager(object):
         '''
         num_process_workers = get_num_workers(self.config_manager)
         num_tasks = self._task_organizer.num_tasks
+        if num_tasks == 0:
+            raise NoTasksError('There are no tasks to run')
         if num_tasks < num_process_workers:
             num_process_workers = num_tasks
 
@@ -154,12 +159,13 @@ class ProcessManager(object):
                 queued_tasks += 1
 
             # wait for one result
-            result = results_queue.get()
-            finished_task_id = result['task_id']
-            finished_task = task_index[finished_task_id]
-            results_index[finished_task_id] = result['result']
-            message_queue.put(('Recieved task results', finished_task))
-            finished_task.complete(result['result'])
+            if queued_tasks > 0:
+                result = results_queue.get()
+                finished_task_id = result['task_id']
+                finished_task = task_index[finished_task_id]
+                results_index[finished_task_id] = result['result']
+                message_queue.put(('Recieved task results', finished_task))
+                finished_task.complete(result['result'])
 
             # are we done queueing up tasks? then add in the sentinals.
             if self._task_organizer.num_tasks == 0:

@@ -6,10 +6,16 @@ class SpikepyError(Exception):
     '''
     pass
 
+class NoTasksError(SpikepyError):
+    pass
+
 class ImpossibleTaskError(SpikepyError):
     pass
 
 class TaskCreationError(SpikepyError):
+    pass
+
+class CannotMarkTrialError(SpikepyError):
     pass
 
 class FileInterpretationError(SpikepyError):

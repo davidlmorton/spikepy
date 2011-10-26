@@ -14,6 +14,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import multiprocessing
+
 from spikepy.common.trial_manager import TrialManager
 from spikepy.common.process_manager import ProcessManager
 from spikepy.common.config_manager import ConfigManager
@@ -109,12 +111,22 @@ class Session(object):
         """Mark all trials according to <status>"""
         self.trial_manager.mark_all_trials(status=status)
 
+    @property
+    def trials(self):
+        '''Return all currently marked and unmarked trials.'''
+        return self.trial_manager.trials
+
+    @property
+    def marked_trials(self):
+        '''Return all currently marked trials.'''
+        return self.trial_manager.marked_trials
+        
     def get_trial_with_name(self, name):
         """
         Find the trial with display_name=<name> and return it.
         Raises RuntimeError if trial cannot be found.
         """
-        self.trial_manager.get_trial_with_name(name)
+        return self.trial_manager.get_trial_with_name(name)
 
     # --- STRATEGY ---
     def select_strategy(self, strategy_name):
@@ -134,6 +146,21 @@ class Session(object):
     def save_current_strategy(self, strategy_name):
         """Save the current strategy, giving it the name <strategy_name>"""
         self.strategy_manager.save_current_strategy(strategy_name)
+
+    def run(self, strategy=None, stage_name=None, 
+            message_queue=multiprocessing.Queue()):
+        '''
+            Run the given strategy (defaults to current_strategy), or a stage 
+        from that strategy.  Results are placed into the appropriate 
+        trial's resources.
+        '''
+        if strategy is None:
+            strategy = self.current_strategy 
+        self.process_manager.prepare_to_run_strategy(strategy, 
+                stage_name=stage_name)
+        self.process_manager.run_tasks(message_queue=message_queue)
+
+
 
 
 
