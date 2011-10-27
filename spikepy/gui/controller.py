@@ -25,15 +25,15 @@ import wx
 from wx.lib.pubsub import Publisher as pub
 from wx.lib.delayedresult import startWorker
 
-from spikepy.common.session_manager import SessionManager
-from ..common.trial import Trial
-from .view import View
-from .utils import named_color, load_pickle
+from spikepy import session
+
 from spikepy.common import program_text as pt
+from spikepy.gui.view import View
+from spikepy.gui.utils import named_color, load_pickle
 from spikepy.gui.process_progress_dialog import ProcessProgressDialog
-from .trial_rename_dialog import TrialRenameDialog
-from .pyshell import locals_dict
-from .export_dialog import ExportDialog
+from spikepy.gui.trial_rename_dialog import TrialRenameDialog
+from spikpey.gui.pyshell import locals_dict
+from spikepy.gui.export_dialog import ExportDialog
 
 all_stages = ['detection_filter', 'detection', 'extraction_filter', 
               'extraction', 'clustering']
@@ -47,14 +47,14 @@ def make_version_float(version_number_string):
 
 class Controller(object):
     def __init__(self):
-        self.model = SessionManager()
+        self.session = session()
         self.view = View()
         self.results_notebook = self.view.frame.results_notebook
         self._selected_trial = None
         self._process_progress_dlg = None
 
         # save for locals in pyshell
-        locals_dict['model']      = self.model
+        locals_dict['session']      = self.session
         locals_dict['view']       = self.view
         locals_dict['controller'] = self
         self.setup_subscriptions()
@@ -100,14 +100,6 @@ class Controller(object):
 
     def stop_debug_subscriptions(self):
         pub.unsubscribe(self._print_messages) # unsubscribes from all
-
-    def get_marked_trials(self):
-        trial_grid_ctrl = self.view.frame.trial_list
-        trial_ids = trial_grid_ctrl.marked_trial_ids
-        return [self.model.trials[trial_id] for trial_id in trial_ids]
-
-    def get_all_trials(self):
-        return self.model.trials.values()
 
     def _cannot_mark_trial(self, message):
         unmarkable_trial = self.model.trials[message.data]
