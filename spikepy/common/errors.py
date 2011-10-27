@@ -42,7 +42,7 @@ class AddResourceError(SpikepyError):
 class MissingTrialError(SpikepyError):
     pass
 
-class InvalidOptionError(SpikepyError):
+class InvalidValueError(SpikepyError):
     pass
 
 class UnknownStageError(SpikepyError):

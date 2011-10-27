@@ -48,12 +48,20 @@ class ValidType(object):
         self.args = ', '.join(args)
         self.default = self(self._default)
 
+    @property
+    def passed_args(self):
+        return self.args.split(', ')
+
     def __call__(self, value=None, **kwargs):
         check_string = '%s(%s)' % (self.mytype, self.args) 
         if value is None:
             return self.default
         else:
-            return v.check(check_string, value, **kwargs)
+            try:
+                return v.check(check_string, value, **kwargs)
+            except:
+                raise InvalidValueError('The value "%s" is invalid [%s]' % 
+                        (value, check_string))
 
 class ValidInteger(ValidType):
     mytype = 'integer'
@@ -80,5 +88,5 @@ class ValidOption(ValidType):
         try:
             return v.check(check_string, value, **kwargs)
         except VdtValueError:
-            raise InvalidOptionError(
+            raise InvalidValueError(
                     'The value "%s" must be one of "%s"' % (value, self.args))

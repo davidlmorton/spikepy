@@ -17,7 +17,8 @@ along with this program.  if not, see <http://www.gnu.org/licenses/>.
 """
 import wx
 
-from spikepy.gui.valid_controls import ValidFloatControl 
+from spikepy.gui.valid_controls import *
+from spikepy.common.valid_types import *
 
 # setup app and main_frame
 app = wx.PySimpleApp()
@@ -28,11 +29,26 @@ sizer = wx.BoxSizer(orient=wx.VERTICAL)
 def print_entry(entry):
     print entry
 
-control = ValidFloatControl(main_frame, name='Example', min_value=0.0, 
-        max_value=1.0, valid_entry_callback=print_entry)
-control.SetValue('0.5')
+control1 = ValidNumberControl(main_frame, name='Float Between -10 and 2.4', 
+        valid_type=ValidFloat(min=-10, max=2.4, default=-3.14159), 
+        valid_entry_callback=print_entry)
 
-sizer.Add(control)
+control2 = ValidNumberControl(main_frame, name='Integer Greater than 3', 
+        valid_type=ValidInteger(min=3, default=12), 
+        valid_entry_callback=print_entry)
+
+control3 = ValidBooleanControl(main_frame, name='Boolean', 
+        valid_type=ValidFloat(default=True), 
+        valid_entry_callback=print_entry)
+
+control4 = ValidChoiceControl(main_frame, name='Choice', 
+        valid_type=ValidOption('bleh', 'blah', 'blew', default='blah'), 
+        valid_entry_callback=print_entry)
+
+sizer.Add(control1)
+sizer.Add(control2)
+sizer.Add(control3)
+sizer.Add(control4)
 
 # set sizer and run app
 main_frame.SetSizer(sizer)
