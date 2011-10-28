@@ -41,7 +41,9 @@ class MyFrame(wx.Frame):
     def __init__(self, parent, id=wx.ID_ANY, 
                  title=pt.MAIN_FRAME_TITLE,
                  size=None,
-                 style=wx.DEFAULT_FRAME_STYLE):
+                 style=wx.DEFAULT_FRAME_STYLE,
+                 plugin_manager=None,
+                 strategy_manager=None):
         # MAIN_FRAME_SIZE needs the wx.App() instance so can't be put 
         #   in declaration
         if size is None: 
@@ -54,7 +56,9 @@ class MyFrame(wx.Frame):
 
 
         strategy_holder = BorderPanel(hsplit, style=wx.BORDER_SUNKEN)
-        self.strategy_pane = StrategyPane(strategy_holder)
+        self.strategy_pane = StrategyPane(strategy_holder, 
+                plugin_manager=plugin_manager, 
+                strategy_manager=strategy_manager)
         strategy_holder.add_content(self.strategy_pane, 0)
 
         trial_list_holder = BorderPanel(hsplit, style=wx.BORDER_SUNKEN)

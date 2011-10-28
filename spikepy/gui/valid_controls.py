@@ -16,13 +16,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import wx
 from spikepy.common.errors import *
+from spikepy.common.valid_types import *
 
 class ValidControl(wx.Panel):
     def __init__(self, parent, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
 
+    def register_valid_entry_callback(self, valid_entry_callback):
+        self.valid_entry_callback = valid_entry_callback 
+
     def SetFocusFromKbd(self):
         self.green.text_ctrl.SetFocus()
+
+def make_control(parent, name, valid_type, background_color=None):
+    type_dict = {ValidInteger:ValidNumberControl,
+                 ValidFloat:ValidNumberControl,
+                 ValidOption:ValidChoiceControl,
+                 ValidBoolean:ValidBooleanControl}
+    ctrl = type_dict[valid_type.__class__](parent, name=name, 
+            valid_type=valid_type)
+    if background_color is not None:
+        ctrl.SetBackgroundColour(background_color)
+    return ctrl
 
 class ValidBooleanControl(ValidControl):
     def __init__(self, parent, name='', valid_type=None, 
@@ -44,10 +59,7 @@ class ValidBooleanControl(ValidControl):
         self.SetValue(valid_type(missing=True))
 
     def GetValue(self):
-        try:
-            return bool(self.valid_type(self.ctrl.GetValue()))
-        except InvalidValueError:
-            return
+        return bool(self.valid_type(self.ctrl.GetValue()))
         
     def SetValue(self, value):
         temp, self.valid_entry_callback = self.valid_entry_callback, None
@@ -87,10 +99,7 @@ class ValidNumberControl(ValidControl):
         self.SetValue(valid_type(missing=True))
 
     def GetValue(self):
-        try:
-            return self.valid_type(self.ctrl.GetValue())
-        except InvalidValueError:
-            return
+        return self.valid_type(self.ctrl.GetValue())
         
     def SetValue(self, value):
         temp, self.valid_entry_callback = self.valid_entry_callback, None
@@ -100,7 +109,7 @@ class ValidNumberControl(ValidControl):
     def _value_entered(self, event):
         event.Skip()
         try:
-            my_value = self.valid_type(self.ctrl.GetValue())
+            my_value = self.GetValue()
         except InvalidValueError:
             self.ctrl.SetBackgroundColour(wx.Colour(255, 200, 200))
             self._last_value = None
@@ -138,10 +147,7 @@ class ValidChoiceControl(ValidControl):
         self.SetValue(valid_type(missing=True))
 
     def GetValue(self):
-        try:
-            return self.valid_type(self.ctrl.GetStringSelection())
-        except InvalidValueError:
-            return
+        return self.valid_type(self.ctrl.GetStringSelection())
         
     def SetValue(self, value):
         temp, self.valid_entry_callback = self.valid_entry_callback, None

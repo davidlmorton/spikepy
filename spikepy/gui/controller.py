@@ -32,7 +32,7 @@ from spikepy.gui.view import View
 from spikepy.gui.utils import named_color, load_pickle
 from spikepy.gui.process_progress_dialog import ProcessProgressDialog
 from spikepy.gui.trial_rename_dialog import TrialRenameDialog
-from spikpey.gui.pyshell import locals_dict
+from spikepy.gui.pyshell import locals_dict
 from spikepy.gui.export_dialog import ExportDialog
 
 all_stages = ['detection_filter', 'detection', 'extraction_filter', 
@@ -47,8 +47,9 @@ def make_version_float(version_number_string):
 
 class Controller(object):
     def __init__(self):
-        self.session = session()
-        self.view = View()
+        self.session = session.Session()
+        self.view = View(plugin_manager=self.session.plugin_manager, 
+                strategy_manager=self.session.strategy_manager)
         self.results_notebook = self.view.frame.results_notebook
         self._selected_trial = None
         self._process_progress_dlg = None

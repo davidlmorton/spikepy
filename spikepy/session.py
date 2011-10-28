@@ -21,6 +21,7 @@ from spikepy.common.process_manager import ProcessManager
 from spikepy.common.config_manager import ConfigManager
 from spikepy.common.plugin_manager import PluginManager
 from spikepy.common.strategy_manager import StrategyManager, Strategy
+from spikepy.common import path_utils
 
 class Session(object):
     def __init__(self):
@@ -36,6 +37,8 @@ class Session(object):
         # register callback for open_files
         self.process_manager.open_files.add_callback(self._trials_created,
                 takes_target_results=True)
+
+        path_utils.setup_user_directories(app_name='spikepy')
 
     def _make_default_strategy(self):
         methods_used = {'detection_filter':'Infinite Impulse Response',

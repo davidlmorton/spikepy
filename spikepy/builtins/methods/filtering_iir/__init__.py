@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from spikepy.developer_tools.methods import FilteringMethod
-from spikepy.common.valid_types import ValidOption, ValidIntegerList, \
+from spikepy.common.valid_types import ValidOption, \
         ValidInteger, ValidBoolean
 from .simple_iir import butterworth, bessel
 
@@ -30,7 +30,8 @@ class FilteringIIR(FilteringMethod):
 
     function_name = ValidOption('butterworth', 'bessel', default='butterworth')
     acausal = ValidBoolean(default=True)
-    critical_freq = ValidIntegerList(1, 2, default=[300, 3000])
+    low_cutoff_frequency = ValidInteger(min=10, default=300)
+    high_cutoff_frequency = ValidInteger(min=10, default=3000)
     kind = ValidOption('low pass', 'high pass', 'band pass', 
             default='band pass')
     order = ValidInteger(2, 8, default=3)
@@ -41,7 +42,19 @@ class FilteringIIR(FilteringMethod):
         elif kwargs['function_name'].lower() == 'bessel':
             filter_function = bessel
         del kwargs['function_name']
-        kwargs['kind'] = kwargs['kind'].lower().split()[0]
+
+        kind = kwargs['kind'] = kwargs['kind'].lower().split()[0]
+        if kind == 'low':
+            critical_freq = kwargs['low_cutoff_frequency']
+        elif kind == 'high':
+            critical_freq = kwargs['high_cutoff_frequency']
+        else:
+            critical_freq = (kwargs['low_cutoff_frequency'],
+                    kwargs['high_cutoff_frequency'])
+        del kwargs['low_cutoff_frequency']
+        del kwargs['high_cutoff_frequency']
+        kwargs['critical_freq'] = critical_freq
+
         filtered_signal = filter_function(signal, sampling_freq, **kwargs)
         return [filtered_signal, sampling_freq]
     

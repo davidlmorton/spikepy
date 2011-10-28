@@ -26,11 +26,12 @@ class ResampleAEF(AuxiliaryMethod):
     provides = ['ef_traces', 'ef_sampling_freq']
     is_stochastic = False
 
-    new_sampling_freq = ValidInteger(10, 100000, default=30000)
+    new_sampling_frequency = ValidInteger(10, 100000, default=30000)
 
     def run(self, signal, sampling_freq, **kwargs):
         return [resample(signal, sampling_freq, 
-                kwargs['new_sampling_freq']), kwargs['new_sampling_freq']]
+                kwargs['new_sampling_frequency']), 
+                kwargs['new_sampling_frequency']]
 
 class ResampleADF(ResampleAEF):
     name = 'Resample after Detection Filter'

@@ -23,18 +23,11 @@ import matplotlib
 #     requires this before importing wxagg backend
 matplotlib.use('WXAgg', warn=False) 
 
-from spikepy.common import plugin_utils
-from spikepy.common import path_utils
-from spikepy.common.config_manager import config_manager
-
 class MySplashScreen(wx.SplashScreen):
     def __init__(self, image=None, splash_style=None, timeout=None, 
                        parent=None, **kwargs):
         wx.SplashScreen.__init__(self, image, splash_style, timeout, 
                                  parent, **kwargs)
-
-path_utils.setup_user_directories(app_name='spikepy')
-plugin_utils.load_all_plugins(app_name='spikepy')
 
 if __name__ == '__main__':
     def startup():

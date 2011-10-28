@@ -167,7 +167,12 @@ class PluginManager(object):
             new_items = [item.replace('<stage_name>', provides_prefix)
                     for item in typed_filter.provides]
             typed_filter.provides = new_items
-            typed_filters[typed_filter.name] = typed_filter
+            is_correct_type = False
+            for pname in typed_filter.provides:
+                if provides_prefix in pname:
+                    is_correct_type = True
+            if is_correct_type:
+                typed_filters[typed_filter.name] = typed_filter
         return typed_filters
 
     @property

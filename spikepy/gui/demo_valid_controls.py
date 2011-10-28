@@ -19,6 +19,12 @@ import wx
 
 from spikepy.gui.valid_controls import *
 from spikepy.common.valid_types import *
+from spikepy import session
+from spikepy.gui.strategy_pane import ControlPanel
+
+s = session.Session()
+p = s.plugin_manager.find_plugin('detection_filter', 
+        'Infinite Impulse Response')
 
 # setup app and main_frame
 app = wx.PySimpleApp()
@@ -29,9 +35,9 @@ sizer = wx.BoxSizer(orient=wx.VERTICAL)
 def print_entry(entry):
     print entry
 
-control1 = ValidNumberControl(main_frame, name='Float Between -10 and 2.4', 
-        valid_type=ValidFloat(min=-10, max=2.4, default=-3.14159), 
-        valid_entry_callback=print_entry)
+control1 = make_control(main_frame, name='Float Between -10 and 2.4',
+        valid_type=ValidFloat(min=-10, max=2.4, default=-3.14159))
+control1.register_valid_entry_callback(print_entry)
 
 control2 = ValidNumberControl(main_frame, name='Integer Greater than 3', 
         valid_type=ValidInteger(min=3, default=12), 
@@ -45,10 +51,13 @@ control4 = ValidChoiceControl(main_frame, name='Choice',
         valid_type=ValidOption('bleh', 'blah', 'blew', default='blah'), 
         valid_entry_callback=print_entry)
 
+cp1 = ControlPanel(main_frame, p, valid_entry_callback=print_entry)
+
 sizer.Add(control1)
 sizer.Add(control2)
 sizer.Add(control3)
 sizer.Add(control4)
+sizer.Add(cp1)
 
 # set sizer and run app
 main_frame.SetSizer(sizer)

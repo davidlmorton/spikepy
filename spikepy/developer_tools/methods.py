@@ -33,15 +33,22 @@ class SpikepyMethod(object):
 
     def run(*args, **kwargs):
         raise NotImplementedError 
-    
-    def get_parameter_defaults(self):
-        ''' Return a dictionary containing the default parameter values.  '''
-        kwargs = {}
+
+    def get_parameter_attributes(self):
+        ''' Return a dictionary of ValidType attributes. '''
+        attrs = {}
         attribute_names = dir(self)
         for name in attribute_names:
             value = getattr(self, name)
             if isinstance(value, ValidType):
-                kwargs[name] = value()
+                attrs[name] = value
+        return attrs
+    
+    def get_parameter_defaults(self):
+        ''' Return a dictionary containing the default parameter values.  '''
+        kwargs = {}
+        for attr_name, attr in self.get_parameter_attributes().items():
+            kwargs[attr_name] = attr()
         return kwargs
 
     def validate_parameters(self, parameter_dict):
