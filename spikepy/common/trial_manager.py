@@ -23,6 +23,7 @@ import uuid
 import wx
 import numpy
 import scipy.io
+from callbacks import supports_callbacks 
 
 from spikepy.common import program_text as pt
 from spikepy.common import utils
@@ -50,6 +51,7 @@ class TrialManager(object):
         self._trial_index = {}
         self._display_names = set()
 
+    @supports_callbacks 
     def mark_trial(self, name, status):
         """Mark trial with display_name=<name> according to <status>."""
         trial = self.get_trial_with_name(name)
@@ -59,6 +61,7 @@ class TrialManager(object):
             if trial.num_channels != num_channels and status:
                 raise CannotMarkTrialError('Cannot mark a trial with %d channels, since trials with %d channels are already marked.' % (trial.num_channels, num_channels))
         trial.mark(status=status)
+        return trial.trial_id, trial.is_marked
 
     def mark_all_trials(self, status):
         """Mark all trials according to <status>"""
@@ -81,22 +84,27 @@ class TrialManager(object):
             self._trial_index[trial.trial_id] = trial
 
         for name in new_names:
-            self.mark_trial(name, marked)
+            try:
+                self.mark_trial(name, marked)
+            except CannotMarkTrialError:
+                pass
 
     def remove_trial_with_name(self, name):
         """Remove the trial with display_name=<name>."""
         trial = self.get_trial_with_name(name)
-        self._remove_trial(trial)
+        self.remove_trial(trial)
 
-    def _remove_trial(self, trial):
+    @supports_callbacks 
+    def remove_trial(self, trial):
         self._display_names.remove(trial.display_name)
         del self._trial_index[trial.trial_id]
+        return trial.trial_id
 
     def remove_marked_trials(self):
         """Remove all currently marked trials."""
         for trial_id in self.get_marked_trial_ids():
             trial = self._trial_index[trial_id]
-            self._remove_trial(trial)
+            self.remove_trial(trial)
 
     def _get_unique_display_name(self, proposed_display_name):
         count = 1
@@ -107,12 +115,17 @@ class TrialManager(object):
         self._display_names.add(new_display_name)
         return new_display_name
 
+    @property
+    def all_display_names(self):
+        return self._display_names 
+
     @supports_callbacks
     def rename_trial(self, old_name, proposed_name):
         """Find trial named <old_name> and rename it to <proposed_name>."""
         trial = self.get_trial_with_name(old_name)
         self._display_names.remove(trial.display_name)
         trial.display_name = self._get_unique_display_name(proposed_name)
+        return trial
 
     @property
     def marked_trials(self):

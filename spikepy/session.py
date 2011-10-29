@@ -14,7 +14,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import threading
 import multiprocessing
+import uuid
+
+from callbacks import supports_callbacks
 
 from spikepy.common.trial_manager import TrialManager
 from spikepy.common.process_manager import ProcessManager
@@ -83,10 +87,12 @@ class Session(object):
         return default_strategy 
 
     # --- OPEN FILE(S) ---
+    @supports_callbacks
     def open_file(self, fullpath):
         """Open file located at fullpath."""
         return self.process_manager.open_file(fullpath)
 
+    @supports_callbacks
     def open_files(self, fullpaths):
         """Open the files located at fullpaths"""
         return self.process_manager.open_files(fullpaths)
@@ -96,25 +102,37 @@ class Session(object):
         self.trial_manager.add_trials(trials)
 
     # --- TRIAL ---
-    def rename_trial(self, old_name, proposed_name):
-        """Find trial named <old_name> and rename it to <proposed_name>."""
-        self.trial_manager.rename_trial(old_name, proposed_name)
-
-    def remove_trial_with_name(self, name):
-        """Remove the trial with display_name=<name>."""
-        self.trial_manager.remove_trial_with_name(name)
+    @supports_callbacks
+    def rename_trial(self, old_name_or_id, proposed_name):
+        """Find trial with <old_name_or_id> and rename it to <proposed_name>."""
+        trial = self.get_trial(old_name_or_id)
+        return self.trial_manager.rename_trial(trial.display_name, 
+                proposed_name)
 
     def remove_marked_trials(self):
         """Remove all currently marked trials."""
         self.trial_manager.remove_marked_trials()
 
-    def mark_trial(self, name, status=True):
-        """Mark trial with display_name=<name> according to <status>."""
-        self.trial_manager.mark_trial(name, status=status)
+    def remove_trial(self, name_or_id):
+        """Remove the trial with name or id given."""
+        trial = self.get_trial(name_or_id)
+        self.trial_manager.remove_trial_with_name(trial.display_name)
+
+    def mark_trial(self, name_or_id, status=True):
+        """Mark trial with name_or_id according to <status>."""
+        trial = self.get_trial(name_or_id)
+        return self.trial_manager.mark_trial(trial.display_name, status=status)
 
     def mark_all_trials(self, status=True):
         """Mark all trials according to <status>"""
         self.trial_manager.mark_all_trials(status=status)
+
+    def get_trial(self, name_or_id):
+        """Return the trial with the given name or id"""
+        if isinstance(name_or_id, uuid.UUID):
+            return self.trial_manager.get_trial_with_id(name_or_id)
+        else:
+            return self.trial_manager.get_trial_with_name(name_or_id)
 
     @property
     def trials(self):
@@ -153,18 +171,43 @@ class Session(object):
         self.strategy_manager.save_current_strategy(strategy_name)
 
     def run(self, strategy=None, stage_name=None, 
-            message_queue=multiprocessing.Queue()):
+            message_queue=multiprocessing.Queue(),
+            block=True):
         '''
             Run the given strategy (defaults to current_strategy), or a stage 
         from that strategy.  Results are placed into the appropriate 
         trial's resources.
+        Inputs:
+            strategy: A Strategy object.  If not passed, 
+                    session.current_strategy will be used.
+            stage_name: If passed, only that stage will be run.
+            message_queue: If passed, will be populated with run messages.
+            block: If True, processing will halt until run is finished.
         '''
         if strategy is None:
             strategy = self.current_strategy 
         self.process_manager.prepare_to_run_strategy(strategy, 
                 stage_name=stage_name)
-        self.process_manager.run_tasks(message_queue=message_queue)
 
+        self._run_thread = threading.Thread(
+                target=self.process_manager.run_tasks,
+                kwargs={'message_queue':message_queue})
+        self._run_thread.start()
+        if block:
+            self._run_thread.join()
+
+    def join_run(self):
+        """Join the run thread (if there is one)."""
+        if hasattr(self, '_run_thread'):
+            self._run_thread.join()
+
+    @property
+    def is_running(self):
+        if hasattr(self, '_run_thread'):
+            return self._run_thread.is_alive()
+        else:
+            return False
+            
 
 
 

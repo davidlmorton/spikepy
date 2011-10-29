@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import string
 
 import wx
-from .validators import FilenameValidator
+from .validators import NameValidator
 from spikepy.common import program_text as pt
 from spikepy.developer_tools.named_controls import NamedTextCtrl 
 
@@ -26,10 +26,10 @@ valid_filename_characters = ('-_.,)(%s%s' %
                              (string.ascii_letters, string.digits))
 
 class TrialRenameDialog(wx.TextEntryDialog):
-    def __init__(self, parent, trial_name, fullpath, 
-                       all_other_trials, *args, **kwargs):
-        self.all_other_trials = all_other_trials
-        message =  'Fullpath: %s' % fullpath
+    def __init__(self, parent, trial_name, origin, 
+                       all_display_names, *args, **kwargs):
+        message =  'Origin: %s' % origin
+        self._invalid_names = all_display_names 
         self._valid_characters = valid_filename_characters
         wx.TextEntryDialog.__init__(self, parent, message, 
                 caption='Enter New Trial Name',
@@ -53,7 +53,8 @@ class TrialRenameDialog(wx.TextEntryDialog):
                 # be the original value, but dlg._text_ctrl.GetValue() will
                 # get the correct value.
                 self._text_ctrl = child
-                child.SetValidator(FilenameValidator(valid_filename_characters))
+                child.SetValidator(NameValidator(valid_filename_characters,
+                        invalid_names=self._invalid_names))
                 child.Bind(wx.EVT_TEXT, self._text_ctrl_validate)
 
     def _text_ctrl_validate(self, event=None):

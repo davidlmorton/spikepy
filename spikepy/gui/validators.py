@@ -74,35 +74,42 @@ class CharacterSubsetValidator(wx.PyValidator):
             return # eat the event.
         event.Skip()
 
-class FilenameValidator(CharacterSubsetValidator):
-    def __init__(self, valid_characters, **kwargs):
+class NameValidator(CharacterSubsetValidator):
+    def __init__(self, valid_characters, invalid_names=[], **kwargs):
         CharacterSubsetValidator.__init__(self, valid_characters, **kwargs)
+        self._invalid_names = invalid_names
 
     def Clone(self):
-        return FilenameValidator(self._valid_characters)
+        return self.__class__(self._valid_characters, 
+                invalid_names=self._invalid_names)
 
     def Validate(self, dlg=None, can_exit=True):
         win = self.GetWindow()
         new_name = win.GetValue()
+
         # ensure current name is not one of the other names.
         has_error = False
-        all_other_trial_names = [otrial.display_name 
-                                 for otrial in dlg.all_other_trials]
-        if new_name in all_other_trial_names:
-            dlg.warning_text.SetLabel(pt.NAME_ALREADY_EXISTS % new_name)
+        if new_name in self._invalid_names:
+            if dlg is not None and hasattr(dlg, 'warning_text'):
+                dlg.warning_text.SetLabel(pt.NAME_ALREADY_EXISTS % new_name)
             has_error = True
         if new_name.startswith('.'):
-            dlg.warning_text.SetLabel(pt.NAME_CANNOT_BEGIN_WITH)
+            if dlg is not None and hasattr(dlg, 'warning_text'):
+                dlg.warning_text.SetLabel(pt.NAME_CANNOT_BEGIN_WITH)
+            has_error = True
+        if len(new_name) == 0:
             has_error = True
         if has_error:
             win.SetBackgroundColour('pink')
             return False
         else:
             if can_exit:
-                dlg.EndModal(wx.ID_OK)
+                if dlg is not None:
+                    dlg.EndModal(wx.ID_OK)
                 return True
             else:
-                dlg.warning_text.SetLabel('')
+                if dlg is not None:
+                    dlg.warning_text.SetLabel('')
                 win.SetBackgroundColour('white')
                 return True
 

@@ -14,10 +14,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import os
 
 import numpy
 
-from spikepy.developer_tools.file_interpreter import FileInterpreter
+from spikepy.developer_tools.file_interpreter import FileInterpreter, Trial
 
 class Wessel_LabView_text_tetrode(FileInterpreter):
     def __init__(self):
@@ -33,5 +34,7 @@ class Wessel_LabView_text_tetrode(FileInterpreter):
         sampling_freq = int((len(times)-1)/
                             (times[-1]-times[0])*1000) # 1000 kHz->Hz
 
-        trials = [self.make_trial_object(sampling_freq, raw_traces, fullpath)]
-        return trials
+        display_name = os.path.splitext(os.path.split(fullpath)[-1])[0]
+        trial = Trial.from_raw_traces(sampling_freq, raw_traces, 
+                origin=fullpath, display_name=display_name)
+        return [trial]

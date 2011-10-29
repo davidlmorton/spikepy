@@ -68,6 +68,7 @@ class TrialGridCtrl(gridlib.Grid):
         pub.subscribe(self._trial_added, topic='TRIAL_ADDED')
         pub.subscribe(self._trial_closed, topic='TRIAL_CLOSED')
         pub.subscribe(self._trial_renamed, topic='TRIAL_RENAMED')
+        pub.subscribe(self._trial_marked, topic='TRIAL_MARKED')
 
         self.Bind(gridlib.EVT_GRID_CELL_LEFT_CLICK, self._on_left_click)
         self.Bind(gridlib.EVT_GRID_CELL_LEFT_DCLICK, self._on_left_dclick)
@@ -127,7 +128,6 @@ class TrialGridCtrl(gridlib.Grid):
             self.SetCellValue(row, 0, config.marked_status)
         else:
             self.SetCellValue(row, 0, config.unmarked_status)
-        pub.sendMessage(topic='TRIAL_MARKS_CHANGED', data=None)
 
     @property
     def _num_nonempty_rows(self):
@@ -165,16 +165,6 @@ class TrialGridCtrl(gridlib.Grid):
         pub.sendMessage(topic='CLOSE_TRIAL',
                         data=trial_id)
 
-    def _is_markable(self, trial_id):
-        # make sure this trial has same number of channels as
-        #     all other marked trials.
-        num_channels = self._trials[trial_id].num_channels 
-        for tid in self.marked_trial_ids:
-            tnum_channels = self._trials[tid].num_channels
-            if num_channels != tnum_channels:
-                return False
-        return True
-
     def _on_left_click(self, event):
         row = event.GetRow()
         col = event.GetCol()
@@ -183,10 +173,8 @@ class TrialGridCtrl(gridlib.Grid):
             trial_id = self._get_trial_id_from_row(row)
             if col == 0:
                 marked = self._get_marked_status(row)
-                if not marked and not self._is_markable(trial_id):
-                    pub.sendMessage('CANNOT_MARK_TRIAL', data=trial_id)
-                    return
-                self._set_marked_status(row, not marked)
+                pub.sendMessage('MARK_TRIAL', data=(trial_id, not marked))
+                return
             else: 
                 self._select_row(row)
 
@@ -300,10 +288,11 @@ class TrialGridCtrl(gridlib.Grid):
         else:
             self.AppendRows()
         assert len(self._trial_ids) == self._num_nonempty_rows
-        # make new trial come in already marked.
+
+        # make new trial come in correctly marked.
         row = self._get_row_from_trial_id(trial.trial_id)
         self.SetCellRenderer(row, 0, gridlib.GridCellBoolRenderer())
-        self._set_marked_status(row, self._is_markable(trial.trial_id))
+        self._set_marked_status(row, trial.is_marked)
 
         # only select new trial if nothing is selected.
         if self._last_trial_id_selected is None:
@@ -316,4 +305,11 @@ class TrialGridCtrl(gridlib.Grid):
         new_name = trial.display_name
         row = self._get_row_from_trial_id(trial_id)
         self._set_trial_name(row, new_name)
+
+    def _trial_marked(self, message):
+        trial_id, status = message.data
+        print trial_id, status
+        row = self._get_row_from_trial_id(trial_id)
+        if row is not None:
+            self._set_marked_status(row, status)
 

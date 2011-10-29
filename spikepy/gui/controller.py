@@ -27,6 +27,7 @@ from wx.lib.delayedresult import startWorker
 
 from spikepy import session
 
+from spikepy.common.errors import *
 from spikepy.common import program_text as pt
 from spikepy.gui.view import View
 from spikepy.gui.utils import named_color, load_pickle
@@ -48,6 +49,16 @@ def make_version_float(version_number_string):
 class Controller(object):
     def __init__(self):
         self.session = session.Session()
+        self.session.open_files.add_callback(self._files_opened, 
+                takes_target_results=True)
+        self.session.trial_manager.remove_trial.add_callback(
+                self._trial_closed, 
+                takes_target_results=True)
+        self.session.rename_trial.add_callback(self._trial_renamed,
+                takes_target_results=True)
+        self.session.trial_manager.mark_trial.add_callback(self._trial_marked,
+                takes_target_results=True)
+
         self.view = View(plugin_manager=self.session.plugin_manager, 
                 strategy_manager=self.session.strategy_manager)
         self.results_notebook = self.view.frame.results_notebook
@@ -75,26 +86,23 @@ class Controller(object):
     def setup_subscriptions(self):
         pub.subscribe(self._open_open_file_dialog, 
                       topic="OPEN_OPEN_FILE_DIALOG")
+        pub.subscribe(self._close_trial, topic='CLOSE_TRIAL')
+        pub.subscribe(self._mark_trial, topic='MARK_TRIAL')
         pub.subscribe(self._trial_selection_changed, 
                       topic='TRIAL_SELECTION_CHANGED')
         pub.subscribe(self._results_notebook_page_changed,
                       topic='RESULTS_NOTEBOOK_PAGE_CHANGED')
         pub.subscribe(self._plot_results, topic='PLOT_RESULTS')
         pub.subscribe(self._hide_results, topic='HIDE_RESULTS')
-        pub.subscribe(self._calculate_run_buttons_state,
-                      topic='CALCULATE_RUN_BUTTONS_STATE')
-        pub.subscribe(self._trial_closed, topic='TRIAL_CLOSED')
         pub.subscribe(self._save_session, topic='SAVE_SESSION')
         pub.subscribe(self._close_application,  topic="CLOSE_APPLICATION")
         pub.subscribe(self._open_rename_trial_dialog,
                       topic='OPEN_RENAME_TRIAL_DIALOG')
         pub.subscribe(self._export_trials,  topic="EXPORT_TRIALS")
-        pub.subscribe(self._run_on_marked,  
-                      topic="RUN_STRATEGY_ON_MARKED")
-        pub.subscribe(self._run_on_marked,  topic="RUN_STAGE_ON_MARKED")
+        #pub.subscribe(self._run_strategy, topic="RUN_STRATEGY")
+        #pub.subscribe(self._run_stage, topic="RUN_STAGE")
         pub.subscribe(self._aborting_processing, topic='ABORTING_PROCESSING')
         pub.subscribe(self._processing_finished, topic='PROCESSING_FINISHED')
-        pub.subscribe(self._cannot_mark_trial, 'CANNOT_MARK_TRIAL')
 
     def start_debug_subscriptions(self):
         pub.subscribe(self._print_messages) # subscribes to all topics
@@ -102,21 +110,24 @@ class Controller(object):
     def stop_debug_subscriptions(self):
         pub.unsubscribe(self._print_messages) # unsubscribes from all
 
-    def _cannot_mark_trial(self, message):
-        unmarkable_trial = self.model.trials[message.data]
-        num_traces_unmarkable = len(unmarkable_trial.raw_traces)
-        marked_trials = self.get_marked_trials() 
-        num_traces_marked = len(marked_trials[0].raw_traces)
-        msg = pt.UNMARKABLE_TRIAL % (unmarkable_trial.display_name,
-                                     num_traces_unmarkable,
-                                     num_traces_marked)
-        dlg = wx.MessageDialog(self.view.frame, msg, 
-                               style=wx.OK|wx.ICON_EXCLAMATION)
-        dlg.ShowModal()
-        dlg.Destroy()
+    def _close_trial(self, message):
+        self.session.remove_trial(message.data)
 
-    def _run_on_marked(self, message):
-        trial_list = self.get_marked_trials()
+    def _mark_trial(self, message):
+        try:
+            self.session.mark_trial(*message.data)
+        except CannotMarkTrialError as e:
+            msg = e.args[0]
+            dlg = wx.MessageDialog(self.view.frame, msg, 
+                                   style=wx.OK|wx.ICON_EXCLAMATION)
+            dlg.ShowModal()
+            dlg.Destroy()
+
+    def _trial_marked(self, args):
+        trial_id, status = args
+        pub.sendMessage(topic='TRIAL_MARKED', data=(trial_id, status))
+
+    def _run_stage(self, message):
         message_queue = multiprocessing.Queue()
         abort_queue = multiprocessing.Queue()
         locals_dict['mq'] = message_queue
@@ -150,19 +161,20 @@ class Controller(object):
 
     def _open_rename_trial_dialog(self, message):
         trial_id = message.data
-        this_trial = self.model.trials[trial_id]
+        this_trial = self.session.get_trial(trial_id)
         this_trial_name = this_trial.display_name
-        other_trials = [trial for trial in 
-                       self.model.trials.values()
-                       if trial is not this_trial]
-        fullpath = this_trial.fullpath
-        dlg = TrialRenameDialog(self.view.frame, this_trial_name, 
-                                fullpath, other_trials)
+        origin = this_trial.origin
+        all_display_names = self.session.trial_manager.all_display_names
+        dlg = TrialRenameDialog(self.view.frame, this_trial_name, origin,
+                all_display_names)
         if dlg.ShowModal() == wx.ID_OK:
             new_name = dlg._text_ctrl.GetValue()
             if new_name != this_trial_name:
-                this_trial.rename(new_name)
+                self.session.rename_trial(this_trial_name, new_name)
         dlg.Destroy()
+
+    def _trial_renamed(self, trial):
+        pub.sendMessage(topic='TRIAL_RENAMED', data=trial)
 
     def _calculate_run_buttons_state(self, message):
         methods_used, settings = message.data
@@ -196,12 +208,12 @@ class Controller(object):
     def _print_messages(self, message):
         topic = message.topic
         data = message.data
-        print topic,data
+        print topic, data
 
-    def _trial_closed(self, message):
-        trial_id = message.data
+    def _trial_closed(self, trial_id):
         self._selected_trial = None
         pub.sendMessage(topic='REMOVE_PLOT', data=trial_id)
+        pub.sendMessage(topic='TRIAL_CLOSED', data=trial_id)
 
     def _plot_results(self, message):
         trial_id = self._selected_trial
@@ -287,6 +299,10 @@ class Controller(object):
         if dlg.ShowModal() == wx.ID_OK:
             paths = dlg.GetPaths()
         dlg.Destroy()
-        for path in paths:
-            pub.sendMessage(topic='OPENING_DATA_FILE', data=path)
-            pub.sendMessage(topic='OPEN_DATA_FILE', data=path)
+
+        self.session.open_files(paths)
+
+    def _files_opened(self, trials):
+        for trial in trials:
+            pub.sendMessage(topic='TRIAL_ADDED', data=trial)
+        

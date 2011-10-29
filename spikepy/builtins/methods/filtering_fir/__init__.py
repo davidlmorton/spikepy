@@ -49,6 +49,7 @@ class FilteringFIR(FilteringMethod):
         del kwargs['low_cutoff_frequency']
         del kwargs['high_cutoff_frequency']
         kwargs['critical_freq'] = critical_freq
+        kwargs['kernel_window'] = str(kwargs['kernel_window'])
         filtered_signal = fir_filter(signal, sampling_freq, **kwargs)
         return [filtered_signal, sampling_freq]
 
