@@ -53,6 +53,8 @@ class NamedChoiceCtrl(wx.Panel):
 
     @selection.setter
     def selection(self, new_selection):
+        if self.selection_callback is not None:
+            self.selection_callback(new_selection)
         self.choice.SetStringSelection(str(new_selection))
         self._selection_made()
 
@@ -80,4 +82,40 @@ class NamedChoiceCtrl(wx.Panel):
 
     def GetItems(self):
         return self.choice.GetItems()
+
+
+class NamedTextCtrl(wx.Panel):
+    def __init__(self, parent, name="", **kwargs):
+        wx.Panel.__init__(self, parent)
+
+        self.name = wx.StaticText(self, label=name)
+        self.text_ctrl = wx.TextCtrl(self, size=(50,-1), **kwargs)
+        
+        sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        flag = wx.ALIGN_CENTER_VERTICAL|wx.ALL
+        border=1
+        sizer.Add(self.name, proportion=0, 
+                  flag=flag|wx.ALIGN_RIGHT, border=border)
+        sizer.Add((10,5), proportion=0)
+        sizer.Add(self.text_ctrl, proportion=1, 
+                  flag=flag|wx.ALIGN_LEFT, border=border)
+
+        self.SetSizer(sizer)
+
+    def Enable(self, state):
+        self.text_ctrl.Enable(state)
+        self.name.Enable(state)
+
+    def SetFocusFromKbd(self):
+        self.text_ctrl.SetFocus()
+
+    def SetTextctrlSize(self, size):
+        self.text_ctrl.SetMinSize(size)
+
+    def GetValue(self):
+        return self.text_ctrl.GetValue()
+
+    def SetValue(self, value):
+        self.text_ctrl.SetValue(value)
+
 

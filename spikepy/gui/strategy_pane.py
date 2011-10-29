@@ -28,6 +28,7 @@ import spikepy.common.program_text as pt
 from spikepy.common import stages
 from spikepy.gui import utils
 from spikepy.common.config_manager import config_manager as config
+from spikepy.gui.save_strategy_dialog import SaveStrategyDialog 
 
 class ControlPanel(wx.Panel):
     '''
@@ -72,7 +73,10 @@ class StrategyPane(ScrolledPanel):
         self.SetBackgroundColour(wx.WHITE)
         
         self.strategy_chooser = NamedChoiceCtrl(self, name=pt.STRATEGY_NAME, 
-                background_color=wx.WHITE)
+                background_color=wx.WHITE, 
+                selection_callback=self._strategy_chooser_updated)
+        self.strategy_chooser.SetItems(strategy_manager.managed_strategy_names)
+
         self.strategy_summary = StrategySummary(self, plugin_manager) 
         self.plugin_manager = plugin_manager 
         self.strategy_manager = strategy_manager 
@@ -98,7 +102,7 @@ class StrategyPane(ScrolledPanel):
             for plugin_name, plugin in plugin_manager.get_plugins_by_stage(
                     stage_name).items():
                 control_panel = ControlPanel(self, plugin,
-                        valid_entry_callback=None, #FIXME callback
+                        valid_entry_callback=self._update_strategy,
                         background_color=wx.WHITE)
                 sizer.Add(control_panel,
                           flag=wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND, 
@@ -111,10 +115,13 @@ class StrategyPane(ScrolledPanel):
         self._setup_subscriptions()
         self._setup_bindings()
 
+        self._push_strategy(strategy=strategy_manager.current_strategy)
+
         # other initialization
-        self.strategy_summary.select_stage(stage_name=stages.stages[0])
+        pub.sendMessage('STAGE_CHOSEN', data=stages.stages[0])
         self.strategy_summary.select_stage(stage_name=stages.stages[0], 
                                            results=True)
+
                                 
     # -- INITIALIZATION METHODS --
     def _setup_buttons(self):
@@ -133,11 +140,9 @@ class StrategyPane(ScrolledPanel):
 
     def _setup_subscriptions(self):
         pub.subscribe(self._set_run_buttons_state,
-                      topic='SET_RUN_BUTTONS_STATE')
+                      topic='SET_RUN_BUTTONS_STATE' )
         pub.subscribe(self._method_chosen, topic='METHOD_CHOSEN')
         pub.subscribe(self._stage_chosen, topic='STAGE_CHOSEN')
-        pub.subscribe(self._push_strategy, 
-                      topic='PUSH_STRATEGY')
 
     def _setup_bindings(self):
         self.Bind(wx.EVT_BUTTON, self._save_button_pressed, self.save_button)
@@ -154,7 +159,7 @@ class StrategyPane(ScrolledPanel):
     def get_methods_and_settings(self):
         methods_used = self.get_current_methods_used()
         settings     = self.get_current_settings()
-        return strategy
+        return methods_used, settings
 
     def get_current_methods_used(self):
         return self.strategy_summary.get_current_methods()
@@ -166,6 +171,25 @@ class StrategyPane(ScrolledPanel):
             control_panel = self.control_panels[stage_name][method_name]
             settings[stage_name] = control_panel.pull()
         return settings
+
+    def _update_strategy(self, value=None):
+        '''
+            Called when a control_panel's value is changed and is valid.  Also
+        called when the user changes the method of a stage.
+        '''
+        methods_used, settings = self.get_methods_and_settings()
+        cs = self.strategy_manager.current_strategy.copy()
+        cs.methods_used = methods_used
+        cs.settings = settings
+        cs.name = self.strategy_manager.get_strategy_name(cs)
+
+        if cs.name not in self.strategy_chooser.GetItems():
+            managed_names = self.strategy_manager.managed_strategy_names
+            all_names = managed_names + [cs.name]
+            self.strategy_chooser.SetItems(all_names)
+        self.strategy_chooser.selection = cs.name
+
+        self.strategy_manager.current_strategy = cs
 
     def do_layout(self):
         self.SetupScrolling(scroll_x=False)
@@ -182,8 +206,10 @@ class StrategyPane(ScrolledPanel):
             stage_name, method_name = message.data
         for sn, s_dict in self.control_panels.items():
             for mn, control_panel in s_dict.items():
-                should_show = (sn == stage_name and mn == method_name)
+                should_show = (sn == stage_name and mn == method_name and
+                        self.current_stage == sn)
                 control_panel.Show(should_show)
+        self._update_strategy()
         self.do_layout()
 
     def _stage_chosen(self, message):
@@ -191,14 +217,15 @@ class StrategyPane(ScrolledPanel):
         method_name = self.get_current_methods_used()[stage_name]
         self._method_chosen(stage_name=stage_name, method_name=method_name)
 
-    def _push_strategy(self, message=None, strategy=None):
-        if message is not None:
-            strategy = message.data
+    def _push_strategy(self, strategy):
         for stage_name in stages.stages:
             method_name = strategy.methods_used[stage_name]
             self.strategy_summary.make_method_choice(stage_name, method_name)
             control_panel = self.control_panels[stage_name][method_name]
             control_panel.push(strategy.settings[stage_name])
+            if self.current_stage == stage_name:
+                self._method_chosen(stage_name=stage_name, 
+                        method_name=method_name)
 
     # -- EVENT HANDLERS --
     def _run_strategy(self, event):
@@ -215,10 +242,18 @@ class StrategyPane(ScrolledPanel):
 
     def _save_button_pressed(self, event=None):
         event.Skip()
-        methods_used, settings = self.get_methods_and_settings()
-        pub.sendMessage("SAVE_STRATEGY", 
-                        data={'methods_used':methods_used,
-                              'settings':settings})
+        cs = self.strategy_manager.current_strategy
+        old_name = self.strategy_manager.get_strategy_name(cs)
+        all_names = self.strategy_manager.managed_strategy_names
+        dlg = SaveStrategyDialog(self, old_name, all_names)
+        if dlg.ShowModal() == wx.ID_OK:
+            new_name = dlg.get_strategy_name()
+            self.strategy_manager.add_strategy(cs, name=new_name)
+            self.strategy_manager.current_strategy = \
+                    self.strategy_manager.get_strategy(new_name)
+            self.strategy_chooser.SetItems(all_names + [new_name])
+            self.strategy_chooser.selection = new_name
+            self.strategy_manager.save_strategies()
 
     def _run_stage(self, event):
         # disable run buttons
@@ -233,12 +268,26 @@ class StrategyPane(ScrolledPanel):
                               'settings':settings,
                               'stage_name':stage_name})
 
+    def _strategy_chooser_updated(self, new_value):
+        """
+            Called whenever the value of the strategy_chooser is changed, both
+        by the user and programmatically.
+        """
+        status = (pt.CUSTOM_LC in new_value)
+        self.save_button.Enable(status)
+
     def _strategy_choice_made(self, event=None):
-        'Update The Strategy Pane based on the choice made.'
+        """
+            Called when the user chooses a new strategy from the chooser."""
         event.Skip()
-        strategy_name = self.strategy_chooser.GetStringSelection()
-        strategy = self.strategy_manager.get_strategy_by_name(strategy_name)
-        self._push_strategy(strategy=strategy)
+        strategy_name = self.strategy_chooser.selection
+        if pt.CUSTOM_LC not in strategy_name.lower():
+            strategy = self.strategy_manager.get_strategy(strategy_name)
+            self.strategy_manager.current_strategy = strategy
+            self._push_strategy(strategy=strategy)
+            self.strategy_chooser.SetItems(
+                    self.strategy_manager.managed_strategy_names)
+            self.strategy_chooser.selection = strategy_name
 
 class StrategyStageChooser(wx.Panel):
     '''
@@ -293,8 +342,6 @@ class StrategyStageChooser(wx.Panel):
     def set_current_method(self, method_name):
         if method_name in self.method_names:
             self.method_chooser.SetStringSelection(method_name)
-            pub.sendMessage(topic='METHOD_CHOSEN', 
-                            data=(self.stage_name, method_name))
         else:
             raise RuntimeError("Method %s is not a valid choice for stage %s" % (method_name, self.stage_name))
         
@@ -348,6 +395,8 @@ class StrategySummary(wx.Panel):
 
         pub.subscribe(self._results_notebook_page_changed, 
                       topic='RESULTS_NOTEBOOK_PAGE_CHANGED')
+
+        self._current_stage = stages.stages[0]
 
     def _results_notebook_page_changed(self, message=None):
         self.select_stage(stage_name=message.data, results=True)

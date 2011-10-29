@@ -14,6 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import types
 import json
 import copy
 
@@ -99,13 +100,18 @@ class Strategy(object):
         if self.settings != other.settings:
             return True
 
+        # ensure methods sets are different (less likely)
+        if self.auxiliary_stages != other.auxiliary_stages:
+            return True
+
         return False # least likely of all
 
     # --- ARCHIVING METHODS ---
     @property
     def as_dict(self):
         return {'name':self.name, 'methods_used':self.methods_used,
-                'settings':self.settings}
+                'settings':self.settings, 
+                'auxiliary_stages':self.auxiliary_stages}
 
     def save(self, fullpath):
         with open(fullpath, 'w') as ofile:
@@ -117,6 +123,7 @@ class Strategy(object):
         self.methods_used = strategy_dict['methods_used']
         self.settings     = strategy_dict['settings']
         self.name         = strategy_dict['name']
+        self.auxiliary_stages = strategy_dict['auxiliary_stages']
         self.fullpath     = fullpath
 
     @classmethod
@@ -148,6 +155,10 @@ class StrategyManager(object):
         return '\n'.join(return_str)
 
     @property
+    def managed_strategy_names(self):
+        return self.strategies.keys()
+
+    @property
     def current_strategy(self):
         '''Return the currently selected strategy.'''
         return self._current_strategy
@@ -168,7 +179,8 @@ class StrategyManager(object):
         '''
         # load strategies (first builtins, then application, then user)
         for level in ['builtins', 'application', 'user']:
-            strategy_path = get_data_dirs()[level]['strategies']
+            strategy_path = get_data_dirs(app_name='spikepy')[
+                    level]['strategies']
             self.load_strategies(strategy_path)
 
     def load_strategies(self, path):
@@ -181,7 +193,8 @@ class StrategyManager(object):
                     self.add_strategy(strategy)
 
     def save_strategies(self):
-        strategy_path = get_data_dirs()['user']['strategies']
+        strategy_path = get_data_dirs(app_name='spikepy')[
+                'user']['strategies']
         for strategy in self.strategies.values():
             if strategy.fullpath is None:
                 fullpath = os.path.join(strategy_path, 
@@ -190,8 +203,11 @@ class StrategyManager(object):
                 strategy.save(fullpath)
 
     # --- ADD AND REMOVE STRATEGIES ---
-    def add_strategy(self, strategy):
+    def add_strategy(self, strategy, name=None):
         strategy = strategy.copy() 
+        if name is not None:
+            strategy.name = name
+            
         proposed_name = self.get_strategy_name(strategy)
         proposed_methods_used_name = make_methods_used_name(proposed_name)
         proposed_settings_name = make_settings_name(proposed_name)
@@ -256,7 +272,7 @@ class StrategyManager(object):
                            strategy_name)
 
     def get_strategy(self, strategy):
-        if isinstance(strategy, str):
+        if isinstance(strategy, types.StringTypes):
             return self._get_strategy_by_name(strategy)
         elif isinstance(strategy, self._managed_class):
             return self._get_strategy_by_strategy(strategy)
