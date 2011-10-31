@@ -189,7 +189,8 @@ Method that subclasses are REQUIRED to implement:
            storing the result if the name(s) provided do not already correspond
            to resources previously defined.
     '''
-    pass
+    group = None
+    optional_in_gui = False
 
 
 

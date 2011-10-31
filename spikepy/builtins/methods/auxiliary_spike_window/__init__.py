@@ -23,6 +23,7 @@ class DetectionSpikeWindow(AuxiliaryMethod):
     '''
     This class implements a spike-window method.
     '''
+    group = 'Spike Window'
     name = "Detection Spike Window"
     description = "Extract the waveform of spikes in a temporal window around the spike event."
     is_stochastic = False
@@ -41,6 +42,7 @@ class DetectionSpikeWindow(AuxiliaryMethod):
                 **kwargs)[:2]
 
 class ExtractionSpikeWindow(DetectionSpikeWindow):
+    group = 'Spike Window'
     name = 'Extraction Spike Window'
     requires = ['ef_traces', 'ef_sampling_freq', 'events']
     provides = ['ef_spike_windows', 'ef_spike_window_times']

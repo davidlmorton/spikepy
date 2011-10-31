@@ -20,6 +20,8 @@ from spikepy.common.valid_types import ValidInteger
 from spikepy.utils.resample import resample
 
 class ResampleAEF(AuxiliaryMethod):
+    group = 'Resample'
+    optional_in_gui = True
     name = 'Resample after Extraction Filter'
     description = 'Resample the signal after running the Extraction Filter stage.'
     requires = ['ef_traces', 'ef_sampling_freq']
@@ -34,6 +36,8 @@ class ResampleAEF(AuxiliaryMethod):
                 kwargs['new_sampling_frequency']]
 
 class ResampleADF(ResampleAEF):
+    group = 'Resample'
+    optional_in_gui = True
     name = 'Resample after Detection Filter'
     description = 'Resample the signal after running the Detection Filter stage.'
     requires = ['df_traces', 'df_sampling_freq']

@@ -102,8 +102,8 @@ class TrialManager(object):
 
     def remove_marked_trials(self):
         """Remove all currently marked trials."""
-        for trial_id in self.get_marked_trial_ids():
-            trial = self._trial_index[trial_id]
+        marked_trials = self.marked_trials
+        for trial in marked_trials:
             self.remove_trial(trial)
 
     def _get_unique_display_name(self, proposed_display_name):

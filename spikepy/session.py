@@ -82,6 +82,12 @@ class Session(object):
         #        {'new_sampling_freq':25000}
         #auxiliary_stages['Resample after Extraction Filter'] = \
         #        {'new_sampling_freq':25000}
+        auxiliary_stages['Power Spectral Density (Pre-Filtering)'] =\
+                {'frequency_resolution':5.0}
+        auxiliary_stages['Power Spectral Density (Post-Detection-Filtering)'] =\
+                {'frequency_resolution':5.0}
+        auxiliary_stages['Power Spectral Density (Post-Extraction-Filtering)'] \
+                = {'frequency_resolution':5.0}
         default_strategy = Strategy(methods_used=methods_used, 
                 settings=settings, auxiliary_stages=auxiliary_stages)
         return default_strategy 

@@ -35,7 +35,8 @@ def generate_spike_windows(signal, sampling_freq, event_times,
     # +1 to account for the sample itself.
     window_size = int(window_duration * sampling_freq) + 1 
 
-    spike_index_list = collapsed_event_times*sampling_freq
+    spike_index_list = numpy.array(collapsed_event_times, 
+            dtype=numpy.float64)*sampling_freq
     spike_index_list = numpy.array(spike_index_list, dtype=numpy.int32)
     (spike_windows, spike_indexes, excluded_windows, excluded_indexes) =\
             window_spikes(signal, spike_index_list, 
