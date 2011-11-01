@@ -273,6 +273,9 @@ class TrialGridCtrl(gridlib.Grid):
         if self._last_trial_id_selected == trial_id:
             self._last_trial_id_selected = None
 
+        if not self._trials.keys():
+            pub.sendMessage('SET_RUN_BUTTONS_STATE', data=[False, False])
+
     def _trial_added(self, message):
         trial = message.data
         trial_name = trial.display_name
@@ -298,6 +301,8 @@ class TrialGridCtrl(gridlib.Grid):
         if self._last_trial_id_selected is None:
             self._last_trial_id_selected = 'Not-None'
             wx.CallLater(1000, self._select_row, row)
+
+        pub.sendMessage('SET_RUN_BUTTONS_STATE', data=[True, True])
 
     def _trial_renamed(self, message):
         trial = message.data

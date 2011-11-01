@@ -115,13 +115,16 @@ class OptionalControlPanel(ControlPanel):
             sizer.Add(self.ctrls[ctrl_name], flag=wx.EXPAND|wx.ALIGN_RIGHT)
             self.ctrls[ctrl_name].register_valid_entry_callback(
                     self.valid_entry_callback)
+        sizer.Add(wx.StaticLine(self), flag=wx.EXPAND|wx.ALL, border=3)
         self.SetSizer(sizer)
         self.active_checkbox = active_checkbox
+        self.title = title
 
     def _activate(self, event):
         event.Skip()
         for ctrl in self.ctrls.values():
             ctrl.Enable(self.active)
+        self.title.Enable(self.active)
         if self.valid_entry_callback is not None:
             self.valid_entry_callback(self.active)
 
@@ -134,6 +137,7 @@ class OptionalControlPanel(ControlPanel):
         self.active_checkbox.SetValue(value)
         for ctrl in self.ctrls.values():
             ctrl.Enable(self.active)
+        self.title.Enable(self.active)
         if self.valid_entry_callback is not None:
             self.valid_entry_callback(self.active)
 
@@ -229,6 +233,7 @@ class StrategyPane(wx.Panel):
         pub.sendMessage('STAGE_CHOSEN', data=stages.stages[0])
         self.strategy_summary.select_stage(stage_name=stages.stages[0], 
                                            results=True)
+        self._set_run_buttons_state()
 
                                 
     # -- INITIALIZATION METHODS --
@@ -260,7 +265,9 @@ class StrategyPane(wx.Panel):
                                  self.strategy_chooser.choice) 
 
     # -- PUBLIC METHODS --
-    def _set_run_buttons_state(self, states=[False, False]):
+    def _set_run_buttons_state(self, message=None, states=[False, False]):
+        if message is not None:
+            states = message.data
         self.run_stage_button.Enable(states[0])
         self.run_strategy_button.Enable(states[1])
 
@@ -368,8 +375,8 @@ class StrategyPane(wx.Panel):
         self._set_run_buttons_state()
         wx.Yield()
 
-        pub.sendMessage("RUN_STRATEGY_ON_MARKED", 
-                        data=self.get_current_strategy())
+        pub.sendMessage("RUN_STRATEGY", 
+                        data={'strategy':self.get_current_strategy()})
 
     def _save_button_pressed(self, event=None):
         event.Skip()
@@ -390,11 +397,11 @@ class StrategyPane(wx.Panel):
     def _run_stage(self, event):
         # disable run buttons
         event.Skip()
-        self._set_run_buttons_state(state=[False,False])
+        self._set_run_buttons_state(states=[False,False])
         wx.Yield()
 
         stage_name = self.current_stage
-        pub.sendMessage("RUN_STAGE_ON_MARKED", 
+        pub.sendMessage("RUN_STAGE", 
                         data={'strategy':self.get_current_strategy(),
                               'stage_name':stage_name})
 

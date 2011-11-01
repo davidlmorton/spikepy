@@ -65,9 +65,11 @@ def task_worker(input_queue, results_queue):
         plugin = task_info['plugin']
 
         results_dict = {}
+        begin_time = time.time()
         results_dict['result'] = plugin.run(*args, **kwargs)
-        #results_dict['result'] = [time.time() for i in plugin.provides]
+        end_time = time.time()
         results_dict['task_id'] = task_info['task_id']
+        results_dict['runtime'] = end_time - begin_time
 
         results_queue.put(results_dict)
     
@@ -146,17 +148,23 @@ class ProcessManager(object):
         task_index = {}
         for task in self._task_organizer.tasks:
             task_index[task.task_id] = task
+        message_queue.put(('TASKS', task_index.values()))
             
         results_index = {}
         queued_tasks = 0
         while True:
             # queue up ready tasks
-            for task, task_info in self._task_organizer.pull_runnable_tasks():
-                message_queue.put(('Added task to input_queue.', task))
+            pulled, skipped = self._task_organizer.pull_runnable_tasks()
+            for task in skipped:
+                message_queue.put(('SKIPPED_TASK', task))
+
+            for task, task_info in pulled:
+                message_queue.put(('RUNNING_TASK', task))
                 print "RUNNING: %s on %s" % (task.plugin.name,
                         [t.display_name for t in task.trials])
                 input_queue.put(task_info)
                 queued_tasks += 1
+            
 
             # wait for one result
             if queued_tasks > 0:
@@ -164,7 +172,8 @@ class ProcessManager(object):
                 finished_task_id = result['task_id']
                 finished_task = task_index[finished_task_id]
                 results_index[finished_task_id] = result['result']
-                message_queue.put(('Recieved task results', finished_task))
+                message_queue.put(('FINISHED_TASK', 
+                        {'task':finished_task, 'runtime':result['runtime']}))
                 finished_task.complete(result['result'])
 
             # are we done queueing up tasks? then add in the sentinals.
@@ -178,6 +187,7 @@ class ProcessManager(object):
 
         for job in jobs:
             job.join() # halt this thread until processes are all complete.
+        message_queue.put(('FINISHED_RUN', None))
 
         return task_index, results_index
 
@@ -262,6 +272,7 @@ class TaskOrganizer(object):
 
         task_list = [task for task in self._stationary_tasks.values()]
         task_list += [task for task in self._non_stationary_tasks.values()]
+        skipped_tasks = []
         for task in task_list:
             all_provided_items = []
             for ttask in self._non_stationary_tasks.values():
@@ -290,8 +301,9 @@ class TaskOrganizer(object):
                     results.append((co_task, co_task_info))
                 else:
                     co_task.skip()
+                    skipped_tasks.append(co_task)
                 
-        return results
+        return results, skipped_tasks
 
     def checkout_task(self, task):
         task_id = task.task_id

@@ -99,10 +99,8 @@ class Controller(object):
         pub.subscribe(self._open_rename_trial_dialog,
                       topic='OPEN_RENAME_TRIAL_DIALOG')
         pub.subscribe(self._export_trials,  topic="EXPORT_TRIALS")
-        #pub.subscribe(self._run_strategy, topic="RUN_STRATEGY")
-        #pub.subscribe(self._run_stage, topic="RUN_STAGE")
-        pub.subscribe(self._aborting_processing, topic='ABORTING_PROCESSING')
-        pub.subscribe(self._processing_finished, topic='PROCESSING_FINISHED')
+        pub.subscribe(self._run, topic="RUN_STRATEGY")
+        pub.subscribe(self._run, topic="RUN_STAGE")
 
     def start_debug_subscriptions(self):
         pub.subscribe(self._print_messages) # subscribes to all topics
@@ -127,20 +125,21 @@ class Controller(object):
         trial_id, status = args
         pub.sendMessage(topic='TRIAL_MARKED', data=(trial_id, status))
 
-    def _run_stage(self, message):
+    def _run(self, message):
         message_queue = multiprocessing.Queue()
-        abort_queue = multiprocessing.Queue()
         locals_dict['mq'] = message_queue
-        self._open_process_progress_dialog(trial_list, message_queue,
-                                           abort_queue)
 
-        message.data['trial_list'] = trial_list
-        message.data['message_queue'] = message_queue
-        message.data['abort_queue'] = abort_queue
-        if 'STRATEGY' in message.topic:
-            pub.sendMessage(topic='RUN_STRATEGY', data=message.data) 
+        if 'stage_name' in message.data.keys():
+            stage_name = message.data['stage_name']
         else:
-            pub.sendMessage(topic='RUN_STAGE', data=message.data)
+            stage_name = None
+
+        strategy = message.data['strategy']
+        self.session.run(strategy=strategy, stage_name=stage_name, 
+                message_queue=message_queue, async=True)
+
+        dlg = ProcessProgressDialog(self.view.frame, message_queue)
+        dlg.ShowModal()
 
     def _export_trials(self, message):
         export_type = message.data
@@ -216,6 +215,7 @@ class Controller(object):
         pub.sendMessage(topic='TRIAL_CLOSED', data=trial_id)
 
     def _plot_results(self, message):
+        return
         trial_id = self._selected_trial
         stage_name = self.results_notebook.get_current_stage_name()
         should_plot = self.results_notebook.should_plot(stage_name)
@@ -253,41 +253,9 @@ class Controller(object):
         stage_name = self.results_notebook.get_current_stage_name()
         should_plot = self.results_notebook.should_plot(stage_name)
         if trial_id is not None and should_plot:
+            return
             pub.sendMessage(topic='DISPLAY_RESULT', data=(trial_id, stage_name))
 
-    def _processing_finished(self, message):
-        stage_name = message.data
-        if self._process_progress_dlg is not None:
-            done = self._process_progress_dlg.is_done
-            if done:
-                self._process_progress_dlg = None
-
-    def _aborting_processing(self, message):
-        self._process_progress_dlg.abort()
-        self._process_progress_dlg = None
-        offending_trials, abort_reasons, last_stage_name_run = message.data
-        if 'USER_PRESSED_ABORT' in abort_reasons:
-            info = pt.USER_ABORT_MESSAGE % last_stage_name_run
-        else:
-            info = pt.ABORT_MESSAGE
-            for ot, ar in zip(offending_trials, abort_reasons):
-                info += pt.ABORT_TRIALS % (ot.display_name, ar)
-        msg_dlg = wx.MessageDialog(self.view.frame, info, style=wx.OK|wx.CENTRE)
-        msg_dlg.ShowModal()
-        msg_dlg.Destroy()
-        
-    def _open_process_progress_dialog(self, trial_list, message_queue, 
-                                       abort_queue):
-        main_frame_pos = self.view.frame.GetPosition()
-        main_frame_size = self.view.frame.GetSize()
-        dlg_pos = (main_frame_pos[0]+main_frame_size[0]/2,
-                   main_frame_pos[1]+main_frame_size[1]/2)
-        self._process_progress_dlg = ProcessProgressDialog(self.view.frame,
-                                                           trial_list, 
-                                                           message_queue, 
-                                                           abort_queue,
-                                                           pos=dlg_pos)
-        self._process_progress_dlg.Show()
 
     def _open_open_file_dialog(self, message):
         frame = message.data

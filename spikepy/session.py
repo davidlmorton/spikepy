@@ -178,7 +178,7 @@ class Session(object):
 
     def run(self, strategy=None, stage_name=None, 
             message_queue=multiprocessing.Queue(),
-            block=True):
+            async=False):
         '''
             Run the given strategy (defaults to current_strategy), or a stage 
         from that strategy.  Results are placed into the appropriate 
@@ -188,7 +188,8 @@ class Session(object):
                     session.current_strategy will be used.
             stage_name: If passed, only that stage will be run.
             message_queue: If passed, will be populated with run messages.
-            block: If True, processing will halt until run is finished.
+            async: If True, processing will run in a separate thread.  This 
+                    thread can be joined with session.join_run()
         '''
         if strategy is None:
             strategy = self.current_strategy 
@@ -199,7 +200,7 @@ class Session(object):
                 target=self.process_manager.run_tasks,
                 kwargs={'message_queue':message_queue})
         self._run_thread.start()
-        if block:
+        if not async:
             self._run_thread.join()
 
     def join_run(self):
