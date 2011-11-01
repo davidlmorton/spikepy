@@ -29,6 +29,7 @@ from spikepy.common import stages
 from spikepy.gui import utils
 from spikepy.common.config_manager import config_manager as config
 from spikepy.gui.save_strategy_dialog import SaveStrategyDialog 
+from spikepy.common.strategy_manager import Strategy
 
 class ControlPanel(wx.Panel):
     '''
@@ -38,24 +39,36 @@ class ControlPanel(wx.Panel):
     def __init__(self, parent, plugin, valid_entry_callback=None, 
             background_color=None, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
+        self.plugin = plugin
+        self.valid_entry_callback = valid_entry_callback
+        self.background_color = background_color 
 
         if background_color is not None:
             self.SetBackgroundColour(background_color)
-        
-        self.ctrls = {}
-        for pname, valid_type in plugin.get_parameter_attributes().items():
-            display_name = start_case(pname)
-            self.ctrls[pname] = make_control(self, display_name, valid_type,
-                    background_color=background_color)
 
+        self.build_controls()
+        self.layout_ui()
+        self.push(plugin.get_parameter_defaults())
+
+    def layout_ui(self):
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
+        title = wx.StaticText(self, label=self.plugin.name)
+        f = title.GetFont()
+        f.SetWeight(wx.BOLD)
+        title.SetFont(f)
+        sizer.Add(title, flag=wx.ALIGN_LEFT|wx.ALL, border=5)
         for ctrl_name in sorted(self.ctrls.keys()):
             sizer.Add(self.ctrls[ctrl_name], flag=wx.EXPAND|wx.ALIGN_RIGHT)
             self.ctrls[ctrl_name].register_valid_entry_callback(
-                    valid_entry_callback)
+                    self.valid_entry_callback)
         self.SetSizer(sizer)
 
-        self.push(plugin.get_parameter_defaults())
+    def build_controls(self):
+        self.ctrls = {}
+        for pname, valid_type in self.plugin.get_parameter_attributes().items():
+            display_name = start_case(pname)
+            self.ctrls[pname] = make_control(self, display_name, valid_type,
+                    background_color=self.background_color)
 
     def pull(self):
         return_dict = {}
@@ -67,9 +80,84 @@ class ControlPanel(wx.Panel):
         for name, value in value_dict.items():
             self.ctrls[name].SetValue(value)
 
-class StrategyPane(ScrolledPanel):
+class OptionalControlPanel(ControlPanel):
+    '''
+        A ControlPanel that is optional and has a checkbox to turn
+    on/off.
+    '''
+    def __init__(self, parent, plugin, valid_entry_callback=None, 
+            background_color=None, 
+            optional=True, 
+            **kwargs):
+        self.optional = optional
+        ControlPanel.__init__(self, parent, plugin, valid_entry_callback,
+                background_color, **kwargs)
+
+    def layout_ui(self):
+        active_checkbox = wx.CheckBox(self, label='')
+        active_checkbox.Enable(self.optional)
+        active_checkbox.Show(self.optional)
+        active_checkbox.SetValue(True)
+        self.Bind(wx.EVT_CHECKBOX, self._activate, active_checkbox)
+
+        title = wx.StaticText(self, label=self.plugin.name)
+        f = title.GetFont()
+        f.SetWeight(wx.BOLD)
+        title.SetFont(f)
+        title_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        title_sizer.Add(active_checkbox, flag=wx.ALL|wx.ALIGN_CENTER_VERTICAL, 
+                border=5)
+        title_sizer.Add(title, flag=wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL)
+
+        sizer = wx.BoxSizer(orient=wx.VERTICAL)
+        sizer.Add(title_sizer, flag=wx.ALIGN_LEFT)
+        for ctrl_name in sorted(self.ctrls.keys()):
+            sizer.Add(self.ctrls[ctrl_name], flag=wx.EXPAND|wx.ALIGN_RIGHT)
+            self.ctrls[ctrl_name].register_valid_entry_callback(
+                    self.valid_entry_callback)
+        self.SetSizer(sizer)
+        self.active_checkbox = active_checkbox
+
+    def _activate(self, event):
+        event.Skip()
+        for ctrl in self.ctrls.values():
+            ctrl.Enable(self.active)
+        if self.valid_entry_callback is not None:
+            self.valid_entry_callback(self.active)
+
+    @property
+    def active(self):
+        return self.active_checkbox.GetValue()
+
+    @active.setter
+    def active(self, value):
+        self.active_checkbox.SetValue(value)
+        for ctrl in self.ctrls.values():
+            ctrl.Enable(self.active)
+        if self.valid_entry_callback is not None:
+            self.valid_entry_callback(self.active)
+
+    def pull(self):
+        if self.active:
+            return_dict = {}
+            for name, ctrl in self.ctrls.items():
+                return_dict[name] = ctrl.GetValue()
+            return return_dict
+        else:
+            return None
+
+    def push(self, value_dict=None):
+        if value_dict is None:
+            self.active = False
+        else:
+            self.active = True
+            for name, value in value_dict.items():
+                self.ctrls[name].SetValue(value)
+
+
+class StrategyPane(wx.Panel):
     def __init__(self, parent, plugin_manager, strategy_manager, **kwargs):
-        ScrolledPanel.__init__(self, parent, **kwargs)
+        wx.Panel.__init__(self, parent, **kwargs)
         self.SetBackgroundColour(wx.WHITE)
         
         self.strategy_chooser = NamedChoiceCtrl(self, name=pt.STRATEGY_NAME, 
@@ -95,19 +183,39 @@ class StrategyPane(ScrolledPanel):
         self._setup_buttons()
         sizer.Add(self.button_sizer, proportion=0, flag=flag, border=1)
 
+        self.control_panels_scroller = ScrolledPanel(self)
+        sizer.Add(self.control_panels_scroller, proportion=1, flag=flag, 
+                border=border)
+
+        cp_sizer = wx.BoxSizer(orient=wx.VERTICAL)
         self.control_panels = {}
         # method control panels
         for stage_name in stages.stages:
             self.control_panels[stage_name] = {}
             for plugin_name, plugin in plugin_manager.get_plugins_by_stage(
                     stage_name).items():
-                control_panel = ControlPanel(self, plugin,
-                        valid_entry_callback=self._update_strategy,
-                        background_color=wx.WHITE)
-                sizer.Add(control_panel,
+                control_panel = ControlPanel(self.control_panels_scroller, 
+                        plugin,
+                        valid_entry_callback=self._update_strategy)
+                cp_sizer.Add(control_panel,
                           flag=wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND, 
                           border=8)
                 self.control_panels[stage_name][plugin_name] = control_panel
+
+        # auxiliary control panels
+        self.auxiliary_control_panels = {}
+        for plugin_name, plugin in plugin_manager.get_plugins_by_stage(
+                'auxiliary').items():
+            control_panel = OptionalControlPanel(self.control_panels_scroller, 
+                    plugin,
+                    valid_entry_callback=self._update_strategy,
+                    optional=plugin.optional_in_gui)
+
+            cp_sizer.Add(control_panel, 
+                    flag=wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND, 
+                    border=8)
+            self.auxiliary_control_panels[plugin_name] = control_panel
+        self.control_panels_scroller.SetSizer(cp_sizer)
 
         self.SetSizer(sizer)
         self.do_layout()
@@ -156,11 +264,6 @@ class StrategyPane(ScrolledPanel):
         self.run_stage_button.Enable(states[0])
         self.run_strategy_button.Enable(states[1])
 
-    def get_methods_and_settings(self):
-        methods_used = self.get_current_methods_used()
-        settings     = self.get_current_settings()
-        return methods_used, settings
-
     def get_current_methods_used(self):
         return self.strategy_summary.get_current_methods()
 
@@ -172,16 +275,29 @@ class StrategyPane(ScrolledPanel):
             settings[stage_name] = control_panel.pull()
         return settings
 
+    def get_current_auxiliary_stages(self):
+        auxiliary_stages = {}
+        for cp in self.auxiliary_control_panels.values():
+            if cp.active:
+                auxiliary_stages[cp.plugin.name] = cp.pull()
+        return auxiliary_stages
+
+    def get_current_strategy(self):
+        methods_used = self.get_current_methods_used()
+        settings = self.get_current_settings()
+        auxiliary_stages = self.get_current_auxiliary_stages()
+        cs = Strategy(methods_used=methods_used,
+                settings=settings,
+                auxiliary_stages=auxiliary_stages)
+        cs.name = self.strategy_manager.get_strategy_name(cs)
+        return cs
+
     def _update_strategy(self, value=None):
         '''
             Called when a control_panel's value is changed and is valid.  Also
         called when the user changes the method of a stage.
         '''
-        methods_used, settings = self.get_methods_and_settings()
-        cs = self.strategy_manager.current_strategy.copy()
-        cs.methods_used = methods_used
-        cs.settings = settings
-        cs.name = self.strategy_manager.get_strategy_name(cs)
+        cs = self.get_current_strategy()
 
         if cs.name not in self.strategy_chooser.GetItems():
             managed_names = self.strategy_manager.managed_strategy_names
@@ -192,7 +308,8 @@ class StrategyPane(ScrolledPanel):
         self.strategy_manager.current_strategy = cs
 
     def do_layout(self):
-        self.SetupScrolling(scroll_x=False)
+        self.control_panels_scroller.SetupScrolling()
+        self.control_panels_scroller.Layout()
         self.Layout()
 
     @property
@@ -214,8 +331,18 @@ class StrategyPane(ScrolledPanel):
 
     def _stage_chosen(self, message):
         stage_name = message.data
-        method_name = self.get_current_methods_used()[stage_name]
-        self._method_chosen(stage_name=stage_name, method_name=method_name)
+        if stage_name == 'auxiliary':
+            for stage in self.control_panels.values():
+                for panel in stage.values():
+                    panel.Show(False)
+            for panel in self.auxiliary_control_panels.values():
+                panel.Show(True)
+            self.do_layout()
+        else:
+            for panel in self.auxiliary_control_panels.values():
+                panel.Show(False)
+            method_name = self.get_current_methods_used()[stage_name]
+            self._method_chosen(stage_name=stage_name, method_name=method_name)
 
     def _push_strategy(self, strategy):
         for stage_name in stages.stages:
@@ -226,6 +353,13 @@ class StrategyPane(ScrolledPanel):
             if self.current_stage == stage_name:
                 self._method_chosen(stage_name=stage_name, 
                         method_name=method_name)
+            auxiliary_plugins_used = strategy.auxiliary_stages.keys()
+            for cp in self.auxiliary_control_panels.values():
+                if cp.plugin.name in auxiliary_plugins_used:
+                    cp.active = True
+                    cp.push(strategy.auxiliary_stages[cp.plugin.name])
+                else:
+                    cp.active = False
 
     # -- EVENT HANDLERS --
     def _run_strategy(self, event):
@@ -234,11 +368,8 @@ class StrategyPane(ScrolledPanel):
         self._set_run_buttons_state()
         wx.Yield()
 
-        methods_used, settings = self.get_methods_and_settings()
-        stage_name = self.current_stage
         pub.sendMessage("RUN_STRATEGY_ON_MARKED", 
-                        data={'methods_used':methods_used,
-                              'settings':settings})
+                        data=self.get_current_strategy())
 
     def _save_button_pressed(self, event=None):
         event.Skip()
@@ -254,6 +385,7 @@ class StrategyPane(ScrolledPanel):
             self.strategy_chooser.SetItems(all_names + [new_name])
             self.strategy_chooser.selection = new_name
             self.strategy_manager.save_strategies()
+        dlg.Destroy()
 
     def _run_stage(self, event):
         # disable run buttons
@@ -261,11 +393,9 @@ class StrategyPane(ScrolledPanel):
         self._set_run_buttons_state(state=[False,False])
         wx.Yield()
 
-        methods_used, settings = self.get_methods_and_settings()
         stage_name = self.current_stage
         pub.sendMessage("RUN_STAGE_ON_MARKED", 
-                        data={'methods_used':methods_used,
-                              'settings':settings,
+                        data={'strategy':self.get_current_strategy(),
                               'stage_name':stage_name})
 
     def _strategy_chooser_updated(self, new_value):
@@ -364,6 +494,51 @@ class StrategyStageChooser(wx.Panel):
     def show_stage_icon(self, state):
         self.stage_icon.Show(state)
 
+class StrategyAuxiliaryChooser(wx.Panel):
+    '''
+        These are the elements in a StrategySummary that the user can
+    select to choose a stage.
+    '''
+    def __init__(self, parent, stage_name, stage_display_name, 
+                 **kwargs):
+        wx.Panel.__init__(self, parent, **kwargs)
+        self.SetBackgroundColour(wx.WHITE)
+
+        self.stage_name = stage_name
+
+        stage_icon = buttons.GenBitmapButton(self, wx.ID_ANY, 
+                                     utils.get_bitmap_image('down_bar_arrow'),
+                                     size=(30,30),
+                                     style=wx.NO_BORDER)
+        stage_text = buttons.GenButton(self, 
+                                       wx.ID_ANY, "%s" % stage_display_name, 
+                                       size=(130,30),
+                                       style=wx.NO_BORDER|wx.ALIGN_RIGHT)
+
+        sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        flag = wx.ALL|wx.ALIGN_CENTER_VERTICAL
+        sizer.Add(stage_icon,     flag=flag, border=3)
+        sizer.Add(stage_text,     flag=flag|wx.ALIGN_RIGHT,  proportion=1,
+                border=3)
+        self.SetSizer(sizer)
+
+        self.Bind(wx.EVT_LEFT_DOWN, self.on_click, self)
+        self.Bind(wx.EVT_BUTTON, self.on_click, stage_icon)
+        self.Bind(wx.EVT_BUTTON, self.on_click, stage_text)
+
+        self.stage_icon = stage_icon
+
+    def on_click(self, event):
+        event.Skip()
+        pub.sendMessage(topic='STAGE_CHOSEN', 
+                        data=self.stage_name)
+
+    def show_results_icon(self, state):
+        pass
+
+    def show_stage_icon(self, state):
+        self.stage_icon.Show(state)
+
 class StrategySummary(wx.Panel):
     '''
         The StrategySummary shows what methods are chosen for each of the
@@ -381,6 +556,8 @@ class StrategySummary(wx.Panel):
             self.stage_choosers.append(StrategyStageChooser(self, stage_name,
                                                         stage_display_name,
                                                         sorted(method_names)))
+        self.stage_choosers.append(StrategyAuxiliaryChooser(self, 'auxiliary',
+                stages.get_stage_display_name('auxiliary')))
         
         # issued when user chooses a stage to adjust its parameters, not when
         # user clicks on results tab.
@@ -409,8 +586,9 @@ class StrategySummary(wx.Panel):
     def get_current_methods(self):
         return_dict = {}
         for stage_chooser in self.stage_choosers:
-            current_method = stage_chooser.get_current_method()
-            return_dict[stage_chooser.stage_name] = current_method
+            if hasattr(stage_chooser, 'get_current_method'):
+                current_method = stage_chooser.get_current_method()
+                return_dict[stage_chooser.stage_name] = current_method
         return return_dict
 
     def select_stage(self, message=None, stage_name=None, results=False):

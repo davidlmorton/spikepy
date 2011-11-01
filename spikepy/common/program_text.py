@@ -131,6 +131,7 @@ EXTRACTION_FILTER = "Extraction Filter"
 EXTRACTION = "Feature Extraction"
 CLUSTERING = "Clustering"
 SUMMARY = "Summary"
+AUXILIARY = 'Auxiliary'
 STARTUP = "Starting up"
 
 FEATURE_AMPLITUDE = "Feature Amplitude"
