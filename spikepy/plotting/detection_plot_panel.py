@@ -28,8 +28,8 @@ from spikepy.common.config_manager import config_manager as config
 from spikepy.common import program_text as pt
 
 class DetectionPlotPanel(SpikepyPlotPanel):
-    def __init__(self, parent, name):
-        SpikepyPlotPanel.__init__(self, parent, name)
+    def __init__(self, parent, session, name):
+        SpikepyPlotPanel.__init__(self, parent, session, name)
 
         pc = config['gui']['plotting']
         self.line_color = config.detection_color

@@ -34,17 +34,17 @@ plot_panels = {"detection_filter" : FilterPlotPanel,
                "clustering"       : ClusteringPlotPanel,
                "summary"          : SummaryPlotPanel}
 
-
 class ResultsNotebook(wx.Notebook):
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent, session, **kwargs):
         wx.Notebook.__init__(self, parent, **kwargs)
         
-        detection_filter_panel = ResultsPanel(self,  "detection_filter")
-        detection_panel = ResultsPanel(self,  "detection")
-        extraction_filter_panel = ResultsPanel(self,  "extraction_filter")
-        extraction_panel = ResultsPanel(self,  "extraction")
-        clustering_panel = ResultsPanel(self,  "clustering")
-        summary_panel = ResultsPanel(self,  "summary")
+        detection_filter_panel = ResultsPanel(self, session, "detection_filter")
+        detection_panel = ResultsPanel(self, session, "detection")
+        extraction_filter_panel = ResultsPanel(self, session, 
+                "extraction_filter")
+        extraction_panel = ResultsPanel(self, session, "extraction")
+        clustering_panel = ResultsPanel(self, session, "clustering")
+        summary_panel = ResultsPanel(self, session, "summary")
 
         self.AddPage(detection_filter_panel,  pt.DETECTION_FILTER)
         self.AddPage(detection_panel,         pt.DETECTION)
@@ -124,10 +124,10 @@ class ResultsNotebook(wx.Notebook):
 
 
 class ResultsPanel(wx.Panel):
-    def __init__(self, parent, name, **kwargs):
+    def __init__(self, parent, session, name, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
         self.name = name
-        self.plot_panel = plot_panels[self.name](self, self.name)
+        self.plot_panel = plot_panels[self.name](self, session, self.name)
         self.plot_checkbox = wx.CheckBox(self, 
                                          label=pt.PLOT_RESULTS)
         self.plot_checkbox.SetValue(True)

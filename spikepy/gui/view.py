@@ -38,12 +38,12 @@ class View(object):
         
 
 class MyFrame(wx.Frame):
-    def __init__(self, parent, id=wx.ID_ANY, 
+    def __init__(self, parent, session, id=wx.ID_ANY, 
                  title=pt.MAIN_FRAME_TITLE,
                  size=None,
-                 style=wx.DEFAULT_FRAME_STYLE,
-                 plugin_manager=None,
-                 strategy_manager=None):
+                 style=wx.DEFAULT_FRAME_STYLE):
+        plugin_manager = session.plugin_manager
+        strategy_manager = session.strategy_manager
         # MAIN_FRAME_SIZE needs the wx.App() instance so can't be put 
         #   in declaration
         if size is None: 
@@ -66,7 +66,7 @@ class MyFrame(wx.Frame):
         trial_list_holder.add_content(self.trial_list, 0)
 
         self.results_notebook = results_notebook = ResultsNotebook(
-                                                    vsplit)
+                                                    vsplit, session)
         pyshell.locals_dict['results_notebook'] = self.results_notebook
 
         vsplit.SplitVertically(hsplit, self.results_notebook, 400)

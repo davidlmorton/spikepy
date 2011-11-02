@@ -29,8 +29,8 @@ from spikepy.common.config_manager import config_manager as config
 from spikepy.common import projection_utils as pu
 
 class ClusteringPlotPanel(SpikepyPlotPanel):
-    def __init__(self, parent, name):
-        SpikepyPlotPanel.__init__(self, parent, name)
+    def __init__(self, parent, session, name):
+        SpikepyPlotPanel.__init__(self, parent, session, name)
 
     def _basic_setup(self, trial_id):
         plot_panel = self._plot_panels[trial_id]

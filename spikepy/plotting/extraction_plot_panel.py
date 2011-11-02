@@ -27,8 +27,8 @@ from spikepy.common import program_text as pt
 from spikepy.common.config_manager import config_manager as config
 
 class ExtractionPlotPanel(SpikepyPlotPanel):
-    def __init__(self, parent, name):
-        SpikepyPlotPanel.__init__(self, parent, name)
+    def __init__(self, parent, session, name):
+        SpikepyPlotPanel.__init__(self, parent, session, name)
 
 
     def _basic_setup(self, trial_id):

@@ -36,9 +36,6 @@ from spikepy.gui.trial_rename_dialog import TrialRenameDialog
 from spikepy.gui.pyshell import locals_dict
 from spikepy.gui.export_dialog import ExportDialog
 
-all_stages = ['detection_filter', 'detection', 'extraction_filter', 
-              'extraction', 'clustering']
-
 def make_version_float(version_number_string):
     nums = version_number_string.split('.')
     result = 0.0
@@ -59,15 +56,16 @@ class Controller(object):
         self.session.trial_manager.mark_trial.add_callback(self._trial_marked,
                 takes_target_results=True)
 
-        self.view = View(plugin_manager=self.session.plugin_manager, 
-                strategy_manager=self.session.strategy_manager)
+        self.view = View(self.session)
         self.results_notebook = self.view.frame.results_notebook
+        self.results_panels = self.results_notebook.results_panels
+
         self._selected_trial = None
-        self._process_progress_dlg = None
 
         # save for locals in pyshell
-        locals_dict['session']      = self.session
-        locals_dict['view']       = self.view
+        locals_dict['session'] = self.session
+        locals_dict['results_panels'] = self.results_panels
+        locals_dict['view'] = self.view
         locals_dict['controller'] = self
         self.setup_subscriptions()
 
@@ -92,7 +90,6 @@ class Controller(object):
                       topic='TRIAL_SELECTION_CHANGED')
         pub.subscribe(self._results_notebook_page_changed,
                       topic='RESULTS_NOTEBOOK_PAGE_CHANGED')
-        pub.subscribe(self._plot_results, topic='PLOT_RESULTS')
         pub.subscribe(self._hide_results, topic='HIDE_RESULTS')
         pub.subscribe(self._save_session, topic='SAVE_SESSION')
         pub.subscribe(self._close_application,  topic="CLOSE_APPLICATION")
@@ -140,6 +137,7 @@ class Controller(object):
 
         dlg = ProcessProgressDialog(self.view.frame, message_queue)
         dlg.ShowModal()
+        self._plot_results(self._selected_trial)
 
     def _export_trials(self, message):
         export_type = message.data
@@ -175,17 +173,6 @@ class Controller(object):
     def _trial_renamed(self, trial):
         pub.sendMessage(topic='TRIAL_RENAMED', data=trial)
 
-    def _calculate_run_buttons_state(self, message):
-        methods_used, settings = message.data
-
-        checker = self.model.get_stage_run_states
-        marked_trials = self.get_marked_trials()
-        run_state = {}
-        run_state.update(checker(methods_used, settings, marked_trials))
-        run_state['strategy'] = any(run_state.values())
-
-        pub.sendMessage(topic='SET_RUN_BUTTONS_STATE', data=run_state)
-
     def _close_application(self, message):
         pub.sendMessage(topic='SAVE_ALL_STRATEGIES')
         pub.unsubAll()
@@ -214,15 +201,10 @@ class Controller(object):
         pub.sendMessage(topic='REMOVE_PLOT', data=trial_id)
         pub.sendMessage(topic='TRIAL_CLOSED', data=trial_id)
 
-    def _plot_results(self, message):
-        return
-        trial_id = self._selected_trial
+    def _plot_results(self, trial_id):
         stage_name = self.results_notebook.get_current_stage_name()
-        should_plot = self.results_notebook.should_plot(stage_name)
-        
-        if trial_id is not None and should_plot:
-            pub.sendMessage(topic='DISPLAY_RESULT', 
-                            data=(trial_id, stage_name))
+        stage_panel = self.results_panels[stage_name].plot_panel
+        stage_panel.replot(trial_id)
 
     def _hide_results(self, message):
         stage_name = message.data
@@ -235,27 +217,11 @@ class Controller(object):
                 pub.sendMessage(topic='CLEAR_RESULTS', data=stage_name)
 
     def _results_notebook_page_changed(self, message):
-        trial_id = self._selected_trial
-        stage_name = self.results_notebook.get_current_stage_name()
-        should_plot = self.results_notebook.should_plot(stage_name)
-
-        if trial_id is not None and should_plot:
-            pub.sendMessage(topic='DISPLAY_RESULT', 
-                            data=(trial_id, stage_name))
+        self._plot_results(self._selected_trial)
 
     def _trial_selection_changed(self, message):
-        trial_id = message.data
-        # clear all plots when changing trial selections.
-        message.data = 'all'
-        self._hide_results(message)
-
-        self._selected_trial = trial_id
-        stage_name = self.results_notebook.get_current_stage_name()
-        should_plot = self.results_notebook.should_plot(stage_name)
-        if trial_id is not None and should_plot:
-            return
-            pub.sendMessage(topic='DISPLAY_RESULT', data=(trial_id, stage_name))
-
+        self._selected_trial = message.data
+        self._plot_results(self._selected_trial)
 
     def _open_open_file_dialog(self, message):
         frame = message.data

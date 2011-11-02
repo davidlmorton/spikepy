@@ -28,7 +28,7 @@ from callbacks import supports_callbacks
 from spikepy.common import program_text as pt
 from spikepy.common import utils
 from spikepy.common.errors import *
-from callbacks import supports_callbacks
+from spikepy.utils.frequency_analysis import psd
 
 text_delimiters = {pt.PLAIN_TEXT_TABS: '\t',
                    pt.PLAIN_TEXT_SPACES: ' ',
@@ -204,11 +204,13 @@ class Trial(object):
         else:
             return 0
 
+    def get_times(self, signal, sampling_freq):
+        return numpy.arange(0, signal.shape[1], 
+                dtype=signal.dtype)/sampling_freq*1000.0
+
     def _setup_basic_attributes(self, raw_traces, sampling_freq):
         self.raw_traces = utils.format_traces(raw_traces)
-        self.raw_times = numpy.arange(0, 
-                self.raw_traces.shape[1], 
-                dtype=self.raw_traces.dtype)/sampling_freq
+        self.raw_times = self.get_times(self.raw_traces, sampling_freq)
         self.sampling_freq = sampling_freq
 
         # -------------------------------------
@@ -217,11 +219,18 @@ class Trial(object):
         #    len(pf_traces) == num_channels
         self.add_resource(Resource('pf_traces', data=self.raw_traces))
         self.add_resource(Resource('pf_sampling_freq', data=self.sampling_freq))
+        
+        pf_psd, pf_freqs = psd(self.raw_traces.flatten(), sampling_freq, 10)
+        self.add_resource(Resource('pf_psd', data=pf_psd))
+        self.add_resource(Resource('pf_freqs', data=pf_freqs))
 
         # df_traces is a 2D numpy array where (detection-filtering)
         #    len(df_traces) == num_channels
-        self.add_resource(Resource('df_traces', data=self.raw_traces))
-        self.add_resource(Resource('df_sampling_freq', data=self.sampling_freq))
+        self.add_resource(Resource('df_traces'))
+        self.add_resource(Resource('df_sampling_freq'))
+
+        self.add_resource(Resource('df_psd'))
+        self.add_resource(Resource('df_freqs'))
 
         # events is a list of "list of times" where 
         #    len(event_times) == num_channels
@@ -233,6 +242,9 @@ class Trial(object):
         #    len(ef_traces) == num_channels
         self.add_resource(Resource('ef_traces'))
         self.add_resource(Resource('ef_sampling_freq'))
+
+        self.add_resource(Resource('ef_psd'))
+        self.add_resource(Resource('ef_freqs'))
 
         # features is 2D numpy array with shape = (n, m) where
         #    n == the total number of events with features
