@@ -53,6 +53,17 @@ class SpikepyPlotPanel(ScrolledPanel):
         
         self._title = None
         self._plotted_trial_id = None
+        self._change_ids = {}
+
+    def _should_replot(self, trial_id):
+        if self._plotted_trial_id != trial_id:
+            return True
+        if self._change_ids != self._get_change_ids(trial_id):
+            return True
+        return False
+
+    def _get_change_ids(self, trial_id):
+        pass # to be defined in subclasses
 
     def clear_plot(self, key=None):
         self._plot_panel.clear()

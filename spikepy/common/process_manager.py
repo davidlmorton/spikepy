@@ -89,11 +89,13 @@ class ProcessManager(object):
         tasks = []
         marked_trials = self.trial_manager.marked_trials
 
-        if stage_name == 'auxiliary' or stage_name is None:
+        if stage_name == 'auxiliary':
             for plugin_name, plugin_kwargs in strategy.auxiliary_stages.items():
                 plugin = self.plugin_manager.find_plugin('auxiliary', 
                         plugin_name)
-                tasks.extend(build_tasks(marked_trials, plugin, plugin_kwargs))
+                if plugin.runs_with_stage == 'auxiliary':
+                    tasks.extend(build_tasks(marked_trials, plugin, 
+                            plugin_kwargs))
 
         if stage_name is not None: 
             if stage_name != 'auxiliary':
@@ -102,12 +104,27 @@ class ProcessManager(object):
                         plugin_name)
                 plugin_kwargs = strategy.settings[stage_name]
                 tasks.extend(build_tasks(marked_trials, plugin, plugin_kwargs))
+                    
+                # get auxiliary stages that should run with this stage.
+                for plugin_name, plugin_kwargs in \
+                        strategy.auxiliary_stages.items():
+                    plugin = self.plugin_manager.find_plugin('auxiliary', 
+                            plugin_name)
+                    if plugin.runs_with_stage == stage_name:
+                        tasks.extend(build_tasks(marked_trials, plugin, 
+                                plugin_kwargs))
         else: # do for all stages
             for stage_name, plugin_name in strategy.methods_used.items():
                 plugin = self.plugin_manager.find_plugin(stage_name, 
                         plugin_name)
                 plugin_kwargs = strategy.settings[stage_name]
                 tasks.extend(build_tasks(marked_trials, plugin, plugin_kwargs))
+
+            for plugin_name, plugin_kwargs in strategy.auxiliary_stages.items():
+                plugin = self.plugin_manager.find_plugin('auxiliary', 
+                        plugin_name)
+                tasks.extend(build_tasks(marked_trials, plugin, 
+                        plugin_kwargs))
         return tasks 
 
     def prepare_to_run_strategy(self, strategy, stage_name=None):

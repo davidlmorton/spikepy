@@ -24,6 +24,7 @@ class ResampleAEF(AuxiliaryMethod):
     optional_in_gui = True
     name = 'Resample after Extraction Filter'
     description = 'Resample the signal after running the Extraction Filter stage.'
+    runs_with_stage = 'extraction_filter'
     requires = ['ef_traces', 'ef_sampling_freq']
     provides = ['ef_traces', 'ef_sampling_freq']
     is_stochastic = False
@@ -40,6 +41,7 @@ class ResampleADF(ResampleAEF):
     optional_in_gui = True
     name = 'Resample after Detection Filter'
     description = 'Resample the signal after running the Detection Filter stage.'
+    runs_with_stage = 'detection_filter'
     requires = ['df_traces', 'df_sampling_freq']
     provides = ['df_traces', 'df_sampling_freq']
     

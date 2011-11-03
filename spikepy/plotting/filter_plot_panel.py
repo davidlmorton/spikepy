@@ -39,13 +39,6 @@ class FilterPlotPanel(SpikepyPlotPanel):
             self.line_color = config.extraction_color
             self.line_width = pc['extraction']['filtered_trace_linewidth']
 
-    def _should_replot(self, trial_id):
-        if self._plotted_trial_id != trial_id:
-            return True
-        if self._change_ids != self._get_change_ids(trial_id):
-            return True
-        return False
-
     def _get_resources(self, trial_id):
         trial = self.get_trial(trial_id)
         info_dict = {}

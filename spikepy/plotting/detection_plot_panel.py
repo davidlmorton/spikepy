@@ -14,7 +14,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
 import os
 
 from wx.lib.pubsub import Publisher as pub
@@ -23,7 +22,6 @@ import numpy
 
 from spikepy.plotting.spikepy_plot_panel import SpikepyPlotPanel
 from spikepy.plotting import utils
-
 from spikepy.common.config_manager import config_manager as config
 from spikepy.common import program_text as pt
 
@@ -34,6 +32,21 @@ class DetectionPlotPanel(SpikepyPlotPanel):
         pc = config['gui']['plotting']
         self.line_color = config.detection_color
         self.line_width = pc['detection']['filtered_trace_linewidth']
+
+    def _get_resources(self, trial_id):
+        trial = self.get_trial(trial_id)
+        info_dict = {}
+        info_dict['pre_traces'] = trial.pf_traces
+        info_dict['pre_sampling_freq'] = trial.pf_sampling_freq
+        info_dict['pre_psd'] = trial.pf_psd
+        info_dict['pre_freqs'] = trial.pf_freqs
+
+        info_dict['filtered_traces'] = trial.df_traces
+        info_dict['filtered_sampling_freq'] = trial.df_sampling_freq
+
+        info_dict['filtered_psd'] = getattr(trial, '%s_psd' % self.prefix)
+        info_dict['filtered_freqs'] = getattr(trial, '%s_freqs' % self.prefix)
+        return info_dict
 
         
     def _basic_setup(self, trial_id):
@@ -284,4 +297,3 @@ class DetectionPlotPanel(SpikepyPlotPanel):
                                       color=color)[0]
             raster_axes.set_xticks([])
             raster_axes.set_yticks([])
-        

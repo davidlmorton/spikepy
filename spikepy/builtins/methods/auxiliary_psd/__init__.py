@@ -38,6 +38,7 @@ class PSDDF(PSDPF):
     group = 'PSD'
     name = 'Power Spectral Density (Post-Detection-Filtering)'
     description = 'Spectral Density of the detection-filtered signal.'
+    runs_with_stage = 'detection_filter'
     requires = ['df_traces', 'df_sampling_freq']
     provides = ['df_psd', 'df_freqs']
 
@@ -45,6 +46,7 @@ class PSDEF(PSDPF):
     group = 'PSD'
     name = 'Power Spectral Density (Post-Extraction-Filtering)'
     description = 'Spectral Density of the extraction-filtered signal.'
+    runs_with_stage = 'extraction_filter'
     requires = ['ef_traces', 'ef_sampling_freq']
     provides = ['ef_psd', 'ef_freqs']
     

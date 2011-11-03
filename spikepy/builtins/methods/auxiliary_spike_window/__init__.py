@@ -26,6 +26,7 @@ class DetectionSpikeWindow(AuxiliaryMethod):
     group = 'Spike Window'
     name = "Detection Spike Window"
     description = "Extract the waveform of spikes in a temporal window around the spike event."
+    runs_with_stage = 'detection'
     is_stochastic = False
     pooling = False
     requires = ['df_traces', 'df_sampling_freq', 'events']
@@ -44,6 +45,7 @@ class DetectionSpikeWindow(AuxiliaryMethod):
 class ExtractionSpikeWindow(DetectionSpikeWindow):
     group = 'Spike Window'
     name = 'Extraction Spike Window'
+    runs_with_stage = 'extraction_filter'
     requires = ['ef_traces', 'ef_sampling_freq', 'events']
     provides = ['ef_spike_windows', 'ef_spike_window_times']
 

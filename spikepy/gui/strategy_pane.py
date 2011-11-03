@@ -61,6 +61,7 @@ class ControlPanel(wx.Panel):
             sizer.Add(self.ctrls[ctrl_name], flag=wx.EXPAND|wx.ALIGN_RIGHT)
             self.ctrls[ctrl_name].register_valid_entry_callback(
                     self.valid_entry_callback)
+        sizer.Add(wx.StaticLine(self), flag=wx.EXPAND|wx.ALL, border=3)
         self.SetSizer(sizer)
 
     def build_controls(self):
@@ -343,11 +344,11 @@ class StrategyPane(wx.Panel):
                 for panel in stage.values():
                     panel.Show(False)
             for panel in self.auxiliary_control_panels.values():
-                panel.Show(True)
+                panel.Show(panel.plugin.runs_with_stage == stage_name)
             self.do_layout()
         else:
             for panel in self.auxiliary_control_panels.values():
-                panel.Show(False)
+                panel.Show(panel.plugin.runs_with_stage == stage_name)
             method_name = self.get_current_methods_used()[stage_name]
             self._method_chosen(stage_name=stage_name, method_name=method_name)
 
