@@ -25,15 +25,6 @@ def run(signal, sampling_freq, threshold_1=None,
                                    refractory_time=None,
                                    max_spike_duration=None):
     
-    if threshold_units.lower() == 'standard deviation':
-        factor = numpy.std(signal)
-    elif threshold_units.lower() == 'median':
-        factor = numpy.median(signal)
-    else:
-        factor = 1.0
-
-    threshold_1 *= factor
-    threshold_2 *= factor
     
     # convert times to samples (times in ms)
     refractory_period = (refractory_time/1000.0)*sampling_freq
@@ -41,14 +32,36 @@ def run(signal, sampling_freq, threshold_1=None,
     if signal.ndim == 2:
         results = []
         for i in range(len(signal)):
-            spikes = two_threshold_spike_find(signal[i], threshold_1,
-                    threshold_2=threshold_2,
+            # determine thresholds
+            if threshold_units.lower() == 'standard deviation':
+                factor = numpy.std(signal[i])
+            elif threshold_units.lower() == 'median':
+                factor = numpy.median(signal[i])
+            else:
+                factor = 1.0
+
+            t1 = threshold_1 * factor
+            t2 = threshold_2 * factor
+
+            spikes = two_threshold_spike_find(signal[i], t1,
+                    threshold_2=t2,
                     refractory_period=refractory_period,
                     max_spike_width=max_spike_width)
             results.append(spikes/float(sampling_freq))
     else:
-        results = two_threshold_spike_find(signal, threshold_1,
-                threshold_2=threshold_2,
+        # determine thresholds
+        if threshold_units.lower() == 'standard deviation':
+            factor = numpy.std(signal)
+        elif threshold_units.lower() == 'median':
+            factor = numpy.median(signal)
+        else:
+            factor = 1.0
+
+        t1 = threshold_1 * factor
+        t2 = threshold_2 * factor
+
+        results = two_threshold_spike_find(signal, t1,
+                threshold_2=t2,
                 refractory_period=refractory_period,
                 max_spike_width=max_spike_width)
         results /= float(sampling_freq)
