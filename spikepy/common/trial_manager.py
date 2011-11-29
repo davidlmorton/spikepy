@@ -79,6 +79,8 @@ class TrialManager(object):
         """
         new_names = []
         for trial in trial_list:
+            if trial.trial_id in self._trial_index.keys():
+                self.remove_trial(trial)
             new_name = self._get_unique_display_name(trial.display_name)
             trial.display_name = new_name
             new_names.append(new_name)
@@ -283,6 +285,7 @@ class Trial(object):
                 setattr(new_trial, key, value)
             else: # is a resource
                 setattr(new_trial, key, Resource.from_dict(value))
+        return new_trial
 
     @property
     def as_dict(self):
@@ -291,13 +294,9 @@ class Trial(object):
         for archiving.
         '''
         info_dict = {}
-        if hasattr(self, 'raw_traces'):
-            info_dict['raw_traces'] = self.raw_traces
-        if hasattr(self, 'sampling_freq'):
-            info_dict['sampling_freq'] = sampling_freq
         info_dict['_id'] = self.trial_id
-        info_dict['origin'] = origin
-        info_dict['display_name'] = display_name
+        info_dict['origin'] = self.origin
+        info_dict['display_name'] = self.display_name
         for resource in self.resources:
             info_dict[resource.name] = resource.as_dict
         return info_dict

@@ -17,10 +17,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import threading
 import multiprocessing
 import uuid
+import cPickle
 
 from callbacks import supports_callbacks
 
-from spikepy.common.trial_manager import TrialManager
+from spikepy.common.trial_manager import TrialManager, Trial
 from spikepy.common.process_manager import ProcessManager
 from spikepy.common.config_manager import ConfigManager
 from spikepy.common.plugin_manager import PluginManager
@@ -179,6 +180,27 @@ class Session(object):
     def save_current_strategy(self, strategy_name):
         """Save the current strategy, giving it the name <strategy_name>"""
         self.strategy_manager.save_current_strategy(strategy_name)
+
+    def save(self, filename):
+        """Save this session."""
+        if not filename.endswith('.ses'):
+            filename = '%s.ses' % filename
+
+        trial_dicts = []
+        for trial in self.trials:
+            trial_dicts.append(trial.as_dict)
+        with open(filename, 'wb') as ofile:
+            cPickle.dump(trial_dicts, ofile, protocol=-1)
+        return filename
+
+    def load(self, filename):
+        """Load session from a file."""
+        with open(filename) as infile:
+            trial_dicts = cPickle.load(infile)
+        trials = []
+        for td in trial_dicts:
+            trials.append(Trial.from_dict(td))
+        self.trial_manager.add_trials(trials)
 
     def run(self, strategy=None, stage_name=None, 
             message_queue=multiprocessing.Queue(),
