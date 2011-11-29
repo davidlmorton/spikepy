@@ -20,15 +20,18 @@ import os
 from collections import defaultdict
 
 from spikepy.developer_tools.file_interpreter import FileInterpreter
+from spikepy.developer_tools.data_interpreter import DataInterpreter
 from spikepy.developer_tools.methods import FilteringMethod, \
         DetectionMethod, ExtractionMethod, \
         ClusteringMethod, AuxiliaryMethod
 
 from spikepy.common.path_utils import get_data_dirs
+from spikepy.common.utils import SubstringDict 
 from spikepy.common.errors import *
 from spikepy.common.warnings import warn
 
-base_class_index = {'file_interpreter':  FileInterpreter,
+base_class_index = {'data_interpreter':  DataInterpreter,
+                    'file_interpreter':  FileInterpreter,
                     'auxiliary':         AuxiliaryMethod,
                     'filtering':         FilteringMethod,
                     'detection':         DetectionMethod,
@@ -108,20 +111,20 @@ def load_all_plugins(data_dirs=None, **kwargs):
         data_dirs = get_data_dirs(**kwargs)
 
     plugin_levels = {}
-    loaded_plugins = defaultdict(dict)
+    loaded_plugins = defaultdict(SubstringDict)
     for level in ['builtins', 'application', 'user']:
-        for plugin_type in ['file_interpreters', 'methods']:
+        for plugin_type in ['file_interpreters', 'methods', 
+                'data_interpreters']:
             plugin_dir = data_dirs[level][plugin_type]
             plugins = load_plugins_from_dir(plugin_dir)
             for plugin in plugins:
                 plugin_levels[plugin] = level
                 category = get_plugin_category(plugin)
-                try:
+                if plugin.name in loaded_plugins[category].keys():
+                    # already loaded this plugin.
                     existing_plugin = loaded_plugins[category][plugin.name]
                     existing_level = plugin_levels[existing_plugin]
                     warn('plugin "%s" loaded from "%s level" is replacing one loaded from "%s level".' % (plugin.name, level, existing_level))
-                except KeyError:
-                    pass # not replacing previously loaded plugin
 
                 loaded_plugins[category][plugin.name] = plugin
     return loaded_plugins
@@ -151,6 +154,10 @@ class PluginManager(object):
     @property
     def file_interpreters(self):
         return self.loaded_plugins['file_interpreter']
+
+    @property
+    def data_interpreters(self):
+        return self.loaded_plugins['data_interpreter']
 
     @property
     def detection_filters(self):
@@ -214,17 +221,21 @@ class PluginManager(object):
         return lookup_index[lsn]
 
     def find_plugin(self, stage_name, plugin_name):
-        possible_match = None
-        plugins = self.get_plugins_by_stage(stage_name)
-        for name, plugin in plugins.items():
-            if name == plugin_name:
-                possible_match = plugin
-                break
-
-        if possible_match is not None:
-            return possible_match
-        else:
+        stage_plugins = self.get_plugins_by_stage(stage_name)
+        try:
+            return stage_plugins[plugin_name]
+        except KeyError:
             raise MissingPluginError(
                     'No plugin named "%s" could be found in stage "%s"'%
                     (plugin_name, stage_name))
+
+    def get_data_interpreter(self, name):
+        try:
+            return self.data_interpreters[name]
+        except KeyError:
+            raise MissingPluginError(
+                    'No data_interpreter named "%s" could be found'% stage_name)
+        
+        
+        
 
