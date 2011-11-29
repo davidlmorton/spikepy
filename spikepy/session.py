@@ -108,6 +108,10 @@ class Session(object):
         # Called after process_manager opens a file
         self.trial_manager.add_trials(trials)
 
+    def export_data(self, data_interpreter_name):
+        di = self.plugin_manager.get_data_interpreter(data_interpreter_name)
+        di.write_data_file(self.marked_trials)
+
     # --- TRIAL ---
     @supports_callbacks
     def rename_trial(self, old_name_or_id, proposed_name):

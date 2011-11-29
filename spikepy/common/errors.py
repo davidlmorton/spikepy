@@ -6,6 +6,9 @@ class SpikepyError(Exception):
     '''
     pass
 
+class DataUnavailableError(SpikepyError):
+    pass
+
 class NoClustersError(SpikepyError):
     pass
 

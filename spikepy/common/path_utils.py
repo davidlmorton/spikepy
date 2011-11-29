@@ -41,6 +41,7 @@ def get_data_dirs(app_name=None):
     runnining, it creates one temporarily.
     '''
     file_interpreters_dir = 'file_interpreters'
+    data_interpreters_dir = 'data_interpreters'
     methods_dir = 'methods'
     strategies_dir = 'strategies'
     # see if an App() instance is running.
@@ -73,6 +74,8 @@ def get_data_dirs(app_name=None):
                                                         strategies_dir)
         data_dirs[base_name]['file_interpreters'] = os.path.join(base_dir, 
                                                     file_interpreters_dir)
+        data_dirs[base_name]['data_interpreters'] = os.path.join(base_dir,
+                                                    data_interpreters_dir)
         data_dirs[base_name]['methods'] = os.path.join(base_dir, 
                                                     methods_dir)
 

@@ -27,6 +27,7 @@ from callbacks import supports_callbacks
 
 from spikepy.common import program_text as pt
 from spikepy.common import utils
+from spikepy.common.utils import SubstringDict 
 from spikepy.common.errors import *
 from spikepy.utils.frequency_analysis import psd
 
@@ -157,24 +158,22 @@ class TrialManager(object):
             raise MissingTrialError('No trial with id "%s" found.' % 
                     str(trial_id))
 
+    @property
+    def _trial_name_index(self):
+        tni = SubstringDict()
+        for trial in self._trial_index.values():
+            tni[trial.display_name] = trial
+        return tni
+
     def get_trial_with_name(self, name):
         """
         Find the trial with display_name=<name> and return it.
         Raises MissingTrialError if trial cannot be found.
         """
-        for trial in self._trial_index.values():
-            if trial.display_name == name:
-                return trial
-        else:
-            # check if name is a unique part of a trial's display_name
-            trials = []
-            for trial in self._trial_index.values():
-                if name in trial.display_name:
-                    trials.append(trial)
-            if len(trials) == 1:
-                return trials[0]
-
-        raise MissingTrialError('No trial named "%s" found.' % name)
+        try:
+            return self._trial_name_index[name]
+        except KeyError:
+            raise MissingTrialError('No trial named "%s" found.' % name)
 
     def __str__(self):
         return_str =     ['Trial Manager with trials:']
