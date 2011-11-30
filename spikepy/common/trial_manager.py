@@ -31,16 +31,6 @@ from spikepy.common.utils import SubstringDict
 from spikepy.common.errors import *
 from spikepy.utils.frequency_analysis import psd
 
-text_delimiters = {pt.PLAIN_TEXT_TABS: '\t',
-                   pt.PLAIN_TEXT_SPACES: ' ',
-                   pt.CSV: ','}
-format_extentions = {pt.PLAIN_TEXT_SPACES:'txt',
-                     pt.PLAIN_TEXT_TABS:'txt',
-                     pt.CSV:'csv',
-                     pt.MATLAB:'mat',
-                     pt.NUMPY_BINARY:'npz'}
-
-
 class TrialManager(object):
     """
         The TrialManager keeps track of all the trials currently in the

@@ -14,7 +14,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import os
 
+from spikepy.common.valid_types import ValidType
 from spikepy.common.errors import *
 
 class DataInterpreter(object):
@@ -30,7 +32,7 @@ an __init__ method which requires no arguments (asside from 'self' of course).
 
     requires = []
 
-    def construct_filenames(self, trials):
+    def construct_filenames(self, trials, base_path):
         """
             Returns a dictionary keyed on the trial_id with values that are
         the base filenames of the exported data.
@@ -39,8 +41,15 @@ an __init__ method which requires no arguments (asside from 'self' of course).
         for trial in trials:
             filename = '%s__%s' % (trial.display_name, 
                     self.name.replace(' ', '_'))
-            return_dict[trial.trial_id] = filename
+            return_dict[trial.trial_id] = os.path.join(base_path, filename)
         return return_dict
+
+    def is_available(self, trials):
+        try:
+            self._check_requirements(trials)
+            return True
+        except DataUnavailableError:
+            return False
 
     def _check_requirements(self, trials):
         '''
@@ -69,4 +78,20 @@ an __init__ method which requires no arguments (asside from 'self' of course).
         """
         raise NotImplementedError
 
+    def get_parameter_attributes(self):
+        ''' Return a dictionary of ValidType attributes. '''
+        attrs = {}
+        attribute_names = dir(self)
+        for name in attribute_names:
+            value = getattr(self, name)
+            if isinstance(value, ValidType):
+                attrs[name] = value
+        return attrs
+    
+    def get_parameter_defaults(self):
+        ''' Return a dictionary containing the default parameter values.  '''
+        kwargs = {}
+        for attr_name, attr in self.get_parameter_attributes().items():
+            kwargs[attr_name] = attr()
+        return kwargs
 

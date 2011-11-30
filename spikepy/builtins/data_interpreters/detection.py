@@ -28,10 +28,10 @@ class DetectionInterpreter(DataInterpreter):
 
     file_format = ValidOption('.mat', '.csv', '.txt', '.npz', default='.mat')
 
-    def write_data_file(self, trials, file_format='.mat'):
+    def write_data_file(self, trials, base_path, file_format='.mat'):
         self._check_requirements(trials)
 
-        filenames = self.construct_filenames(trials)
+        filenames = self.construct_filenames(trials, base_path)
         fullpaths = []
         for trial in trials:
             filename = filenames[trial.trial_id]

@@ -128,6 +128,11 @@ class ResultsPanel(wx.Panel):
         wx.Panel.__init__(self, parent, **kwargs)
         self.name = name
         self.plot_panel = plot_panels[self.name](self, session, self.name)
+        # temporary, until plotting is updated to new backend.
+        self.plot_panel._plot_panel.figure.text(0.5, 0.5, 
+                'Visualization not implemented yet.\nLook for it in v0.9.\nSingle electrode visualization was available in v0.7.',
+                horizontalalignment='center',
+                multialignment='center')
         self.plot_checkbox = wx.CheckBox(self, 
                                          label=pt.PLOT_RESULTS)
         self.plot_checkbox.SetValue(True)
