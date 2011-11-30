@@ -193,6 +193,10 @@ class Session(object):
             cPickle.dump(trial_dicts, ofile, protocol=-1)
         return filename
 
+    def export(self, data_interpreter_name, **kwargs):
+        di = self.plugin_manager.data_interpreters[data_interpreter_name]
+        return di.write_data_file(self.trials, **kwargs)
+
     def load(self, filename):
         """Load session from a file."""
         with open(filename) as infile:

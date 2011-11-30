@@ -302,13 +302,34 @@ class Trial(object):
         return info_dict
 
     def cluster_data(self, data):
-        results = defaultdict(list)
+        adict = defaultdict(list)
         if self.clusters.data is not None:
             clusters = self.clusters.data
-            for cluster_id, feature_time in zip(clusters, data):
-                results[cluster_id].append(feature_time)
+            for cluster_id, thing in zip(clusters, data):
+                adict[cluster_id].append(thing)
         else:
             raise NoClustersError('Cannot fetch clustered data, clustering not yet run.')
+
+        # give name to cluster based on size, excluding clusters with id==-1
+        sorting_list = []
+        for cluster_id, cluster in adict.items():
+            size = len(cluster)
+            if cluster_id != -1:
+                sorting_list.append( (size, -cluster_id) )
+
+        sorting_list.sort(reverse=True)
+        
+        results = {}
+        new_id = 'A'
+        for size, cluster_id in sorting_list:
+            results[new_id] = adict[-cluster_id]
+            new_id = chr(ord(new_id) + 1)
+
+        try: # put rejected features in special cluster.
+            results['RC'] = adict[-1]
+        except KeyError:
+            pass
+
         return results
         
     @property
@@ -318,6 +339,20 @@ class Trial(object):
     @property
     def clustered_feature_times(self):
         return self.cluster_data(self.feature_times.data)
+
+    @property
+    def clustered_features_as_list(self):
+        return self._clustered_thing_as_list(self.clustered_features)
+
+    @property
+    def clustered_feature_times_as_list(self):
+        return self._clustered_thing_as_list(self.clustered_feature_times)
+
+    def _clustered_thing_as_list(self, thing):
+        return_list = []
+        for cluster_id in sorted(thing.keys()):
+            return_list.append(thing[cluster_id])
+        return return_list
 
     @property
     def resources(self):

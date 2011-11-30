@@ -29,7 +29,7 @@ class DetectionSpikeWindow(AuxiliaryMethod):
     runs_with_stage = 'detection'
     is_stochastic = False
     pooling = False
-    requires = ['df_traces', 'df_sampling_freq', 'events']
+    requires = ['df_traces', 'df_sampling_freq', 'event_times']
     provides = ['df_spike_windows', 'df_spike_window_times']
 
     pre_padding = ValidFloat(min=0.0, default=2.0)
@@ -46,7 +46,7 @@ class ExtractionSpikeWindow(DetectionSpikeWindow):
     group = 'Spike Window'
     name = 'Extraction Spike Window'
     runs_with_stage = 'extraction_filter'
-    requires = ['ef_traces', 'ef_sampling_freq', 'events']
+    requires = ['ef_traces', 'ef_sampling_freq', 'event_times']
     provides = ['ef_spike_windows', 'ef_spike_window_times']
 
 

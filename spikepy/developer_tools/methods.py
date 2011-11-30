@@ -101,8 +101,8 @@ Methods that subclasses are REQUIRED to implement:
            kwargs are all the arguments to the new method's code.
     '''
     requires = ['df_traces', 'df_sampling_freq']
-    provides = ['events']
-    # events is a list of "list of indexes" where 
+    provides = ['event_times']
+    # event_times is a list of "list of indexes" where 
     #    len(events) == num_channels
     #    len(events[i]) == number of events on the ith channel
     #    events[i][j] == index of jth event on the ith channel
@@ -125,7 +125,7 @@ Methods that subclasses are REQUIRED to implement:
         -- This method returns the features.  kwargs are all the arguments
            to the feature-extraction code.
     '''
-    requires = ['ef_traces', 'ef_sampling_freq', 'events']
+    requires = ['ef_traces', 'ef_sampling_freq', 'event_times']
     provides = ['features', 'feature_times']
     # features is 2D numpy array with shape = (n, m) where
     #    n == the total number of kept events
