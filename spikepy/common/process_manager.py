@@ -18,7 +18,10 @@ import uuid
 import multiprocessing
 import time
 
-from callbacks import supports_callbacks
+try:
+    from callbacks import supports_callbacks
+except ImportError:
+    from spikepy.other.callbacks.callbacks import supports_callbacks
 
 from spikepy.common.open_data_file import open_data_file
 from spikepy.common.trial_manager import Resource 

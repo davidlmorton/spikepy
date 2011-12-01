@@ -23,7 +23,11 @@ import uuid
 import wx
 import numpy
 import scipy.io
-from callbacks import supports_callbacks 
+
+try:
+    from callbacks import supports_callbacks
+except ImportError:
+    from spikepy.other.callbacks.callbacks import supports_callbacks
 
 from spikepy.common import program_text as pt
 from spikepy.common import utils

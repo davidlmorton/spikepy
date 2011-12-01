@@ -20,7 +20,10 @@ import uuid
 import cPickle
 import os
 
-from callbacks import supports_callbacks
+try:
+    from callbacks import supports_callbacks
+except ImportError:
+    from spikepy.other.callbacks.callbacks import supports_callbacks
 
 from spikepy.common.trial_manager import TrialManager, Trial
 from spikepy.common.process_manager import ProcessManager
