@@ -19,6 +19,7 @@ import imp
 import os
 from collections import defaultdict
 
+from spikepy.developer_tools.visualization improt Visualization
 from spikepy.developer_tools.file_interpreter import FileInterpreter
 from spikepy.developer_tools.data_interpreter import DataInterpreter
 from spikepy.developer_tools.methods import FilteringMethod, \
@@ -32,6 +33,7 @@ from spikepy.common.warnings import warn
 
 base_class_index = {'data_interpreter':  DataInterpreter,
                     'file_interpreter':  FileInterpreter,
+                    'visualization':     Visualization,
                     'auxiliary':         AuxiliaryMethod,
                     'filtering':         FilteringMethod,
                     'detection':         DetectionMethod,
@@ -114,7 +116,7 @@ def load_all_plugins(data_dirs=None, **kwargs):
     loaded_plugins = defaultdict(SubstringDict)
     for level in ['builtins', 'application', 'user']:
         for plugin_type in ['file_interpreters', 'methods', 
-                'data_interpreters']:
+                'data_interpreters', 'visualizations']:
             plugin_dir = data_dirs[level][plugin_type]
             plugins = load_plugins_from_dir(plugin_dir)
             for plugin in plugins:
@@ -150,6 +152,10 @@ class PluginManager(object):
     def load_plugins(self, **kwargs):
         '''Load or reload all plugins.'''
         self._loaded_plugins = load_all_plugins(**kwargs)
+
+    @property
+    def visualizations(self)
+        return self.loade_plugins['visualization']
 
     @property
     def file_interpreters(self):
