@@ -78,26 +78,12 @@ CLOSE_THIS_TRIAL = "Close This Trial"
 RENAME_TRIAL = 'Rename This Trial'
 
 # ---- Export Panel Text ----
-MAKE_THESE_SETTINGS_DEFAULT = "Make these settings default"
-RESTORE_DEFAULT_SETTINGS = "Restore default settings"
+EXPORT_DATA = "Export Data"
 EXPORT_TO_DIRECTORY = "Export to directory:"
 BROWSE = "Browse..."
 CHOOSE_EXPORT_DIRECTORY = "Choose export directory"
-SELECT_STAGES = 'Select Stages'
-RAW_TRACES = 'Raw Traces'
-STORE_ARRAYS_AS = 'Store arrays as:'
-ROWS = 'Rows'
-COLUMNS = 'Columns'
-FILE_FORMAT = 'File format:'
-PLAIN_TEXT_SPACES = '*.txt  (space delimited plain text)'
-PLAIN_TEXT_TABS = '*.txt  (tab delimited plain text)'
-CSV = '*.csv  (comma delimited plain text)'
-NUMPY_BINARY = '*.npz  (Numpy binary)'
-MATLAB = '*.mat  (MATLAB(tm) format)'
 EXPORT_ALL = 'Export ALL trials'
 EXPORT_MARKED = 'Export MARKED trials'
-
-
 
 ALL_FILES = "All Files (*)"
 SESSION_FILES = "Session Files (*.ses)"

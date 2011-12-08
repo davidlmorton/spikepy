@@ -140,20 +140,21 @@ class Controller(object):
         self._plot_results(self._selected_trial)
 
     def _export_trials(self, message):
-        export_type = message.data
         fullpaths = []
-        if export_type == "all":
-            trial_list = self.model.trials.values()
-            caption=pt.EXPORT_ALL
-        else:
-            trial_list = self.get_marked_trials()
-            caption=pt.EXPORT_MARKED
+        caption=pt.EXPORT_MARKED
 
-        dlg = ExportDialog(self.view.frame, title=caption)
+        dlg = ExportDialog(self.view.frame, 
+                self.session.plugin_manager.data_interpreters, 
+                self.session.marked_trials, title=caption)
         if dlg.ShowModal() == wx.ID_OK:
-            settings = dlg.get_settings()
-            for trial in trial_list:
-                trial.export(**settings)
+            settings = dlg.pull()
+            ep = settings['path']
+            if not os.path.exists(ep):
+                os.mkdirs(ep)
+
+            dii = settings['data_interpreters_info']
+            for plugin_name, kwargs in dii.items():
+                self.session.export(plugin_name, base_path=ep, **kwargs)
         dlg.Destroy()
 
     def _open_rename_trial_dialog(self, message):
@@ -202,9 +203,13 @@ class Controller(object):
         pub.sendMessage(topic='TRIAL_CLOSED', data=trial_id)
 
     def _plot_results(self, trial_id):
+        return
+        # turned off until it is capable of dealing with multiple channels
+        """
         stage_name = self.results_notebook.get_current_stage_name()
         stage_panel = self.results_panels[stage_name].plot_panel
         stage_panel.replot(trial_id)
+        """
 
     def _hide_results(self, message):
         stage_name = message.data

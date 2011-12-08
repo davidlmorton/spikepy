@@ -75,6 +75,7 @@ class ProcessProgressDialog(wx.Dialog):
         self._num_tasks_competed = 0
         self._display_messages = []
         self._should_update = True
+        self.info_text = info_text
 
         self.Bind(wx.EVT_TIMER, self._update_processing)
         self.timer = wx.Timer(self)
@@ -111,6 +112,7 @@ class ProcessProgressDialog(wx.Dialog):
 
         if progress == 100:
             self.close_button.Enable()
+            self.info_text.SetLabel('Finished Processing')
 
     def _update_messages(self, message):
         now = datetime.now()

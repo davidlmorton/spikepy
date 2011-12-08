@@ -39,7 +39,6 @@ SHOW_TOOLBARS      = wx.NewId()
 SHOW_PLOTS         = wx.NewId()
 SAVE_SESSION       = wx.NewId()
 EXPORT_MARKED      = wx.NewId()
-EXPORT_ALL         = wx.NewId()
 PRINT_SUBMENU      = wx.NewId()
 PRINT              = wx.NewId()
 PRINT_PREVIEW      = wx.NewId()
@@ -56,7 +55,6 @@ class SpikepyMenuBar(wx.MenuBar):
         file_menu.Append(SAVE_SESSION,      text=pt.SAVE_SESSION)
         file_menu.AppendSeparator()
         file_menu.Append(EXPORT_MARKED,     text=pt.EXPORT_MARKED_TRIALS)
-        file_menu.Append(EXPORT_ALL,        text=pt.EXPORT_ALL_TRIALS)
         print_menu = wx.Menu()
         print_menu.Append(PRINT,            text=pt.PRINT)
         print_menu.Append(PRINT_PREVIEW,    text=pt.PRINT_PREVIEW)
@@ -92,7 +90,6 @@ class SpikepyMenuBar(wx.MenuBar):
         frame.Bind(wx.EVT_MENU, self._open_file,        id=OPEN)
         frame.Bind(wx.EVT_MENU, self._save_session,     id=SAVE_SESSION)
         frame.Bind(wx.EVT_MENU, self._export_marked,    id=EXPORT_MARKED)
-        frame.Bind(wx.EVT_MENU, self._export_all,       id=EXPORT_ALL)
         frame.Bind(wx.EVT_MENU, self._print,            id=PRINT)
         frame.Bind(wx.EVT_MENU, self._print_preview,    id=PRINT_PREVIEW)
         frame.Bind(wx.EVT_MENU, self._page_setup,       id=PAGE_SETUP)
@@ -122,9 +119,6 @@ class SpikepyMenuBar(wx.MenuBar):
 
     def _export_marked(self, event=None):
         pub.sendMessage(topic="EXPORT_TRIALS", data="marked")
-
-    def _export_all(self, event=None):
-        pub.sendMessage(topic="EXPORT_TRIALS", data="all")
 
     def _show_preferences(self, event=None):
         preferences_frame = PreferencesFrame(self)

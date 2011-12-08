@@ -18,8 +18,12 @@ import threading
 import multiprocessing
 import uuid
 import cPickle
+import os
 
-from callbacks import supports_callbacks
+try:
+    from callbacks import supports_callbacks
+except ImportError:
+    from spikepy.other.callbacks.callbacks import supports_callbacks
 
 from spikepy.common.trial_manager import TrialManager, Trial
 from spikepy.common.process_manager import ProcessManager
@@ -108,10 +112,6 @@ class Session(object):
         # Called after process_manager opens a file
         self.trial_manager.add_trials(trials)
 
-    def export_data(self, data_interpreter_name):
-        di = self.plugin_manager.get_data_interpreter(data_interpreter_name)
-        di.write_data_file(self.marked_trials)
-
     # --- TRIAL ---
     @supports_callbacks
     def rename_trial(self, old_name_or_id, proposed_name):
@@ -193,9 +193,12 @@ class Session(object):
             cPickle.dump(trial_dicts, ofile, protocol=-1)
         return filename
 
-    def export(self, data_interpreter_name, **kwargs):
+    def export(self, data_interpreter_name, base_path=None, **kwargs):
+        if base_path is None:
+            base_path = os.getcwd()
+
         di = self.plugin_manager.data_interpreters[data_interpreter_name]
-        return di.write_data_file(self.trials, **kwargs)
+        return di.write_data_file(self.marked_trials, base_path, **kwargs)
 
     def visualize(self, trial_name, visualization_name, **kwargs):
         """
