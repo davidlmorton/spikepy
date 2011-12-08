@@ -43,7 +43,7 @@ def get_data_dirs(app_name=None):
     file_interpreters_dir = 'file_interpreters'
     data_interpreters_dir = 'data_interpreters'
     methods_dir = 'methods'
-    visualization_dir = 'visualizations'
+    visualizations_dir = 'visualizations'
     strategies_dir = 'strategies'
     # see if an App() instance is running.
     app = wx.GetApp()

@@ -14,6 +14,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import pylab
+
 from spikepy.common.config_manager import config_manager as config
 from spikepy.plotting.plot_panel import PlotPanel
 
@@ -32,6 +34,7 @@ __init__ method that requires no arguments.
     found_under_tab = 'detection_filtering'
 
     def __init__(self):
+        self._change_ids = {}
         for resource_name in self.requires:
             self._change_ids[resource_name] = None 
 
@@ -45,13 +48,14 @@ __init__ method that requires no arguments.
     def _draw(self, trial, parent_panel=None):
         # determine if we should replot.
         should_plot = False
-        for resource_name, old_change_id in self._change_ids:
+        for resource_name, old_change_id in self._change_ids.items():
             new_change_id = getattr(trial, resource_name).change_info[
                     'change_id']
             if new_change_id != old_change_id:
                 should_plot = True
+                self._change_ids[resource_name] = new_change_id
         if not should_plot:
-            return
+            return 'No changes occured, not replotting.'
 
         # are we running within the gui?
         if parent_panel is not None:
@@ -65,8 +69,13 @@ __init__ method that requires no arguments.
             canvas.draw()
         else:
             figure = pylab.figure()
+            figure.canvas.set_window_title(self.name)
             self.plot(trial, figure)
             pylab.show()
+            # reset change_ids so the visualization is forced to plot again
+            #  next time.
+            for resource_name in self.requires:
+                self._change_ids[resource_name] = None 
 
     def _setup_plot_panel(self):
         pc = config['gui']['plotting']

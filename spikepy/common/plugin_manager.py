@@ -19,7 +19,7 @@ import imp
 import os
 from collections import defaultdict
 
-from spikepy.developer_tools.visualization improt Visualization
+from spikepy.developer_tools.visualization import Visualization
 from spikepy.developer_tools.file_interpreter import FileInterpreter
 from spikepy.developer_tools.data_interpreter import DataInterpreter
 from spikepy.developer_tools.methods import FilteringMethod, \
@@ -154,8 +154,8 @@ class PluginManager(object):
         self._loaded_plugins = load_all_plugins(**kwargs)
 
     @property
-    def visualizations(self)
-        return self.loade_plugins['visualization']
+    def visualizations(self):
+        return self.loaded_plugins['visualization']
 
     @property
     def file_interpreters(self):

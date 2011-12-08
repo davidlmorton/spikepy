@@ -197,6 +197,17 @@ class Session(object):
         di = self.plugin_manager.data_interpreters[data_interpreter_name]
         return di.write_data_file(self.trials, **kwargs)
 
+    def visualize(self, trial_name, visualization_name, **kwargs):
+        """
+            Generate and display the visualization with the given 
+        <visualization_name> (or name subset) using the trial with 
+        name <trial_name>.
+        """
+        visualization = self.plugin_manager.visualizations[visualization_name]
+        trial = self.get_trial(trial_name)
+
+        return visualization._draw(trial, **kwargs)
+
     def load(self, filename):
         """Load session from a file."""
         with open(filename) as infile:

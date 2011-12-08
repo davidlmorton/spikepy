@@ -519,6 +519,9 @@ class Resource(object):
 
         self._data = data
 
+        if data is not None:
+            self._change_info['change_id'] = uuid.uuid4()
+
     def __hash__(self):
         return hash(self._id)
 
