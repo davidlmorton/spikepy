@@ -45,7 +45,7 @@ __init__ method that requires no arguments.
         '''
         raise NotImplementedError
 
-    def _draw(self, trial, parent_panel=None):
+    def _draw(self, trial, parent_panel=None, **kwargs):
         # determine if we should replot.
         should_plot = False
         for resource_name, old_change_id in self._change_ids.items():
@@ -63,14 +63,14 @@ __init__ method that requires no arguments.
                 self._setup_plot_panel()
             
             self._plot_panel.figure.clear()
-            self.plot(trial, self._plot_panel.figure)
+            self.plot(trial, self._plot_panel.figure, **kwargs)
 
             canvas = self._plot_panel.canvas
             canvas.draw()
         else:
-            figure = pylab.figure()
+            figure = pylab.figure(figsize=(14,7), dpi=72)
             figure.canvas.set_window_title(self.name)
-            self.plot(trial, figure)
+            self.plot(trial, figure, **kwargs)
             pylab.show()
             # reset change_ids so the visualization is forced to plot again
             #  next time.

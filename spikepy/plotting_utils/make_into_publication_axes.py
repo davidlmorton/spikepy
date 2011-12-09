@@ -20,7 +20,7 @@ from types import MethodType
 import numpy
 
 from spikepy.plotting_utils.make_into_signal_axes import make_into_signal_axes 
-from spikepy.plotting_utils.general import is_iterable
+from spikepy.plotting_utils.general import is_iterable, as_fraction_axes
 
 unit_prefix_index = {-5:'f', -4:'p', -3:'n', -2:r'$\mu$', -1:'m', 0:'', 
                      1:'k', 2:'M', 3:'G',  4:'T', 5:'P'}
@@ -34,6 +34,7 @@ def make_into_publication_axes(axes,
         scale_bar_origin_frac=(0.7, 0.7), 
         live_update=True,
         chunks=[1, 2, 5, 10, 20, 25, 30, 50, 100, 200, 500],
+        y_label_rotation='horizontal',
         color='black'):
     '''
         Makes the axes look like trace plots in publications.  That is, the
@@ -51,6 +52,8 @@ def make_into_publication_axes(axes,
                                   bar in fractional axes units.
         live_update: If True, the scale bars will update when ylim changes.
         chunks           : Passed on to get_scale_bar_info.
+        y_label_rotation: the angle of the y label. Anything that a matplotlib
+                Text object accepts as a rotation= kwarg.
         color: The color of the lines and labels.
     Returns:
         None       : It just alters the axes.
@@ -116,7 +119,7 @@ def make_into_publication_axes(axes,
         bar_y = scale_bar_origin_frac[1]*y_range + y_min
 
         axes._x_scale_bar = axes.plot((bar_min, bar_max), 
-                (bar_y, bar_y), linewidth=2, color=color)
+                (bar_y, bar_y), linewidth=2, color=color, clip_on=False)
 
         bar_range = bar_max-bar_min
         bar_mid = (bar_min + bar_range/2.0)
@@ -124,7 +127,12 @@ def make_into_publication_axes(axes,
         text = '%s %s%s' % (scale_bar_info['best_chunk'], 
                 scale_bar_info['scale_unit_prefix'], 
                 base_unit_x)
-        axes._x_scale_text = axes.text(bar_mid, bar_y-0.02*y_range, text,
+        f = axes.figure
+        canvas_size_in_pixels = (f.get_figwidth()*f.get_dpi(),
+                                f.get_figheight()*f.get_dpi())
+        y_pix = as_fraction_axes(y=8, axes=axes, 
+                canvas_size_in_pixels=canvas_size_in_pixels)*y_range
+        axes._x_scale_text = axes.text(bar_mid, bar_y-y_pix, text,
                 horizontalalignment='center', verticalalignment='top',
                 color=color)
 
@@ -156,7 +164,7 @@ def make_into_publication_axes(axes,
         bar_x = scale_bar_origin_frac[0]*x_range + x_min
 
         axes._y_scale_bar = axes.plot((bar_x, bar_x), 
-                (bar_min, bar_max), linewidth=2, color=color)
+                (bar_min, bar_max), linewidth=2, color=color, clip_on=False)
 
         bar_range = bar_max-bar_min
         bar_mid = (bar_min + bar_range/2.0)
@@ -164,8 +172,14 @@ def make_into_publication_axes(axes,
         text = '%s %s%s' % (scale_bar_info['best_chunk'], 
                 scale_bar_info['scale_unit_prefix'], 
                 base_unit_y)
-        axes._y_scale_text = axes.text(bar_x-x_range*0.02, bar_mid, text,
+        f = axes.figure
+        canvas_size_in_pixels = (f.get_figwidth()*f.get_dpi(),
+                                f.get_figheight()*f.get_dpi())
+        x_pix = as_fraction_axes(x=8, axes=axes, 
+                canvas_size_in_pixels=canvas_size_in_pixels)*x_range
+        axes._y_scale_text = axes.text(bar_x-x_pix, bar_mid, text,
                 horizontalalignment='right', verticalalignment='center',
+                rotation=y_label_rotation,
                 color=color)
 
     if axis in ['both', 'x']:
