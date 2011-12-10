@@ -19,8 +19,10 @@ from spikepy.common.errors import *
 from spikepy.common.valid_types import *
 
 class ValidControl(wx.Panel):
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent, description=None, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
+        if description is not None:
+            self.SetToolTip(wx.ToolTip(description))
 
     def register_valid_entry_callback(self, valid_entry_callback):
         self.valid_entry_callback = valid_entry_callback 
@@ -42,7 +44,8 @@ def make_control(parent, name, valid_type, background_color=None):
 class ValidBooleanControl(ValidControl):
     def __init__(self, parent, name='', valid_type=None, 
             valid_entry_callback=None, **kwargs):
-        ValidControl.__init__(self, parent, **kwargs)
+        description = valid_type.description
+        ValidControl.__init__(self, parent, description, **kwargs)
             
         ctrl  = wx.CheckBox(self, label=name)
         self.Bind(wx.EVT_CHECKBOX, self._value_entered, ctrl)
@@ -79,7 +82,8 @@ class ValidBooleanControl(ValidControl):
 class ValidNumberControl(ValidControl):
     def __init__(self, parent, name='', valid_type=None, 
             width=90, valid_entry_callback=None, **kwargs):
-        ValidControl.__init__(self, parent, **kwargs)
+        description = valid_type.description
+        ValidControl.__init__(self, parent, description, **kwargs)
             
         label = wx.StaticText(self, label=name)
         ctrl  = wx.TextCtrl(self, size=(width, -1))
@@ -126,7 +130,8 @@ class ValidNumberControl(ValidControl):
 class ValidChoiceControl(ValidControl):
     def __init__(self, parent, name='', valid_type=None, 
             width=90, valid_entry_callback=None, **kwargs):
-        ValidControl.__init__(self, parent, **kwargs)
+        description = valid_type.description
+        ValidControl.__init__(self, parent, description, **kwargs)
             
         label = wx.StaticText(self, label=name)
         ctrl  = wx.Choice(self, choices=valid_type.passed_args, 

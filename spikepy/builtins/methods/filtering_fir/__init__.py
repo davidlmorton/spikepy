@@ -35,7 +35,8 @@ class FilteringFIR(FilteringMethod):
     high_cutoff_frequency = ValidInteger(min=10, default=3000)
     kind = ValidOption('low pass', 'high pass', 'band pass', 
             default='band pass')
-    taps = ValidInteger(min=31, default=101)
+    order = ValidInteger(min=31, default=100,
+            description="The impulse response of an Nth-order FIR filter (i.e. with a Kronecker delta impulse input) lasts for N+1 samples, and then dies to zero." )
 
     def run(self, signal, sampling_freq, **kwargs):
         kind = kwargs['kind'] = kwargs['kind'].lower().split()[0]

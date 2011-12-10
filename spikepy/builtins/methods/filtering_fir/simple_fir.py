@@ -23,7 +23,7 @@ def spectral_inversion(kernel):
     kernel[len(kernel)/2] += 1.0
     return kernel
 
-def make_fir_filter(sampling_freq, critical_freq, kernel_window, taps, kind, 
+def make_fir_filter(sampling_freq, critical_freq, kernel_window, order, kind, 
                     **kwargs):
     """
     Create a finite impulse response filter kernel.
@@ -34,8 +34,8 @@ def make_fir_filter(sampling_freq, critical_freq, kernel_window, taps, kind,
                            filters, or a tuple of two frequencies for bandpass 
                            filters
         kernel_window    : the name of the windowing function to use
-        taps             : the number of sample points to use for filtering 
-                           (this is sometimes called the order)
+        order            : the number of sample points to use for filtering 
+                           (this is sometimes called the taps)
         kind             : the kind of passband to use (i.e. 'high', 'low', or 
                            'band')
     Returns:
@@ -45,6 +45,7 @@ def make_fir_filter(sampling_freq, critical_freq, kernel_window, taps, kind,
     critical_freq = numpy.array(critical_freq, dtype=numpy.float64)
     normalized_critical_freq = critical_freq / nyquist_freq
 
+    taps = order+1
     if not taps % 2: # ensure taps is odd
         taps += 1
 

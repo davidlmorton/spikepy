@@ -30,6 +30,10 @@ class ValidType(object):
             self._default = kwargs['default']
             del kwargs['default']
 
+        self.description = kwargs.get('description', None)
+        if 'description' in kwargs.keys():
+            del kwargs['description']
+
         if args:
             self._are_args = True
             arg_string = ', '.join(map(str, args))
