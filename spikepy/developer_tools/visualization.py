@@ -17,7 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pylab
 
 from spikepy.common.config_manager import config_manager as config
-from spikepy.plotting.plot_panel import PlotPanel
+from spikepy.plotting_utils.plot_panel import PlotPanel
+from spikepy.common.valid_types import ValidType
 
 class Visualization(object):
     """
@@ -29,59 +30,64 @@ __init__ method that requires no arguments.
     """
     name = ''
     requires = []
-    # one of 'detection_filtering', 'detection', 'extraction_filtering',
+    # one of 'detection_filter', 'detection', 'extraction_filter',
     #        'extraction', 'clustering', or 'summary' **only used with gui**
-    found_under_tab = 'detection_filtering'
+    found_under_tab = 'detection_filter'
 
     def __init__(self):
         self._change_ids = {}
         for resource_name in self.requires:
             self._change_ids[resource_name] = None 
 
-    def plot(self, trial, figure, **kwargs):
+    def _plot(self, trial, figure, **kwargs):
         '''
             Plot the results from <trial> onto the <figure>.  This is most 
         likely all you'll need to redefine in your subclasses.
         '''
         raise NotImplementedError
 
-    def _draw(self, trial, parent_panel=None, **kwargs):
-        # determine if we should replot.
-        should_plot = False
-        for resource_name, old_change_id in self._change_ids.items():
-            new_change_id = getattr(trial, resource_name).change_info[
-                    'change_id']
-            if new_change_id != old_change_id:
-                should_plot = True
-                self._change_ids[resource_name] = new_change_id
-        if not should_plot:
-            return 'No changes occured, not replotting.'
-
+    def draw(self, trial, parent_panel=None, **kwargs):
         # are we running within the gui?
         if parent_panel is not None:
-            if not hasattr(self, '_plot_panel'):
-                self._setup_plot_panel()
-            
-            self._plot_panel.figure.clear()
-            self.plot(trial, self._plot_panel.figure, **kwargs)
+            parent_panel.plot_panel.figure.clear()
+            self._plot(trial, parent_panel.plot_panel.figure, **kwargs)
 
-            canvas = self._plot_panel.canvas
+            canvas = parent_panel.plot_panel.canvas
             canvas.draw()
         else:
-            figure = pylab.figure(figsize=(14,7), dpi=72)
+            figsize = config.get_size('figure')
+            figure = pylab.figure(figsize=figsize)
             figure.canvas.set_window_title(self.name)
-            self.plot(trial, figure, **kwargs)
+            self._plot(trial, figure, **kwargs)
             pylab.show()
             # reset change_ids so the visualization is forced to plot again
             #  next time.
             for resource_name in self.requires:
                 self._change_ids[resource_name] = None 
 
-    def _setup_plot_panel(self):
-        pc = config['gui']['plotting']
-        self._plot_panel = PlotPanel(self, figsize=figsize,
-                facecolor=pc['face_color'],
-                edgecolor=pc['face_color'],
-                toolbar_visible=toolbar_visible,
-                dpi=pc['dpi'])
+    def get_parameter_attributes(self):
+        ''' Return a dictionary of ValidType attributes. '''
+        attrs = {}
+        attribute_names = dir(self)
+        for name in attribute_names:
+            value = getattr(self, name)
+            if isinstance(value, ValidType):
+                attrs[name] = value
+        return attrs
+    
+    def get_parameter_defaults(self):
+        ''' Return a dictionary containing the default parameter values.  '''
+        kwargs = {}
+        for attr_name, attr in self.get_parameter_attributes().items():
+            kwargs[attr_name] = attr()
+        return kwargs
+
+    def validate_parameters(self, parameter_dict):
+        '''
+            Attempts to validate parameters in a dictionary.  If parameters are 
+        invalid an exception is raised.  If parameters are valid, None is 
+        returned.
+        '''
+        for key, value in parameter_dict.items():
+            getattr(self, key)(value)
         

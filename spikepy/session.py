@@ -209,7 +209,7 @@ class Session(object):
         visualization = self.plugin_manager.visualizations[visualization_name]
         trial = self.get_trial(trial_name)
 
-        return visualization._draw(trial, **kwargs)
+        return visualization.draw(trial, **kwargs)
 
     def load(self, filename):
         """Load session from a file."""

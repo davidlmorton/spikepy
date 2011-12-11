@@ -14,11 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import gzip
 import os 
-import traceback 
-import sys
-import cPickle
 import multiprocessing
 
 import wx
@@ -90,7 +86,8 @@ class Controller(object):
                       topic='TRIAL_SELECTION_CHANGED')
         pub.subscribe(self._results_notebook_page_changed,
                       topic='RESULTS_NOTEBOOK_PAGE_CHANGED')
-        pub.subscribe(self._hide_results, topic='HIDE_RESULTS')
+        pub.subscribe(self._visualization_panel_changed, 
+                      topic='VISUALIZATION_PANEL_CHANGED')
         pub.subscribe(self._save_session, topic='SAVE_SESSION')
         pub.subscribe(self._close_application,  topic="CLOSE_APPLICATION")
         pub.subscribe(self._open_rename_trial_dialog,
@@ -157,6 +154,10 @@ class Controller(object):
                 self.session.export(plugin_name, base_path=ep, **kwargs)
         dlg.Destroy()
 
+    def _save_session(self, message):
+        save_path = message.data
+        self.session.save(save_path)
+
     def _open_rename_trial_dialog(self, message):
         trial_id = message.data
         this_trial = self.session.get_trial(trial_id)
@@ -180,17 +181,6 @@ class Controller(object):
         wx.Yield()
         # deinitialize the frame manager
         self.view.frame.Destroy()
-
-    def _save_session(self, message):
-        save_path = message.data
-        trials = self.model.trials.values()
-        save_filename = os.path.split(save_path)[1]
-        trial_archives = [trial.get_archive(archive_name=save_filename) 
-                          for trial in trials]
-
-        ofile = gzip.open(save_path, 'wb')
-        cPickle.dump(trial_archives, ofile, protocol=-1)
-        ofile.close()
         
     def _print_messages(self, message):
         topic = message.topic
@@ -199,27 +189,19 @@ class Controller(object):
 
     def _trial_closed(self, trial_id):
         self._selected_trial = None
-        pub.sendMessage(topic='REMOVE_PLOT', data=trial_id)
         pub.sendMessage(topic='TRIAL_CLOSED', data=trial_id)
 
     def _plot_results(self, trial_id):
-        return
-        # turned off until it is capable of dealing with multiple channels
-        """
+        trial = self.session.get_trial(trial_id)
         stage_name = self.results_notebook.get_current_stage_name()
-        stage_panel = self.results_panels[stage_name].plot_panel
-        stage_panel.replot(trial_id)
-        """
+        results_panel = self.results_panels[stage_name]
+        results_panel.plot(trial)
 
-    def _hide_results(self, message):
-        stage_name = message.data
-        if stage_name != 'all':
-            pub.sendMessage(topic='CLEAR_RESULTS', data=stage_name)
-        else:
-            for stage_name in ['detection_filter', 'detection', 
-                               'extraction_filter', 'extraction', 
-                               'clustering', 'summary']:
-                pub.sendMessage(topic='CLEAR_RESULTS', data=stage_name)
+    def _visualization_panel_changed(self, message):
+        visualization_control_panel = message.data
+        if self._selected_trial is not None:
+            trial = self.session.get_trial(self._selected_trial)
+            visualization_control_panel.plot(trial)
 
     def _results_notebook_page_changed(self, message):
         self._plot_results(self._selected_trial)

@@ -21,7 +21,6 @@ from spikepy.utils.resample import resample
 
 class ResampleAEF(AuxiliaryMethod):
     group = 'Resample'
-    optional_in_gui = True
     name = 'Resample after Extraction Filter'
     description = 'Resample the signal after running the Extraction Filter stage.'
     runs_with_stage = 'extraction_filter'
@@ -38,7 +37,6 @@ class ResampleAEF(AuxiliaryMethod):
 
 class ResampleADF(ResampleAEF):
     group = 'Resample'
-    optional_in_gui = True
     name = 'Resample after Detection Filter'
     description = 'Resample the signal after running the Detection Filter stage.'
     runs_with_stage = 'detection_filter'

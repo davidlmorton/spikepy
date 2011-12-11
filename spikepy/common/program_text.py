@@ -86,9 +86,8 @@ EXPORT_ALL = 'Export ALL trials'
 EXPORT_MARKED = 'Export MARKED trials'
 
 ALL_FILES = "All Files (*)"
-SESSION_FILES = "Session Files (*.ses)"
-ENTER_NEW_WORKSPACE = "Enter a name for the new workspace:"
-NEW_WORKSPACE_DLG_CAPTION = "Save current workspace"
+SESSION_FILES = "Spikepy Session Files (*.ses)"
+SAVE_SESSION = "Save Session File"
 OPEN_FILE_DLG_MESSAGE = "Choose file(s) to open."
 TRACE = "Trace"
 SAMPLE_NUMBER = "Sample Number"

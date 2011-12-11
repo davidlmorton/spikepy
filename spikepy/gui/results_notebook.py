@@ -17,22 +17,76 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 from wx.lib.pubsub import Publisher as pub
+from wx.lib.scrolledpanel import ScrolledPanel
 
-from spikepy.plotting.filter_plot_panel import FilterPlotPanel
-from spikepy.plotting.detection_plot_panel import DetectionPlotPanel
-from spikepy.plotting.extraction_plot_panel import ExtractionPlotPanel
-from spikepy.plotting.clustering_plot_panel import ClusteringPlotPanel
-from spikepy.plotting.summary_plot_panel import SummaryPlotPanel
+from spikepy.gui.strategy_pane import OptionalControlPanel
 from spikepy.common import program_text as pt
 from spikepy.gui.utils import SinglePanelFrame
 from spikepy.gui import pyshell
+from spikepy.common.config_manager import config_manager as config
+from spikepy.plotting_utils.plot_panel import PlotPanel
 
-plot_panels = {"detection_filter" : FilterPlotPanel,
-               "detection"        : DetectionPlotPanel,
-               "extraction_filter": FilterPlotPanel,
-               "extraction"       : ExtractionPlotPanel,
-               "clustering"       : ClusteringPlotPanel,
-               "summary"          : SummaryPlotPanel}
+
+class VisualizationControlPanel(OptionalControlPanel):
+    num_columns = 2
+
+    def layout_ui(self):
+        active_checkbox = wx.CheckBox(self)
+        self.Bind(wx.EVT_CHECKBOX, self._activate, active_checkbox)
+
+        title = wx.StaticText(self, label=self.plugin.name)
+        f = title.GetFont()
+        f.SetWeight(wx.BOLD)
+        title.SetFont(f)
+        title_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        title_sizer.Add(active_checkbox, flag=wx.ALL|wx.ALIGN_CENTER_VERTICAL, 
+                border=5)
+        title_sizer.Add(title, flag=wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL)
+
+        
+        main_sizer = wx.BoxSizer(orient=wx.VERTICAL)
+        main_sizer.Add(title_sizer, flag=wx.ALIGN_LEFT)
+
+        control_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+
+        col_sizers = []
+        for i in range(self.num_columns):
+            col_sizers.append(wx.BoxSizer(orient=wx.VERTICAL))
+            for ctrl_name in sorted(self.ctrls.keys())[i::self.num_columns]:
+                col_sizers[-1].Add(self.ctrls[ctrl_name], 
+                        flag=wx.EXPAND|wx.ALIGN_RIGHT)
+                self.ctrls[ctrl_name].register_valid_entry_callback(
+                        self._something_changed)
+            control_sizer.Add(col_sizers[-1], proportion=1)
+            if i != self.num_columns-1:
+                control_sizer.Add(wx.StaticLine(self, style=wx.LI_VERTICAL),
+                        flag=wx.EXPAND|wx.ALL, border=3)
+
+        main_sizer.Add(control_sizer, flag=wx.EXPAND)
+
+        plot_panel = PlotPanel(self, figsize=config.get_size('figure'))
+        main_sizer.Add(plot_panel, flag=wx.EXPAND|wx.ALL, border=5) 
+        main_sizer.Add(wx.StaticLine(self), flag=wx.EXPAND|wx.ALL, border=3)
+        self.SetSizer(main_sizer)
+
+        self.active_checkbox = active_checkbox
+        self.title = title
+        self.plot_panel = plot_panel
+        self.active = False
+
+    def setup_active_state(self):
+        OptionalControlPanel.setup_active_state(self)
+        self.plot_panel.Show(self.active)
+
+    def _something_changed(self, new_value):
+        pub.sendMessage(topic='VISUALIZATION_PANEL_CHANGED', data=self)
+
+    def plot(self, trial):
+        if self.active:
+            self.plugin.draw(trial, parent_panel=self, **self.pull())
+        else:
+            return
+        
 
 class ResultsNotebook(wx.Notebook):
     def __init__(self, parent, session, **kwargs):
@@ -59,9 +113,6 @@ class ResultsNotebook(wx.Notebook):
         # ---- Setup Subscriptions
         pub.subscribe(self._change_page, 
                       topic='STRATEGY_CHOICEBOOK_PAGE_CHANGED')
-        pub.subscribe(self._print,          topic="PRINT")
-        pub.subscribe(self._page_setup,     topic="PAGE_SETUP")
-        pub.subscribe(self._print_preview,  topic="PRINT_PREVIEW")
 
         # this is here for debugging in the pyflake shell
         self.results_panels = {'detection_filter':detection_filter_panel,
@@ -79,23 +130,8 @@ class ResultsNotebook(wx.Notebook):
         pub.sendMessage("SET_RESULTS_FRAME_SIZE", 
                         data=current_results_panel_size)
 
-    def should_plot(self, stage_name):
-        return self.results_panels[stage_name].plot_checkbox.IsChecked()
-
     def get_current_stage_name(self):
         return self.GetPage(self._selected_page_num).name
-
-    def _print(self, data=None):
-        current_plot_panel = self.get_currently_shown_plot_panel()
-        current_plot_panel.do_print()
-
-    def _print_preview(self, event=None):
-        current_plot_panel = self.get_currently_shown_plot_panel()
-        current_plot_panel.print_preview()
-    
-    def _page_setup(self, event=None):
-        current_plot_panel = self.get_currently_shown_plot_panel()
-        current_plot_panel.page_setup()
 
     def _page_changed(self, event=None):
         old_page_num  = event.GetOldSelection()
@@ -123,109 +159,30 @@ class ResultsNotebook(wx.Notebook):
         pub.sendMessage(topic="HIDE_RESULTS", data=old_page.name)
 
 
-class ResultsPanel(wx.Panel):
+class ResultsPanel(ScrolledPanel):
     def __init__(self, parent, session, name, **kwargs):
-        wx.Panel.__init__(self, parent, **kwargs)
+        ScrolledPanel.__init__(self, parent, **kwargs)
         self.name = name
-        self.plot_panel = plot_panels[self.name](self, session, self.name)
-        # temporary, until plotting is updated to new backend.
-        self.plot_panel._plot_panel.figure.text(0.5, 0.5, 
-                'Visualization not implemented yet.\nLook for it in v0.9.\nSingle electrode visualization was available in v0.7.',
-                horizontalalignment='center',
-                multialignment='center')
-        self.plot_checkbox = wx.CheckBox(self, 
-                                         label=pt.PLOT_RESULTS)
-        self.plot_checkbox.SetValue(True)
-        self.plot_checkbox.Show(False)
 
-        top_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        top_sizer.Add(self.plot_checkbox, proportion=0, 
-                flag=wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM, border=4)
-        
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        sizer.Add(top_sizer, proportion=0, flag=wx.EXPAND)
-        sizer.Add(self.plot_panel, proportion=1, flag=wx.EXPAND)
+
+        self.visualizations = {}
+        for visualization in session.plugin_manager.visualizations.values():
+            if visualization.found_under_tab == name:
+                self.visualizations[visualization.name] = visualization
+
+        self.ctrls = {}
+        for v_name in sorted(self.visualizations.keys()): 
+            visualization = self.visualizations[v_name]
+            self.ctrls[v_name] = VisualizationControlPanel(self, visualization)
+            sizer.Add(self.ctrls[v_name], proportion=0, 
+                    flag=wx.EXPAND|wx.ALL, border=2)
+        
         self.SetSizer(sizer)
+        self.SetupScrolling()
 
-        pub.subscribe(self._set_plot_results_checkbox, 
-                       "SET_PLOT_RESULTS_CHECKBOX")
+    def plot(self, trial):
+        for ctrl in self.ctrls.values():
+            ctrl.plot(trial)
 
-        self.Bind(wx.EVT_BUTTON, self._show_method_details)
-        self.Bind(wx.EVT_CHECKBOX, self._plot_results)
-
-    def _set_plot_results_checkbox(self, message):
-        state, name = message.data
-        if name == self.name or name == 'all':
-            self.plot_checkbox.SetValue(state)
-
-    def _plot_results(self, event):
-        if self.plot_checkbox.IsChecked():
-            pub.sendMessage("PLOT_RESULTS", data=self.name)
-        else:
-            pub.sendMessage("HIDE_RESULTS", data=self.name)
-
-    def _tell_report_coordinates(self, report_coordinates):
-        for plot_panel in self.plot_panel._plot_panels.values():
-            plot_panel._report_coordinates = report_coordinates
-
-    def _show_method_details(self, event=None):
-        pass
-
-class CursorPositionBar(wx.Panel):
-    def __init__(self, parent, **kwargs):
-        wx.Panel.__init__(self, parent, **kwargs)
-
-        self.x_text = wx.StaticText(self, label='', size=(150,-1), 
-                style=wx.ST_NO_AUTORESIZE)
-        self.y_text = wx.StaticText(self, label='', size=(150,-1),
-                style=wx.ST_NO_AUTORESIZE)
-        self.show_cursor_position_checkbox = wx.CheckBox(self, 
-                label=pt.SHOW_CURSOR_POSITION)
-        self.scientific_notation_checkbox = wx.CheckBox(self, 
-                label=pt.USE_SCIENTIFIC_NOTATION)
-        self.scientific_notation_checkbox.Disable()
-        self.Bind(wx.EVT_CHECKBOX, self._show_position, 
-                  self.show_cursor_position_checkbox)
-
-        # ---- SUBSCRIPTIONS ----
-        pub.subscribe(self._update_cursor_display, 
-                      topic='UPDATE_CURSOR_DISPLAY')
-
-        # ---- SIZERS ----
-        checkbox_sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        flag = wx.ALL|wx.ALIGN_CENTER_VERTICAL
-        checkbox_sizer.Add(self.show_cursor_position_checkbox, proportion=0,
-                           flag=flag,
-                           border=2)
-        checkbox_sizer.Add(self.scientific_notation_checkbox, proportion=0,
-                           flag=flag,
-                           border=2)
-
-        position_sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        position_sizer.Add(self.x_text, proportion=0, flag=flag, border=2)
-        position_sizer.Add(self.y_text, proportion=0, flag=flag, border=2)
-
-        sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        sizer.Add(checkbox_sizer,  proportion=0, flag=flag, border=10)
-        sizer.Add(position_sizer,  proportion=0, flag=flag, border=10)
-        self.SetSizer(sizer)
-
-    def _show_position(self, event=None):
-        # tell the plots shown in this window to report their coordinates or no.
-        self.GetParent()._tell_report_coordinates(event.IsChecked())
-        self.scientific_notation_checkbox.Enable(event.IsChecked())
-
-    def _update_cursor_display(self, message=None):
-        if self.show_cursor_position_checkbox.IsChecked():
-            x, y = message.data
-            if x is not None:
-                if self.scientific_notation_checkbox.IsChecked():
-                    self.x_text.SetLabel('X = %1.8e' % x)
-                    self.y_text.SetLabel('Y = %1.8e' % y)
-                else:
-                    self.x_text.SetLabel('X = %8.8f' % x)
-                    self.y_text.SetLabel('Y = %8.8f' % y)
-            else:
-                self.x_text.SetLabel('')
-                self.y_text.SetLabel('')
 

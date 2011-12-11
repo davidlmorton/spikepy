@@ -70,7 +70,7 @@ def make_fir_filter(sampling_freq, critical_freq, kernel_window, order, kind,
     return kernel
 
 def fir_filter(signal, sampling_freq, critical_freq, kernel_window='hamming',
-               taps=101, kind='high', **kwargs):
+               order=101, kind='high', **kwargs):
     """
     Build a filter kernel of type <kind> and apply it to the signal.  
     Returns the filtered signal.
@@ -91,8 +91,12 @@ def fir_filter(signal, sampling_freq, critical_freq, kernel_window='hamming',
     Returns:
         filtered_signal     : an n element sequence
     """
-    kernel = make_fir_filter(sampling_freq, critical_freq, kernel_window, taps, 
-                             kind, **kwargs)
+    kernel = make_fir_filter(sampling_freq, critical_freq, kernel_window, order,
+            kind, **kwargs)
+
+    taps = order+1
+    if not taps % 2: # ensure taps is odd
+        taps += 1
 
     if signal.ndim == 2:
         result = numpy.empty(signal.shape, dtype=signal.dtype)

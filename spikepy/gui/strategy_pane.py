@@ -88,16 +88,12 @@ class OptionalControlPanel(ControlPanel):
     '''
     def __init__(self, parent, plugin, valid_entry_callback=None, 
             background_color=None, 
-            optional=True, 
             **kwargs):
-        self.optional = optional
         ControlPanel.__init__(self, parent, plugin, valid_entry_callback,
                 background_color, **kwargs)
 
     def layout_ui(self):
-        active_checkbox = wx.CheckBox(self, label='')
-        active_checkbox.Enable(self.optional)
-        active_checkbox.Show(self.optional)
+        active_checkbox = wx.CheckBox(self)
         active_checkbox.SetValue(True)
         self.Bind(wx.EVT_CHECKBOX, self._activate, active_checkbox)
 
@@ -123,11 +119,7 @@ class OptionalControlPanel(ControlPanel):
 
     def _activate(self, event):
         event.Skip()
-        for ctrl in self.ctrls.values():
-            ctrl.Enable(self.active)
-        self.title.Enable(self.active)
-        if self.valid_entry_callback is not None:
-            self.valid_entry_callback(self.active)
+        self.setup_active_state()
 
     @property
     def active(self):
@@ -136,6 +128,9 @@ class OptionalControlPanel(ControlPanel):
     @active.setter
     def active(self, value):
         self.active_checkbox.SetValue(value)
+        self.setup_active_state()
+
+    def setup_active_state(self):
         for ctrl in self.ctrls.values():
             ctrl.Enable(self.active)
         self.title.Enable(self.active)
@@ -213,8 +208,7 @@ class StrategyPane(wx.Panel):
                 'auxiliary').items():
             control_panel = OptionalControlPanel(self.control_panels_scroller, 
                     plugin,
-                    valid_entry_callback=self._update_strategy,
-                    optional=plugin.optional_in_gui)
+                    valid_entry_callback=self._update_strategy)
 
             cp_sizer.Add(control_panel, 
                     flag=wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND, 
@@ -236,8 +230,6 @@ class StrategyPane(wx.Panel):
                                            results=True)
         self._set_run_buttons_state()
 
-                                
-    # -- INITIALIZATION METHODS --
     def _setup_buttons(self):
         button_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         self.run_strategy_button = wx.Button(self, label=pt.RUN_STRATEGY)
@@ -265,7 +257,6 @@ class StrategyPane(wx.Panel):
         self.Bind(wx.EVT_CHOICE, self._strategy_choice_made, 
                                  self.strategy_chooser.choice) 
 
-    # -- PUBLIC METHODS --
     def _set_run_buttons_state(self, message=None, states=[False, False]):
         if message is not None:
             states = message.data

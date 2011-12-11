@@ -190,7 +190,6 @@ Method that subclasses are REQUIRED to implement:
            to resources previously defined.
     '''
     group = None
-    optional_in_gui = False
     runs_with_stage = 'auxiliary'
 
 

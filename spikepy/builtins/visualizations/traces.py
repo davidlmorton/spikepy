@@ -31,11 +31,11 @@ class DetectionTraceVisualization(Visualization):
     name = 'Detection Filtered Data Trace(s)'
     requires = ['pf_traces', 'pf_sampling_freq', 
             'df_traces', 'df_sampling_freq']
-    found_under_tab = 'detection_filtering'
+    found_under_tab = 'detection_filter'
     channel_separation_std = ValidFloat(0.1, 20.0, default=8.0)
     invert_colors = ValidBoolean(default=False)
 
-    def plot(self, trial, figure, channel_separation_std=8.0, 
+    def _plot(self, trial, figure, channel_separation_std=8.0, 
             invert_colors=False):
         pf_traces = getattr(trial, self.requires[0]).data
         pf_sf = getattr(trial, self.requires[1]).data

@@ -26,14 +26,14 @@
         "detection_filter": {
             "low_cutoff_frequency":300,
             "high_cutoff_frequency":600,
-            "taps": 101, 
+            "order": 101, 
             "kernel_window": "hamming", 
             "kind": "high pass"
         }, 
         "extraction_filter": {
             "low_cutoff_frequency":300,
             "high_cutoff_frequency":600,
-            "taps": 101, 
+            "order": 101, 
             "kernel_window": "hamming", 
             "kind": "high pass"
         }, 
