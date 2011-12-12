@@ -51,6 +51,174 @@ class Session(object):
                 takes_target_results=True)
 
 
+    # FILE RELATED
+    def export(self, data_interpreter_name, base_path=None, **kwargs):
+        if base_path is None:
+            base_path = os.getcwd()
+
+        di = self.plugin_manager.data_interpreters[data_interpreter_name]
+        return di.write_data_file(self.marked_trials, base_path, **kwargs)
+
+    def load(self, filename):
+        """Load session from a file."""
+        with open(filename) as infile:
+            trial_dicts = cPickle.load(infile)
+        trials = []
+        for td in trial_dicts:
+            trials.append(Trial.from_dict(td))
+        self.trial_manager.add_trials(trials)
+
+    def open_file(self, fullpath):
+        """Open file located at fullpath."""
+        return self.process_manager.open_file(fullpath)
+
+    @supports_callbacks
+    def open_files(self, fullpaths):
+        """Open the files located at fullpaths"""
+        return self.process_manager.open_files(fullpaths)
+
+    def save(self, filename):
+        """Save this session."""
+        if not filename.endswith('.ses'):
+            filename = '%s.ses' % filename
+
+        trial_dicts = []
+        for trial in self.trials:
+            trial_dicts.append(trial.as_dict)
+        with open(filename, 'wb') as ofile:
+            cPickle.dump(trial_dicts, ofile, protocol=-1)
+        return filename
+
+    # TRIAL RELATED
+    def get_trial(self, name_or_id):
+        """Return the trial with the given name or id"""
+        if isinstance(name_or_id, uuid.UUID):
+            return self.trial_manager.get_trial_with_id(name_or_id)
+        else:
+            return self.trial_manager.get_trial_with_name(name_or_id)
+
+    def get_trial_with_name(self, name):
+        """
+        Find the trial with display_name=<name> and return it.
+        Raises RuntimeError if trial cannot be found.
+        """
+        return self.trial_manager.get_trial_with_name(name)
+
+    def mark_all_trials(self, status=True):
+        """Mark all trials according to <status>"""
+        for trial in self.trials.values():
+            try:
+                self.mark_trial(trial.name, status)
+            except CannotMarkTrialError:
+                pass
+
+    @supports_callbacks
+    def mark_trial(self, name_or_id, status=True):
+        """Mark trial with name_or_id according to <status>."""
+        trial = self.get_trial(name_or_id)
+        return self.trial_manager.mark_trial(trial.display_name, status=status)
+
+    @property
+    def marked_trials(self):
+        '''Return all currently marked trials.'''
+        return self.trial_manager.marked_trials
+
+    def remove_marked_trials(self):
+        """Remove all currently marked trials."""
+        results = []
+        for trial in self.marked_trials:
+            results.append(self.remove_trial(self.marked_trials))
+        return results
+
+    @supports_callbacks
+    def remove_trial(self, name_or_id):
+        """Remove the trial with name or id given."""
+        trial = self.get_trial(name_or_id)
+        self.trial_manager.remove_trial_with_name(trial.display_name)
+
+    @supports_callbacks
+    def rename_trial(self, old_name_or_id, proposed_name):
+        """Find trial with <old_name_or_id> and rename it to <proposed_name>."""
+        trial = self.get_trial(old_name_or_id)
+        return self.trial_manager.rename_trial(trial.display_name, 
+                proposed_name)
+
+    @property
+    def trials(self):
+        '''Return all currently marked and unmarked trials.'''
+        return self.trial_manager.trials
+
+    def visualize(self, trial_name, visualization_name, **kwargs):
+        """
+            Generate and display the visualization with the given 
+        <visualization_name> (or name subset) using the trial with 
+        name <trial_name>.
+        """
+        visualization = self.plugin_manager.visualizations[visualization_name]
+        trial = self.get_trial(trial_name)
+
+        return visualization.draw(trial, **kwargs)
+
+    # STRATEGY RELATED
+    @property
+    def current_strategy(self):
+        """The currently selected strategy."""
+        return self.strategy_manager.current_strategy
+
+    @current_strategy.setter
+    def current_strategy(self, strategy):
+        """Make <strategy> the current strategy."""
+        self.strategy_manager.current_strategy = strategy
+
+    def save_current_strategy(self, strategy_name):
+        """Save the current strategy, giving it the name <strategy_name>"""
+        self.strategy_manager.save_current_strategy(strategy_name)
+
+    def select_strategy(self, strategy_name):
+        """Make the strategy with name <strategy_name>, the current strategy."""
+        self.strategy_manager.select_strategy(strategy_name)
+
+    # RUN RELATED
+    def join_run(self):
+        """Join the run thread (if there is one)."""
+        if hasattr(self, '_run_thread'):
+            self._run_thread.join()
+
+    @property
+    def is_running(self):
+        if hasattr(self, '_run_thread'):
+            return self._run_thread.is_alive()
+        else:
+            return False
+
+    def run(self, strategy=None, stage_name=None, 
+            message_queue=multiprocessing.Queue(),
+            async=False):
+        '''
+            Run the given strategy (defaults to current_strategy), or a stage 
+        from that strategy.  Results are placed into the appropriate 
+        trial's resources.
+        Inputs:
+            strategy: A Strategy object.  If not passed, 
+                    session.current_strategy will be used.
+            stage_name: If passed, only that stage will be run.
+            message_queue: If passed, will be populated with run messages.
+            async: If True, processing will run in a separate thread.  This 
+                    thread can be joined with session.join_run()
+        '''
+        if strategy is None:
+            strategy = self.current_strategy 
+        self.process_manager.prepare_to_run_strategy(strategy, 
+                stage_name=stage_name)
+
+        self._run_thread = threading.Thread(
+                target=self.process_manager.run_tasks,
+                kwargs={'message_queue':message_queue})
+        self._run_thread.start()
+        if not async:
+            self._run_thread.join()
+
+    # PRIVATE FNS
     def _make_default_strategy(self):
         methods_used = {'detection_filter':'Infinite Impulse Response',
                         'detection':'Voltage Threshold',
@@ -83,10 +251,10 @@ class Session(object):
                  'exclude_overlappers':False,
                  'min_num_channels':3,
                  'peak_drift':0.3}
-        #auxiliary_stages['Resample after Detection Filter'] = \
-        #        {'new_sampling_freq':25000}
-        #auxiliary_stages['Resample after Extraction Filter'] = \
-        #        {'new_sampling_freq':25000}
+        auxiliary_stages['Resample after Detection Filter'] = \
+                {'new_sampling_frequency':25000}
+        auxiliary_stages['Resample after Extraction Filter'] = \
+                {'new_sampling_frequency':25000}
         auxiliary_stages['Power Spectral Density (Pre-Filtering)'] =\
                 {'frequency_resolution':5.0}
         auxiliary_stages['Power Spectral Density (Post-Detection-Filtering)'] =\
@@ -97,167 +265,11 @@ class Session(object):
                 settings=settings, auxiliary_stages=auxiliary_stages)
         return default_strategy 
 
-    # --- OPEN FILE(S) ---
-    @supports_callbacks
-    def open_file(self, fullpath):
-        """Open file located at fullpath."""
-        return self.process_manager.open_file(fullpath)
-
-    @supports_callbacks
-    def open_files(self, fullpaths):
-        """Open the files located at fullpaths"""
-        return self.process_manager.open_files(fullpaths)
-
     def _trials_created(self, trials):
         # Called after process_manager opens a file
         self.trial_manager.add_trials(trials)
 
-    # --- TRIAL ---
-    @supports_callbacks
-    def rename_trial(self, old_name_or_id, proposed_name):
-        """Find trial with <old_name_or_id> and rename it to <proposed_name>."""
-        trial = self.get_trial(old_name_or_id)
-        return self.trial_manager.rename_trial(trial.display_name, 
-                proposed_name)
 
-    def remove_marked_trials(self):
-        """Remove all currently marked trials."""
-        self.trial_manager.remove_marked_trials()
-
-    def remove_trial(self, name_or_id):
-        """Remove the trial with name or id given."""
-        trial = self.get_trial(name_or_id)
-        self.trial_manager.remove_trial_with_name(trial.display_name)
-
-    def mark_trial(self, name_or_id, status=True):
-        """Mark trial with name_or_id according to <status>."""
-        trial = self.get_trial(name_or_id)
-        return self.trial_manager.mark_trial(trial.display_name, status=status)
-
-    def mark_all_trials(self, status=True):
-        """Mark all trials according to <status>"""
-        self.trial_manager.mark_all_trials(status=status)
-
-    def get_trial(self, name_or_id):
-        """Return the trial with the given name or id"""
-        if isinstance(name_or_id, uuid.UUID):
-            return self.trial_manager.get_trial_with_id(name_or_id)
-        else:
-            return self.trial_manager.get_trial_with_name(name_or_id)
-
-    @property
-    def trials(self):
-        '''Return all currently marked and unmarked trials.'''
-        return self.trial_manager.trials
-
-    @property
-    def marked_trials(self):
-        '''Return all currently marked trials.'''
-        return self.trial_manager.marked_trials
-        
-    def get_trial_with_name(self, name):
-        """
-        Find the trial with display_name=<name> and return it.
-        Raises RuntimeError if trial cannot be found.
-        """
-        return self.trial_manager.get_trial_with_name(name)
-
-    # --- STRATEGY ---
-    def select_strategy(self, strategy_name):
-        """Make the strategy with name <strategy_name>, the current strategy."""
-        self.strategy_manager.select_strategy(strategy_name)
-
-    @property
-    def current_strategy(self):
-        """The currently selected strategy."""
-        return self.strategy_manager.current_strategy
-
-    @current_strategy.setter
-    def current_strategy(self, strategy):
-        """Make <strategy> the current strategy."""
-        self.strategy_manager.current_strategy = strategy
-
-    def save_current_strategy(self, strategy_name):
-        """Save the current strategy, giving it the name <strategy_name>"""
-        self.strategy_manager.save_current_strategy(strategy_name)
-
-    def save(self, filename):
-        """Save this session."""
-        if not filename.endswith('.ses'):
-            filename = '%s.ses' % filename
-
-        trial_dicts = []
-        for trial in self.trials:
-            trial_dicts.append(trial.as_dict)
-        with open(filename, 'wb') as ofile:
-            cPickle.dump(trial_dicts, ofile, protocol=-1)
-        return filename
-
-    def export(self, data_interpreter_name, base_path=None, **kwargs):
-        if base_path is None:
-            base_path = os.getcwd()
-
-        di = self.plugin_manager.data_interpreters[data_interpreter_name]
-        return di.write_data_file(self.marked_trials, base_path, **kwargs)
-
-    def visualize(self, trial_name, visualization_name, **kwargs):
-        """
-            Generate and display the visualization with the given 
-        <visualization_name> (or name subset) using the trial with 
-        name <trial_name>.
-        """
-        visualization = self.plugin_manager.visualizations[visualization_name]
-        trial = self.get_trial(trial_name)
-
-        return visualization.draw(trial, **kwargs)
-
-    def load(self, filename):
-        """Load session from a file."""
-        with open(filename) as infile:
-            trial_dicts = cPickle.load(infile)
-        trials = []
-        for td in trial_dicts:
-            trials.append(Trial.from_dict(td))
-        self.trial_manager.add_trials(trials)
-
-    def run(self, strategy=None, stage_name=None, 
-            message_queue=multiprocessing.Queue(),
-            async=False):
-        '''
-            Run the given strategy (defaults to current_strategy), or a stage 
-        from that strategy.  Results are placed into the appropriate 
-        trial's resources.
-        Inputs:
-            strategy: A Strategy object.  If not passed, 
-                    session.current_strategy will be used.
-            stage_name: If passed, only that stage will be run.
-            message_queue: If passed, will be populated with run messages.
-            async: If True, processing will run in a separate thread.  This 
-                    thread can be joined with session.join_run()
-        '''
-        if strategy is None:
-            strategy = self.current_strategy 
-        self.process_manager.prepare_to_run_strategy(strategy, 
-                stage_name=stage_name)
-
-        self._run_thread = threading.Thread(
-                target=self.process_manager.run_tasks,
-                kwargs={'message_queue':message_queue})
-        self._run_thread.start()
-        if not async:
-            self._run_thread.join()
-
-    def join_run(self):
-        """Join the run thread (if there is one)."""
-        if hasattr(self, '_run_thread'):
-            self._run_thread.join()
-
-    @property
-    def is_running(self):
-        if hasattr(self, '_run_thread'):
-            return self._run_thread.is_alive()
-        else:
-            return False
             
 
 

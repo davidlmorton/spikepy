@@ -33,6 +33,10 @@ from spikepy.gui.pyshell import locals_dict
 from spikepy.gui.export_dialog import ExportDialog
 
 def make_version_float(version_number_string):
+    """
+        Makes version numbers for matplotlib a float
+    so they can be easily compared.
+    """
     nums = version_number_string.split('.')
     result = 0.0
     for i, num in enumerate(nums):
@@ -44,12 +48,12 @@ class Controller(object):
         self.session = session.Session()
         self.session.open_files.add_callback(self._files_opened, 
                 takes_target_results=True)
-        self.session.trial_manager.remove_trial.add_callback(
+        self.session.remove_trial.add_callback(
                 self._trial_closed, 
                 takes_target_results=True)
         self.session.rename_trial.add_callback(self._trial_renamed,
                 takes_target_results=True)
-        self.session.trial_manager.mark_trial.add_callback(self._trial_marked,
+        self.session.mark_trial.add_callback(self._trial_marked,
                 takes_target_results=True)
 
         self.view = View(self.session)
@@ -63,7 +67,7 @@ class Controller(object):
         locals_dict['results_panels'] = self.results_panels
         locals_dict['view'] = self.view
         locals_dict['controller'] = self
-        self.setup_subscriptions()
+        self._setup_subscriptions()
 
     def warn_for_matplotlib_version(self):
         import matplotlib
@@ -77,7 +81,7 @@ class Controller(object):
             dlg.ShowModal()
             dlg.Destroy()
 
-    def setup_subscriptions(self):
+    def _setup_subscriptions(self):
         pub.subscribe(self._open_open_file_dialog, 
                       topic="OPEN_OPEN_FILE_DIALOG")
         pub.subscribe(self._close_trial, topic='CLOSE_TRIAL')
@@ -96,45 +100,46 @@ class Controller(object):
         pub.subscribe(self._run, topic="RUN_STRATEGY")
         pub.subscribe(self._run, topic="RUN_STAGE")
 
+    # UTILITY FNS
+    def _plot_results(self, trial_id):
+        trial = self.session.get_trial(trial_id)
+        stage_name = self.results_notebook.get_current_stage_name()
+        results_panel = self.results_panels[stage_name]
+        results_panel.plot(trial)
+
+    # CALLBACK HANDLERS
+    def _trial_marked(self, args):
+        trial_id, status = args
+        pub.sendMessage(topic='TRIAL_MARKED', data=(trial_id, status))
+
+    def _trial_renamed(self, trial):
+        pub.sendMessage(topic='TRIAL_RENAMED', data=trial)
+
+    def _trial_closed(self, trial_id):
+        self._selected_trial = None
+        pub.sendMessage(topic='TRIAL_CLOSED', data=trial_id)
+
+    def _files_opened(self, trials):
+        for trial in trials:
+            pub.sendMessage(topic='TRIAL_ADDED', data=trial)
+
+    # MESSAGING RELATED FNS
     def start_debug_subscriptions(self):
         pub.subscribe(self._print_messages) # subscribes to all topics
 
     def stop_debug_subscriptions(self):
         pub.unsubscribe(self._print_messages) # unsubscribes from all
 
+    # MESSAGE HANDLERS
+    def _close_application(self, message):
+        pub.sendMessage(topic='SAVE_ALL_STRATEGIES')
+        pub.unsubAll()
+        wx.Yield()
+        # deinitialize the frame manager
+        self.view.frame.Destroy()
+        
     def _close_trial(self, message):
         self.session.remove_trial(message.data)
-
-    def _mark_trial(self, message):
-        try:
-            self.session.mark_trial(*message.data)
-        except CannotMarkTrialError as e:
-            msg = e.args[0]
-            dlg = wx.MessageDialog(self.view.frame, msg, 
-                                   style=wx.OK|wx.ICON_EXCLAMATION)
-            dlg.ShowModal()
-            dlg.Destroy()
-
-    def _trial_marked(self, args):
-        trial_id, status = args
-        pub.sendMessage(topic='TRIAL_MARKED', data=(trial_id, status))
-
-    def _run(self, message):
-        message_queue = multiprocessing.Queue()
-        locals_dict['mq'] = message_queue
-
-        if 'stage_name' in message.data.keys():
-            stage_name = message.data['stage_name']
-        else:
-            stage_name = None
-
-        strategy = message.data['strategy']
-        self.session.run(strategy=strategy, stage_name=stage_name, 
-                message_queue=message_queue, async=True)
-
-        dlg = ProcessProgressDialog(self.view.frame, message_queue)
-        dlg.ShowModal()
-        self._plot_results(self._selected_trial)
 
     def _export_trials(self, message):
         fullpaths = []
@@ -154,9 +159,28 @@ class Controller(object):
                 self.session.export(plugin_name, base_path=ep, **kwargs)
         dlg.Destroy()
 
-    def _save_session(self, message):
-        save_path = message.data
-        self.session.save(save_path)
+    def _mark_trial(self, message):
+        try:
+            self.session.mark_trial(*message.data)
+        except CannotMarkTrialError as e:
+            msg = e.args[0]
+            dlg = wx.MessageDialog(self.view.frame, msg, 
+                                   style=wx.OK|wx.ICON_EXCLAMATION)
+            dlg.ShowModal()
+            dlg.Destroy()
+
+    def _open_open_file_dialog(self, message):
+        frame = message.data
+
+        paths = []
+        dlg = wx.FileDialog(frame, message=pt.OPEN_FILE_DLG_MESSAGE,
+                            defaultDir=os.getcwd(),
+                            style=wx.OPEN|wx.MULTIPLE) 
+        if dlg.ShowModal() == wx.ID_OK:
+            paths = dlg.GetPaths()
+        dlg.Destroy()
+
+        self.session.open_files(paths)
 
     def _open_rename_trial_dialog(self, message):
         trial_id = message.data
@@ -172,30 +196,38 @@ class Controller(object):
                 self.session.rename_trial(this_trial_name, new_name)
         dlg.Destroy()
 
-    def _trial_renamed(self, trial):
-        pub.sendMessage(topic='TRIAL_RENAMED', data=trial)
-
-    def _close_application(self, message):
-        pub.sendMessage(topic='SAVE_ALL_STRATEGIES')
-        pub.unsubAll()
-        wx.Yield()
-        # deinitialize the frame manager
-        self.view.frame.Destroy()
-        
     def _print_messages(self, message):
         topic = message.topic
         data = message.data
         print topic, data
 
-    def _trial_closed(self, trial_id):
-        self._selected_trial = None
-        pub.sendMessage(topic='TRIAL_CLOSED', data=trial_id)
+    def _results_notebook_page_changed(self, message):
+        self._plot_results(self._selected_trial)
 
-    def _plot_results(self, trial_id):
-        trial = self.session.get_trial(trial_id)
-        stage_name = self.results_notebook.get_current_stage_name()
-        results_panel = self.results_panels[stage_name]
-        results_panel.plot(trial)
+    def _run(self, message):
+        message_queue = multiprocessing.Queue()
+        locals_dict['mq'] = message_queue
+
+        if 'stage_name' in message.data.keys():
+            stage_name = message.data['stage_name']
+        else:
+            stage_name = None
+
+        strategy = message.data['strategy']
+        self.session.run(strategy=strategy, stage_name=stage_name, 
+                message_queue=message_queue, async=True)
+
+        dlg = ProcessProgressDialog(self.view.frame, message_queue)
+        dlg.ShowModal()
+        self._plot_results(self._selected_trial)
+
+    def _save_session(self, message):
+        save_path = message.data
+        self.session.save(save_path)
+
+    def _trial_selection_changed(self, message):
+        self._selected_trial = message.data
+        self._plot_results(self._selected_trial)
 
     def _visualization_panel_changed(self, message):
         visualization_control_panel = message.data
@@ -203,27 +235,3 @@ class Controller(object):
             trial = self.session.get_trial(self._selected_trial)
             visualization_control_panel.plot(trial)
 
-    def _results_notebook_page_changed(self, message):
-        self._plot_results(self._selected_trial)
-
-    def _trial_selection_changed(self, message):
-        self._selected_trial = message.data
-        self._plot_results(self._selected_trial)
-
-    def _open_open_file_dialog(self, message):
-        frame = message.data
-
-        paths = []
-        dlg = wx.FileDialog(frame, message=pt.OPEN_FILE_DLG_MESSAGE,
-                            defaultDir=os.getcwd(),
-                            style=wx.OPEN|wx.MULTIPLE) 
-        if dlg.ShowModal() == wx.ID_OK:
-            paths = dlg.GetPaths()
-        dlg.Destroy()
-
-        self.session.open_files(paths)
-
-    def _files_opened(self, trials):
-        for trial in trials:
-            pub.sendMessage(topic='TRIAL_ADDED', data=trial)
-        

@@ -51,12 +51,12 @@ def guess_file_interpreters(fullpath, file_interpreters):
     applicability.
     """
     filename = os.path.split(fullpath)[-1]
-    extention = os.path.splitext(filename)[-1]
 
     candidates = {}
     for fi in file_interpreters.values():
-        if extention in fi.extentions:
-            candidates[fi.priority] = fi
+        for extention in fi.extentions:
+            if filename.endswith(extention):
+                candidates['%04d-%s' % (fi.priority, fi.name)] = fi
 
     if candidates:
         return [candidates[key] for key in 

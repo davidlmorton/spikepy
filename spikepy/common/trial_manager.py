@@ -46,7 +46,6 @@ class TrialManager(object):
         self._trial_index = {}
         self._display_names = set()
 
-    @supports_callbacks 
     def mark_trial(self, name, status):
         """Mark trial with display_name=<name> according to <status>."""
         trial = self.get_trial_with_name(name)
@@ -57,14 +56,6 @@ class TrialManager(object):
                 raise CannotMarkTrialError('Cannot mark a trial with %d channels, since trials with %d channels are already marked.' % (trial.num_channels, num_channels))
         trial.mark(status=status)
         return trial.trial_id, trial.is_marked
-
-    def mark_all_trials(self, status):
-        """Mark all trials according to <status>"""
-        for trial in self._trial_index.values():
-            try:
-                self.mark_trial(trial.name, status)
-            except CannotMarkTrialError:
-                pass
 
     def add_trials(self, trial_list, marked=True):
         """
@@ -116,7 +107,6 @@ class TrialManager(object):
     def all_display_names(self):
         return self._display_names 
 
-    @supports_callbacks
     def rename_trial(self, old_name, proposed_name):
         """Find trial named <old_name> and rename it to <proposed_name>."""
         trial = self.get_trial_with_name(old_name)
