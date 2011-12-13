@@ -93,21 +93,16 @@ class OptionalControlPanel(ControlPanel):
                 background_color, **kwargs)
 
     def layout_ui(self):
-        active_checkbox = wx.CheckBox(self)
+        active_checkbox = wx.CheckBox(self, label=self.plugin.name)
+        f = active_checkbox.GetFont()
+        f.SetWeight(wx.BOLD)
+        active_checkbox.SetFont(f)
+
         active_checkbox.SetValue(True)
         self.Bind(wx.EVT_CHECKBOX, self._activate, active_checkbox)
 
-        title = wx.StaticText(self, label=self.plugin.name)
-        f = title.GetFont()
-        f.SetWeight(wx.BOLD)
-        title.SetFont(f)
-        title_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        title_sizer.Add(active_checkbox, flag=wx.ALL|wx.ALIGN_CENTER_VERTICAL, 
-                border=5)
-        title_sizer.Add(title, flag=wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL)
-
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        sizer.Add(title_sizer, flag=wx.ALIGN_LEFT)
+        sizer.Add(active_checkbox, flag=wx.ALIGN_LEFT)
         for ctrl_name in sorted(self.ctrls.keys()):
             sizer.Add(self.ctrls[ctrl_name], flag=wx.EXPAND|wx.ALIGN_RIGHT)
             self.ctrls[ctrl_name].register_valid_entry_callback(
@@ -115,7 +110,6 @@ class OptionalControlPanel(ControlPanel):
         sizer.Add(wx.StaticLine(self), flag=wx.EXPAND|wx.ALL, border=3)
         self.SetSizer(sizer)
         self.active_checkbox = active_checkbox
-        self.title = title
 
     def _activate(self, event):
         event.Skip()
@@ -132,10 +126,12 @@ class OptionalControlPanel(ControlPanel):
 
     def setup_active_state(self):
         for ctrl in self.ctrls.values():
-            ctrl.Enable(self.active)
-        self.title.Enable(self.active)
+            ctrl.Show(self.active)
         if self.valid_entry_callback is not None:
             self.valid_entry_callback(self.active)
+        self.Layout()
+        self.GetParent().Layout()
+        self.GetParent().SetupScrolling(scrollToTop=False)
 
     def pull(self):
         if self.active:

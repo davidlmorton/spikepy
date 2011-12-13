@@ -26,9 +26,13 @@ def run(features, iterations=None, threshold=None,
         number_of_clusters=None):
     # pack into single array
     data = numpy.vstack(features)
-    codebook, distortions = run_kmeans(number_of_clusters, data, 
-                                 threshold=threshold, iterations=iterations)
-    membership, distortions = vq(data, codebook)
+    if len(data) <= number_of_clusters:
+        membership = range(len(data))
+        distortions = [1.0 for i in range(len(data))]
+    else:
+        codebook, distortions = run_kmeans(number_of_clusters, data, 
+                                     threshold=threshold, iterations=iterations)
+        membership, distortions = vq(data, codebook)
 
     # unpack results
     start = 0

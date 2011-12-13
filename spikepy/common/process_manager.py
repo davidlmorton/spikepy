@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
 import multiprocessing
+import traceback
 import time
 
 try:
@@ -69,7 +70,11 @@ def task_worker(input_queue, results_queue):
 
         results_dict = {}
         begin_time = time.time()
-        results_dict['result'] = plugin.run(*args, **kwargs)
+        try:
+            results_dict['result'] = plugin.run(*args, **kwargs)
+        except:
+            results_dict['result'] = None
+            traceback.print_exc()
         end_time = time.time()
         results_dict['task_id'] = task_info['task_id']
         results_dict['runtime'] = end_time - begin_time
@@ -192,9 +197,17 @@ class ProcessManager(object):
                 finished_task_id = result['task_id']
                 finished_task = task_index[finished_task_id]
                 results_index[finished_task_id] = result['result']
-                message_queue.put(('FINISHED_TASK', 
-                        {'task':finished_task, 'runtime':result['runtime']}))
-                finished_task.complete(result['result'])
+                if result['result'] is None:
+                    message_queue.put(('TASK_ERROR', 
+                            {'task':finished_task, 
+                             'runtime':result['runtime']}))
+                    for i in xrange(num_process_workers):
+                        input_queue.put(None)
+                    break
+                else:
+                    message_queue.put(('FINISHED_TASK', 
+                            {'task':finished_task, 'runtime':result['runtime']}))
+                    finished_task.complete(result['result'])
 
             # are we done queueing up tasks? then add in the sentinals.
             if self._task_organizer.num_tasks == 0:

@@ -119,6 +119,8 @@ SUMMARY = "Summary"
 AUXILIARY = 'Auxiliary'
 STARTUP = "Starting up"
 
+SHOW_HIDE_OPTIONS = 'shows[+] or hides[-] options.'
+
 FEATURE_AMPLITUDE = "Feature Amplitude"
 FEATURE_INDEX = "Feature Index"
 FEATURE_SETS = "Feature Sets"

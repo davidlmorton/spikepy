@@ -14,6 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import time
 import Queue
 from datetime import datetime
 
@@ -29,6 +30,8 @@ class ProcessProgressDialog(wx.Dialog):
     def __init__(self, parent, message_queue, **kwargs):
         if 'style' not in kwargs.keys():
             kwargs['style'] = wx.STAY_ON_TOP
+
+        width, height = config.get_size('main_frame')*0.75
         kwargs['style'] |= wx.RESIZE_BORDER
         kwargs['style'] |= wx.CAPTION
         kwargs['style'] |= wx.SYSTEM_MENU
@@ -38,13 +41,13 @@ class ProcessProgressDialog(wx.Dialog):
         wx.Dialog.__init__(self, parent, **kwargs)
 
         self.message_queue = message_queue
-        self.update_period = 100 # in ms
+        self.update_period = 200 # in ms
 
         info_text = wx.StaticText(self, label=pt.STRATEGY_PROGRESS_INFO)
         self.gauge = wx.Gauge(self, wx.ID_ANY, 100, 
-                              size=(500,20), style=wx.GA_HORIZONTAL)
+                              size=(int(width*0.8),20), style=wx.GA_HORIZONTAL)
         self.gauge2 = wx.Gauge(self, wx.ID_ANY, 100, 
-                              size=(500, 5), style=wx.GA_HORIZONTAL)
+                              size=(int(width*0.8), 5), style=wx.GA_HORIZONTAL)
         self.close_button = wx.Button(self, wx.ID_CLOSE)
         self.close_button.Enable(False)
         self.Bind(wx.EVT_BUTTON, self.close, self.close_button)
@@ -60,7 +63,12 @@ class ProcessProgressDialog(wx.Dialog):
         sizer.Add(self.close_button, proportion=0, flag=wx.ALIGN_RIGHT|wx.RIGHT,
                 border=10)
 
-        message_text = wx.TextCtrl(self, style=wx.TE_MULTILINE, size=(500, 300))
+        message_text = wx.TextCtrl(self, style=wx.TE_MULTILINE, 
+                size=(int(width*0.8), int(height*0.6)))
+        f = message_text.GetFont()
+        f.SetPointSize(10)
+        f.SetFaceName('Courier 10 Pitch')
+        message_text.SetFont(f)
         message_text.SetBackgroundColour(wx.BLACK)
         message_text.SetForegroundColour(wx.WHITE)
         message_text.Enable(False)
@@ -76,6 +84,9 @@ class ProcessProgressDialog(wx.Dialog):
         self._display_messages = []
         self._should_update = True
         self.info_text = info_text
+        self._start_time = time.time()
+        self._plugin_runtime = 0.0
+        self._just_once = True
 
         self.Bind(wx.EVT_TIMER, self._update_processing)
         self.timer = wx.Timer(self)
@@ -102,17 +113,24 @@ class ProcessProgressDialog(wx.Dialog):
                     self._update_messages(
                             'Finished %s\n    Runtime:%8.4f seconds' % 
                             (data['task'], data['runtime']))
+                    self._plugin_runtime += data['runtime']
+
+                progress = int((self._num_tasks_competed/
+                        float(self._num_tasks))*100.0)
+                self.gauge.SetValue(progress)
+                self.gauge2.Pulse()
             else:
                 break
 
         progress = int((self._num_tasks_competed/
                 float(self._num_tasks))*100.0)
-        self.gauge.SetValue(progress)
         self.gauge2.Pulse()
-
-        if progress == 100:
+        if progress == 100 and self._just_once:
+            self._just_once = False
             self.close_button.Enable()
             self.info_text.SetLabel('Finished Processing')
+            total_runtime = time.time()-self._start_time
+            self._update_messages('Finished Processing:\n    Total Runtime = %f seconds (real time)\n    Time spent in plugins = %f seconds (cpu time, not real time)' % (total_runtime, self._plugin_runtime))
 
     def _update_messages(self, message):
         now = datetime.now()
@@ -123,6 +141,7 @@ class ProcessProgressDialog(wx.Dialog):
         self.message_text.SetValue(
                 '\n'.join(self._display_messages))
         self.message_text.ShowPosition(self.message_text.GetLastPosition())
+        wx.Yield()
 
     def close(self, event):
         event.Skip()

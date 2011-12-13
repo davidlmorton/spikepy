@@ -47,7 +47,10 @@ def run(signal, sampling_freq, threshold_1=None,
                     threshold_2=t2,
                     refractory_period=refractory_period,
                     max_spike_width=max_spike_width)
-            results.append(spikes/float(sampling_freq))
+            if len(spikes) > 0:
+                results.append(spikes/float(sampling_freq))
+            else:
+                results.append([])
     else:
         # determine thresholds
         if threshold_units.lower() == 'standard deviation':
@@ -64,6 +67,7 @@ def run(signal, sampling_freq, threshold_1=None,
                 threshold_2=t2,
                 refractory_period=refractory_period,
                 max_spike_width=max_spike_width)
-        results /= float(sampling_freq)
+        if len(results) > 0:
+            results /= float(sampling_freq)
     return [results]
 

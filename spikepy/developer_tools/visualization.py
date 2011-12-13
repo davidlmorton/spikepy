@@ -46,7 +46,18 @@ __init__ method that requires no arguments.
         '''
         raise NotImplementedError
 
+    def _is_ready_to_draw(self, trial):
+        for req_name in self.requires:
+            if (hasattr(trial, req_name) and 
+                    getattr(trial, req_name) is not None):
+                pass
+            else:
+                return False
+        return True
+
     def draw(self, trial, parent_panel=None, **kwargs):
+        if not self._is_ready_to_draw(trial):
+            return
         # are we running within the gui?
         if parent_panel is not None:
             parent_panel.plot_panel.figure.clear()

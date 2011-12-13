@@ -28,6 +28,10 @@ def generate_spike_windows(signal, sampling_freq, event_times,
     collapsed_event_times = collapse_event_times(signal, sampling_freq, 
             event_times, min_num_channels, peak_drift)
 
+    if len(collapsed_event_times) == 0:
+        return [numpy.empty((0, 0)),[],
+                numpy.empty((0, 0)),[]]
+
     pre_padding_percent = pre_padding/float(pre_padding+post_padding)
     # from sampling frequency (in Hz) and pre/post_padding (in ms) determine
     #     window_size (in samples)

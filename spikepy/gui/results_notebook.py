@@ -31,35 +31,40 @@ class VisualizationControlPanel(OptionalControlPanel):
     num_columns = 2
 
     def layout_ui(self):
-        active_checkbox = wx.CheckBox(self)
+        active_checkbox = wx.CheckBox(self, label=self.plugin.name)
         self.Bind(wx.EVT_CHECKBOX, self._activate, active_checkbox)
-
-        title = wx.StaticText(self, label=self.plugin.name)
-        f = title.GetFont()
+        f = active_checkbox.GetFont()
         f.SetWeight(wx.BOLD)
-        title.SetFont(f)
-        title_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        title_sizer.Add(active_checkbox, flag=wx.ALL|wx.ALIGN_CENTER_VERTICAL, 
-                border=5)
-        title_sizer.Add(title, flag=wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL)
+        active_checkbox.SetFont(f)
 
-        
+        show_hide_button = wx.Button(self, label='+', size=(26, 26))
+        self.Bind(wx.EVT_BUTTON, self._show_hide, show_hide_button)
+        show_hide_button.SetToolTip(wx.ToolTip(pt.SHOW_HIDE_OPTIONS))
+
+        top_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        top_sizer.Add(active_checkbox)
+        top_sizer.Add(show_hide_button, flag=wx.LEFT, border=5)
+
         main_sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        main_sizer.Add(title_sizer, flag=wx.ALIGN_LEFT)
+        main_sizer.Add(top_sizer, flag=wx.ALIGN_LEFT)
 
         control_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
 
         col_sizers = []
+        hidden_items = []
         for i in range(self.num_columns):
             col_sizers.append(wx.BoxSizer(orient=wx.VERTICAL))
             for ctrl_name in sorted(self.ctrls.keys())[i::self.num_columns]:
+                hidden_items.append(self.ctrls[ctrl_name])
                 col_sizers[-1].Add(self.ctrls[ctrl_name], 
                         flag=wx.EXPAND|wx.ALIGN_RIGHT)
                 self.ctrls[ctrl_name].register_valid_entry_callback(
                         self._something_changed)
             control_sizer.Add(col_sizers[-1], proportion=1)
             if i != self.num_columns-1:
-                control_sizer.Add(wx.StaticLine(self, style=wx.LI_VERTICAL),
+                static_line = wx.StaticText(self, style=wx.LI_VERTICAL)
+                hidden_items.append(static_line)
+                control_sizer.Add(static_line,
                         flag=wx.EXPAND|wx.ALL, border=3)
 
         main_sizer.Add(control_sizer, flag=wx.EXPAND)
@@ -70,13 +75,31 @@ class VisualizationControlPanel(OptionalControlPanel):
         self.SetSizer(main_sizer)
 
         self.active_checkbox = active_checkbox
-        self.title = title
         self.plot_panel = plot_panel
+        self.hidden_items = hidden_items
+        self.show_hide_button = show_hide_button
+        self._hidden = True
         self.active = False
+
+    def _show_hide(self, event):
+        event.Skip()
+        self._hidden = not self._hidden
+        labels = {True:'+', False:'-'}
+        self.show_hide_button.SetLabel(labels[self._hidden])
+        for item in self.hidden_items:
+            item.Show(not self._hidden)
+        self.Layout()
+        self.GetParent().Layout()
 
     def setup_active_state(self):
         OptionalControlPanel.setup_active_state(self)
         self.plot_panel.Show(self.active)
+        for item in self.hidden_items:
+            item.Show(self.active and not self._hidden)
+        self.show_hide_button.Enable(self.active)
+        self.Layout()
+        self.GetParent().Layout()
+        self.GetParent().SetupScrolling(scrollToTop=False)
 
     def _something_changed(self, new_value):
         pub.sendMessage(topic='VISUALIZATION_PANEL_CHANGED', data=self)
