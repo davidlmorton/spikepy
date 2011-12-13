@@ -35,13 +35,15 @@ class DetectionTraceVisualization(Visualization):
             description='How far apart the channels are plotted (as a multiple of the standard deviation of the signal).')
     invert_colors = ValidBoolean(default=False)
 
+    def _get_auxiliary_results(self, trial):
+        return trial.df_traces.data, trial.df_sampling_freq.data
+
     def _plot(self, trial, figure, channel_separation_std=8.0, 
             invert_colors=False):
         pf_traces = getattr(trial, self.requires[0]).data
         pf_sf = getattr(trial, self.requires[1]).data
 
-        f_traces = trial.df_traces.data
-        f_sf = trial.df_sampling_freq.data
+        f_traces, f_sf = self._get_auxiliary_results(trial)
         have_filtered_results = (f_traces is not None)
 
         def as_frac(x=None, y=None):
@@ -110,8 +112,13 @@ class DetectionTraceVisualization(Visualization):
         axes.set_xlim(pf_times[0], pf_times[-1])
         axes.set_ylim((y_min - 0.03*y_range, y_max + 0.20*y_range))
 
-            
-            
 
-        
+class ExtractionTraceVisualization(DetectionTraceVisualization):
+    name = 'Extraction Filtered Data Trace(s)'
+    requires = ['pf_traces', 'pf_sampling_freq']
+    found_under_tab = 'extraction_filter'
+
+    def _get_auxiliary_results(self, trial):
+        return trial.ef_traces.data, trial.ef_sampling_freq.data
+
 

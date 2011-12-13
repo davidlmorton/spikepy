@@ -174,14 +174,23 @@ class ProcessManager(object):
         for task in self._task_organizer.tasks:
             task_index[task.task_id] = task
         message_queue.put(('TASKS', task_index.values()))
+        print "Preparing to run %d tasks." % \
+                len(self._task_organizer.tasks)
             
         results_index = {}
         queued_tasks = 0
         while True:
             # queue up ready tasks
-            pulled, skipped = self._task_organizer.pull_runnable_tasks()
+            pulled, skipped, impossible =\
+                    self._task_organizer.pull_runnable_tasks()
+            for task in impossible:
+                message_queue.put(('IMPOSSIBLE_TASK', task))
+                print "REMOVED: %s on %s" % (task.plugin.name, 
+                        [t.display_name for t in task.trials])
             for task in skipped:
                 message_queue.put(('SKIPPED_TASK', task))
+                print "SKIPPED: %s on %s" % (task.plugin.name, 
+                        [t.display_name for t in task.trials])
 
             for task, task_info in pulled:
                 message_queue.put(('RUNNING_TASK', task))
@@ -306,6 +315,7 @@ class TaskOrganizer(object):
         task_list = [task for task in self._stationary_tasks.values()]
         task_list += [task for task in self._non_stationary_tasks.values()]
         skipped_tasks = []
+        impossible_tasks = []
         for task in task_list:
             all_provided_items = []
             for ttask in self._non_stationary_tasks.values():
@@ -324,19 +334,22 @@ class TaskOrganizer(object):
 
             # do you require something never set?
             if can_run:
-                for item in task.requires:
-                    if item.data is None:
-                        raise ImpossibleTaskError('Cannot execute %s because it requires something that will not be set by any task in this set.' % task)
-
-            if can_run:
                 (co_task, co_task_info) = self.checkout_task(task)
-                if co_task.would_generate_unique_results:
+                impossible = False
+                for item in co_task.requires:
+                    if item.data is None:
+                        impossible = True
+
+                if impossible:
+                    co_task.skip()
+                    impossible_tasks.append(co_task)
+                elif co_task.would_generate_unique_results:
                     results.append((co_task, co_task_info))
                 else:
                     co_task.skip()
                     skipped_tasks.append(co_task)
                 
-        return results, skipped_tasks
+        return results, skipped_tasks, impossible_tasks 
 
     def checkout_task(self, task):
         task_id = task.task_id

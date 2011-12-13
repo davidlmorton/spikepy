@@ -106,6 +106,9 @@ class ProcessProgressDialog(wx.Dialog):
                 if statement == 'SKIPPED_TASK':
                     self._num_tasks_competed += 1
                     self._update_messages('Skipped %s' % data)
+                if statement == 'IMPOSSIBLE_TASK':
+                    self._num_tasks_competed += 1
+                    self._update_messages('Removed %s\n    Reason: task was impossible to complete.' % data)
                 if statement == 'RUNNING_TASK':
                     self._update_messages('Started %s' % data)
                 if statement == 'FINISHED_TASK':

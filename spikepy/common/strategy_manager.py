@@ -24,6 +24,7 @@ from spikepy.common import program_text as pt
 from spikepy.common.path_utils import get_data_dirs
 from spikepy.common.stages import stages
 from spikepy.common.errors import *
+from spikepy.common.utils import SubstringDict 
 
 
 class Strategy(object):
@@ -142,7 +143,7 @@ class StrategyManager(object):
 
     def __init__(self, config_manager=None):
         self.config_manager = config_manager 
-        self.strategies = {} # strategies under management
+        self.strategies = SubstringDict() # strategies under management
         self._current_strategy = None
 
     def __str__(self):
@@ -264,12 +265,7 @@ class StrategyManager(object):
                              strategy.name)
 
     def _get_strategy_by_name(self, strategy_name):
-        for managed_strategy in self.strategies.values():
-            if managed_strategy.name == strategy_name:
-                return managed_strategy
-        raise MissingStrategyError(
-                'No strategy named "%s" under management.' % 
-                           strategy_name)
+        return self.strategies[strategy_name]
 
     def get_strategy(self, strategy):
         if isinstance(strategy, types.StringTypes):

@@ -166,17 +166,14 @@ class Session(object):
         return self.strategy_manager.current_strategy
 
     @current_strategy.setter
-    def current_strategy(self, strategy):
+    def current_strategy(self, strategy_or_name):
         """Make <strategy> the current strategy."""
+        strategy = self.strategy_manager.get_strategy(strategy_or_name)
         self.strategy_manager.current_strategy = strategy
 
     def save_current_strategy(self, strategy_name):
         """Save the current strategy, giving it the name <strategy_name>"""
         self.strategy_manager.save_current_strategy(strategy_name)
-
-    def select_strategy(self, strategy_name):
-        """Make the strategy with name <strategy_name>, the current strategy."""
-        self.strategy_manager.select_strategy(strategy_name)
 
     # RUN RELATED
     def join_run(self):
