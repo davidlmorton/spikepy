@@ -57,6 +57,8 @@ __init__ method that requires no arguments.
 
     def draw(self, trial, parent_panel=None, **kwargs):
         if not self._is_ready_to_draw(trial):
+            if parent_panel is not None:
+                parent_panel.plot_panel.figure.clear()
             return
         # are we running within the gui?
         if parent_panel is not None:

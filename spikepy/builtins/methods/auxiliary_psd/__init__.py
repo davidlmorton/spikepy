@@ -24,11 +24,13 @@ class PSDPF(AuxiliaryMethod):
     group = 'PSD'
     name = 'Power Spectral Density (Pre-Filtering)'
     description = 'Spectral Density of the pre-filtered signal.'
+    runs_with_stage = 'detection_filter'
     requires = ['pf_traces', 'pf_sampling_freq']
     provides = ['pf_psd', 'pf_freqs']
     is_stochastic = False
 
-    frequency_resolution = ValidFloat(min=0.1, default=10)
+    frequency_resolution = ValidFloat(min=0.1, default=10,
+            description="The minimal acceptable frequency resolution.  The actual frequency resolution may be better than this (but won't be worse).")
 
     def run(self, signal, sampling_freq, **kwargs):
         return psd(signal.flatten(), sampling_freq, 

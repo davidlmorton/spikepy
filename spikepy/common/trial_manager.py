@@ -33,7 +33,6 @@ from spikepy.common import program_text as pt
 from spikepy.common import utils
 from spikepy.common.utils import SubstringDict 
 from spikepy.common.errors import *
-from spikepy.utils.frequency_analysis import psd
 
 class TrialManager(object):
     """
@@ -205,10 +204,6 @@ class Trial(object):
         self.add_resource(Resource('pf_traces', data=self.raw_traces))
         self.add_resource(Resource('pf_sampling_freq', data=self.sampling_freq))
         
-        pf_psd, pf_freqs = psd(self.raw_traces.flatten(), sampling_freq, 10)
-        self.add_resource(Resource('pf_psd', data=pf_psd))
-        self.add_resource(Resource('pf_freqs', data=pf_freqs))
-
         # df_traces is a 2D numpy array where (detection-filtering)
         #    len(df_traces) == num_channels
         self.add_resource(Resource('df_traces'))
