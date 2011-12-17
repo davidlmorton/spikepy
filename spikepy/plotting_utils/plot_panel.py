@@ -15,6 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import time
+import copy
 import gc
 
 import matplotlib
@@ -106,7 +107,23 @@ class PlotPanel(wx.Panel):
 
         self.axes = {}
 
-    def clear(self):
+    def _save_history(self):
+        if (hasattr(self.toolbar, '_views') and 
+                hasattr(self.toolbar, '_positions')):
+            self._old_history = {}
+            self._old_history['views'] = copy.copy(self.toolbar._views)
+            self._old_history['positions'] = copy.copy(self.toolbar._positions)
+
+    def _restore_history(self):
+        if hasattr(self, '_old_history'):
+            self.toolbar._views = self._old_history['views']
+            self.toolbar._positions = self._old_history['positions']
+            self.toolbar.set_history_buttons()
+            if hasattr(self.toolbar, '_update_view'):
+                self.toolbar._update_view()
+
+    def clear(self, keep_history=False):
+        self._save_history()
         self.axes = {}
         self.figure.clear()
         gc.collect()

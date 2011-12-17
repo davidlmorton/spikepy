@@ -39,6 +39,7 @@ __init__ method that requires no arguments.
         self._change_ids = {}
         for resource_name in self.requires:
             self._change_ids[resource_name] = None 
+        self._last_drawn_trial_id = None
 
     def _plot(self, trial, figure, **kwargs):
         '''
@@ -78,6 +79,7 @@ __init__ method that requires no arguments.
 
 
     def draw(self, trial, parent_panel=None, **kwargs):
+
         unmet_requirements = self._get_unmet_requirements(trial)
         if unmet_requirements: 
             self._handle_unmet_requirements(parent_panel, unmet_requirements)
@@ -85,10 +87,20 @@ __init__ method that requires no arguments.
 
         # are we running within the gui?
         if parent_panel is not None:
-            parent_panel.plot_panel.figure.clear()
+            if trial.trial_id == self._last_drawn_trial_id:
+                preserve_history = True
+                parent_panel.plot_panel._save_history()
+            else:
+                self._last_drawn_trial_id = trial.trial_id
+                preserve_history = False
+
+            parent_panel.plot_panel.clear()
             self._plot(trial, parent_panel.plot_panel.figure, **kwargs)
 
             canvas = parent_panel.plot_panel.canvas
+
+            if preserve_history:
+                parent_panel.plot_panel._restore_history()
             canvas.draw()
         else:
             figsize = config.get_size('figure')

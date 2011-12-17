@@ -90,6 +90,7 @@ class VisualizationControlPanel(OptionalControlPanel):
             item.Show(not self._hidden)
         self.Layout()
         self.GetParent().Layout()
+        self.GetParent().SetupScrolling(scroll_x=False, scrollToTop=False)
 
     def setup_active_state(self):
         OptionalControlPanel.setup_active_state(self)
@@ -99,7 +100,7 @@ class VisualizationControlPanel(OptionalControlPanel):
         self.show_hide_button.Enable(self.active)
         self.Layout()
         self.GetParent().Layout()
-        self.GetParent().SetupScrolling(scrollToTop=False)
+        self.GetParent().SetupScrolling(scroll_x=False, scrollToTop=False)
 
     def _something_changed(self, new_value):
         pub.sendMessage(topic='VISUALIZATION_PANEL_CHANGED', data=self)
@@ -202,7 +203,7 @@ class ResultsPanel(ScrolledPanel):
                     flag=wx.EXPAND|wx.ALL, border=2)
         
         self.SetSizer(sizer)
-        self.SetupScrolling()
+        self.SetupScrolling(scroll_x=False)
 
     def plot(self, trial):
         for ctrl in self.ctrls.values():
