@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pylab
 
 from spikepy.common.config_manager import config_manager as config
+from spikepy.common import program_text as pt
 from spikepy.plotting_utils.plot_panel import PlotPanel
 from spikepy.common.valid_types import ValidType
 
@@ -46,20 +47,42 @@ __init__ method that requires no arguments.
         '''
         raise NotImplementedError
 
-    def _is_ready_to_draw(self, trial):
+    def _get_unmet_requirements(self, trial):
+        unmet_requirements = []
         for req_name in self.requires:
             if (hasattr(trial, req_name) and 
                     getattr(trial, req_name) is not None):
                 pass
             else:
-                return False
-        return True
+                unmet_requirements.append(req_name)
+        return unmet_requirements
+
+    def _handle_unmet_requirements(self, parent_panel, unmet_requirements):
+        if parent_panel is not None:
+            figure = parent_panel.plot_panel.figure
+            figure.clear()
+        else:
+            figsize = config.get_size('figure')
+            figure = pylab.figure(figsize=figsize)
+            figure.canvas.set_window_title(self.name)
+
+        msg = pt.CANNOT_CREATE_VISUALIZATION % \
+                '\n'.join(unmet_requirements)
+        figure.text(0.5, 0.5, msg, verticalalignment='center',
+                horizontalalignment='center')
+            
+        if parent_panel is not None:
+            figure.canvas.draw()
+        else:
+            pylab.show()
+
 
     def draw(self, trial, parent_panel=None, **kwargs):
-        if not self._is_ready_to_draw(trial):
-            if parent_panel is not None:
-                parent_panel.plot_panel.figure.clear()
+        unmet_requirements = self._get_unmet_requirements(trial)
+        if unmet_requirements: 
+            self._handle_unmet_requirements(parent_panel, unmet_requirements)
             return
+
         # are we running within the gui?
         if parent_panel is not None:
             parent_panel.plot_panel.figure.clear()

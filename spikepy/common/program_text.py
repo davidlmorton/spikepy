@@ -189,6 +189,7 @@ SPECIFIC_CLUSTER_ID = "Cluster %s" # % cluster_id
 PRO_EMPTY = "Cluster %s vs %s (Cluster %s Empty)" 
 PRO_UNKNOWN = "Cluster %s vs %s (Unknown Overlap)"
 PRO_OK = "Cluster %s vs %s (%3.1f%s overlap)"
+CANNOT_CREATE_VISUALIZATION = 'This visualization could not be completed.  The following trial resources were required but not computed:\n\n%s'
 
 # --- Printing ---
 PRINT = "Print..."

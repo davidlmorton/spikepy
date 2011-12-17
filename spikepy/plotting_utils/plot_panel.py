@@ -14,6 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import time
 import gc
 
 import matplotlib
@@ -67,9 +68,19 @@ class PlotPanel(wx.Panel):
         self.toolbar.Show(False)
         self.toolbar.Realize()
 
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.toolbar, 0, wx.EXPAND)
-        sizer.Add(self.canvas,  1, wx.EXPAND)
+        toolbar_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        self.x_coord = wx.StaticText(self, label='x:')
+        self.y_coord = wx.StaticText(self, label='y:')
+        toolbar_sizer.Add(self.toolbar, proportion=2)
+        toolbar_sizer.Add(self.x_coord, proportion=1, 
+                flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT|wx.LEFT, border=5)
+        toolbar_sizer.Add(self.y_coord, proportion=1,
+                flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT|wx.LEFT, border=5)
+
+
+        sizer = wx.BoxSizer(orient=wx.VERTICAL)
+        sizer.Add(toolbar_sizer, proportion=0, flag=wx.EXPAND)
+        sizer.Add(self.canvas,  proportion=1, flag=wx.EXPAND)
         self.SetSizer(sizer)
 
         figheight = self.figure.get_figheight()
@@ -83,6 +94,10 @@ class PlotPanel(wx.Panel):
             self.hide_toolbar()
 
         self.canvas.Bind(wx.EVT_LEFT_DCLICK, self.toggle_toolbar)
+
+        self._last_time_coordinates_updated = 0.0
+        self._coordinates_blank = True
+        self.canvas.mpl_connect('motion_notify_event', self._update_coordinates)
         
         # ---- Setup Subscriptions
         pub.subscribe(self._toggle_toolbar, topic="TOGGLE_TOOLBAR")
@@ -134,6 +149,8 @@ class PlotPanel(wx.Panel):
         Make the toolbar visible.
         '''
         self.toolbar.Show(True)
+        self.x_coord.Show(True)
+        self.y_coord.Show(True)
         self._toolbar_visible = True
         self.Layout()
 
@@ -148,7 +165,25 @@ class PlotPanel(wx.Panel):
         Make toolbar invisible.
         '''
         self.toolbar.Show(False)
+        self.x_coord.Show(False)
+        self.y_coord.Show(False)
         self._toolbar_visible = False
         self.Layout()
+
+    def _update_coordinates(self, event=None):
+        if event.inaxes:
+            now = time.time()
+            # only once every 100 ms.
+            if now-self._last_time_coordinates_updated > 0.100:
+                self._last_time_coordinates_updated = now
+                x, y = event.xdata, event.ydata
+                self._coordinates_blank = False
+                self.x_coord.SetLabel('x: %e' % x)
+                self.y_coord.SetLabel('y: %e' % y)
+        elif not self._coordinates_blank:
+            # make the coordinates blank
+            self._coordinates_not_blank = True
+            self.x_coord.SetLabel('x: ')
+            self.y_coord.SetLabel('y: ')
 
 
