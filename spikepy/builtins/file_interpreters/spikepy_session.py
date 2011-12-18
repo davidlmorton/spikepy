@@ -18,7 +18,7 @@ import cPickle
 
 import numpy
 
-from spikepy.developer_tools.file_interpreter import FileInterpreter
+from spikepy.developer_tools.file_interpreter import FileInterpreter, Trial
 
 class SpikepySession(FileInterpreter):
     def __init__(self):
@@ -31,15 +31,9 @@ class SpikepySession(FileInterpreter):
     def read_data_file(self, fullpath):
         with open(fullpath, 'r') as infile:
             trial_archives = cPickle.load(infile)
+
         trials = []
         for archive in trial_archives:
-            trial = self.make_trial_object(archive['sampling_freq'],
-                                           archive['raw_traces'], 
-                                           archive['fullpath'])
+            trial = Trial.from_dict(archive)
             trials.append(trial)
-            for stage in trial.stages:
-                if stage.name in archive.keys():
-                    data_for_stage = archive[stage.name]
-                    trial.set_data_for_stage(stage.name, **data_for_stage)
-
         return trials

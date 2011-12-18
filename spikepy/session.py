@@ -134,7 +134,7 @@ class Session(object):
     def remove_trial(self, name_or_id):
         """Remove the trial with name or id given."""
         trial = self.get_trial(name_or_id)
-        self.trial_manager.remove_trial_with_name(trial.display_name)
+        return self.trial_manager.remove_trial(trial)
 
     @supports_callbacks
     def rename_trial(self, old_name_or_id, proposed_name):

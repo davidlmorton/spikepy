@@ -77,8 +77,28 @@ __init__ method that requires no arguments.
         else:
             pylab.show()
 
+    def _handle_no_trial_passed(self, parent_panel):
+        if parent_panel is not None:
+            figure = parent_panel.plot_panel.figure
+            figure.clear()
+        else:
+            figsize = config.get_size('figure')
+            figure = pylab.figure(figsize=figsize)
+            figure.canvas.set_window_title(self.name)
 
-    def draw(self, trial, parent_panel=None, **kwargs):
+        msg = pt.NO_TRIAL_SELECTED 
+        figure.text(0.5, 0.5, msg, verticalalignment='center',
+                horizontalalignment='center')
+            
+        if parent_panel is not None:
+            figure.canvas.draw()
+        else:
+            pylab.show()
+
+    def draw(self, trial=None, parent_panel=None, **kwargs):
+        if trial is None:
+            self._handle_no_trial_passed(parent_panel)
+            return
 
         unmet_requirements = self._get_unmet_requirements(trial)
         if unmet_requirements: 

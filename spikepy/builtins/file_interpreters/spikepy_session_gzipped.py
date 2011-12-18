@@ -36,13 +36,6 @@ class SpikepySession(FileInterpreter):
 
         trials = []
         for archive in trial_archives:
-            trial = self.make_trial_object(archive['sampling_freq'],
-                                           archive['raw_traces'], 
-                                           archive['fullpath'])
+            trial = Trial.from_dict(archive)
             trials.append(trial)
-            for stage in trial.stages:
-                if stage.name in archive.keys():
-                    data_for_stage = archive[stage.name]
-                    trial.set_data_for_stage(stage.name, **data_for_stage)
-
         return trials

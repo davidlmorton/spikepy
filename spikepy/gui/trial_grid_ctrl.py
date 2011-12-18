@@ -272,6 +272,7 @@ class TrialGridCtrl(gridlib.Grid):
         # if trial was selected, unselect it.
         if self._last_trial_id_selected == trial_id:
             self._last_trial_id_selected = None
+            pub.sendMessage('TRIAL_SELECTION_CHANGED', data=None) 
 
         if not self._trials.keys():
             pub.sendMessage('SET_RUN_BUTTONS_STATE', data=[False, False])
@@ -313,7 +314,6 @@ class TrialGridCtrl(gridlib.Grid):
 
     def _trial_marked(self, message):
         trial_id, status = message.data
-        print trial_id, status
         row = self._get_row_from_trial_id(trial_id)
         if row is not None:
             self._set_marked_status(row, status)

@@ -36,7 +36,6 @@ DEFAULT            = wx.NewId()
 ABOUT              = wx.ID_ABOUT
 SHELL              = wx.NewId()
 SHOW_TOOLBARS      = wx.NewId()
-SHOW_PLOTS         = wx.NewId()
 SAVE_SESSION       = wx.NewId()
 EXPORT_MARKED      = wx.NewId()
 PRINT_SUBMENU      = wx.NewId()
@@ -71,9 +70,6 @@ class SpikepyMenuBar(wx.MenuBar):
         view_menu = wx.Menu()
         view_menu.Append(SHOW_TOOLBARS, text=pt.SHOW_TOOLBARS_MENU, 
                          kind=wx.ITEM_CHECK)
-        view_menu.Append(SHOW_PLOTS, text=pt.SHOW_PLOTS, 
-                         kind=wx.ITEM_CHECK)
-        view_menu.Check(SHOW_PLOTS, True)
         
         # --- HELP ---
         help_menu = wx.Menu()
@@ -98,7 +94,6 @@ class SpikepyMenuBar(wx.MenuBar):
         frame.Bind(wx.EVT_MENU, self._show_preferences, id=PREFERENCES)
         # View
         frame.Bind(wx.EVT_MENU, self._show_toolbars,    id=SHOW_TOOLBARS)
-        frame.Bind(wx.EVT_MENU, self._show_plots,       id=SHOW_PLOTS)
         # Help
         frame.Bind(wx.EVT_MENU, self._python_shell,     id=SHELL)
         frame.Bind(wx.EVT_MENU, self._about_box,        id=ABOUT)

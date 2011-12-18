@@ -42,8 +42,9 @@ class VisualizationControlPanel(OptionalControlPanel):
         show_hide_button.SetToolTip(wx.ToolTip(pt.SHOW_HIDE_OPTIONS))
 
         top_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        top_sizer.Add(active_checkbox)
-        top_sizer.Add(show_hide_button, flag=wx.LEFT, border=5)
+        top_sizer.Add(active_checkbox, flag=wx.ALIGN_CENTER_VERTICAL)
+        top_sizer.Add(show_hide_button, flag=wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 
+                border=5)
 
         main_sizer = wx.BoxSizer(orient=wx.VERTICAL)
         main_sizer.Add(top_sizer, flag=wx.ALIGN_LEFT)
@@ -95,6 +96,8 @@ class VisualizationControlPanel(OptionalControlPanel):
     def setup_active_state(self):
         OptionalControlPanel.setup_active_state(self)
         self.plot_panel.Show(self.active)
+        if self.active:
+            pub.sendMessage(topic='VISUALIZATION_PANEL_CHANGED', data=self)
         for item in self.hidden_items:
             item.Show(self.active and not self._hidden)
         self.show_hide_button.Enable(self.active)
@@ -110,6 +113,11 @@ class VisualizationControlPanel(OptionalControlPanel):
             self.plugin.draw(trial, parent_panel=self, **self.pull())
         else:
             return
+
+    def push(self, value_dict=None):
+        if value_dict is not None:
+            for name, value in value_dict.items():
+                self.ctrls[name].SetValue(value)
         
 
 class ResultsNotebook(wx.Notebook):

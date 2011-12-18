@@ -22,6 +22,7 @@ from wx.lib.scrolledpanel import ScrolledPanel
 from wx.lib import buttons
 
 from spikepy.utils.string_formatting import start_case
+from spikepy.utils.wrap import wrap
 from spikepy.gui.valid_controls import make_control
 from spikepy.gui.named_controls import NamedChoiceCtrl 
 import spikepy.common.program_text as pt
@@ -93,7 +94,7 @@ class OptionalControlPanel(ControlPanel):
                 background_color, **kwargs)
 
     def layout_ui(self):
-        active_checkbox = wx.CheckBox(self, label=self.plugin.name)
+        active_checkbox = wx.CheckBox(self, label=wrap(self.plugin.name, 40))
         f = active_checkbox.GetFont()
         f.SetWeight(wx.BOLD)
         active_checkbox.SetFont(f)
@@ -195,7 +196,7 @@ class StrategyPane(wx.Panel):
                         valid_entry_callback=self._update_strategy)
                 cp_sizer.Add(control_panel,
                           flag=wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND, 
-                          border=8)
+                          border=5)
                 self.control_panels[stage_name][plugin_name] = control_panel
 
         # auxiliary control panels
@@ -208,7 +209,7 @@ class StrategyPane(wx.Panel):
 
             cp_sizer.Add(control_panel, 
                     flag=wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND, 
-                    border=8)
+                    border=5)
             self.auxiliary_control_panels[plugin_name] = control_panel
         self.control_panels_scroller.SetSizer(cp_sizer)
 
@@ -229,7 +230,7 @@ class StrategyPane(wx.Panel):
     def _setup_buttons(self):
         button_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         self.run_strategy_button = wx.Button(self, label=pt.RUN_STRATEGY)
-        self.run_stage_button    = wx.Button(self, label=pt.RUN_STAGE)
+        self.run_stage_button    = wx.Button(self, label='run stage button')
         self.save_button         = wx.Button(self, label=pt.SAVE_STRATEGY)
 
         button_sizer.Add(self.run_strategy_button, proportion=0, 
@@ -332,12 +333,16 @@ class StrategyPane(wx.Panel):
                     panel.Show(False)
             for panel in self.auxiliary_control_panels.values():
                 panel.Show(panel.plugin.runs_with_stage == stage_name)
+            self.run_stage_button.SetLabel(pt.RUN_AUXILIARY_PLUGINS)
             self.do_layout()
         else:
             for panel in self.auxiliary_control_panels.values():
                 panel.Show(panel.plugin.runs_with_stage == stage_name)
             method_name = self.get_current_methods_used()[stage_name]
             self._method_chosen(stage_name=stage_name, method_name=method_name)
+            self.run_stage_button.SetLabel(pt.RUN_STAGE % 
+                    stages.get_stage_display_name(stage_name))
+            self.do_layout()
 
     def _push_strategy(self, strategy):
         for stage_name in stages.stages:

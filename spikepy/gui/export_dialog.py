@@ -105,21 +105,13 @@ class ExportControlPanel(OptionalControlPanel):
         hsizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         tsizer = wx.BoxSizer(orient=wx.VERTICAL)
 
-        active_checkbox = wx.CheckBox(self, label='')
-        active_checkbox.Enable(self.optional)
-        active_checkbox.Show(self.optional)
+        active_checkbox = wx.CheckBox(self, label=self.plugin.name)
+        f = active_checkbox.GetFont()
+        f.SetWeight(wx.BOLD)
+        active_checkbox.SetFont(f)
         self.Bind(wx.EVT_CHECKBOX, self._activate, active_checkbox)
 
-        title = wx.StaticText(self, label=self.plugin.name)
-        f = title.GetFont()
-        f.SetWeight(wx.BOLD)
-        title.SetFont(f)
-        title_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        title_sizer.Add(active_checkbox, flag=wx.ALL|wx.ALIGN_CENTER_VERTICAL, 
-                border=5)
-        title_sizer.Add(title, flag=wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL)
-
-        vsizer.Add(title_sizer, flag=wx.ALIGN_LEFT|wx.ALL, border=5)
+        vsizer.Add(active_checkbox, flag=wx.ALIGN_LEFT|wx.ALL, border=5)
         for ctrl_name in sorted(self.ctrls.keys()):
             vsizer.Add(self.ctrls[ctrl_name], flag=wx.EXPAND|wx.ALIGN_RIGHT)
 
@@ -134,7 +126,6 @@ class ExportControlPanel(OptionalControlPanel):
         self.SetSizer(tsizer)
 
         self.active_checkbox = active_checkbox
-        self.title = title
 
 class DataInterpretersPanel(ScrolledPanel):
     def __init__(self, parent, data_interpreters, trials):

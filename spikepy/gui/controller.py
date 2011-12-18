@@ -102,7 +102,10 @@ class Controller(object):
 
     # UTILITY FNS
     def _plot_results(self, trial_id):
-        trial = self.session.get_trial(trial_id)
+        if trial_id is not None:
+            trial = self.session.get_trial(trial_id)
+        else:
+            trial = None
         stage_name = self.results_notebook.get_current_stage_name()
         results_panel = self.results_panels[stage_name]
         results_panel.plot(trial)
@@ -132,7 +135,6 @@ class Controller(object):
 
     # MESSAGE HANDLERS
     def _close_application(self, message):
-        pub.sendMessage(topic='SAVE_ALL_STRATEGIES')
         pub.unsubAll()
         wx.Yield()
         # deinitialize the frame manager
@@ -233,5 +235,7 @@ class Controller(object):
         visualization_control_panel = message.data
         if self._selected_trial is not None:
             trial = self.session.get_trial(self._selected_trial)
-            visualization_control_panel.plot(trial)
+        else:
+            trial = None
+        visualization_control_panel.plot(trial)
 

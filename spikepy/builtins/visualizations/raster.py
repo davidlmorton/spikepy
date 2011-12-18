@@ -109,7 +109,8 @@ class RasterVisualization(Visualization):
                 if raster_position == 'center':
                     e_ys = [offsets[i] for e in e_xs]
                 else:
-                    event_indexes = [f_sf * e for e in e_xs]
+                    # 0.1 corrects for roundoff error
+                    event_indexes = [int(f_sf*e+0.1) for e in e_xs] 
                     e_ys = [f_traces[i][ei]+offsets[i] for ei in event_indexes]
 
                 axes.plot(e_xs, e_ys, linewidth=0, marker='|', 

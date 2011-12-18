@@ -64,7 +64,7 @@ class TrialManager(object):
         new_names = []
         for trial in trial_list:
             if trial.trial_id in self._trial_index.keys():
-                self.remove_trial(trial)
+                trial.reset_trial_id()
             new_name = self._get_unique_display_name(trial.display_name)
             trial.display_name = new_name
             new_names.append(new_name)
@@ -76,22 +76,10 @@ class TrialManager(object):
             except CannotMarkTrialError:
                 pass
 
-    def remove_trial_with_name(self, name):
-        """Remove the trial with display_name=<name>."""
-        trial = self.get_trial_with_name(name)
-        self.remove_trial(trial)
-
-    @supports_callbacks 
     def remove_trial(self, trial):
         self._display_names.remove(trial.display_name)
         del self._trial_index[trial.trial_id]
         return trial.trial_id
-
-    def remove_marked_trials(self):
-        """Remove all currently marked trials."""
-        marked_trials = self.marked_trials
-        for trial in marked_trials:
-            self.remove_trial(trial)
 
     def _get_unique_display_name(self, proposed_display_name):
         count = 1
@@ -352,6 +340,9 @@ class Trial(object):
     @property
     def trial_id(self):
         return self._id
+
+    def reset_trial_id(self):
+        self._id = uuid.uuid4()
 
     @property
     def is_marked(self):

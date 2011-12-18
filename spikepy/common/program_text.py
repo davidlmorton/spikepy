@@ -133,7 +133,8 @@ SHOW_CURSOR_POSITION = "Show Cursor Position"
 USE_SCIENTIFIC_NOTATION = "Use Scientific Notation"
 PLOT_RESULTS = 'Plot Results'
 SETTINGS = "Settings"
-RUN_STAGE = "Run This Stage"
+RUN_STAGE = "Run '%s'" #% stage_name
+RUN_AUXILIARY_PLUGINS = 'Run Auxiliary Plugins'
 RUN_STRATEGY = "Run Strategy" 
 METHOD = "Method"
 METHOD_DETAILS = "Method Details"
@@ -190,6 +191,7 @@ PRO_EMPTY = "Cluster %s vs %s (Cluster %s Empty)"
 PRO_UNKNOWN = "Cluster %s vs %s (Unknown Overlap)"
 PRO_OK = "Cluster %s vs %s (%3.1f%s overlap)"
 CANNOT_CREATE_VISUALIZATION = 'This visualization could not be completed.  The following trial resources were required but not computed:\n\n%s'
+NO_TRIAL_SELECTED = 'No trial was selected.\nSelect a trial or add trials to this session from %s --> %s' % (FILE, OPEN)
 
 # --- Printing ---
 PRINT = "Print..."
