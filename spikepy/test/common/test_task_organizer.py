@@ -99,21 +99,21 @@ class TaskOrganizerTests(unittest.TestCase):
             to.add_task(task)
 
         # batch one should be filtering and nothing else
-        results = to.pull_runnable_tasks()
+        results, skipped, impossible = to.pull_runnable_tasks()
         pp = [task.plugin for task, info in results]
         print '1', [p.name for p in pp]
         self.assertTrue(self.dfp in pp)
         self.assertTrue(self.efp in pp)
         self.assertEquals(len(pp), 4) # 2 for each trial.
 
-        no_results = to.pull_runnable_tasks()
+        no_results, skipped, impossible = to.pull_runnable_tasks()
         self.assertEquals(no_results, [])
 
         for task, info in results:
             return_fake_results(to, task)
 
         # batch 2 should be detection and upsampling.
-        results = to.pull_runnable_tasks()
+        results, skipped, impossible = to.pull_runnable_tasks()
 
         pp = [task.plugin for task, info in results]
         print '2', [p.name for p in pp]
@@ -121,84 +121,84 @@ class TaskOrganizerTests(unittest.TestCase):
         self.assertTrue(self.sdp in pp)
         self.assertEquals(len(pp), 4) # 2 for each trial.
 
-        no_results = to.pull_runnable_tasks()
+        no_results, skipped, impossible = to.pull_runnable_tasks()
         self.assertEquals(no_results, [])
 
         for task, info in results:
             return_fake_results(to, task)
 
         # batch 3 should more upsampling.
-        results = to.pull_runnable_tasks()
+        results, skipped, impossible = to.pull_runnable_tasks()
 
         pp = [task.plugin for task, info in results]
         print '3', [p.name for p in pp]
         self.assertTrue(self.esrp in pp or self.esrp2 in pp)
         self.assertEquals(len(pp), 2) # 2 for each trial.
 
-        no_results = to.pull_runnable_tasks()
+        no_results, skipped, impossible = to.pull_runnable_tasks()
         self.assertEquals(no_results, [])
 
         for task, info in results:
             return_fake_results(to, task)
 
         # batch 4 should be feature extraction.
-        results = to.pull_runnable_tasks()
+        results, skipped, impossible = to.pull_runnable_tasks()
 
         pp = [task.plugin for task, info in results]
         print '4', [p.name for p in pp]
         self.assertTrue(self.fep in pp)
         self.assertEquals(len(pp), 2) # 2 for each trial.
 
-        no_results = to.pull_runnable_tasks()
+        no_results, skipped, impossible = to.pull_runnable_tasks()
         self.assertEquals(no_results, [])
         
         for task, info in results:
             return_fake_results(to, task)
 
         # batch 5 should be clustering.
-        results = to.pull_runnable_tasks()
+        results, skipped, impossible = to.pull_runnable_tasks()
 
         pp = [task.plugin for task, info in results]
         print '5', [p.name for p in pp]
         self.assertTrue(self.cp in pp)
         self.assertEquals(len(pp), 1) # 1 for each trial. (pooling)
 
-        no_results = to.pull_runnable_tasks()
+        no_results, skipped, impossible = to.pull_runnable_tasks()
         self.assertEquals(no_results, [])
 
         for task, info in results:
             return_fake_results(to, task)
 
         # batch 6 should be clustering revision.
-        results = to.pull_runnable_tasks()
+        results, skipped, impossible = to.pull_runnable_tasks()
 
         pp = [task.plugin for task, info in results]
         print '6', [p.name for p in pp]
         self.assertTrue(self.crp in pp)
         self.assertEquals(len(pp), 1) # 1 for each trial. (pooling)
 
-        no_results = to.pull_runnable_tasks()
+        no_results, skipped, impossible = to.pull_runnable_tasks()
         self.assertEquals(no_results, [])
 
         for task, info in results:
             return_fake_results(to, task)
 
         # batch 7 should be summary plot stuff.
-        results = to.pull_runnable_tasks()
+        results, skipped, impossible = to.pull_runnable_tasks()
 
         pp = [task.plugin for task, info in results]
         print '7', [p.name for p in pp]
         self.assertTrue(self.spp in pp)
         self.assertEquals(len(pp), 2) # 2 for each trial.
 
-        no_results = to.pull_runnable_tasks()
+        no_results, skipped, impossible = to.pull_runnable_tasks()
         self.assertEquals(no_results, [])
 
         for task, info in results:
             return_fake_results(to, task)
 
         # all done
-        no_results = to.pull_runnable_tasks()
+        no_results, skipped, impossible = to.pull_runnable_tasks()
         self.assertEquals(no_results, [])
 
 

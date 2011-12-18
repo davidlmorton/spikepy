@@ -21,7 +21,6 @@ from wx.lib.scrolledpanel import ScrolledPanel
 
 from spikepy.gui.strategy_pane import OptionalControlPanel
 from spikepy.common import program_text as pt
-from spikepy.gui.utils import SinglePanelFrame
 from spikepy.gui import pyshell
 from spikepy.common.config_manager import config_manager as config
 from spikepy.plotting_utils.plot_panel import PlotPanel

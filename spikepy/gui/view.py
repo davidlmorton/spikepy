@@ -36,7 +36,6 @@ class View(object):
         self.frame = MyFrame(None, *args, **kwargs)
         self.frame.Show()
         
-
 class MyFrame(wx.Frame):
     def __init__(self, parent, session, id=wx.ID_ANY, 
                  title=pt.MAIN_FRAME_TITLE,
@@ -53,7 +52,6 @@ class MyFrame(wx.Frame):
         # --- STRATEGY PANE ---
         vsplit = wx.SplitterWindow(self, style=wx.SP_3D)
         hsplit = wx.SplitterWindow(vsplit, style=wx.SP_3D)
-
 
         strategy_holder = BorderPanel(hsplit, style=wx.BORDER_SUNKEN)
         self.strategy_pane = StrategyPane(strategy_holder, 
@@ -95,6 +93,7 @@ class MyFrame(wx.Frame):
         self.SetStatusText(new_text)
 
     def _close_application(self, event=None):
+        event.Skip()
         pub.sendMessage(topic='CLOSE_APPLICATION')
 
 class BorderPanel(wx.Panel):

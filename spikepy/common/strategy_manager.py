@@ -265,7 +265,11 @@ class StrategyManager(object):
                              strategy.name)
 
     def _get_strategy_by_name(self, strategy_name):
-        return self.strategies[strategy_name]
+        try:
+            return self.strategies[strategy_name]
+        except KeyError:
+            raise MissingStrategyError(
+                    'No strategy named "%s" under management.' % strategy_name)
 
     def get_strategy(self, strategy):
         if isinstance(strategy, types.StringTypes):

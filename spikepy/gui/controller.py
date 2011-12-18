@@ -26,7 +26,7 @@ from spikepy import session
 from spikepy.common.errors import *
 from spikepy.common import program_text as pt
 from spikepy.gui.view import View
-from spikepy.gui.utils import named_color, load_pickle
+from spikepy.gui.utils import named_color
 from spikepy.gui.process_progress_dialog import ProcessProgressDialog
 from spikepy.gui.trial_rename_dialog import TrialRenameDialog
 from spikepy.gui.pyshell import locals_dict

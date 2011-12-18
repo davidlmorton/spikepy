@@ -64,10 +64,11 @@ class StrategyClassTests(unittest.TestCase):
 
     def test_as_dict(self):
         adict = self.a.as_dict
-        self.assertTrue(len(adict.keys())==3)
+        self.assertTrue(len(adict.keys())==4)
         self.assertTrue('name' in adict.keys())
         self.assertTrue('methods_used' in adict.keys())
         self.assertTrue('settings' in adict.keys())
+        self.assertTrue('auxiliary_stages' in adict.keys())
 
     def test_save_and_load(self):
         self.b.save('test.strategy')
