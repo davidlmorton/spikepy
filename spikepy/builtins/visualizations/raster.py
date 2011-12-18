@@ -70,7 +70,7 @@ class RasterVisualization(Visualization):
                 bottom=as_frac(y=30), 
                 top=1.0-as_frac(y=10))
 
-        channel_separation = numpy.std(f_traces) * channel_separation_std
+        channel_separation = numpy.std(f_traces[0]) * channel_separation_std
 
         axes = figure.add_subplot(111)
         axes.set_axis_bgcolor(background[invert_colors])
@@ -79,6 +79,8 @@ class RasterVisualization(Visualization):
                 target_size_frac=as_frac(150, 80),
                 y_label_rotation='vertical',
                 color=foreground[invert_colors])
+
+        axes.lock_axes()
 
         # plot traces
         offsets = []
@@ -104,18 +106,22 @@ class RasterVisualization(Visualization):
 
         if have_event_times:
             for i, event_sequence in enumerate(event_times):
-                color = colors[invert_colors][i%len(colors[invert_colors])]
-                e_xs = event_sequence
-                if raster_position == 'center':
-                    e_ys = [offsets[i] for e in e_xs]
-                else:
-                    # 0.1 corrects for roundoff error
-                    event_indexes = [int(f_sf*e+0.1) for e in e_xs] 
-                    e_ys = [f_traces[i][ei]+offsets[i] for ei in event_indexes]
+                if len(event_sequence) > 0:
+                    color = colors[invert_colors][i%len(colors[invert_colors])]
+                    e_xs = event_sequence
+                    if raster_position == 'center':
+                        e_ys = [offsets[i] for e in e_xs]
+                    else:
+                        # 0.1 corrects for roundoff error
+                        event_indexes = [int(f_sf*e+0.1) for e in e_xs] 
+                        e_ys = [f_traces[i][ei]+offsets[i] 
+                                for ei in event_indexes]
 
-                axes.plot(e_xs, e_ys, linewidth=0, marker='|', 
-                        markersize=raster_size, color=color,
-                        markeredgewidth=3)
+                    axes.plot(numpy.array(e_xs), numpy.array(e_ys), 
+                            linewidth=0, marker='|', 
+                            markersize=raster_size, color=color,
+                            markeredgewidth=2)
 
+        axes.unlock_axes()
         axes.set_xlim(f_times[0], f_times[-1])
         axes.set_ylim((y_min - 0.03*y_range, y_max + 0.20*y_range))

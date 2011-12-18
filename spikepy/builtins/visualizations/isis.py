@@ -23,26 +23,24 @@ from spikepy.common.valid_types import ValidFloat, ValidBoolean, ValidOption,\
 
 background = {True:'black', False:'white'}
 foreground = {True:'white', False:'black'}
-line_color = {True:'cyan', False:'blue'}
+line_color = {True:'yellow', False:'green'}
 
-class DetectionPSDVisualization(Visualization):
-    name = 'Power Spectral Density (detection_filter)'
-    requires = ['pf_psd', 'pf_freqs']
-    found_under_tab = 'detection_filter'
+class ISIsVisualization(Visualization):
+    name = 'Interspike Interval Histogram'
+    requires = ['event_times']
+    found_under_tab = 'detection'
 
     invert_colors = ValidBoolean(default=False)
-    logscale = ValidBoolean(default=True)
+    line_width = ValidInteger(min=0, default=1)
+    max_drawn = ValidInteger(min=1, default=250,
+        description='Maximum number of features drawn, to speed up plotting')
+    opacity = ValidFloat(min=0.0, max=1.0, default=0.25)
+    point_size = ValidInteger(min=0, default=2)
 
-    def _get_auxiliary_results(self, trial):
-        return trial.df_psd.data, trial.df_freqs.data
-    
-    def _plot(self, trial, figure, logscale=True, invert_colors=False):
-        pf_psd = trial.pf_psd.data
-        pf_freqs = trial.pf_freqs.data
+    def _plot(self, trial, figure, invert_colors=False, line_width=1, 
+            max_drawn=250, opacity=0.25, point_size=2):
+        features = trial.features.data
 
-        f_psd, f_freqs = self._get_auxiliary_results(trial)
-        have_filtered_results = (f_psd is not None)
-    
         def as_frac(x=None, y=None):
             f = figure
             canvas_size_in_pixels = (f.get_figwidth()*f.get_dpi(),
@@ -59,25 +57,29 @@ class DetectionPSDVisualization(Visualization):
 
         axes = figure.add_subplot(111)
 
-        axes.plot(pf_freqs, pf_psd, color=foreground[invert_colors],
-            alpha=0.50, label='Pre-Filtered')
+        
+        for feature in features[:max_drawn]:
+            if point_size > 0:
+                marker = 'o'
+            else:
+                marker = ''
+            axes.plot(feature, color=line_color[invert_colors],
+                alpha=opacity, 
+                linewidth=line_width, 
+                marker=marker,
+                markeredgecolor=line_color[invert_colors],
+                markerfacecolor=foreground[invert_colors],
+                markersize=point_size)
 
-        if have_filtered_results:
-            axes.plot(f_freqs, f_psd, color=line_color[invert_colors],
-                    label='Filtered')
+        axes.text(0.98, 0.95, '%d drawn' % min(max_drawn, len(features)), 
+                color=foreground[invert_colors],
+                horizontalalignment='right', 
+                verticalalignment='center', 
+                transform=axes.transAxes)
 
-        legend = axes.legend(loc='upper right')
-        frame = legend.get_frame()
-        frame.set_facecolor(background[invert_colors])
-        frame.set_edgecolor(foreground[invert_colors])
-        for text in legend.texts:
-            text.set_color(foreground[invert_colors])
-
-        axes.set_ylabel('PSD (power/Hz)', color=foreground[invert_colors])
-        axes.set_xlabel('Frequency (Hz)', color=foreground[invert_colors])
-
-        if logscale:
-            axes.set_yscale('log')
+        axes.set_ylabel('Feature Amplitude', color=foreground[invert_colors])
+        axes.set_xlabel('Feature Index (found features for %d events)' % len(features), 
+                color=foreground[invert_colors])
 
         # axes color fixing
         frame = axes.patch
@@ -93,15 +95,4 @@ class DetectionPSDVisualization(Visualization):
         labels.extend(axes.get_yticklabels())
         for label in labels:
             label.set_color(foreground[invert_colors])
-
-class ExtractionPSDVisualization(DetectionPSDVisualization):
-    name = 'Power Spectral Density (extraction_filter)'
-    requires = ['pf_psd', 'pf_freqs']
-    found_under_tab = 'extraction_filter'
-
-    invert_colors = ValidBoolean(default=False)
-    logscale = ValidBoolean(default=True)
-
-    def _get_auxiliary_results(self, trial):
-        return trial.ef_psd.data, trial.ef_freqs.data
 

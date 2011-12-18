@@ -63,10 +63,10 @@ class DetectionTraceVisualization(Visualization):
         pf_times = create_times_array(pf_traces, pf_sf)
         if have_filtered_results:
             f_times = create_times_array(f_traces, f_sf)
-            channel_separation = (numpy.std(pf_traces) + 
-                    numpy.std(f_traces))*(channel_separation_std/2.0)
+            channel_separation = (numpy.std(pf_traces[0]) + 
+                    numpy.std(f_traces[0]))*(channel_separation_std/2.0)
         else:
-            channel_separation = (numpy.std(pf_traces))*channel_separation_std
+            channel_separation = (numpy.std(pf_traces[0]))*channel_separation_std
 
         axes = figure.add_subplot(111)
         axes.set_axis_bgcolor(background[invert_colors])
@@ -75,6 +75,7 @@ class DetectionTraceVisualization(Visualization):
                 target_size_frac=as_frac(150, 80),
                 y_label_rotation='vertical',
                 color=foreground[invert_colors])
+        axes.lock_axes()
 
         offsets = []
         y_mins = []
@@ -109,6 +110,7 @@ class DetectionTraceVisualization(Visualization):
         y_max = max(y_maxs)
         y_range = y_max - y_min
 
+        axes.unlock_axes()
         axes.set_xlim(pf_times[0], pf_times[-1])
         axes.set_ylim((y_min - 0.03*y_range, y_max + 0.20*y_range))
 

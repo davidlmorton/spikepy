@@ -52,7 +52,7 @@ __init__ method that requires no arguments.
         unmet_requirements = []
         for req_name in self.requires:
             if (hasattr(trial, req_name) and 
-                    getattr(trial, req_name) is not None):
+                    getattr(trial, req_name).data is not None):
                 pass
             else:
                 unmet_requirements.append(req_name)

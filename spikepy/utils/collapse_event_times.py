@@ -15,40 +15,32 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import numpy
-from spikepy.utils.fast_thresh_detect import fast_thresh_detect
-
-def find_between(a, low, high):
-    return a[numpy.where(numpy.where(a >= low, a, high+1) <= high)]
 
 def collapse_event_times(signal, sampling_freq, event_times, 
         min_num_channels, peak_drift):
+    all_times = numpy.hstack(event_times)
+    sorted_indexes = all_times.argsort()
+    sorted_times = all_times[sorted_indexes]
     if len(event_times) <= min_num_channels:
-        result = numpy.hstack(event_times)
-        result.sort()
-        return result
+        return sorted_times
     else:
-        all_times = numpy.hstack(event_times)
-        all_times.sort()
-
-        peak_drift_samp = int(peak_drift*sampling_freq)
-        if signal.ndim == 2:
-            scores = numpy.zeros(signal.shape[1], dtype=numpy.int)
-        else:
-            scores = numpy.zeros(signal.shape, dtype=numpy.int)
-
-        for time in all_times:
-            mid = int(time*sampling_freq)
-            begin = max(mid-peak_drift_samp, 0)
-            end = min(len(scores)-1, mid+peak_drift_samp)
-            scores[begin:end] = scores[begin:end] + 1
-
-        scores[0] = 0
-        scores[-1] = 0
-
-        crossings = fast_thresh_detect(scores, min_num_channels-0.5)
+        # Think of a worm moving through the times, if it can stretch to
+        # cover <min_num_channels> then we have a single event across multiple
+        # channels.  The event time will be the event_time of the 
+        # lowest numbered channel that participated in the event.
+        h = 1 # head
+        t = 0 # tail
         collapsed_event_times = []
-        for up, down in zip(crossings[::2], crossings[1::2]):
-            collapsed_event_times.append( (up+down)/2.0 / sampling_freq )
-
-        return collapsed_event_times
+        while h < len(sorted_times):
+            # possibly move up t
+            while sorted_times[h] - sorted_times[t] > peak_drift:
+                t += 1
+            # detect event
+            if (h - t) + 1 >= min_num_channels:
+                event_time = all_times[min(sorted_indexes[t:h+1])]
+                collapsed_event_times.append(event_time)
+                t = h
+            h += 1
+        return numpy.array(collapsed_event_times, dtype=numpy.float64)
+            
 

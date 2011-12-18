@@ -28,9 +28,9 @@ def signal_set_xlim(axes, tmin=None, tmax=None, **kwargs):
     function.  It will redraw the signals after having downsampled them.
     '''
     # don't do anything if locked.
-    if hasattr(axes, '_monkeypatched_lims_locked'):
+    if axes._are_axes_locked:
         return
-    axes._monkeypatched_lims_locked = True
+    axes.lock_axes()
 
     # parse inputs
     if tmax is None and is_iterable(tmin):
@@ -62,7 +62,7 @@ def signal_set_xlim(axes, tmin=None, tmax=None, **kwargs):
             # save this line so we can remove it later.
             axes._signal_lines[s_id] = line
 
-    del axes._monkeypatched_lims_locked
+    axes.unlock_axes()
 
     # actually change the xlimits
     axes._pre_signal_set_xlim(tmin, tmax, **kwargs)
@@ -70,15 +70,15 @@ def signal_set_xlim(axes, tmin=None, tmax=None, **kwargs):
 
 def signal_set_ylim(axes, *args, **kwargs):
     # don't do anything if locked.
-    if hasattr(axes, '_monkeypatched_lims_locked'):
+    if axes._are_axes_locked:
         return
     axes._pre_signal_set_ylim(*args, **kwargs)
 
     if hasattr(axes, '_live_updating_scalebars'):
-        axes._monkeypatched_lims_locked = True
+        axes.lock_axes()
         axes._create_x_scale_bar(axes)
         axes._create_y_scale_bar(axes)
-        del axes._monkeypatched_lims_locked
+        axes.unlock_axes()
 
 def get_signal_yrange(axes, padding=0.05):
     all_min = 0
@@ -130,6 +130,12 @@ def signal_plot(axes, times, signal, *args, **kwargs):
     axes.set_xlim(axes.get_xlim())
     return this_signal_id
 
+def unlock_axes(axes):
+    axes._are_axes_locked = False
+
+def lock_axes(axes):
+    axes._are_axes_locked = True
+
 def make_into_signal_axes(axes, num_samples=1500):
     '''
         Turn axes into an axis which can plot signals efficiently.  It will
@@ -157,5 +163,10 @@ def make_into_signal_axes(axes, num_samples=1500):
 
         axes._pre_signal_set_ylim = axes.set_ylim
         axes.set_ylim = MethodType(signal_set_ylim, axes, axes.__class__)
+
+        axes.lock_axes = MethodType(lock_axes, axes, axes.__class__)
+        axes.unlock_axes = MethodType(unlock_axes, axes, axes.__class__)
+
+        axes._are_axes_locked = False
 
         axes._signal_num_samples = num_samples 

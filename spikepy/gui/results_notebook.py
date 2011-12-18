@@ -27,7 +27,7 @@ from spikepy.plotting_utils.plot_panel import PlotPanel
 
 
 class VisualizationControlPanel(OptionalControlPanel):
-    num_columns = 2
+    num_columns = 3
 
     def layout_ui(self):
         active_checkbox = wx.CheckBox(self, label=self.plugin.name)
