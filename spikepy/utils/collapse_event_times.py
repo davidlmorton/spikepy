@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import numpy
 
-def collapse_event_times(signal, sampling_freq, event_times, 
+def collapse_event_times(event_times, 
         min_num_channels, peak_drift):
     all_times = numpy.hstack(event_times)
     sorted_indexes = all_times.argsort()

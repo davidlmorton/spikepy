@@ -26,8 +26,8 @@ def generate_spike_windows(signal, sampling_freq, event_times,
             exclude_overlappers=None):
 
     # event times are in sec, peak_drift must be converted to sec (from ms).
-    collapsed_event_times = collapse_event_times(signal, sampling_freq, 
-            event_times, min_num_channels, peak_drift/1000.0)
+    collapsed_event_times = collapse_event_times(event_times, 
+            min_num_channels, peak_drift/1000.0)
 
     if len(collapsed_event_times) == 0:
         return [numpy.empty((0, 0)),[],

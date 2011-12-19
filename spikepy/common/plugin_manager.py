@@ -27,7 +27,7 @@ from spikepy.developer_tools.methods import FilteringMethod, \
         ClusteringMethod, AuxiliaryMethod
 
 from spikepy.common.path_utils import get_data_dirs
-from spikepy.common.utils import SubstringDict 
+from spikepy.utils.substring_dict import SubstringDict 
 from spikepy.common.errors import *
 from spikepy.common.warnings import warn
 

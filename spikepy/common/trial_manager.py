@@ -30,9 +30,15 @@ except ImportError:
     from spikepy.other.callbacks.callbacks import supports_callbacks
 
 from spikepy.common import program_text as pt
-from spikepy.common import utils
-from spikepy.common.utils import SubstringDict 
+from spikepy.utils.substring_dict import SubstringDict 
 from spikepy.common.errors import *
+
+def format_traces(trace_list):
+    result = numpy.empty((len(trace_list), len(trace_list[0])), 
+            dtype=numpy.float64)
+    for i, trace in enumerate(trace_list):
+        result[i,:] = zero_mean(numpy.array(trace, dtype=numpy.float64))
+    return result
 
 class TrialManager(object):
     """
@@ -181,7 +187,7 @@ class Trial(object):
                 dtype=signal.dtype)/sampling_freq*1000.0
 
     def _setup_basic_attributes(self, raw_traces, sampling_freq):
-        self.raw_traces = utils.format_traces(raw_traces)
+        self.raw_traces = format_traces(raw_traces)
         self.raw_times = self.get_times(self.raw_traces, sampling_freq)
         self.sampling_freq = sampling_freq
 
@@ -352,124 +358,6 @@ class Trial(object):
         """Mark this trial according to <status>"""
         self._marked = status
 
-    def export(self, path=None, stages_selected=[], file_format=None):
-        # TODO refactor into another file using the new resources idea.
-        '''
-        Store the results of the stages in <stage_list> to files in <path>.
-        Inputs:
-            path            : The export directory (must exist)
-            stage_list      : A list of strings denoting the stages results to
-                              export.
-            rows_or_cols    : Should sequences be stored as rows or columns.
-            format          : The file format
-        Returns:
-            None
-        '''
-        for stage_name in stages_selected:
-            extention = format_extentions[file_format]
-            base_name = '%s-%s' % (self.display_name, stage_name)
-            filename = '%s.%s' % (base_name, extention)
-            fullpath = os.path.join(path, filename)
-            times = self.times
-            if 'raw_traces' == stage_name:
-                if (file_format == pt.PLAIN_TEXT_TABS or
-                    file_format == pt.PLAIN_TEXT_SPACES or
-                    file_format == pt.CSV ):
-                    results = [times]
-                    for trace in self.raw_traces:
-                        results.append(trace)
-                    delimiter = text_delimiters[file_format]
-                    utils.save_list_txt(fullpath, results, 
-                                  delimiter=delimiter)
-                elif file_format == pt.NUMPY_BINARY:
-                    numpy.savez(fullpath, times=times, 
-                                raw_traces=self.raw_traces)
-                elif file_format == pt.MATLAB:
-                    results = {'times': times,
-                               'raw_traces': self.raw_traces}
-                    scipy.io.savemat(fullpath, results)
-                continue
-            stage_data = self.get_stage_data(stage_name)
-            if stage_data.results is None:
-                continue # this stage hasn't been run.
-            # EXPORT FILTER STAGE
-            if 'filter' in stage_name:
-                if (file_format == pt.PLAIN_TEXT_TABS or
-                    file_format == pt.PLAIN_TEXT_SPACES or
-                    file_format == pt.CSV ):
-                    results = [times]
-                    for trace in stage_data.results['traces']:
-                        results.append(trace)
-                    delimiter = text_delimiters[file_format]
-                    utils.save_list_txt(fullpath, results, 
-                                        delimiter=delimiter)
-                elif file_format == pt.NUMPY_BINARY:
-                    numpy.savez(fullpath, **stage_data.results)
-                elif file_format == pt.MATLAB:
-                    scipy.io.savemat(fullpath, stage_data.results)
-            # EXPORT DETECTION STAGE
-            if stage_name == 'detection':
-                spike_times        = stage_data.results['spike_times']
-                if (file_format == pt.PLAIN_TEXT_TABS or
-                    file_format == pt.PLAIN_TEXT_SPACES or
-                    file_format == pt.CSV ):
-                    delimiter = text_delimiters[file_format]
-                    results = [spike_times]
-                    utils.save_list_txt(fullpath, results, 
-                                  delimiter=delimiter)
-                elif file_format == pt.NUMPY_BINARY:
-                    numpy.savez(fullpath, **stage_data.results)
-                elif file_format == pt.MATLAB:
-                    scipy.io.savemat(fullpath, stage_data.results)
-            # EXPORT EXTRACTION STAGE
-            if stage_name == 'extraction':
-                features = numpy.array(stage_data.results['features'])
-                feature_times = numpy.array(stage_data.results['feature_times'])
-                feature_times = feature_times.reshape(1,-1)
-                if (file_format == pt.PLAIN_TEXT_TABS or
-                    file_format == pt.PLAIN_TEXT_SPACES or
-                    file_format == pt.CSV ):
-                    for f, ft in zip(features, feature_times):
-                        results.append([ft, f])
-                    delimiter = text_delimiters[file_format]
-                    utils.save_list_txt(fullpath, results, 
-                                  delimiter=delimiter)
-                elif file_format == pt.NUMPY_BINARY:
-                    numpy.savez(fullpath, **stage_data.results)
-                elif file_format == pt.MATLAB:
-                    scipy.io.savemat(fullpath, stage_data.results)
-            # EXPORT CLUSTERING STAGE
-            if stage_name == 'clustering':
-                sr = stage_data.results
-                # store results the way you should for .mat files.
-                results_dict = {}
-                st_dict = sr['clustered_spike_times']
-                for cluster_id, spike_times in st_dict.items():
-                    key = 'cluster_%s_spike_times' % cluster_id
-                    results_dict[key] = spike_times
-                f_dict = sr['clustered_features']
-                for cluster_id, features in f_dict.items():
-                    key = 'cluster_%s_features' % cluster_id
-                    results_dict[key] = features
-                sw_dict = self.get_clustered_spike_windows()
-                for cluster_id, sw in sw_dict.items():
-                    key = 'cluster_%s_spike_windows'% cluster_id
-                    results_dict[key] = sw
-                # format results for .txt files.
-                clustered_spike_times = sr['clustered_spike_times']
-                cluster_keys = sorted(clustered_spike_times.keys())
-                results = [clustered_spike_times[key] for key in cluster_keys]
-                string_dict = {}
-                if (file_format == pt.PLAIN_TEXT_TABS or
-                    file_format == pt.PLAIN_TEXT_SPACES or
-                    file_format == pt.CSV ):
-                    delimiter = text_delimiters[file_format]
-                    utils.save_list_txt(fullpath, results, 
-                                        delimiter=delimiter)
-                elif file_format == pt.NUMPY_BINARY:
-                    numpy.savez(fullpath, **sr)
-                elif file_format == pt.MATLAB:
-                    scipy.io.savemat(fullpath, results_dict)
 
 
 class Resource(object):

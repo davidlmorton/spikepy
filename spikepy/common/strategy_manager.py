@@ -24,7 +24,7 @@ from spikepy.common import program_text as pt
 from spikepy.common.path_utils import get_data_dirs
 from spikepy.common.stages import stages
 from spikepy.common.errors import *
-from spikepy.common.utils import SubstringDict 
+from spikepy.utils.substring_dict import SubstringDict 
 
 
 class Strategy(object):

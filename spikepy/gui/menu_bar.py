@@ -27,7 +27,6 @@ from spikepy.plotting.utils import PlotPanelPrintout
 from spikepy.gui.pyshell import PyShellDialog
 from spikepy.common import program_text as pt
 from spikepy.common.config_manager import config_manager as config
-from spikepy.gui.preferences_frame import PreferencesFrame
 
 OPEN               = wx.ID_OPEN
 EXIT               = wx.ID_EXIT
@@ -90,8 +89,6 @@ class SpikepyMenuBar(wx.MenuBar):
         frame.Bind(wx.EVT_MENU, self._print_preview,    id=PRINT_PREVIEW)
         frame.Bind(wx.EVT_MENU, self._page_setup,       id=PAGE_SETUP)
         frame.Bind(wx.EVT_MENU, self._close_window,     id=EXIT)
-        # Edit
-        frame.Bind(wx.EVT_MENU, self._show_preferences, id=PREFERENCES)
         # View
         frame.Bind(wx.EVT_MENU, self._show_toolbars,    id=SHOW_TOOLBARS)
         # Help
@@ -114,9 +111,6 @@ class SpikepyMenuBar(wx.MenuBar):
 
     def _export_marked(self, event=None):
         pub.sendMessage(topic="EXPORT_TRIALS", data="marked")
-
-    def _show_preferences(self, event=None):
-        preferences_frame = PreferencesFrame(self)
 
     def _save_session(self, event=None):
         wildcard = pt.SESSION_FILES + '|*.ses|'
