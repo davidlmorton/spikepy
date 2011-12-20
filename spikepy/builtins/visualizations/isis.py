@@ -45,8 +45,9 @@ class ISIsVisualization(Visualization):
         bounds2 = (0.0, 20.0) # first 20 ms
 
         event_times = trial.event_times.data
+        # event_times is in sec, so make peak_drift also in sec.
         collapsed_event_times = collapse_event_times(event_times, 
-                min_num_channels, peak_drift)
+                min_num_channels, peak_drift/1000.0)
 
         isis = collapsed_event_times[1:] - collapsed_event_times[:-1]
         isis *= 1000.0 # to get it to ms

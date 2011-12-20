@@ -24,6 +24,8 @@ def collapse_event_times(event_times,
     if len(event_times) <= min_num_channels:
         return sorted_times
     else:
+        if min_num_channels == 1:
+            return sorted_times
         # Think of a worm moving through the times, if it can stretch to
         # cover <min_num_channels> then we have a single event across multiple
         # channels.  The event time will be the event_time of the 
@@ -39,6 +41,7 @@ def collapse_event_times(event_times,
             if (h - t) + 1 >= min_num_channels:
                 event_time = all_times[min(sorted_indexes[t:h+1])]
                 collapsed_event_times.append(event_time)
+                h += 1
                 t = h
             h += 1
         return numpy.array(collapsed_event_times, dtype=numpy.float64)

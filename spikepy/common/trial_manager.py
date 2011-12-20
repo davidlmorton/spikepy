@@ -33,6 +33,9 @@ from spikepy.common import program_text as pt
 from spikepy.utils.substring_dict import SubstringDict 
 from spikepy.common.errors import *
 
+def zero_mean(a):
+    return a - numpy.average(a)
+
 def format_traces(trace_list):
     result = numpy.empty((len(trace_list), len(trace_list[0])), 
             dtype=numpy.float64)

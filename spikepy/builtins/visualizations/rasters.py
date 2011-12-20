@@ -28,7 +28,7 @@ foreground = {True:'white', False:'black'}
 colors = {True:['cyan', 'magenta', 'yellow'],
           False:['red', 'green', 'blue']}
 
-class RasterVisualization(Visualization):
+class EventRasterVisualization(Visualization):
     name = 'Event Raster(s)'
     requires = ['df_traces', 'df_sampling_freq']
     found_under_tab = 'detection'
@@ -125,3 +125,58 @@ class RasterVisualization(Visualization):
         axes.unlock_axes()
         axes.set_xlim(f_times[0], f_times[-1])
         axes.set_ylim((y_min - 0.03*y_range, y_max + 0.20*y_range))
+        self.axes = axes
+
+class FeatureRasterVisualization(EventRasterVisualization):
+    name = 'Feature Raster'
+    requires = ['df_traces', 'df_sampling_freq', 
+            'event_times']
+    found_under_tab = 'extraction'
+    channel_separation_std = ValidFloat(0.1, 100.0, default=8.0,
+            description='How far apart the channels are plotted (as a multiple of the standard deviation of the signal).')
+    invert_colors = ValidBoolean(default=False)
+    event_raster_position = ValidOption('peak', 'center', default='center')
+    raster_position = None
+    event_raster_size = ValidInteger(1, 1000, default=20, 
+            description='Size of event raster tick marks in pixels.')
+    raster_size = None
+    feature_raster_position = ValidOption('top', 'middle', 'bottom', 
+            default='top')
+    feature_raster_size = ValidInteger(1, 1000, default=20, 
+            description='Size of feature raster tick marks in pixels.')
+    trace_opacity = ValidFloat(0.0, 1.0, default=0.25, 
+            description='How darkly the traces are plotted.')
+
+    def _plot(self, trial, figure, channel_separation_std=8.0, 
+            invert_colors=False, 
+            event_raster_position='center', 
+            event_raster_size=20,
+            feature_raster_position='top',
+            feature_raster_size=50,
+            trace_opacity=0.25):
+        # call parent's _plot first.
+        EventRasterVisualization._plot(self, trial, figure, 
+                channel_separation_std=channel_separation_std, 
+                invert_colors=invert_colors, 
+                raster_size=event_raster_size, 
+                raster_position=event_raster_position, 
+                trace_opacity=trace_opacity)
+        # if possible, plot feature raster.
+        if (hasattr(trial, 'features') and trial.features.data is not None and
+            hasattr(trial, 'feature_times') and trial.feature_times.data is not
+            None):
+            self.axes.lock_axes()
+            ymin, ymax = self.axes.get_ylim()
+            positions = {'top':ymax, 'bottom':ymin, 'middle':(ymax+ymin)/2.0}
+            ft = trial.feature_times.data
+            self.axes.plot(ft, 
+                    numpy.ones(len(ft))*positions[feature_raster_position],
+                    linewidth=0,
+                    marker='|',
+                    markersize=feature_raster_size,
+                    color=foreground[invert_colors],
+                    markeredgewidth=2)
+            self.axes.unlock_axes()
+        
+
+            
