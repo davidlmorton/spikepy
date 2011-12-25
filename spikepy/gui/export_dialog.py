@@ -23,7 +23,7 @@ from wx.lib.scrolledpanel import ScrolledPanel
 from spikepy.common import program_text as pt
 from spikepy.gui.named_controls import NamedTextCtrl
 
-from spikepy.gui.strategy_pane import OptionalControlPanel
+from spikepy.gui.control_panels import ExportControlPanel
 
 class ExportDialog(wx.Dialog):
     def __init__(self, parent, data_interpreters, trials, **kwargs):
@@ -98,34 +98,6 @@ class ButtonsPanel(wx.Panel):
                                             border=border)
         self.SetSizer(sizer)
 
-
-class ExportControlPanel(OptionalControlPanel):
-    def layout_ui(self):
-        vsizer = wx.BoxSizer(orient=wx.VERTICAL)
-        hsizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        tsizer = wx.BoxSizer(orient=wx.VERTICAL)
-
-        active_checkbox = wx.CheckBox(self, label=self.plugin.name)
-        f = active_checkbox.GetFont()
-        f.SetWeight(wx.BOLD)
-        active_checkbox.SetFont(f)
-        self.Bind(wx.EVT_CHECKBOX, self._activate, active_checkbox)
-
-        vsizer.Add(active_checkbox, flag=wx.ALIGN_LEFT|wx.ALL, border=5)
-        for ctrl_name in sorted(self.ctrls.keys()):
-            vsizer.Add(self.ctrls[ctrl_name], flag=wx.EXPAND|wx.ALIGN_RIGHT)
-
-        description = wx.StaticText(self, label=self.plugin.description)
-        hsizer.Add(vsizer)
-        hsizer.Add(wx.StaticLine(self, style=wx.LI_VERTICAL), 
-                flag=wx.EXPAND|wx.TOP|wx.BOTTOM, border=8)
-        hsizer.Add(description, proportion=1, flag=wx.ALL, border=5)
-
-        tsizer.Add(hsizer)
-        tsizer.Add(wx.StaticLine(self), flag=wx.EXPAND|wx.ALL, border=3)
-        self.SetSizer(tsizer)
-
-        self.active_checkbox = active_checkbox
 
 class DataInterpretersPanel(ScrolledPanel):
     def __init__(self, parent, data_interpreters, trials):

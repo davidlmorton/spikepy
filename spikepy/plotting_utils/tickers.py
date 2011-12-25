@@ -14,9 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from matplotlib.ticker import MaxNLocator
-from matplotlib import ticker
-from matplotlib.dates import num2date
+from spikepy.plotting_utils.import_matplotlib import *
 
 def set_tick_fontsize(axes, fontsize=12):
     for ticklabel in axes.get_yticklabels():

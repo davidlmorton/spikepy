@@ -26,8 +26,10 @@ from spikepy.plotting_utils.make_into_raster_axes import make_into_raster_axes
 
 background = {True:'black', False:'white'}
 foreground = {True:'white', False:'black'}
-colors = {True:['cyan', 'magenta', 'yellow'],
-          False:['red', 'green', 'blue']}
+cluster_colors = {True:['cyan', 'magenta', 'yellow', 'blue', 'red', 'green',
+        'orange', 'white'],
+        False:['blue', 'red', 'green', 'cyan', 'majenta', 'orange',
+        'black', 'purple']}
 
 class ClusteredEventRasterVisualization(Visualization):
     name = 'Clustered Event Raster(s)'
@@ -35,7 +37,7 @@ class ClusteredEventRasterVisualization(Visualization):
     found_under_tab = 'clustering'
     channel_separation_std = ValidFloat(0.1, 100.0, default=8.0,
             description='How far apart the channels are plotted (as a multiple of the standard deviation of the signal).')
-    invert_colors = ValidBoolean(default=False)
+    invert_colors = ValidBoolean(default=True)
     raster_size = ValidInteger(1, 1000, default=20, 
             description='Size of raster tick marks in pixels.')
     trace_opacity = ValidFloat(0.0, 1.0, default=0.25, 
@@ -130,6 +132,13 @@ class ClusteredEventRasterVisualization(Visualization):
         else:
             ra = figure.add_subplot(111, frameon=False)
             xlims = None
+        ra.text(1+as_frac(28), 0.5, 'Cluster', 
+                color=foreground[invert_colors],
+                clip_on=False,
+                verticalalignment='center',
+                horizontalalignment='center',
+                rotation='vertical',
+                transform=ra.transAxes)
 
         ymin, ymax = (0.0, 1.0)
         yrange = ymax - ymin
@@ -138,7 +147,8 @@ class ClusteredEventRasterVisualization(Visualization):
         maxx = -1e30
         poss = []
         for i, cluster_name in enumerate(sorted(cft.keys())):
-            color = colors[invert_colors][i%len(colors[invert_colors])]
+            color = cluster_colors[invert_colors][
+                    i%len(cluster_colors[invert_colors])]
             e_xs = cft[cluster_name]
             pos = ymax - i/float(len(cft.keys())-1)*yrange
             poss.append(pos)

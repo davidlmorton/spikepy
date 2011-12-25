@@ -31,23 +31,17 @@ from spikepy.gui.process_progress_dialog import ProcessProgressDialog
 from spikepy.gui.trial_rename_dialog import TrialRenameDialog
 from spikepy.gui.pyshell import locals_dict
 from spikepy.gui.export_dialog import ExportDialog
-
-def make_version_float(version_number_string):
-    """
-        Makes version numbers for matplotlib a float
-    so they can be easily compared.
-    """
-    nums = version_number_string.split('.')
-    result = 0.0
-    for i, num in enumerate(nums):
-        result += float(num)*10**(-3*i)
-    return result
+from spikepy.plotting_utils.import_matplotlib import matplotlib_version_too_low
 
 class Controller(object):
     def __init__(self):
         self.session = session.Session()
-        self.session.open_files.add_callback(self._files_opened, 
+        self.session.trial_manager.add_trials.add_callback(self._trials_added,
                 takes_target_results=True)
+        self.session.strategy_manager.add_strategy.add_callback(
+                self._strategy_added, takes_target_results=True)
+        self.session.strategy_manager.set_current_strategy.add_callback(
+                self._current_strategy_updated, takes_target_results=True)
         self.session.remove_trial.add_callback(
                 self._trial_closed, 
                 takes_target_results=True)
@@ -70,11 +64,8 @@ class Controller(object):
         self._setup_subscriptions()
 
     def warn_for_matplotlib_version(self):
-        import matplotlib
-        version = matplotlib.__version__
         min_version = '0.99.1.1'
-
-        if make_version_float(version) < make_version_float(min_version):
+        if matplotlib_version_too_low(min_version):
             msg = pt.MATPLOTLIB_VERSION % (min_version, version)
             dlg = wx.MessageDialog(self.view.frame, msg, 
                                    style=wx.OK|wx.ICON_EXCLAMATION)
@@ -122,9 +113,15 @@ class Controller(object):
         self._selected_trial = None
         pub.sendMessage(topic='TRIAL_CLOSED', data=trial_id)
 
-    def _files_opened(self, trials):
+    def _trials_added(self, trials):
         for trial in trials:
             pub.sendMessage(topic='TRIAL_ADDED', data=trial)
+
+    def _strategy_added(self, strategy):
+        pub.sendMessage(topic='STRATEGY_ADDED', data=strategy)
+
+    def _current_strategy_updated(self, strategy):
+        pub.sendMessage(topic='CURRENT_STRATEGY_UPDATED', data=strategy)
 
     # MESSAGING RELATED FNS
     def start_debug_subscriptions(self):

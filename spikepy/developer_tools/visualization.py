@@ -14,11 +14,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import pylab
 
 from spikepy.common.config_manager import config_manager as config
 from spikepy.common import program_text as pt
-from spikepy.plotting_utils.plot_panel import PlotPanel
 from spikepy.common.valid_types import ValidType
 
 class Visualization(object):
@@ -123,6 +121,7 @@ __init__ method that requires no arguments.
                 parent_panel.plot_panel._restore_history()
             canvas.draw()
         else:
+            import pylab
             figsize = config.get_size('figure')
             figure = pylab.figure(figsize=figsize)
             figure.canvas.set_window_title(self.name)

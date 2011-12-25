@@ -15,10 +15,35 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import cPickle
+import gzip
 
 import numpy
 
 from spikepy.developer_tools.file_interpreter import FileInterpreter, Trial
+from spikepy.common.strategy_manager import Strategy
+
+def load_archive(archive):
+    results = []
+    for ta in archive['trials']:
+        trial = Trial.from_dict(ta)
+        results.append(trial)
+    results.append(Strategy.from_dict(archive['strategy']))
+    return results
+
+class SpikepySessionGzipped(FileInterpreter):
+    def __init__(self):
+        self.name = 'Spikepy Session Gzipped'
+        self.extentions = ['.ses']
+        # higher priority means will be used in ambiguous cases
+        self.priority = 11 
+        self.description = '''A previously saved spikepy session file.  May contain multiple trials at various stages of processing.'''
+
+    def read_data_file(self, fullpath):
+        infile = gzip.open(fullpath, 'rb')
+        archive = cPickle.load(infile)
+        infile.close()
+
+        return load_archive(archive)
 
 class SpikepySession(FileInterpreter):
     def __init__(self):
@@ -30,10 +55,6 @@ class SpikepySession(FileInterpreter):
 
     def read_data_file(self, fullpath):
         with open(fullpath, 'r') as infile:
-            trial_archives = cPickle.load(infile)
+            archive = cPickle.load(infile)
 
-        trials = []
-        for archive in trial_archives:
-            trial = Trial.from_dict(archive)
-            trials.append(trial)
-        return trials
+        return load_archive(archive)

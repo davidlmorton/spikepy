@@ -18,12 +18,16 @@ import time
 import copy
 import gc
 
-import matplotlib
-matplotlib.use('WXAgg') # breaks pep-8 to put code here, but matplotlib 
-                        #     requires this before importing wxagg backend
-from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as Canvas,
-                                             NavigationToolbar2WxAgg as Toolbar)
-from matplotlib.figure import Figure
+try:
+    from spikepy.plotting_utils.import_matplotlib import *
+except ImportError:
+    import matplotlib
+    matplotlib.use('WXAgg') # breaks pep-8 to put code here, but matplotlib 
+                            #     requires this before importing wxagg backend
+    from matplotlib.backends.backend_wxagg import \
+            FigureCanvasWxAgg as Canvas, \
+            NavigationToolbar2WxAgg as Toolbar
+    from matplotlib.figure import Figure
 import wx
 from wx.lib.pubsub import Publisher as pub
 

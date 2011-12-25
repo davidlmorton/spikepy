@@ -18,10 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 from spikepy.gui.images import spikepy_splash_image as spi
-import matplotlib
-# breaks pep-8 to put code here, but matplotlib 
-#     requires this before importing wxagg backend
-matplotlib.use('WXAgg', warn=False) 
 
 class MySplashScreen(wx.SplashScreen):
     def __init__(self, image=None, splash_style=None, timeout=None, 

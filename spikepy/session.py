@@ -47,7 +47,7 @@ class Session(object):
                 self.trial_manager, self.plugin_manager)
 
         # register callback for open_files
-        self.process_manager.open_files.add_callback(self._trials_created,
+        self.process_manager.open_files.add_callback(self._files_opened,
                 takes_target_results=True)
 
 
@@ -61,12 +61,7 @@ class Session(object):
 
     def load(self, filename):
         """Load session from a file."""
-        with open(filename) as infile:
-            trial_dicts = cPickle.load(infile)
-        trials = []
-        for td in trial_dicts:
-            trials.append(Trial.from_dict(td))
-        self.trial_manager.add_trials(trials)
+        return self.open_file(filename)
 
     def open_file(self, fullpath):
         """Open file located at fullpath."""
@@ -85,8 +80,10 @@ class Session(object):
         trial_dicts = []
         for trial in self.trials:
             trial_dicts.append(trial.as_dict)
+        strategy_dict = self.current_strategy.as_dict
+        session_dict = {'trials':trial_dicts, 'strategy':strategy_dict}
         with open(filename, 'wb') as ofile:
-            cPickle.dump(trial_dicts, ofile, protocol=-1)
+            cPickle.dump(session_dict, ofile, protocol=-1)
         return filename
 
     # TRIAL RELATED
@@ -262,8 +259,18 @@ class Session(object):
                 settings=settings, auxiliary_stages=auxiliary_stages)
         return default_strategy 
 
-    def _trials_created(self, trials):
+    def _files_opened(self, results):
         # Called after process_manager opens a file
+        trials = []
+        for result in results:
+            if isinstance(result, Trial):
+                trials.append(result)
+            elif isinstance(result, Strategy):
+                try:
+                    self.strategy_manager.add_strategy(result)
+                except: # may be a name conflict or something.
+                    pass
+                self.current_strategy = result
         self.trial_manager.add_trials(trials)
 
 

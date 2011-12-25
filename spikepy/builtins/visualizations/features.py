@@ -105,7 +105,7 @@ class ClusteredFeaturesVisualization(Visualization):
     requires = ['clusters']
     found_under_tab = 'clustering'
 
-    invert_colors = ValidBoolean(default=False)
+    invert_colors = ValidBoolean(default=True)
     line_width = ValidInteger(min=0, default=1)
     max_drawn = ValidInteger(min=1, default=250,
         description='Maximum number of features drawn (per cluster), to speed up plotting')

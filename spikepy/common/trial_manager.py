@@ -65,6 +65,7 @@ class TrialManager(object):
         trial.mark(status=status)
         return trial.trial_id, trial.is_marked
 
+    @supports_callbacks 
     def add_trials(self, trial_list, marked=True):
         """
             Add all the trials in <trial_list> and ensure they have unique
@@ -84,6 +85,7 @@ class TrialManager(object):
                 self.mark_trial(name, marked)
             except CannotMarkTrialError:
                 pass
+        return trial_list
 
     def remove_trial(self, trial):
         self._display_names.remove(trial.display_name)
@@ -282,31 +284,16 @@ class Trial(object):
         if self.clusters.data is not None:
             clusters = self.clusters.data
             for cluster_id, thing in zip(clusters, data):
-                adict[cluster_id].append(thing)
+                if cluster_id == -1:
+                    adict['Rejected'].append(thing)
+                else:
+                    adict[cluster_id].append(thing)
+            for key in adict.keys():
+                adict[key] = numpy.array(adict[key])
         else:
             raise NoClustersError('Cannot fetch clustered data, clustering not yet run.')
 
-        # give name to cluster based on size, excluding clusters with id==-1
-        sorting_list = []
-        for cluster_id, cluster in adict.items():
-            size = len(cluster)
-            if cluster_id != -1:
-                sorting_list.append( (size, -cluster_id) )
-
-        sorting_list.sort(reverse=True)
-        
-        results = {}
-        new_id = 'A'
-        for size, cluster_id in sorting_list:
-            results[new_id] = adict[-cluster_id]
-            new_id = chr(ord(new_id) + 1)
-
-        try: # put rejected features in special cluster.
-            results['RC'] = adict[-1]
-        except KeyError:
-            pass
-
-        return results
+        return dict(adict)
         
     @property
     def clustered_features(self):

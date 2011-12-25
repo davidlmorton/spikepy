@@ -20,6 +20,11 @@ import copy
 
 import os
 
+try:
+    from callbacks import supports_callbacks
+except ImportError:
+    from spikepy.other.callbacks.callbacks import supports_callbacks
+
 from spikepy.common import program_text as pt
 from spikepy.common.path_utils import get_data_dirs
 from spikepy.common.stages import stages
@@ -121,11 +126,20 @@ class Strategy(object):
     def load(self, fullpath):
         with open(fullpath, 'r') as infile:
             strategy_dict = json.load(infile)
+        self.update(strategy_dict)
+        self.fullpath     = fullpath
+
+    def update(self, strategy_dict):
         self.methods_used = strategy_dict['methods_used']
         self.settings     = strategy_dict['settings']
         self.name         = strategy_dict['name']
         self.auxiliary_stages = strategy_dict['auxiliary_stages']
-        self.fullpath     = fullpath
+
+    @classmethod
+    def from_dict(cls, strategy_dict):
+        return_strategy = cls()
+        return_strategy.update(strategy_dict)
+        return return_strategy
 
     @classmethod
     def from_file(cls, fullpath):
@@ -168,11 +182,18 @@ class StrategyManager(object):
     def current_strategy(self, value):
         '''Set the current strategy with either a name or a Strategy object.'''
         if isinstance(value, self._managed_class):
-            self._current_strategy = value
+            if value is not self.current_strategy:
+                self.set_current_strategy(value)
         elif isinstance(value, str):
-            self._current_strategy = self.get_strategy_name(value)
+            if self.get_strategy_name(value) is not self.current_strategy:
+                self.set_current_strategy(self.get_strategy_name(value))
         else:
             raise ArgumentTypeError('Current Strategy must be set with either a string or a Strategy object, not %s' % type(value))
+
+    @supports_callbacks
+    def set_current_strategy(self, strategy):
+        self._current_strategy = strategy
+        return strategy
 
     def load_all_strategies(self):
         '''
@@ -204,6 +225,7 @@ class StrategyManager(object):
                 strategy.save(fullpath)
 
     # --- ADD AND REMOVE STRATEGIES ---
+    @supports_callbacks 
     def add_strategy(self, strategy, name=None):
         strategy = strategy.copy() 
         if name is not None:
@@ -246,6 +268,7 @@ class StrategyManager(object):
 
         # -- checks passed, so add to manager --
         self.strategies[strategy.name] = strategy
+        return strategy
 
     def remove_strategy(self, strategy):
         managed_strategy = self.get_strategy(strategy)
