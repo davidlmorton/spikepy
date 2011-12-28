@@ -43,11 +43,13 @@ class ProcessProgressDialog(wx.Dialog):
         self.message_queue = message_queue
         self.update_period = 200 # in ms
 
-        info_text = wx.StaticText(self, label=pt.STRATEGY_PROGRESS_INFO)
+        info_text = wx.StaticText(self, label=pt.COMPLETION_PROGRESS % '|')
+        f = info_text.GetFont()
+        f.SetPointSize(10)
+        f.SetFaceName('Courier 10 Pitch')
+        info_text.SetFont(f)
         self.gauge = wx.Gauge(self, wx.ID_ANY, 100, 
                               size=(int(width*0.8),20), style=wx.GA_HORIZONTAL)
-        self.gauge2 = wx.Gauge(self, wx.ID_ANY, 100, 
-                              size=(int(width*0.8), 5), style=wx.GA_HORIZONTAL)
         self.close_button = wx.Button(self, wx.ID_CLOSE)
         self.close_button.Enable(False)
         self.Bind(wx.EVT_BUTTON, self.close, self.close_button)
@@ -58,10 +60,8 @@ class ProcessProgressDialog(wx.Dialog):
         sizer.Add(self.gauge, proportion=0, 
                 flag=wx.ALIGN_CENTER_HORIZONTAL|wx.TOP|wx.LEFT|wx.RIGHT, 
                 border=8)
-        sizer.Add(self.gauge2, proportion=0, 
-                flag=wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, border=3)
-        sizer.Add(self.close_button, proportion=0, flag=wx.ALIGN_RIGHT|wx.RIGHT,
-                border=10)
+        sizer.Add(self.close_button, proportion=0, flag=wx.ALIGN_RIGHT|wx.ALL,
+                border=8)
 
         message_text = wx.TextCtrl(self, style=wx.TE_MULTILINE, 
                 size=(int(width*0.8), int(height*0.6)))
@@ -87,15 +87,23 @@ class ProcessProgressDialog(wx.Dialog):
         self._start_time = time.time()
         self._plugin_runtime = 0.0
         self._just_once = True
+        self._step = 0
+        self._last_len = -1
 
         self.Bind(wx.EVT_TIMER, self._update_processing)
         self.timer = wx.Timer(self)
         self.timer.Start(self.update_period)
 
+    def _spin(self):
+        spin_steps = ['/', '-', '\\', '|']
+        self._step = (self._step + 1) % len(spin_steps)
+        spinner = spin_steps[self._step]
+        self.info_text.SetLabel(pt.COMPLETION_PROGRESS % str(spinner))
+
     def _update_processing(self, event):
         while True:
             try:
-                new_message = self.message_queue.get(False)
+                new_message = self.message_queue.get_nowait()
             except Queue.Empty:
                 new_message = None
             if new_message is not None:
@@ -121,19 +129,22 @@ class ProcessProgressDialog(wx.Dialog):
                 progress = int((self._num_tasks_competed/
                         float(self._num_tasks))*100.0)
                 self.gauge.SetValue(progress)
-                self.gauge2.Pulse()
             else:
                 break
 
         progress = int((self._num_tasks_competed/
                 float(self._num_tasks))*100.0)
-        self.gauge2.Pulse()
-        if progress == 100 and self._just_once:
-            self._just_once = False
-            self.close_button.Enable()
-            self.info_text.SetLabel('Finished Processing')
-            total_runtime = time.time()-self._start_time
-            self._update_messages('Finished Processing:\n    Total Runtime = %f seconds (real time)\n    Time spent in plugins = %f seconds (cpu time, not real time)' % (total_runtime, self._plugin_runtime))
+        if progress == 100:
+            if self._just_once:
+                self._just_once = False
+                self.close_button.Enable()
+                self.info_text.SetLabel('Finished Processing')
+                total_runtime = time.time()-self._start_time
+                self._update_messages('Finished Processing:\n    Total Runtime = %f seconds (real time)\n    Time spent in plugins = %f seconds (cpu time, not real time)' % (total_runtime, self._plugin_runtime))
+        else:
+            self._spin()
+
+        self._draw_messages()
 
     def _update_messages(self, message):
         now = datetime.now()
@@ -141,10 +152,12 @@ class ProcessProgressDialog(wx.Dialog):
                 now.second, message)
         self._display_messages.append(display_message)
 
-        self.message_text.SetValue(
-                '\n'.join(self._display_messages))
-        self.message_text.ShowPosition(self.message_text.GetLastPosition())
-        wx.Yield()
+    def _draw_messages(self):
+        if len(self._display_messages) != self._last_len:
+            self._last_len = len(self._display_messages)
+            self.message_text.SetValue(
+                    '\n'.join(self._display_messages))
+            self.message_text.ShowPosition(self.message_text.GetLastPosition())
 
     def close(self, event):
         event.Skip()

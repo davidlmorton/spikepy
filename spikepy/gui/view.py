@@ -93,11 +93,14 @@ class MyFrame(wx.Frame):
         Resize main frame up one pixel in each direction then back down... so
         as to fix osX related drawing bugs.
         '''
-        s = self.GetSize()
-        self.SetSize((s[0]+1, s[1]+1))
-        self.SendSizeEvent()
-        self.SetSize(s)
-        self.SendSizeEvent()
+        if wx.Platform == '__WXMAC__':
+            s = self.GetSize()
+            self.SetSize((s[0]+1, s[1]+1))
+            self.SendSizeEvent()
+            self.SetSize(s)
+            self.SendSizeEvent()
+        else:
+            pass
 
     def _update_status_bar(self, message=None):
         new_text = message.data

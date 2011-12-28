@@ -49,9 +49,6 @@ class TrialGridCtrl(gridlib.Grid):
         # set all cols to use this set of attributes
         self.SetColAttr(0, attr0)
         self.SetColAttr(1, attr1)
-        # set the col labels
-        self.SetColLabelValue(0, '%s/%s' % config.get_status_markers())
-        self.SetColLabelValue(1, pt.TRIAL_NAME)
         # set the col widths
         self.SetColSize(0, 5)
         # set it up so that selections select the whole row

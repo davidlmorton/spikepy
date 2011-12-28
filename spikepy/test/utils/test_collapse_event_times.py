@@ -22,17 +22,20 @@ from spikepy.utils.collapse_event_times import collapse_event_times as cet
 
 test_data = \
         [[1.0, 1.01, 1.2],
+        [],
               [0.99, 1.21, 1.3],
+              [],
                     [1.19, 1.31],
+                    [],
                           [1.29]]
 
 class TestCollapseEventTimes(unittest.TestCase):
     def test_min_num_channels(self):
-        #    If min_num_channels is less than the number of channels in 
+        #    If min_num_channels is greater than the number of channels in 
         # event_times then just return the flattened list of event_times.
         flattened_data = numpy.array([0.99, 1.0, 1.01, 1.19, 1.2, 1.21, 
                 1.29, 1.3, 1.31])
-        results = cet(test_data, 5, 0.2)
+        results = cet(test_data, 100, 0.2)
         print 'testing %s expected to be %s' % (results, flattened_data)
         self.assertEqual(flattened_data.shape, results.shape)
         self.assertTrue(numpy.equal(flattened_data, results).all())

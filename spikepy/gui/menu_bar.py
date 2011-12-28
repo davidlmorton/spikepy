@@ -37,10 +37,6 @@ SHELL              = wx.NewId()
 SHOW_TOOLBARS      = wx.NewId()
 SAVE_SESSION       = wx.NewId()
 EXPORT_MARKED      = wx.NewId()
-PRINT_SUBMENU      = wx.NewId()
-PRINT              = wx.NewId()
-PRINT_PREVIEW      = wx.NewId()
-PAGE_SETUP         = wx.NewId()
 
 class SpikepyMenuBar(wx.MenuBar):
     def __init__(self, frame, *args, **kwargs):
@@ -53,11 +49,6 @@ class SpikepyMenuBar(wx.MenuBar):
         file_menu.Append(SAVE_SESSION,      text=pt.SAVE_SESSION)
         file_menu.AppendSeparator()
         file_menu.Append(EXPORT_MARKED,     text=pt.EXPORT_MARKED_TRIALS)
-        print_menu = wx.Menu()
-        print_menu.Append(PRINT,            text=pt.PRINT)
-        print_menu.Append(PRINT_PREVIEW,    text=pt.PRINT_PREVIEW)
-        print_menu.Append(PAGE_SETUP,       text=pt.PAGE_SETUP)
-        #file_menu.AppendSubMenu(print_menu,      pt.PRINT_SUBMENU)
         file_menu.AppendSeparator()
         file_menu.Append(EXIT,              text=pt.EXIT)
         
@@ -85,9 +76,6 @@ class SpikepyMenuBar(wx.MenuBar):
         frame.Bind(wx.EVT_MENU, self._open_file,        id=OPEN)
         frame.Bind(wx.EVT_MENU, self._save_session,     id=SAVE_SESSION)
         frame.Bind(wx.EVT_MENU, self._export_marked,    id=EXPORT_MARKED)
-        frame.Bind(wx.EVT_MENU, self._print,            id=PRINT)
-        frame.Bind(wx.EVT_MENU, self._print_preview,    id=PRINT_PREVIEW)
-        frame.Bind(wx.EVT_MENU, self._page_setup,       id=PAGE_SETUP)
         frame.Bind(wx.EVT_MENU, self._close_window,     id=EXIT)
         # View
         frame.Bind(wx.EVT_MENU, self._show_toolbars,    id=SHOW_TOOLBARS)
@@ -99,15 +87,6 @@ class SpikepyMenuBar(wx.MenuBar):
 
         self._toolbars_shown = False
         self._plots_shown = True
-
-    def _print(self, event=None):
-        pub.sendMessage(topic="PRINT", data=None)
-
-    def _print_preview(self, event=None):
-        pub.sendMessage(topic="PRINT_PREVIEW", data=None)
-
-    def _page_setup(self, event=None):
-        pub.sendMessage(topic="PAGE_SETUP", data=None)
 
     def _export_marked(self, event=None):
         pub.sendMessage(topic="EXPORT_TRIALS", data="marked")

@@ -173,7 +173,7 @@ class ProcessManager(object):
         task_index = {}
         for task in self._task_organizer.tasks:
             task_index[task.task_id] = task
-        message_queue.put(('TASKS', task_index.values()))
+        message_queue.put(('TASKS', [str(t) for t in task_index.values()]))
             
         results_index = {}
         queued_tasks = 0
@@ -182,12 +182,12 @@ class ProcessManager(object):
             pulled, skipped, impossible =\
                     self._task_organizer.pull_runnable_tasks()
             for task in impossible:
-                message_queue.put(('IMPOSSIBLE_TASK', task))
+                message_queue.put(('IMPOSSIBLE_TASK', str(task)))
             for task in skipped:
-                message_queue.put(('SKIPPED_TASK', task))
+                message_queue.put(('SKIPPED_TASK', str(task)))
 
             for task, task_info in pulled:
-                message_queue.put(('RUNNING_TASK', task))
+                message_queue.put(('RUNNING_TASK', str(task)))
                 input_queue.put(task_info)
                 queued_tasks += 1
             
@@ -200,14 +200,15 @@ class ProcessManager(object):
                 results_index[finished_task_id] = result['result']
                 if result['result'] is None:
                     message_queue.put(('TASK_ERROR', 
-                            {'task':finished_task, 
+                            {'task':str(finished_task), 
                              'runtime':result['runtime']}))
                     for i in xrange(num_process_workers):
                         input_queue.put(None)
                     break
                 else:
                     message_queue.put(('FINISHED_TASK', 
-                            {'task':finished_task, 'runtime':result['runtime']}))
+                            {'task':str(finished_task), 
+                             'runtime':result['runtime']}))
                     finished_task.complete(result['result'])
 
             # are we done queueing up tasks? then add in the sentinals.

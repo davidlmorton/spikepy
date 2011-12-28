@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import random
+from collections import defaultdict
 
 from scipy.cluster.vq import vq
 import numpy
@@ -33,6 +34,21 @@ def run(features, iterations=None, threshold=None,
         codebook, distortions = run_kmeans(number_of_clusters, data, 
                                      threshold=threshold, iterations=iterations)
         membership, distortions = vq(data, codebook)
+
+    # determine the size of the clusters
+    sizes = defaultdict(lambda :0)
+    for m in membership:
+        sizes[m] += 1
+    # give new ids based on size
+    si = numpy.argsort(sizes.values())
+    new_ids = {}
+    for i, rsi in enumerate(reversed(si)):
+        new_ids[sizes.keys()[rsi]] = i
+        
+    sorted_membership = []
+    for m in membership:
+        sorted_membership.append(new_ids[m])
+    membership = numpy.array(sorted_membership)
 
     # unpack results
     start = 0

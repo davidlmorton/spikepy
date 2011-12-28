@@ -55,6 +55,8 @@ def collapse_event_times(event_times,
                 # possibly move up t
                 while sorted_times[h] - sorted_times[t] > peak_drift:
                     t += 1
+            else:
+                break
         return numpy.array(collapsed_event_times, dtype=numpy.float64)
             
 
