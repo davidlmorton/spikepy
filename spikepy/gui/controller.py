@@ -99,7 +99,10 @@ class Controller(object):
             trial = None
         stage_name = self.results_notebook.get_current_stage_name()
         results_panel = self.results_panels[stage_name]
+        pub.sendMessage('UPDATE_STATUS', pt.STATUS_PLOTTING) 
         results_panel.plot(trial)
+        pub.sendMessage('UPDATE_STATUS', pt.STATUS_IDLE) 
+        self.view.frame.wiggle()
 
     # CALLBACK HANDLERS
     def _trial_marked(self, args):
@@ -138,7 +141,9 @@ class Controller(object):
         self.view.frame.Destroy()
         
     def _close_trial(self, message):
+        pub.sendMessage('UPDATE_STATUS', pt.STATUS_CLOSING)
         self.session.remove_trial(message.data)
+        pub.sendMessage('UPDATE_STATUS', pt.STATUS_IDLE)
 
     def _export_trials(self, message):
         fullpaths = []
@@ -147,6 +152,7 @@ class Controller(object):
         dlg = ExportDialog(self.view.frame, 
                 self.session.plugin_manager.data_interpreters, 
                 self.session.marked_trials, title=caption)
+        pub.sendMessage('UPDATE_STATUS', pt.STATUS_PREPARING_EXPORT)
         if dlg.ShowModal() == wx.ID_OK:
             settings = dlg.pull()
             ep = settings['path']
@@ -154,9 +160,11 @@ class Controller(object):
                 os.mkdirs(ep)
 
             dii = settings['data_interpreters_info']
+            pub.sendMessage('UPDATE_STATUS', pt.STATUS_EXPORTING)
             for plugin_name, kwargs in dii.items():
                 self.session.export(plugin_name, base_path=ep, **kwargs)
         dlg.Destroy()
+        pub.sendMessage('UPDATE_STATUS', pt.STATUS_IDLE)
 
     def _mark_trial(self, message):
         try:
@@ -179,7 +187,9 @@ class Controller(object):
             paths = dlg.GetPaths()
         dlg.Destroy()
 
+        pub.sendMessage('UPDATE_STATUS', pt.STATUS_OPENING % len(paths))
         self.session.open_files(paths)
+        pub.sendMessage('UPDATE_STATUS', pt.STATUS_IDLE)
 
     def _open_rename_trial_dialog(self, message):
         trial_id = message.data
@@ -217,12 +227,16 @@ class Controller(object):
                 message_queue=message_queue, async=True)
 
         dlg = ProcessProgressDialog(self.view.frame, message_queue)
+        pub.sendMessage('UPDATE_STATUS', pt.STATUS_RUNNING)
         dlg.ShowModal()
+        pub.sendMessage('UPDATE_STATUS', pt.STATUS_IDLE)
         self._plot_results(self._selected_trial)
 
     def _save_session(self, message):
         save_path = message.data
+        pub.sendMessage('UPDATE_STATUS', pt.STATUS_SAVING) 
         self.session.save(save_path)
+        pub.sendMessage('UPDATE_STATUS', pt.STATUS_IDLE) 
 
     def _trial_selection_changed(self, message):
         self._selected_trial = message.data
@@ -234,5 +248,8 @@ class Controller(object):
             trial = self.session.get_trial(self._selected_trial)
         else:
             trial = None
+        pub.sendMessage('UPDATE_STATUS', pt.STATUS_PLOTTING) 
         visualization_control_panel.plot(trial)
+        pub.sendMessage('UPDATE_STATUS', pt.STATUS_IDLE) 
+        self.view.frame.wiggle()
 

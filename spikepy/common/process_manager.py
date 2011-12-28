@@ -174,8 +174,6 @@ class ProcessManager(object):
         for task in self._task_organizer.tasks:
             task_index[task.task_id] = task
         message_queue.put(('TASKS', task_index.values()))
-        print "Preparing to run %d tasks." % \
-                len(self._task_organizer.tasks)
             
         results_index = {}
         queued_tasks = 0
@@ -185,17 +183,11 @@ class ProcessManager(object):
                     self._task_organizer.pull_runnable_tasks()
             for task in impossible:
                 message_queue.put(('IMPOSSIBLE_TASK', task))
-                print "REMOVED: %s on %s" % (task.plugin.name, 
-                        [t.display_name for t in task.trials])
             for task in skipped:
                 message_queue.put(('SKIPPED_TASK', task))
-                print "SKIPPED: %s on %s" % (task.plugin.name, 
-                        [t.display_name for t in task.trials])
 
             for task, task_info in pulled:
                 message_queue.put(('RUNNING_TASK', task))
-                print "RUNNING: %s on %s" % (task.plugin.name,
-                        [t.display_name for t in task.trials])
                 input_queue.put(task_info)
                 queued_tasks += 1
             

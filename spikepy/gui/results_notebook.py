@@ -36,14 +36,12 @@ class ResultsNotebook(wx.Notebook):
                 "extraction_filter")
         extraction_panel = ResultsPanel(self, session, "extraction")
         clustering_panel = ResultsPanel(self, session, "clustering")
-        summary_panel = ResultsPanel(self, session, "summary")
 
         self.AddPage(detection_filter_panel,  pt.DETECTION_FILTER)
         self.AddPage(detection_panel,         pt.DETECTION)
         self.AddPage(extraction_filter_panel, pt.EXTRACTION_FILTER)
         self.AddPage(extraction_panel,        pt.EXTRACTION)
         self.AddPage(clustering_panel,        pt.CLUSTERING)
-        self.AddPage(summary_panel,           pt.SUMMARY)
 
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self._page_changed)
         self.Bind(wx.EVT_SIZE, self._on_size)
@@ -57,8 +55,7 @@ class ResultsNotebook(wx.Notebook):
                                'detection':detection_panel,
                                'extraction_filter':extraction_filter_panel,
                                'extraction':extraction_panel,
-                               'clustering':clustering_panel,
-                               'summary':summary_panel}
+                               'clustering':clustering_panel}
         pyshell.locals_dict['results_panels'] = self.results_panels
         self._selected_page_num = 0
 

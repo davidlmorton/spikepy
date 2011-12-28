@@ -88,6 +88,17 @@ class MyFrame(wx.Frame):
         pub.subscribe(self._update_status_bar, 
                       topic='UPDATE_STATUS')
 
+    def wiggle(self):
+        '''
+        Resize main frame up one pixel in each direction then back down... so
+        as to fix osX related drawing bugs.
+        '''
+        s = self.GetSize()
+        self.SetSize((s[0]+1, s[1]+1))
+        self.SendSizeEvent()
+        self.SetSize(s)
+        self.SendSizeEvent()
+
     def _update_status_bar(self, message=None):
         new_text = message.data
         self.SetStatusText(new_text)

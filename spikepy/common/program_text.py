@@ -201,7 +201,11 @@ PAGE_SETUP = "Page Setup..."
 # --- STATUS ---
 STATUS_IDLE = "Current Status: IDLE"
 STATUS_RUNNING = "Current Status: RUNNING"
-STATUS_OPENING = "Current Status: OPENING FILE(S) [%d]" # % num_files
+STATUS_OPENING = "Current Status: OPENING %d FILE(S)"
+STATUS_CLOSING = "Current Status: CLOSING TRIAL(S)"
+STATUS_PREPARING_EXPORT = "Current Status: PREPARING TO EXPORT DATA"
+STATUS_EXPORTING = "Current Status: EXPORTING DATA"
+STATUS_PLOTTING = "Current Status: GENERATING VISUALS"
 
 # --- ERRORS ---
 RESOURCE_LOCKED = 'Resource (%s) is locked.' # % self.name
