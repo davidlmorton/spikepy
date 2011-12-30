@@ -176,7 +176,8 @@ class ClusteredEventRasterVisualization(Visualization):
 
         # fix colors
         lines = ra.get_xticklines()
-        lines.extend(axes.get_yticklines())
+        if traces_shown != 'None':
+            lines.extend(axes.get_yticklines())
         for line in lines:
             line.set_color(foreground[invert_colors])
         labels = ra.get_xticklabels()
