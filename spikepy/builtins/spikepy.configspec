@@ -9,24 +9,13 @@
         min_height=integer(min=100, max=800, default=None) # in pixels
         wait_time=float(min=50, max=10000, default=None) # in ms
         border=integer(min=0, max=10, default=None) # in pixels
-        summary_border=integer(min=0, max=10, default=None) # in pixels
-        control_border=integer(min=0, max=10, default=None) # in pixels
-        control_border_mac=integer(min=0, max=10, default=None) # in pixels
-        control_panel_border=integer(min=0, max=10, default=None) # in pixels
     [[trial_list]]
         start_height=integer(min=100, max=400, default=None) # in pixels
         marked_status=integer(default=None)
         unmarked_status=integer(default=None)
         column_width_compensation=integer(default=None)
     [[plotting]]
-        trace_limit=integer(min=10, max=10000, default=None)
         dpi=float(min=10, max=150, default=None)
-        aspect_ratio=float(min=1.0, max=10.0, default=None)
-        face_color=float_list(min=3, max=4, default=None)
-        std_trace_color=float_list(min=3, max=4, default=None)
-        std_trace_linewidth=integer(min=0, max=5, default=None)
-        bold_linewidth=integer(min=0, max=5, default=None)
-        title_fontsize=integer(min=10, max=72, default=None)
         [[[colors]]]
             red=float_list(min=3, max=4, default=None)
             blue=float_list(min=3, max=4, default=None)
@@ -40,51 +29,5 @@
             detection=string(default=None)
             extraction=string(default=None)
             pca=list(default=None)
-        [[[detection]]]
-            filtered_trace_color=float_list(min=3, max=4, default=None)
-            filtered_trace_linewidth=integer(min=0, max=5, default=None)
-            raster_pos_traces=option('top', 'bottom', 'center', default=None)
-            raster_pos_rate=option('top', 'bottom', 'center', default=None)
-            raster_width=integer(min=0, default=None) 
-            raster_height=float(min=1.0, default=None)
-            raster_color=float_list(min=3, max=4, default=None)
-        [[[extraction]]]
-            filtered_trace_color=float_list(min=3, max=4, default=None)
-            filtered_trace_linewidth=integer(min=0, max=5, default=None)
-            feature_trace_color=float_list(min=3, max=4, default=None)
-            feature_trace_linewidth=integer(min=0, max=5, default=None)
-            feature_trace_alpha=float(min=0.0, max=1.0, default=None)
-        [[[clustering]]]
-            color_cycle=list(min=1, default=None)
-        [[[summary]]]
-            raster_left=float(default=None)
-            raster_right=float(default=None)
-            right_ylabel=float(default=None)
-            std_alpha=float(min=0.0, max=1.0, default=None)
-            upper_isi_bound1=float(min=1.0, default=None)
-            upper_isi_bound2=float(min=1.0, default=None)
-        [[[spacing]]]
-            isi_inset=float(default=None)
-            legend_offset=float(default=None)
-            title_vspace=float(default=None)
-            no_label_axes_left=float(max=0, default=None)
-            no_label_axes_bottom=float(max=0, default=None)
-            axes_left=float(max=0, default=None)
-            axes_bottom=float(max=0, default=None)
-            left_border=float(min=0, default=None)
-            right_border=float(min=0, default=None)
-            top_border=float(min=0, default=None)
-            bottom_border=float(min=0, default=None)
-            hspace=float(default=None)
-            vspace=float(default=None)
-        [[[printing]]]
-            preview_width=integer(min=300, default=None)
-            preview_height=integer(min=300, default=None)
-    [[control_panel]]
-        border=integer(min=0, max=10, default=None)
 [backend]
-    psd_freq_resolution=float(default=None)
     limit_num_processes=integer(min=1, default=None)
-    min_sampling_freq=integer(min=5000, max=50000, default=None)
-    spike_window_prepad=float(min=0.01, default=None)
-    spike_window_postpad=float(min=0.01, default=None)

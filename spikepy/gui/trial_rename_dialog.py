@@ -20,7 +20,7 @@ import string
 import wx
 from .validators import NameValidator
 from spikepy.common import program_text as pt
-from spikepy.developer_tools.named_controls import NamedTextCtrl 
+from spikepy.gui.named_controls import NamedTextCtrl 
 
 valid_filename_characters = ('-_.,)(%s%s' % 
                              (string.ascii_letters, string.digits))

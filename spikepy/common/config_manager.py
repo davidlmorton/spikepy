@@ -77,7 +77,6 @@ class ConfigManager(object):
         self._user = None
         self._current = configobj.ConfigObj()
         self._status_markers = None
-        self._control_border = None
         self._results_frame_size = numpy.array([800, 600])
         pub.subscribe(self._set_results_frame_size, "SET_RESULTS_FRAME_SIZE")
         self.load_configs(app_name='spikepy')
@@ -188,19 +187,6 @@ class ConfigManager(object):
         marked = '1' 
         return (unmarked, marked)
 
-    @property
-    def control_border(self):
-        if self._control_border is None:
-            self._control_border = self.get_control_border()
-        return self._control_border
-
-    def get_control_border(self):
-        if path_utils.platform() == 'mac':
-            cb = self['gui']['strategy_pane']['control_border_mac']
-        else:
-            cb = self['gui']['strategy_pane']['control_border']
-        return cb
-    
     @property
     def current(self):
         return copy.copy(self._current)
