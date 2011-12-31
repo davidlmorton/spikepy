@@ -170,8 +170,7 @@ class Session(object):
     @current_strategy.setter
     def current_strategy(self, strategy_or_name):
         """Make <strategy> the current strategy."""
-        strategy = self.strategy_manager.get_strategy(strategy_or_name)
-        self.strategy_manager.current_strategy = strategy
+        self.strategy_manager.current_strategy = strategy_or_name
 
     def save_current_strategy(self, strategy_name):
         """Save the current strategy, giving it the name <strategy_name>"""
