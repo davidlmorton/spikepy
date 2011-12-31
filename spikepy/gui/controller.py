@@ -21,8 +21,6 @@ import wx
 from wx.lib.pubsub import Publisher as pub
 from wx.lib.delayedresult import startWorker
 
-from spikepy import session
-
 from spikepy.common.errors import *
 from spikepy.common import program_text as pt
 from spikepy.gui.view import View
@@ -34,8 +32,8 @@ from spikepy.gui.export_dialog import ExportDialog
 from spikepy.plotting_utils.import_matplotlib import matplotlib_version_too_low
 
 class Controller(object):
-    def __init__(self):
-        self.session = session.Session()
+    def __init__(self, session):
+        self.session = session
         self.view = View(self.session)
         self.results_notebook = self.view.frame.results_notebook
         self.results_panels = self.results_notebook.results_panels

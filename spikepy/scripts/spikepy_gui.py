@@ -19,6 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import wx
 from spikepy.gui.images import spikepy_splash_image as spi
 
+# create a spikepy session
+from spikepy.session import Session
+session = Session()
+
 class MySplashScreen(wx.SplashScreen):
     def __init__(self, image=None, splash_style=None, timeout=None, 
                        parent=None, **kwargs):
@@ -29,7 +33,7 @@ if __name__ == '__main__':
     def startup():
         ''' Run after splash screen has loaded '''
         from spikepy.gui.controller import Controller
-        controller = Controller()
+        controller = Controller(session)
         wx.CallLater(1000, splash_screen.Destroy)
         wx.CallLater(2100, controller.warn_for_matplotlib_version)
 

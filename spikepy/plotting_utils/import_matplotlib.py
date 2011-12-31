@@ -1,7 +1,8 @@
 
 import matplotlib
-matplotlib.use('WXAgg') # breaks pep-8 to put code here, but matplotlib 
-                        #     requires this before importing wxagg backend
+# breaks pep-8 to put code here, but matplotlib 
+#     requires this before importing wxagg backend
+matplotlib.use('WXAgg', warn=False) 
 from matplotlib.backends.backend_wxagg import \
         FigureCanvasWxAgg as Canvas, \
         NavigationToolbar2WxAgg as Toolbar
