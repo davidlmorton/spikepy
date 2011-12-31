@@ -69,7 +69,8 @@ class StrategyPane(wx.Panel):
         self._setup_subscriptions()
         self._setup_bindings()
 
-        self._push_strategy(strategy=strategy_manager.current_strategy)
+        self._current_strategy_updated(
+                strategy=strategy_manager.current_strategy)
 
         # other initialization
         pub.sendMessage('STAGE_CHOSEN', data=stages.stages[0])
@@ -127,6 +128,8 @@ class StrategyPane(wx.Panel):
         pub.subscribe(self._method_chosen, topic='METHOD_CHOSEN')
         pub.subscribe(self._stage_chosen, topic='STAGE_CHOSEN')
         pub.subscribe(self._strategy_added, topic='STRATEGY_ADDED')
+        pub.subscribe(self._current_strategy_updated, 
+                topic='CURRENT_STRATEGY_UPDATED')
 
     def _setup_bindings(self):
         self.Bind(wx.EVT_BUTTON, self._save_button_pressed, self.save_button)
@@ -148,6 +151,20 @@ class StrategyPane(wx.Panel):
         current_selection = self.strategy_chooser.GetStringSelection()
         self.strategy_chooser.SetItems(sorted(current_strategy_choices))
         self.strategy_chooser.SetStringSelection(current_selection)
+
+    def _current_strategy_updated(self, message=None, strategy=None):
+        if message is not None:
+            strategy = message.data
+        self._push_strategy(strategy=strategy)
+
+        managed_names = self.strategy_manager.managed_strategy_names
+        if strategy.name not in managed_names:
+            all_names = managed_names + [strategy.name]
+        else:
+            all_names = managed_names
+        self.strategy_chooser.SetItems(all_names)
+
+        self.strategy_chooser.SetStringSelection(strategy.name)
 
     def get_current_methods_used(self):
         return self.strategy_summary.get_current_methods()
@@ -188,9 +205,9 @@ class StrategyPane(wx.Panel):
             managed_names = self.strategy_manager.managed_strategy_names
             all_names = managed_names + [cs.name]
             self.strategy_chooser.SetItems(all_names)
-        self.strategy_chooser.selection = cs.name
 
         self.strategy_manager.current_strategy = cs
+        self.strategy_chooser.SetStringSelection(cs.name)
 
     def do_layout(self):
         self.control_panels_scroller.SetupScrolling()
@@ -206,12 +223,15 @@ class StrategyPane(wx.Panel):
         ''' Show the appropriate stage's control panel. '''
         if stage_name is None and method_name is None:
             stage_name, method_name = message.data
+        self._set_method(stage_name=stage_name, method_name=method_name)
+        self._update_strategy()
+
+    def _set_method(self, stage_name=None, method_name=None):
         for sn, s_dict in self.control_panels.items():
             for mn, control_panel in s_dict.items():
                 should_show = (sn == stage_name and mn == method_name and
                         self.current_stage == sn)
                 control_panel.Show(should_show)
-        self._update_strategy()
         self.do_layout()
 
     def _stage_chosen(self, message):
@@ -228,7 +248,7 @@ class StrategyPane(wx.Panel):
             for panel in self.auxiliary_control_panels.values():
                 panel.Show(panel.plugin.runs_with_stage == stage_name)
             method_name = self.get_current_methods_used()[stage_name]
-            self._method_chosen(stage_name=stage_name, method_name=method_name)
+            self._set_method(stage_name=stage_name, method_name=method_name)
             self.run_stage_button.SetLabel(pt.RUN_STAGE % 
                     stages.get_stage_display_name(stage_name))
             self.do_layout()
@@ -240,7 +260,7 @@ class StrategyPane(wx.Panel):
             control_panel = self.control_panels[stage_name][method_name]
             control_panel.push(strategy.settings[stage_name])
             if self.current_stage == stage_name:
-                self._method_chosen(stage_name=stage_name, 
+                self._set_method(stage_name=stage_name, 
                         method_name=method_name)
             auxiliary_plugins_used = strategy.auxiliary_stages.keys()
             for cp in self.auxiliary_control_panels.values():
@@ -307,7 +327,7 @@ class StrategyPane(wx.Panel):
             self._push_strategy(strategy=strategy)
             self.strategy_chooser.SetItems(
                     self.strategy_manager.managed_strategy_names)
-            self.strategy_chooser.selection = strategy_name
+            self.strategy_chooser.SetStringSelection(strategy_name)
 
 class StrategyStageChooser(wx.Panel):
     '''

@@ -36,6 +36,19 @@ from spikepy.plotting_utils.import_matplotlib import matplotlib_version_too_low
 class Controller(object):
     def __init__(self):
         self.session = session.Session()
+        self.view = View(self.session)
+        self.results_notebook = self.view.frame.results_notebook
+        self.results_panels = self.results_notebook.results_panels
+
+        self._selected_trial = None
+
+        # save for locals in pyshell
+        locals_dict['session'] = self.session
+        locals_dict['results_panels'] = self.results_panels
+        locals_dict['view'] = self.view
+        locals_dict['controller'] = self
+        self._setup_subscriptions()
+
         self.session.trial_manager.add_trials.add_callback(self._trials_added,
                 takes_target_results=True)
         self.session.strategy_manager.add_strategy.add_callback(
@@ -49,19 +62,6 @@ class Controller(object):
                 takes_target_results=True)
         self.session.mark_trial.add_callback(self._trial_marked,
                 takes_target_results=True)
-
-        self.view = View(self.session)
-        self.results_notebook = self.view.frame.results_notebook
-        self.results_panels = self.results_notebook.results_panels
-
-        self._selected_trial = None
-
-        # save for locals in pyshell
-        locals_dict['session'] = self.session
-        locals_dict['results_panels'] = self.results_panels
-        locals_dict['view'] = self.view
-        locals_dict['controller'] = self
-        self._setup_subscriptions()
 
     def warn_for_matplotlib_version(self):
         min_version = '0.99.1.1'

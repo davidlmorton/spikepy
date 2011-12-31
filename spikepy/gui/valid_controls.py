@@ -65,9 +65,10 @@ class ValidBooleanControl(ValidControl):
         return bool(self.valid_type(self.ctrl.GetValue()))
         
     def SetValue(self, value):
-        temp, self.valid_entry_callback = self.valid_entry_callback, None
-        self.ctrl.SetValue(value)
-        self.valid_entry_callback = temp
+        if self._last_value != value:
+            temp, self.valid_entry_callback = self.valid_entry_callback, None
+            self.ctrl.SetValue(value)
+            self.valid_entry_callback = temp
 
     def _value_entered(self, event):
         event.Skip()
@@ -106,9 +107,10 @@ class ValidNumberControl(ValidControl):
         return self.valid_type(self.ctrl.GetValue())
         
     def SetValue(self, value):
-        temp, self.valid_entry_callback = self.valid_entry_callback, None
-        self.ctrl.SetValue(str(value))
-        self.valid_entry_callback = temp
+        if self._last_value != value:
+            temp, self.valid_entry_callback = self.valid_entry_callback, None
+            self.ctrl.SetValue(str(value))
+            self.valid_entry_callback = temp
 
     def _value_entered(self, event):
         event.Skip()
@@ -155,9 +157,10 @@ class ValidChoiceControl(ValidControl):
         return self.valid_type(self.ctrl.GetStringSelection())
         
     def SetValue(self, value):
-        temp, self.valid_entry_callback = self.valid_entry_callback, None
-        self.ctrl.SetStringSelection(str(value))
-        self.valid_entry_callback = temp
+        if self._last_value != value:
+            temp, self.valid_entry_callback = self.valid_entry_callback, None
+            self.ctrl.SetStringSelection(str(value))
+            self.valid_entry_callback = temp
 
     def _value_entered(self, event):
         event.Skip()

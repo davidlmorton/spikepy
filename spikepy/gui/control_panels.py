@@ -107,6 +107,8 @@ class OptionalControlPanel(ControlPanel):
 
     def _activate(self, event):
         event.Skip()
+        if self.valid_entry_callback is not None:
+            self.valid_entry_callback(self.active)
         self.setup_active_state()
 
     @property
@@ -121,8 +123,6 @@ class OptionalControlPanel(ControlPanel):
     def setup_active_state(self):
         for ctrl in self.ctrls.values():
             ctrl.Show(self.active)
-        if self.valid_entry_callback is not None:
-            self.valid_entry_callback(self.active)
         self.Layout()
         self.GetParent().Layout()
         self.GetParent().SetupScrolling(scrollToTop=False)
