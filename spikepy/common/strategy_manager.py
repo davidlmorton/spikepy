@@ -183,10 +183,15 @@ class StrategyManager(object):
         '''Set the current strategy with either a name or a Strategy object.'''
         if isinstance(value, self._managed_class):
             if value is not self.current_strategy:
+                try:
+                    strategy = self.get_strategy(value)
+                except MissingStrategyError:
+                    strategy = value
+                value.name = self.get_strategy_name(value)
                 self.set_current_strategy(value)
         elif isinstance(value, str):
-            if self.get_strategy_by_name(value) is not self.current_strategy:
-                self.set_current_strategy(self.get_strategy_by_name(value))
+            if self._get_strategy_by_name(value) is not self.current_strategy:
+                self.set_current_strategy(self._get_strategy_by_name(value))
         else:
             raise ArgumentTypeError('Current Strategy must be set with either a string or a Strategy object, not %s' % type(value))
 
