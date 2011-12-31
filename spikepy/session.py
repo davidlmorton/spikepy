@@ -19,6 +19,7 @@ import multiprocessing
 import uuid
 import cPickle
 import os
+import gzip
 
 try:
     from callbacks import supports_callbacks
@@ -72,7 +73,7 @@ class Session(object):
         """Open the files located at fullpaths"""
         return self.process_manager.open_files(fullpaths)
 
-    def save(self, filename):
+    def save(self, filename, gzipped=True):
         """Save this session."""
         if not filename.endswith('.ses'):
             filename = '%s.ses' % filename
@@ -82,8 +83,12 @@ class Session(object):
             trial_dicts.append(trial.as_dict)
         strategy_dict = self.current_strategy.as_dict
         session_dict = {'trials':trial_dicts, 'strategy':strategy_dict}
-        with open(filename, 'wb') as ofile:
-            cPickle.dump(session_dict, ofile, protocol=-1)
+        if gzipped:
+            ofile = gzip.open(filename, 'wb')
+        else:
+            ofile = open(filename, 'wb')
+        cPickle.dump(session_dict, ofile, protocol=-1)
+        ofile.close()
         return filename
 
     # TRIAL RELATED
