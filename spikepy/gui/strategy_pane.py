@@ -151,6 +151,7 @@ class StrategyPane(wx.Panel):
         current_selection = self.strategy_chooser.GetStringSelection()
         self.strategy_chooser.SetItems(sorted(current_strategy_choices))
         self.strategy_chooser.SetStringSelection(current_selection)
+        self._strategy_chooser_updated(current_selection)
 
     def _current_strategy_updated(self, message=None, strategy=None):
         if message is not None:
@@ -165,6 +166,7 @@ class StrategyPane(wx.Panel):
         self.strategy_chooser.SetItems(all_names)
 
         self.strategy_chooser.SetStringSelection(strategy.name)
+        self._strategy_chooser_updated(strategy.name)
 
     def get_current_methods_used(self):
         return self.strategy_summary.get_current_methods()
@@ -309,8 +311,8 @@ class StrategyPane(wx.Panel):
 
     def _strategy_chooser_updated(self, new_value):
         """
-            Called whenever the value of the strategy_chooser is changed, both
-        by the user and programmatically.
+            Called whenever the value of the strategy_chooser is changed by
+        the user, called manually by other parts of the code too.
         """
         status = (pt.CUSTOM_LC in new_value)
         self.save_button.Enable(status)
@@ -328,6 +330,7 @@ class StrategyPane(wx.Panel):
             self.strategy_chooser.SetItems(
                     self.strategy_manager.managed_strategy_names)
             self.strategy_chooser.SetStringSelection(strategy_name)
+            self._strategy_chooser_updated(strategy_name)
 
 class StrategyStageChooser(wx.Panel):
     '''
