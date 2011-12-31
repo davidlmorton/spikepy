@@ -210,9 +210,24 @@ class StrategyPane(wx.Panel):
         self.strategy_chooser.SetStringSelection(cs.name)
 
     def do_layout(self):
+        self.wiggle()
         self.control_panels_scroller.SetupScrolling()
         self.control_panels_scroller.Layout()
         self.Layout()
+
+    def wiggle(self):
+        '''
+        Resize main frame up one pixel in each direction then back down... so
+        as to fix windows related drawing bugs.
+        '''
+        if wx.Platform == '__WXMSW__':
+            s = self.GetSize()
+            self.SetSize((s[0]+1, s[1]+1))
+            self.SendSizeEvent()
+            self.SetSize(s)
+            self.SendSizeEvent()
+        else:
+            pass
 
     @property
     def current_stage(self):
