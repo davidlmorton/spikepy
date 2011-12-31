@@ -243,14 +243,14 @@ class VisualizationControlPanel(OptionalControlPanel):
     def setup_active_state(self):
         OptionalControlPanel.setup_active_state(self)
         self.plot_panel.Show(self.active)
-        if self.active:
-            pub.sendMessage(topic='VISUALIZATION_PANEL_CHANGED', data=self)
         for item in self.hidden_items:
             item.Show(self.active and not self._hidden)
         self.show_hide_button.Enable(self.active)
         self.Layout()
         self.GetParent().Layout()
         self.GetParent().SetupScrolling(scroll_x=False, scrollToTop=False)
+        if self.active:
+            pub.sendMessage(topic='VISUALIZATION_PANEL_CHANGED', data=self)
 
     def _something_changed(self, new_value):
         pub.sendMessage(topic='VISUALIZATION_PANEL_CHANGED', data=self)
