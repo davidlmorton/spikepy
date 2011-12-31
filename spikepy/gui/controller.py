@@ -133,6 +133,7 @@ class Controller(object):
 
     # MESSAGE HANDLERS
     def _close_application(self, message):
+        self.session.strategy_manager.save_strategies()
         pub.unsubAll()
         wx.Yield()
         # deinitialize the frame manager
