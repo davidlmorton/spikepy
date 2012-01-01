@@ -23,7 +23,6 @@ from wx.lib.pubsub import Publisher as pub
 from wx.lib.wordwrap import wordwrap
 
 import spikepy
-from spikepy.plotting.utils import PlotPanelPrintout
 from spikepy.gui.pyshell import PyShellDialog
 from spikepy.common import program_text as pt
 from spikepy.common.config_manager import config_manager as config
