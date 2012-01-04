@@ -59,7 +59,12 @@ def open_file_worker(input_queue, results_queue):
     '''Worker process to handle open_file operations.'''
     for run_data in iter(input_queue.get, None):
         fullpath, file_interpreters = run_data
-        results_queue.put(open_data_file(fullpath, file_interpreters))
+        try:
+            results = open_data_file(fullpath, file_interpreters)
+        except:
+            results = []
+            traceback.print_exc()
+        results_queue.put(results)
 
 def task_worker(input_queue, results_queue):
     '''Worker process to handle task operations.'''

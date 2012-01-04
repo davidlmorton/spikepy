@@ -57,6 +57,7 @@ class TrialManager(object):
     def mark_trial(self, name, status):
         """Mark trial with display_name=<name> according to <status>."""
         trial = self.get_trial_with_name(name)
+        assert type(status) is bool
 
         if self.marked_trials:
             num_channels = self.marked_trials[0].num_channels
