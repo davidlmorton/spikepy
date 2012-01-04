@@ -28,7 +28,7 @@ projection_color = {True:['cyan', 'magenta', 'yellow'],
         False:['blue', 'red', 'green']}
 cluster_colors = {True:['cyan', 'magenta', 'yellow', 'blue', 'red', 'green',
         'orange', 'white'],
-        False:['blue', 'red', 'green', 'cyan', 'majenta', 'orange',
+        False:['blue', 'red', 'green', 'cyan', 'magenta', 'orange',
         'black', 'purple']}
 
 class ClusteredFeaturePCAVisualization(Visualization):

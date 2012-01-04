@@ -14,6 +14,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import traceback
+import sys
 
 from spikepy.common.config_manager import config_manager as config
 from spikepy.common import program_text as pt
@@ -61,6 +63,7 @@ __init__ method that requires no arguments.
             figure = parent_panel.plot_panel.figure
             figure.clear()
         else:
+            import pylab
             figsize = config.get_size('figure')
             figure = pylab.figure(figsize=figsize)
             figure.canvas.set_window_title(self.name)
@@ -75,11 +78,22 @@ __init__ method that requires no arguments.
         else:
             pylab.show()
 
+    def _handle_cannot_plot(self, parent_panel):
+        figure = parent_panel.plot_panel.figure
+        figure.clear()
+
+        msg = pt.CANNOT_COMPLETE_VISUALIZATION
+        figure.text(0.5, 0.5, msg, verticalalignment='center',
+                horizontalalignment='center')
+            
+        figure.canvas.draw()
+
     def _handle_no_trial_passed(self, parent_panel):
         if parent_panel is not None:
             figure = parent_panel.plot_panel.figure
             figure.clear()
         else:
+            import pylab
             figsize = config.get_size('figure')
             figure = pylab.figure(figsize=figsize)
             figure.canvas.set_window_title(self.name)
@@ -113,13 +127,18 @@ __init__ method that requires no arguments.
                 preserve_history = False
 
             parent_panel.plot_panel.clear()
-            self._plot(trial, parent_panel.plot_panel.figure, **kwargs)
+            try:
+                self._plot(trial, parent_panel.plot_panel.figure, **kwargs)
+                canvas = parent_panel.plot_panel.canvas
 
-            canvas = parent_panel.plot_panel.canvas
-
-            if preserve_history:
-                parent_panel.plot_panel._restore_history()
-            canvas.draw()
+                if preserve_history:
+                    parent_panel.plot_panel._restore_history()
+                canvas.draw()
+            except:
+                exc_info = sys.exc_info()
+                traceback.print_exception(exc_info[0], exc_info[1],
+                        exc_info[2], 100)
+                self._handle_cannot_plot(parent_panel)
         else:
             import pylab
             figsize = config.get_size('figure')

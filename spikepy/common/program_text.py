@@ -117,6 +117,7 @@ INVALID = '*Invalid*'
 
 # ---- visualization ----
 CANNOT_CREATE_VISUALIZATION = 'This visualization could not be completed.  The following trial resources were required but not computed:\n\n%s'
+CANNOT_COMPLETE_VISUALIZATION = 'An error occured while trying to complete this visualization.\nPlease see the error message displayed on the console.'
 NO_TRIAL_SELECTED = 'No trial was selected.\nSelect a trial or add trials to this session from %s --> %s' % (FILE, OPEN)
 
 # --- Trial Rename Dialog ---

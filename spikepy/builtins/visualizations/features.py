@@ -26,7 +26,7 @@ foreground = {True:'white', False:'black'}
 line_color = {True:'yellow', False:'green'}
 cluster_colors = {True:['cyan', 'magenta', 'yellow', 'blue', 'red', 'green',
         'orange', 'white'],
-        False:['blue', 'red', 'green', 'cyan', 'majenta', 'orange',
+        False:['blue', 'red', 'green', 'cyan', 'magenta', 'orange',
         'black', 'purple']}
 
 class FeaturesVisualization(Visualization):
