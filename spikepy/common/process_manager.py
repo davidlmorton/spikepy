@@ -79,6 +79,7 @@ def task_worker(input_queue, results_queue):
             results_dict['result'] = plugin.run(*args, **kwargs)
         except:
             results_dict['result'] = None
+            results_dict['traceback'] = traceback.format_exc()
             traceback.print_exc()
         end_time = time.time()
         results_dict['task_id'] = task_info['task_id']
@@ -205,11 +206,11 @@ class ProcessManager(object):
                 results_index[finished_task_id] = result['result']
                 if result['result'] is None:
                     message_queue.put(('TASK_ERROR', 
-                            {'task':str(finished_task), 
+                            {'task':str(finished_task),
+                             'traceback':result['traceback'],
                              'runtime':result['runtime']}))
-                    for i in xrange(num_process_workers):
-                        input_queue.put(None)
-                    break
+                    finished_task.skip()
+                    self._task_organizer.remove_tasks()
                 else:
                     message_queue.put(('FINISHED_TASK', 
                             {'task':str(finished_task), 
@@ -302,6 +303,10 @@ class TaskOrganizer(object):
         for task in self.tasks:
             str_list.append('    %s' % str(task))
         return '\n'.join(str_list)
+
+    def remove_tasks(self):
+        self._non_stationary_tasks = {}
+        self._stationary_tasks = {}
 
     def pull_runnable_tasks(self):
         '''

@@ -25,6 +25,7 @@ import wx.grid as gridlib
 
 from spikepy.common.config_manager import config_manager as config
 from spikepy.common import program_text as pt
+from spikepy.utils.wrap import wrap
 
 class ProcessProgressDialog(wx.Dialog):
     def __init__(self, parent, message_queue, **kwargs):
@@ -119,6 +120,12 @@ class ProcessProgressDialog(wx.Dialog):
                     self._update_messages('Removed %s\n    Reason: task was impossible to complete.' % data)
                 if statement == 'RUNNING_TASK':
                     self._update_messages('Started %s' % data)
+                if statement == 'TASK_ERROR':
+                    self._update_messages('ERROR on %s:\n\n %s' % 
+                            (data['task'], wrap(data['traceback'], 80)))
+                    self._num_tasks_competed = self._num_tasks
+                    self.close_button.SetLabel('ABORT')
+                    self.info_text.SetLabel('An ERROR occured in a plugin!')
                 if statement == 'FINISHED_TASK':
                     self._num_tasks_competed += 1
                     self._update_messages(
@@ -138,7 +145,8 @@ class ProcessProgressDialog(wx.Dialog):
             if self._just_once:
                 self._just_once = False
                 self.close_button.Enable()
-                self.info_text.SetLabel('Finished Processing')
+                if 'ERROR' not in self.info_text.GetLabel():
+                    self.info_text.SetLabel('Finished Processing')
                 total_runtime = time.time()-self._start_time
                 self._update_messages('Finished Processing:\n    Total Runtime = %f seconds (real time)\n    Time spent in plugins = %f seconds (cpu time, not real time)' % (total_runtime, self._plugin_runtime))
         else:

@@ -6,6 +6,9 @@ class SpikepyError(Exception):
     '''
     pass
 
+class FeatureDimensionalityError(SpikepyError):
+    pass
+
 class DataUnavailableError(SpikepyError):
     pass
 

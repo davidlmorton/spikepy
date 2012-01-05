@@ -22,11 +22,25 @@ from scipy.cluster.vq import vq
 import numpy
 
 from .run_kmeans import run_kmeans
+from spikepy.common.errors import FeatureDimensionalityError
 
 def run(features, iterations=None, threshold=None, 
         number_of_clusters=None):
+    # remove any trials with no features.
+    non_zero_features = []
+    for feature in features:
+        if len(feature) > 0:
+            non_zero_features.append(feature)
+
+    # ensure feature dimensionality is uniform
+    num_feature_dimensionalities = set([nzf.shape[-1] 
+            for nzf in non_zero_features])
+    if len(num_feature_dimensionalities) != 1:
+        raise FeatureDimensionalityError('The dimensionality of the features of different trials do not match.  Instead of all being a single dimensionality your trials have features with dimensionality as follows.  %s' %
+                str(list(num_feature_dimensionalities)))
+
     # pack into single array
-    data = numpy.vstack(features)
+    data = numpy.vstack(non_zero_features)
     if len(data) <= number_of_clusters:
         membership = range(len(data))
         distortions = [1.0 for i in range(len(data))]
