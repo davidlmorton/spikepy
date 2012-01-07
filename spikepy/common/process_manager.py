@@ -244,11 +244,18 @@ class ProcessManager(object):
             Open a multiple data files. Returns a list of 
         'list of trials created'.
         '''
+        file_interpreters = self.plugin_manager.file_interpreters
+        if len(fullpaths) == 1:
+            try:
+                results = open_data_file(fullpaths[0], file_interpreters)
+            except:
+                results = []
+                traceback.print_exc()
+            return results
+
         num_process_workers = get_num_workers(self.config_manager)
         if len(fullpaths) < num_process_workers:
             num_process_workers = len(fullpaths)
-
-        file_interpreters = self.plugin_manager.file_interpreters
 
         # setup the input and return queues.
         input_queue = multiprocessing.Queue()
