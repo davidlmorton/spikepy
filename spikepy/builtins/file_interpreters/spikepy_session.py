@@ -19,8 +19,8 @@ import gzip
 
 import numpy
 
-from spikepy.developer_tools.file_interpreter import FileInterpreter, Trial
-from spikepy.common.strategy_manager import Strategy
+from spikepy.developer_tools.file_interpreter import FileInterpreter, Trial,\
+        Strategy
 
 def load_archive(archive):
     results = []

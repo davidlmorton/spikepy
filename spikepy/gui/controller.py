@@ -75,6 +75,7 @@ class Controller(object):
                       topic="OPEN_OPEN_FILE_DIALOG")
         pub.subscribe(self._close_trial, topic='CLOSE_TRIAL')
         pub.subscribe(self._mark_trial, topic='MARK_TRIAL')
+        pub.subscribe(self._mark_all_trials, topic='MARK_ALL_TRIALS')
         pub.subscribe(self._trial_selection_changed, 
                       topic='TRIAL_SELECTION_CHANGED')
         pub.subscribe(self._results_notebook_page_changed,
@@ -174,6 +175,10 @@ class Controller(object):
                                    style=wx.OK|wx.ICON_EXCLAMATION)
             dlg.ShowModal()
             dlg.Destroy()
+
+    def _mark_all_trials(self, message):
+        status = message.data
+        self.session.mark_all_trials(status=status)
 
     def _open_open_file_dialog(self, message):
         frame = message.data

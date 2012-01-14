@@ -56,7 +56,9 @@ HELP = "Help"
 PYTHON_SHELL_MENU = "Python shell"
 ABOUT = "About"
 
-# ---- File Grid Text ----
+# ---- Trial Grid Text ----
+MARK_ALL_TRIALS = 'Mark all trials'
+UNMARK_ALL_TRIALS = 'Unmark all trials'
 OPEN_ANOTHER_FILE = "Open Another File..."
 CLOSE_MARKED_TRIALS = "Close Marked Trials"
 CLOSE_THIS_TRIAL = "Close This Trial"
