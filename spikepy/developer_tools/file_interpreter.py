@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from spikepy.common.trial_manager import Trial
+from spikepy.common.strategy_manager import Strategy
 
 class FileInterpreter(object):
     '''
@@ -29,10 +30,10 @@ Methods that subclasses are REQUIRED to implement:
     - read_data_file(fullpath)
         -- This method recieves only a string representation of the
            fullpath to the data file.  It is required to return a list of 
-           Trial objects, even if only one was created.  You should use the
-           method make_trial_object to create these Trial objects.
+           Trial and or Strategy objects, even if only one was created.
     '''
-    opens_extentions = [] # a list of one or more file extentions.
+    # A list of one or more file extentions this interpreter can open.
+    extentions = [] 
     #     Higher priority means that this FileInterpreter will be tried first
     # if spikepy tries more than one FileInterpreter.
     priority = 10

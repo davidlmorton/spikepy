@@ -137,6 +137,13 @@ class TrialGridCtrl(gridlib.Grid):
                   if self._get_marked_status(row)]
         return result
 
+    @property
+    def all_trials_are_unmarked(self):
+        if self.marked_trial_ids:
+            return False
+        else:
+            return True
+
     # --- EVENT HANDLERS ---
     def _ensure_fills_space(self, event=None):
         if event is not None:
@@ -190,12 +197,15 @@ class TrialGridCtrl(gridlib.Grid):
         self._row_right_clicked = row
         if not hasattr(self, '_cmid_open_file'):
             self._cmid_open_file  = wx.NewId()
+            self._cmid_mark_all_trials = wx.NewId()
             self._cmid_rename_trial = wx.NewId()
             self._cmid_close_marked_trials = wx.NewId()
             self._cmid_close_this_trial = wx.NewId()
 
             self.Bind(wx.EVT_MENU, self._rename_trial, 
                                    id=self._cmid_rename_trial)
+            self.Bind(wx.EVT_MENU, self._mark_all_trials,
+                                   id=self._cmid_mark_all_trials)
             self.Bind(wx.EVT_MENU, self._open_file,  id=self._cmid_open_file)
             self.Bind(wx.EVT_MENU, self._close_marked_trials, 
                                    id=self._cmid_close_marked_trials)
@@ -216,6 +226,15 @@ class TrialGridCtrl(gridlib.Grid):
         else:
             item = wx.MenuItem(cm, self._cmid_open_file, pt.OPEN)
         cm.AppendItem(item)
+
+        # mark all trials
+        if self.all_trials_are_unmarked:
+            item_text = pt.MARK_ALL_TRIALS
+        else:
+            item_text = pt.UNMARK_ALL_TRIALS
+        item = wx.MenuItem(cm, self._cmid_mark_all_trials, item_text)
+        cm.AppendItem(item)
+        cm.Enable(self._cmid_mark_all_trials, bool(len(self._trial_ids)))
 
         # rename_trial item
         if row >= self._num_nonempty_rows:
@@ -255,6 +274,11 @@ class TrialGridCtrl(gridlib.Grid):
             row = self._row_left_dclicked
         trial_id = self._get_trial_id_from_row(row)
         pub.sendMessage(topic='OPEN_RENAME_TRIAL_DIALOG', data=trial_id)
+
+    def _mark_all_trials(self, event):
+        pub.sendMessage(topic='MARK_ALL_TRIALS', 
+                data=self.all_trials_are_unmarked)
+        
 
     # --- MESSAGE HANDLERS ---
     def _trial_closed(self, message):

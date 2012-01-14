@@ -32,6 +32,7 @@ from spikepy.common.config_manager import ConfigManager
 from spikepy.common.plugin_manager import PluginManager
 from spikepy.common.strategy_manager import StrategyManager, Strategy
 from spikepy.common import path_utils
+from spikepy.common.errors import *
 
 class Session(object):
     def __init__(self):
@@ -108,9 +109,9 @@ class Session(object):
 
     def mark_all_trials(self, status=True):
         """Mark all trials according to <status>"""
-        for trial in self.trials.values():
+        for trial in self.trials:
             try:
-                self.mark_trial(trial.name, status)
+                self.mark_trial(trial.display_name, status)
             except CannotMarkTrialError:
                 pass
 
