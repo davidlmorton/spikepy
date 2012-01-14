@@ -150,7 +150,7 @@ class ClusteredEventRasterVisualization(Visualization):
             color = cluster_colors[invert_colors][
                     i%len(cluster_colors[invert_colors])]
             e_xs = cft[cluster_name]
-            pos = ymax - i/float(len(cft.keys())-1)*yrange
+            pos = ymax - i/max(1.0, float(len(cft.keys())-1))*yrange
             poss.append(pos)
             if len(e_xs) > 0:
                 minx = min(minx, min(e_xs))

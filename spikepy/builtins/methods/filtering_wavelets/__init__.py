@@ -36,10 +36,8 @@ class FilteringWavelets(FilteringMethod):
 
     def run(self, signal, sampling_freq, wavelet='db20', 
             min_level=1, max_level=6):
-        filtered_signal = numpy.empty(signal.shape, signal.dtype)
-        for i in range(len(signal)):
-            filtered_signal[i] = filt(signal[i],
-                    wavelet=wavelet,
-                    minlevel=min_level, 
-                    maxlevel=max_level)
+        filtered_signal = filt(signal,
+                wavelet=wavelet,
+                minlevel=min_level, 
+                maxlevel=max_level)
         return [filtered_signal, sampling_freq]
