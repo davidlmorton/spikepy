@@ -136,8 +136,8 @@ class Controller(object):
     def _close_application(self, message):
         self.session.strategy_manager.save_strategies()
         pub.unsubAll()
+        self.view.frame.Show(False)
         wx.Yield()
-        # deinitialize the frame manager
         self.view.frame.Destroy()
         
     def _close_trial(self, message):
