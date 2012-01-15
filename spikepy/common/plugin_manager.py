@@ -15,6 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import types
+import traceback
 import imp
 import os
 from collections import defaultdict
@@ -82,9 +83,13 @@ def load_plugins_from_dir(plugin_dir):
                 except ImportError:
                     pass
                 if fm_results is not None:
-                    module=imp.load_module(unique_name, *fm_results)
-                    loaded_plugins.extend(get_plugins_from_module(module, 
-                            class_list=base_class_index.values()))
+                    try:
+                        module=imp.load_module(unique_name, *fm_results)
+                        loaded_plugins.extend(get_plugins_from_module(module, 
+                                class_list=base_class_index.values()))
+                    except:
+                        print "Failed to load plugin '%s':" % module_name
+                        traceback.print_exc()
     return loaded_plugins
 
 def get_plugins_from_module(module, class_list=[]):
@@ -147,6 +152,10 @@ class PluginManager(object):
         for stage_name, method_name in strategy.methods_used.items():
             plugin = self.find_plugin(stage_name, method_name)
             settings = strategy.settings[stage_name]
+            plugin.validate_parameters(settings)
+
+        for method_name, settings in strategy.auxiliary_stages.items():
+            plugin = self.find_plugin('auxiliary', method_name)
             plugin.validate_parameters(settings)
 
     def load_plugins(self, **kwargs):

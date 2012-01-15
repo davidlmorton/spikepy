@@ -14,6 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import traceback
 import os 
 import multiprocessing
 
@@ -51,7 +52,7 @@ class Controller(object):
                 takes_target_results=True)
         self.session.strategy_manager.add_strategy.add_callback(
                 self._strategy_added, takes_target_results=True)
-        self.session.strategy_manager.set_current_strategy.add_callback(
+        self.session._set_current_strategy.add_callback(
                 self._current_strategy_updated, takes_target_results=True)
         self.session.remove_trial.add_callback(
                 self._trial_closed, 
@@ -80,6 +81,8 @@ class Controller(object):
                       topic='TRIAL_SELECTION_CHANGED')
         pub.subscribe(self._results_notebook_page_changed,
                       topic='RESULTS_NOTEBOOK_PAGE_CHANGED')
+        pub.subscribe(self._set_current_strategy,
+                      topic='SET_CURRENT_STRATEGY')
         pub.subscribe(self._visualization_panel_changed, 
                       topic='VISUALIZATION_PANEL_CHANGED')
         pub.subscribe(self._save_session, topic='SAVE_SESSION')
@@ -165,6 +168,19 @@ class Controller(object):
                 self.session.export(plugin_name, base_path=ep, **kwargs)
         dlg.Destroy()
         pub.sendMessage('UPDATE_STATUS', pt.STATUS_IDLE)
+
+    def _set_current_strategy(self, message):
+        strategy = message.data
+        try:
+            self.session.current_strategy = strategy
+        except:
+            msg = 'Could not set strategy because it failed varification:\n\n'
+            msg += traceback.format_exc()
+            dlg = wx.MessageDialog(self.view.frame, msg, 
+                                   style=wx.OK|wx.ICON_EXCLAMATION)
+            dlg.ShowModal()
+            dlg.Destroy()
+            self.session.current_strategy = self.session.get_default_strategy()
 
     def _mark_trial(self, message):
         try:

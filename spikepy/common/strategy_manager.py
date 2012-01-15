@@ -158,47 +158,16 @@ class StrategyManager(object):
     def __init__(self, config_manager=None):
         self.config_manager = config_manager 
         self.strategies = SubstringDict() # strategies under management
-        self._current_strategy = None
 
     def __str__(self):
         return_str = ['Strategy Manager with strategies:']
         for strategy_name in sorted(self.strategies.keys()):
-            is_current = ''
-            if self.current_strategy.name == strategy_name:
-                is_current = ' (Currently Selected)'
-            return_str.append('    %s%s' % (strategy_name, is_current))
+            return_str.append('    %s' % strategy_name)
         return '\n'.join(return_str)
 
     @property
     def managed_strategy_names(self):
         return self.strategies.keys()
-
-    @property
-    def current_strategy(self):
-        '''Return the currently selected strategy.'''
-        return self._current_strategy
-
-    @current_strategy.setter
-    def current_strategy(self, value):
-        '''Set the current strategy with either a name or a Strategy object.'''
-        if isinstance(value, self._managed_class):
-            if value is not self.current_strategy:
-                try:
-                    strategy = self.get_strategy(value)
-                except MissingStrategyError:
-                    strategy = value
-                value.name = self.get_strategy_name(value)
-                self.set_current_strategy(value)
-        elif isinstance(value, str):
-            if self._get_strategy_by_name(value) is not self.current_strategy:
-                self.set_current_strategy(self._get_strategy_by_name(value))
-        else:
-            raise ArgumentTypeError('Current Strategy must be set with either a string or a Strategy object, not %s' % type(value))
-
-    @supports_callbacks
-    def set_current_strategy(self, strategy):
-        self._current_strategy = strategy
-        return strategy
 
     def load_all_strategies(self):
         '''
