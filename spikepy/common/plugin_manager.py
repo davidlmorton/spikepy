@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import types
 import imp
 import os
+import uuid
 from collections import defaultdict
 
 from spikepy.developer_tools.visualization import Visualization
@@ -73,7 +74,8 @@ def load_plugins_from_dir(plugin_dir):
             fullpath_e = os.path.join(plugin_dir, e)
             if should_load(fullpath_e):
                 module_name = os.path.splitext(e)[0]
-                unique_name = 'spikepy_plugin_%s' % (module_name)
+                unique_name = 'spikepy_plugin_%s' % \
+                        str(uuid.uuid4()).replace('-','_')
 
                 # load the module
                 fm_results = None
