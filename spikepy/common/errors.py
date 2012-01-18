@@ -15,6 +15,9 @@ class DataUnavailableError(SpikepyError):
 class NoClustersError(SpikepyError):
     pass
 
+class NoCurrentStrategyError(SpikepyError):
+    pass
+
 class NoTasksError(SpikepyError):
     pass
 

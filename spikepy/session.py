@@ -44,7 +44,8 @@ class Session(object):
                 app_name='spikepy')
         self.strategy_manager = StrategyManager(self.config_manager)
         self.strategy_manager.load_all_strategies()
-        self.strategy_manager.current_strategy = self._make_default_strategy()
+        self._current_strategy = None
+        self.current_strategy = self.get_default_strategy()
         self.process_manager  = ProcessManager(self.config_manager, 
                 self.trial_manager, self.plugin_manager)
 
@@ -166,12 +167,31 @@ class Session(object):
     @property
     def current_strategy(self):
         """The currently selected strategy."""
-        return self.strategy_manager.current_strategy
+        return self._current_strategy
 
     @current_strategy.setter
     def current_strategy(self, strategy_or_name):
-        """Make <strategy> the current strategy."""
-        self.strategy_manager.current_strategy = strategy_or_name
+        '''Set the current strategy with either a name or a Strategy object.'''
+        if isinstance(strategy_or_name, Strategy):
+            if strategy_or_name is not self.current_strategy:
+                try:
+                    strategy = self.strategy_manager.get_strategy(
+                            strategy_or_name)
+                except MissingStrategyError: # its okay if not under management
+                    strategy = strategy_or_name
+                strategy_or_name.name = self.strategy_manager.get_strategy_name(
+                        strategy_or_name)
+                self._set_current_strategy(strategy_or_name)
+        else:
+            strategy = self.strategy_manager.get_strategy(strategy_or_name)
+            if strategy is not self.current_strategy:
+                self._set_current_strategy(strategy)
+
+    @supports_callbacks
+    def _set_current_strategy(self, strategy):
+        self.plugin_manager.validate_strategy(strategy)
+        self._current_strategy = strategy
+        return strategy
 
     def save_current_strategy(self, strategy_name):
         """Save the current strategy, giving it the name <strategy_name>"""
@@ -207,6 +227,11 @@ class Session(object):
         '''
         if strategy is None:
             strategy = self.current_strategy 
+
+        # if still none, then abort run.
+        if strategy is None:
+            raise NoCurrentStrategyError("You must supply a strategy or set the session's current strategy.")
+            
         self.process_manager.prepare_to_run_strategy(strategy, 
                 stage_name=stage_name)
 
@@ -217,8 +242,7 @@ class Session(object):
         if not async:
             self._run_thread.join()
 
-    # PRIVATE FNS
-    def _make_default_strategy(self):
+    def get_default_strategy(self):
         methods_used = {'detection_filter':'Infinite Impulse Response',
                         'detection':'Voltage Threshold',
                         'extraction_filter':'Copy Detection Filtering',
@@ -264,6 +288,7 @@ class Session(object):
                 settings=settings, auxiliary_stages=auxiliary_stages)
         return default_strategy 
 
+    # PRIVATE FNS
     def _files_opened(self, results):
         # Called after process_manager opens a file
         trials = []

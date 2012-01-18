@@ -38,7 +38,8 @@ class StrategyPane(wx.Panel):
         self.strategy_chooser = NamedChoiceCtrl(self, name=pt.STRATEGY_NAME, 
                 background_color=wx.WHITE, 
                 selection_callback=self._strategy_chooser_updated)
-        self.strategy_chooser.SetItems(strategy_manager.managed_strategy_names)
+        choices = strategy_manager.managed_strategy_names 
+        self.strategy_chooser.SetItems(choices)
 
         self.strategy_summary = StrategySummary(self, plugin_manager) 
         self.plugin_manager = plugin_manager 
@@ -69,13 +70,11 @@ class StrategyPane(wx.Panel):
         self._setup_subscriptions()
         self._setup_bindings()
 
-        self._current_strategy_updated(
-                strategy=strategy_manager.current_strategy)
-
         # other initialization
         pub.sendMessage('STAGE_CHOSEN', data=stages.stages[0])
         self.strategy_summary.select_stage(stage_name=stages.stages[0], 
                                            results=True)
+        self._strategy_choice_made(selection=choices[0])
         self._set_run_buttons_state()
 
     def _setup_control_panels(self, plugin_manager):
@@ -201,15 +200,8 @@ class StrategyPane(wx.Panel):
             Called when a control_panel's value is changed and is valid.  Also
         called when the user changes the method of a stage.
         '''
-        cs = self.get_current_strategy()
-
-        if cs.name not in self.strategy_chooser.GetItems():
-            managed_names = self.strategy_manager.managed_strategy_names
-            all_names = managed_names + [cs.name]
-            self.strategy_chooser.SetItems(all_names)
-
-        self.strategy_manager.current_strategy = cs
-        self.strategy_chooser.SetStringSelection(cs.name)
+        strategy = self.get_current_strategy()
+        pub.sendMessage('SET_CURRENT_STRATEGY', data=strategy)
 
     def do_layout(self):
         self.control_panels_scroller.SetupScrolling()
@@ -284,18 +276,15 @@ class StrategyPane(wx.Panel):
 
     def _save_button_pressed(self, event=None):
         event.Skip()
-        cs = self.strategy_manager.current_strategy
+        cs = self.get_current_strategy()
         old_name = self.strategy_manager.get_strategy_name(cs)
         all_names = self.strategy_manager.managed_strategy_names
         dlg = SaveStrategyDialog(self, old_name, all_names)
         if dlg.ShowModal() == wx.ID_OK:
             new_name = dlg.get_strategy_name()
             self.strategy_manager.add_strategy(cs, name=new_name)
-            self.strategy_manager.current_strategy = \
-                    self.strategy_manager.get_strategy(new_name)
-            self.strategy_chooser.SetItems(all_names + [new_name])
-            self.strategy_chooser.selection = new_name
             self.strategy_manager.save_strategies()
+            pub.sendMessage('SET_CURRENT_STRATEGY', data=cs)
         dlg.Destroy()
 
     def _run_stage(self, event):
@@ -317,20 +306,22 @@ class StrategyPane(wx.Panel):
         status = (pt.CUSTOM_LC in new_value)
         self.save_button.Enable(status)
 
-    def _strategy_choice_made(self, event=None):
+    def _strategy_choice_made(self, event=None, selection=None):
         """
-            Called when the user chooses a new strategy from the chooser."""
+            Called when the user chooses a strategy from the chooser.
+        """
         if event is not None:
             event.Skip()
-        strategy_name = self.strategy_chooser.selection
+        if event is None and selection is not None:
+            strategy_name = selection
+            self.strategy_chooser.SetStringSelection(selection)
+        else:
+            strategy_name = self.strategy_chooser.selection
+
         if pt.CUSTOM_LC not in strategy_name.lower():
             strategy = self.strategy_manager.get_strategy(strategy_name)
-            self.strategy_manager.current_strategy = strategy
             self._push_strategy(strategy=strategy)
-            self.strategy_chooser.SetItems(
-                    self.strategy_manager.managed_strategy_names)
-            self.strategy_chooser.SetStringSelection(strategy_name)
-            self._strategy_chooser_updated(strategy_name)
+            pub.sendMessage('SET_CURRENT_STRATEGY', data=strategy)
 
 class StrategyStageChooser(wx.Panel):
     '''

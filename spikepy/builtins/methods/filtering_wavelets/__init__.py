@@ -15,7 +15,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pywt
-import numpy
 
 from spikepy.developer_tools.methods import FilteringMethod
 from spikepy.common.valid_types import ValidOption, ValidInteger
@@ -31,8 +30,10 @@ class FilteringWavelets(FilteringMethod):
 
     # method parameters
     wavelet = ValidOption(*pywt.wavelist(), default='db20')
-    min_level = ValidInteger(min=1, default=1, description="Effectively sets the low-pass cutoff frequency (sampling_freq/2**<Min Level>)")
-    max_level = ValidInteger(min=1, default=6, description="Effectively sets the high-pass cutoff frequency (sampling_freq/2**(<Max Level>+1))")
+    min_level = ValidInteger(min=1, default=1, 
+            description="Effectively sets the low-pass cutoff frequency (sampling_freq/2**<Min Level>)")
+    max_level = ValidInteger(min=1, default=6, 
+            description="Effectively sets the high-pass cutoff frequency (sampling_freq/2**(<Max Level>+1))")
 
     def run(self, signal, sampling_freq, wavelet='db20', 
             min_level=1, max_level=6):
