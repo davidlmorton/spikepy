@@ -15,6 +15,16 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+# PARSE COMMAND LINE ARGUMENTS
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description="Graphical interface for the spikepy spike-sorting package.")
+
+    parser.add_argument('-p', '--print_messages', dest='print_messages', 
+            action='store_true',
+            help='print out all pub/sub messages')
+    command_line_arguments = vars(parser.parse_args())
+    print_messages = command_line_arguments['print_messages']
 
 import wx
 from spikepy.gui.images import spikepy_splash_image as spi
@@ -33,7 +43,7 @@ if __name__ == '__main__':
     def startup():
         ''' Run after splash screen has loaded '''
         from spikepy.gui.controller import Controller
-        controller = Controller(session)
+        controller = Controller(session, print_messages=print_messages)
         wx.CallLater(1000, splash_screen.Destroy)
         wx.CallLater(2100, controller.warn_for_matplotlib_version)
 

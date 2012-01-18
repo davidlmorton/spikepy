@@ -33,20 +33,20 @@ from spikepy.gui.export_dialog import ExportDialog
 from spikepy.plotting_utils.import_matplotlib import matplotlib_version_too_low
 
 class Controller(object):
-    def __init__(self, session):
+    def __init__(self, session, print_messages=False):
         self.session = session
         self.view = View(self.session)
         self.results_notebook = self.view.frame.results_notebook
         self.results_panels = self.results_notebook.results_panels
 
-        self._selected_trial = None
+        self._selected_trial_id = None
 
         # save for locals in pyshell
         locals_dict['session'] = self.session
         locals_dict['results_panels'] = self.results_panels
         locals_dict['view'] = self.view
         locals_dict['controller'] = self
-        self._setup_subscriptions()
+        self._setup_subscriptions(print_messages)
 
         self.session.trial_manager.add_trials.add_callback(self._trials_added,
                 takes_target_results=True)
@@ -71,7 +71,7 @@ class Controller(object):
             dlg.ShowModal()
             dlg.Destroy()
 
-    def _setup_subscriptions(self):
+    def _setup_subscriptions(self, print_messages=False):
         pub.subscribe(self._open_open_file_dialog, 
                       topic="OPEN_OPEN_FILE_DIALOG")
         pub.subscribe(self._close_trial, topic='CLOSE_TRIAL')
@@ -92,6 +92,9 @@ class Controller(object):
         pub.subscribe(self._export_trials,  topic="EXPORT_TRIALS")
         pub.subscribe(self._run, topic="RUN_STRATEGY")
         pub.subscribe(self._run, topic="RUN_STAGE")
+
+        if print_messages:
+            pub.subscribe(self._print_messages, topic='')
 
     # UTILITY FNS
     def _plot_results(self, trial_id):
@@ -115,7 +118,8 @@ class Controller(object):
         pub.sendMessage(topic='TRIAL_RENAMED', data=trial)
 
     def _trial_closed(self, trial_id):
-        self._selected_trial = None
+        if self._selected_trial_id == trial_id:
+            self._selected_trial_id = None
         pub.sendMessage(topic='TRIAL_CLOSED', data=trial_id)
 
     def _trials_added(self, trials):
@@ -136,6 +140,9 @@ class Controller(object):
         pub.unsubscribe(self._print_messages) # unsubscribes from all
 
     # MESSAGE HANDLERS
+    def _print_messages(self, message):
+        line = '%s -- %s' % message.topic, message.data
+
     def _close_application(self, message):
         self.session.strategy_manager.save_strategies()
         pub.unsubAll()
@@ -231,7 +238,7 @@ class Controller(object):
         print topic, data
 
     def _results_notebook_page_changed(self, message):
-        self._plot_results(self._selected_trial)
+        self._plot_results(self._selected_trial_id)
 
     def _run(self, message):
         message_queue = multiprocessing.Queue()
@@ -250,7 +257,7 @@ class Controller(object):
         pub.sendMessage('UPDATE_STATUS', pt.STATUS_RUNNING)
         dlg.ShowModal()
         pub.sendMessage('UPDATE_STATUS', pt.STATUS_IDLE)
-        self._plot_results(self._selected_trial)
+        self._plot_results(self._selected_trial_id)
 
     def _save_session(self, message):
         save_path = message.data
@@ -259,13 +266,13 @@ class Controller(object):
         pub.sendMessage('UPDATE_STATUS', pt.STATUS_IDLE) 
 
     def _trial_selection_changed(self, message):
-        self._selected_trial = message.data
-        self._plot_results(self._selected_trial)
+        self._selected_trial_id = message.data
+        self._plot_results(self._selected_trial_id)
 
     def _visualization_panel_changed(self, message):
         visualization_control_panel = message.data
-        if self._selected_trial is not None:
-            trial = self.session.get_trial(self._selected_trial)
+        if self._selected_trial_id is not None:
+            trial = self.session.get_trial(self._selected_trial_id)
         else:
             trial = None
         pub.sendMessage('UPDATE_STATUS', pt.STATUS_PLOTTING) 
