@@ -74,7 +74,8 @@ class StrategyPane(wx.Panel):
         pub.sendMessage('STAGE_CHOSEN', data=stages.stages[0])
         self.strategy_summary.select_stage(stage_name=stages.stages[0], 
                                            results=True)
-        self._strategy_choice_made(selection=choices[0])
+        if choices:
+            self._strategy_choice_made(selection=choices[0])
         self._set_run_buttons_state()
 
     def _setup_control_panels(self, plugin_manager):

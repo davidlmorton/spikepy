@@ -148,7 +148,7 @@ Methods that subclasses are REQUIRED to implement:
         -- This method returns a wx.Panel object (or a subclass) that acts as 
            the control panel for the new method.  kwargs should be 
            passed to the wx.Panel constructor.
-    - run(features, feature_locations, ef_sampling_freq, **kwargs)
+    - run(features, feature_locations, **kwargs)
         -- This method returns the clustered results.  kwargs 
            are all the arguments to the new method's code.
     NOTE: Clustering is unique among stages in spikepy because it takes input
@@ -161,7 +161,7 @@ Methods that subclasses are REQUIRED to implement:
           if the provided features are from multiple trials or a single trial.
     '''
     pooling = True
-    requires = ['features', 'feature_times', 'ef_sampling_freq'] 
+    requires = ['features'] 
     provides = ['clusters']
     # clusters is a 1D numpy array of integers (cluster ids).
     #   clusters[k] == id of cluster to which the kth feature belongs.

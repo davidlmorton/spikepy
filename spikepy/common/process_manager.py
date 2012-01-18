@@ -18,6 +18,9 @@ import uuid
 import multiprocessing
 import traceback
 import time
+from collections import defaultdict
+
+import numpy
 
 try:
     from callbacks import supports_callbacks
@@ -390,6 +393,7 @@ class Task(object):
         self.plugin_kwargs = plugin_kwargs
         self.locking_keys = {}
         self._prepare_trials_for_task()
+        self.trial_packing_index = {}
 
     def __str__(self):
         str_list = ['Task: plugin="%s"' % self.plugin.name]
@@ -500,8 +504,11 @@ class Task(object):
     def complete(self, result):
         change_info = self.change_info
         for pname, presult in zip(self.plugin.provides, result):
-            if len(self.trials) == 1 and not self.plugin.pooling:
+            if self.plugin.pooling:
+                presult = self._unpack_pooled_resource(pname, presult)
+            elif len(self.trials) == 1:
                 presult = [presult]
+
             for trial, tresult in zip(self.trials, presult):
                 item = getattr(trial, pname)
                 key = self.locking_keys[item]
@@ -529,24 +536,64 @@ class Task(object):
         '''Return the data we require as arguments to run.'''
         arg_list = []
         for requirement_name in self.plugin.requires:
-            if not self.plugin.pooling:
-                trial = self.trials[0]
-                requirement = getattr(trial, requirement_name)
-                if isinstance(requirement, Resource):
-                    arg = requirement.data
-                else:
-                    arg = requirement
-                arg_list.append(arg)
+            if self.plugin.pooling:
+                arg_list.append(self._pack_pooled_resource(requirement_name))
             else:
-                args = []
-                for trial in self.trials:
-                    requirement = getattr(trial, requirement_name)
-                    if isinstance(requirement, Resource):
-                        arg = requirement.data
-                    else:
-                        arg = requirement
-                    args.append(arg)
-                arg_list.append(args)
+                trial = self.trials[0]
+                requirement = getattr(trial, requirement_name).data
+                arg_list.append(requirement)
         return arg_list
         
-    
+    def _pack_pooled_resource(self, resource_name): 
+        '''
+        Pack the resources from all of self.trials into a single numpy array.
+        '''
+        # count total length
+        ndim_set = set()
+        total_len = 0
+        for trial in self.trials:
+            resource = getattr(trial, resource_name).data
+            ndim = resource.ndim
+            ndim_set.add(ndim)
+            total_len += len(resource)
+        if len(ndim_set) != 1:
+            raise DimensionalityError('The dimensionality of the %s of different trials do not match.  Instead of all being a single dimensionality your trials have %s with dimensionality as follows.  %s' % 
+                (resource_name, resource_name, 
+                str(list(num_feature_dimensionalities))))
+
+        # figure out begin and end for later packing/unpacking.
+        begin = 0
+        end = 0
+        self.trial_packing_index = {}
+        for trial in self.trials:
+            resource = getattr(trial, resource_name).data
+            end = begin + len(resource)
+            self.trial_packing_index[trial.trial_id] = [begin, end]
+            begin = end
+
+        if ndim == 1:
+            pooled_resource = numpy.empty(total_len, dtype=resource.dtype)
+            for trial in self.trials:
+                resource = getattr(trial, resource_name).data
+                begin, end = self.trial_packing_index[trial.trial_id]
+                pooled_resource[begin:end] = resource
+        elif ndim == 2:
+            pooled_resource = numpy.empty((total_len, resource.shape[1]), 
+                    dtype=resource.dtype)
+            for trial in self.trials:
+                resource = getattr(trial, resource_name).data
+                begin, end = self.trial_packing_index[trial.trial_id]
+                pooled_resource[begin:end] = resource
+        else:
+            raise NotImplementedError(
+                    "I don't know what to do with %d dimensional data (%s)" % 
+                    (ndim, resource_name))
+        return pooled_resource
+            
+    def _unpack_pooled_resource(self, resource_name, pooled_resource):
+        results = []
+        for trial in self.trials:
+            begin, end = self.trial_packing_index[trial.trial_id]
+            results.append(pooled_resource[begin:end])
+        return results
+
