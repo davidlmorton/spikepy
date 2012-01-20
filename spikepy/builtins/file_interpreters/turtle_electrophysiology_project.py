@@ -1,4 +1,3 @@
-
 """
 Copyright (C) 2011  David Morton
 
@@ -27,13 +26,16 @@ SHANK_CHANNEL_INDEX = [9,   8, 10,  7, 13,  4, 12,  5,
 class TurtleElectrophysiologyProject(FileInterpreter):
     def __init__(self):
         self.name = 'Archived TEP file.'
-        self.extentions = ['.gz']
+        self.extentions = ['.gz', '.cPickle']
         # higher priority means will be used in ambiguous cases
         self.priority = 10 
         self.description = '''An archived Turtle Electrophysiology Project file.'''
 
     def read_data_file(self, fullpath):
-        infile = gzip.open(fullpath, 'rb')
+        if fullpath.endswith('.pgz'):
+            infile = gzip.open(fullpath, 'rb')
+        else:
+            infile = open(fullpath, 'rb)
         data = cPickle.load(infile)
         voltage_traces = data['voltage_traces']
         sampling_freq = data['sampling_freq']
