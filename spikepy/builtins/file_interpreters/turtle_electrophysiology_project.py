@@ -35,7 +35,7 @@ class TurtleElectrophysiologyProject(FileInterpreter):
         if fullpath.endswith('.pgz'):
             infile = gzip.open(fullpath, 'rb')
         else:
-            infile = open(fullpath, 'rb)
+            infile = open(fullpath, 'rb')
         data = cPickle.load(infile)
         voltage_traces = data['voltage_traces']
         sampling_freq = data['sampling_freq']
