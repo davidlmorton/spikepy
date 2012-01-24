@@ -32,7 +32,7 @@ class TurtleElectrophysiologyProject(FileInterpreter):
         self.description = '''An archived Turtle Electrophysiology Project file.'''
 
     def read_data_file(self, fullpath):
-        if fullpath.endswith('.pgz'):
+        if fullpath.endswith('.gz'):
             infile = gzip.open(fullpath, 'rb')
         else:
             infile = open(fullpath, 'rb')
