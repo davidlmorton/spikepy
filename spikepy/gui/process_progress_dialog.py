@@ -141,7 +141,7 @@ class ProcessProgressDialog(wx.Dialog):
 
         progress = int((self._num_tasks_competed/
                 float(self._num_tasks))*100.0)
-        if progress == 100:
+        if progress >= 100:
             if self._just_once:
                 self._just_once = False
                 self.close_button.Enable()

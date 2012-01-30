@@ -29,16 +29,18 @@ def generate_spike_windows(signal, sampling_freq, event_times,
     collapsed_event_times = collapse_event_times(event_times, 
             min_num_channels, peak_drift/1000.0)
 
-    if len(collapsed_event_times) == 0:
-        return [numpy.empty((0, 0)),[],
-                numpy.empty((0, 0)),[]]
-
     pre_padding_percent = pre_padding/float(pre_padding+post_padding)
     # from sampling frequency (in Hz) and pre/post_padding (in ms) determine
     #     window_size (in samples)
     window_duration = (pre_padding + post_padding) / 1000.0 # now in secs
     # +1 to account for the sample itself.
     window_size = int(window_duration * sampling_freq) + 1 
+
+    if len(collapsed_event_times) == 0:
+        # need to return something compatible in shape with what would have
+        # been returned if there were event_times.
+        return [numpy.empty((0, window_size)),numpy.empty(0),
+                numpy.empty((0, window_size)),numpy.empty(0)]
 
     spike_index_list = numpy.array(collapsed_event_times, 
             dtype=numpy.float64)*sampling_freq

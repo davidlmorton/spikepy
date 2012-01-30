@@ -437,8 +437,11 @@ class Task(object):
                     arg_info = []
                     for trial in self.trials:
                         arg = getattr(trial, arg_name)
-                        arg_info.append((trial.trial_id, arg_name, 
-                                arg.change_info['change_id']))
+                        using_info = {'trial_id':trial.trial_id,
+                                'resource_name':arg_name,
+                                'resource_change_id':
+                                    arg.change_info['change_id']}
+                        arg_info.append(using_info)
 
                     if arg_info not in using:
                         return True
