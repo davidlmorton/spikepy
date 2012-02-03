@@ -63,18 +63,22 @@ class SpikepyMethod(object):
 
 class FilteringMethod(SpikepyMethod):
     '''
-    This class should be subclassed in order for developers to add a new 
-filtering method to spikepy.
-    There is no need to instantiate (create an object from) the subclass, 
-spikepy will handle that internally.  Therefore it is important to have 
-an __init__ method which requires no arguments (asside from 'self' of course).
+        This class should be subclassed in order for developers to add a new 
+    filtering method to spikepy.
+        There is no need to instantiate (create an object from) the subclass, 
+    spikepy will handle that internally.  Therefore it is important to have 
+    an __init__ method which requires no arguments (aside from 'self' of course).
 
-Methods that subclasses are REQUIRED to implement:
-    - run(raw_traces, sampling_freq, **kwargs)
-        -- This method returns the filtered results and the new sampling_freq.
-           It should return a list of filtered signals and the sampling_freq 
-           of the new signals.  kwargs are all the arguments to the filtering 
-           code.
+    Method that subclasses are REQUIRED to implement:
+        - run(*args, **kwargs)
+            -- This method returns the method's result.  *args is built by
+               spikepy based on the <_requires> class-variable defined below or
+               in subclasses.  **kwargs are any additional arguments you wish to
+               pass in.
+            -- The <_provides> class-variable tells spikepy where to store the
+               results in the trial object.  Spikepy will create a resource for
+               storing the result if the name(s) provided do not already correspond
+               to resources that already exist.
     '''
     requires = ['pf_traces', 'pf_sampling_freq']
     provides = ['<stage_name>_traces', '<stage_name>_sampling_freq'] 
@@ -85,20 +89,22 @@ Methods that subclasses are REQUIRED to implement:
 
 class DetectionMethod(SpikepyMethod):
     '''
-    This class should be subclassed in order for developers to add a new 
-spike detection method to spikepy.
-    There is no need to instantiate (create an object from) the subclass, 
-spikepy will handle that internally.  Therefore it is important to have 
-an __init__ method which requires no arguments (asside from 'self' of course).
+        This class should be subclassed in order for developers to add a new 
+    spike detection method to spikepy.
+        There is no need to instantiate (create an object from) the subclass, 
+    spikepy will handle that internally.  Therefore it is important to have 
+    an __init__ method which requires no arguments (asside from 'self' of course).
 
-Methods that subclasses are REQUIRED to implement:
-    - make_control_panel(parent, **kwargs)
-        -- This method returns a wx.Panel object (or a subclass) that acts as 
-           the control panel for the new method.  kwargs should be 
-           passed to the wx.Panel constructor.
-    - run(signal_list, sampling_freq, **kwargs)
-        -- This method returns the list of spike locations (index of spike).  
-           kwargs are all the arguments to the new method's code.
+    Method that subclasses are REQUIRED to implement:
+        - run(*args, **kwargs)
+            -- This method returns the method's result.  *args is built by
+               spikepy based on the <_requires> class-variable defined below or
+               in subclasses.  **kwargs are any additional arguments you wish to
+               pass in.
+            -- The <_provides> class-variable tells spikepy where to store the
+               results in the trial object.  Spikepy will create a resource for
+               storing the result if the name(s) provided do not already correspond
+               to resources that already exist.
     '''
     requires = ['df_traces', 'df_sampling_freq']
     provides = ['event_times']
@@ -110,20 +116,22 @@ Methods that subclasses are REQUIRED to implement:
 
 class ExtractionMethod(SpikepyMethod):
     '''
-    This class should be subclassed in order for developers to add a new 
-feature-extraction method to spikepy.
-    There is no need to instantiate (create an object from) the subclass, 
-spikepy will handle that internally.  Therefore it is important to have 
-an __init__ method which requires no arguments (asside from 'self' of course).
+        This class should be subclassed in order for developers to add a new 
+    feature-extraction method to spikepy.
+        There is no need to instantiate (create an object from) the subclass, 
+    spikepy will handle that internally.  Therefore it is important to have 
+    an __init__ method which requires no arguments (asside from 'self' of course).
 
-Methods that subclasses are REQUIRED to implement:
-    - make_control_panel(parent, **kwargs)
-        -- This method returns a wx.Panel object (or a subclass) that acts as 
-           the control panel for the new method.  kwargs should be 
-           passed to the wx.Panel constructor.
-    - run(signal_list, sampling_freq, events, **kwargs)
-        -- This method returns the features.  kwargs are all the arguments
-           to the feature-extraction code.
+    Method that subclasses are REQUIRED to implement:
+        - run(*args, **kwargs)
+            -- This method returns the method's result.  *args is built by
+               spikepy based on the <_requires> class-variable defined below or
+               in subclasses.  **kwargs are any additional arguments you wish to
+               pass in.
+            -- The <_provides> class-variable tells spikepy where to store the
+               results in the trial object.  Spikepy will create a resource for
+               storing the result if the name(s) provided do not already correspond
+               to resources that already exist.
     '''
     requires = ['ef_traces', 'ef_sampling_freq', 'event_times']
     provides = ['features', 'feature_times']
@@ -137,57 +145,59 @@ Methods that subclasses are REQUIRED to implement:
 
 class ClusteringMethod(SpikepyMethod):
     '''
-    This class should be subclassed in order for developers to add a new 
-clustering method to spikepy.
-    There is no need to instantiate (create an object from) the subclass, 
-spikepy will handle that internally.  Therefore it is important to have 
-an __init__ method which requires no arguments (asside from 'self' of course).
+        This class should be subclassed in order for developers to add a new 
+    clustering method to spikepy.
+        There is no need to instantiate (create an object from) the subclass, 
+    spikepy will handle that internally.  Therefore it is important to have 
+    an __init__ method which requires no arguments (asside from 'self' of course).
 
-Methods that subclasses are REQUIRED to implement:
-    - make_control_panel(parent, **kwargs)
-        -- This method returns a wx.Panel object (or a subclass) that acts as 
-           the control panel for the new method.  kwargs should be 
-           passed to the wx.Panel constructor.
-    - run(features, feature_locations, **kwargs)
-        -- This method returns the clustered results.  kwargs 
-           are all the arguments to the new method's code.
     NOTE: Clustering is unique among stages in spikepy because it takes input
           from multiple trials.  This is so that you can cluster using 
           data from multiple trials together.  Spikepy automatically compiles
-          features from multiple trials into a list before calling a
+          features from multiple trials into a single array before calling a
           clustering method.  Spikepy also automatically parses out results
           to the appropriate trials when clustering methods return.  What this
           means is that the clustering-method author need not worry about
           if the provided features are from multiple trials or a single trial.
+
+    Method that subclasses are REQUIRED to implement:
+            -- This method returns the method's result.  *args is built by
+               spikepy based on the <_requires> class-variable defined below or
+               in subclasses.  **kwargs are any additional arguments you wish to
+               pass in.
+            -- The <_provides> class-variable tells spikepy where to store the
+               results in the trial object.  Spikepy will create a resource for
+               storing the result if the name(s) provided do not already correspond
+               to resources that already exist.
     '''
     pooling = True
     requires = ['features'] 
     provides = ['clusters']
     # clusters is a 1D numpy array of integers (cluster ids).
     #   clusters[k] == id of cluster to which the kth feature belongs.
-    # NOTE: while you cannot leave features 'unclustered', you may simply
+    # NOTE: while you cannot leave features 'unclustered', just simply
     #       place all 'unclustered' features in a cluster with id=-1.
 
 
 class AuxiliaryMethod(SpikepyMethod):
     '''
-    This class should be subclassed in order for developers to add a new 
-auxiliary method to spikepy.  For example, a method to calculate the
-principal components of a set of features, or the L factor of a cluster set.
-    There is no need to instantiate (create an object from) the subclass, 
-spikepy will handle that internally.  Therefore it is important to have 
-an __init__ method which requires no arguments (asside from 'self' of course).
+        This class should be subclassed in order for developers to add a new 
+    auxiliary method to spikepy.  For example, a method to calculate the
+    principal components of a set of features, or the L factor of a cluster set.
+        There is no need to instantiate (create an object from) the subclass, 
+    spikepy will handle that internally.  Therefore it is important to have 
+    an __init__ method which requires no arguments (asside from 'self' of course).
 
-Method that subclasses are REQUIRED to implement:
-    - run(*args, **kwargs)
-        -- This method returns the auxiliary result.  *args is built by
-           spikepy based on the <_requires> class-variable defined below or
-           in subclasses.  **kwargs are any additional arguments you wish to
-           pass in.
-        -- The <_provides> class-variable tells spikepy where to store the
-           results in the trial object.  Spikepy will create a resource for
-           storing the result if the name(s) provided do not already correspond
-           to resources previously defined.
+    Method that subclasses are REQUIRED to implement:
+        - run(*args, **kwargs)
+            -- This method returns the method's result.  *args is built by
+               spikepy based on the <_requires> class-variable defined below or
+               in subclasses.  **kwargs are any additional arguments you wish to
+               pass in.
+            -- The <_provides> class-variable tells spikepy where to store the
+               results in the trial object.  Spikepy will create a resource for
+               storing the result if the name(s) provided do not already correspond
+               to resources that already exist.
     '''
     group = None
     runs_with_stage = 'auxiliary'
