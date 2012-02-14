@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from spikepy.developer_tools.methods import ExtractionMethod
+from spikepy.developer.methods import ExtractionMethod
 from spikepy.common.valid_types import ValidFloat, ValidBoolean, ValidInteger
 from spikepy.utils.generate_spike_windows import generate_spike_windows
 

@@ -19,7 +19,7 @@ import cPickle
 
 import scipy
 
-from spikepy.developer_tools.data_interpreter import DataInterpreter 
+from spikepy.developer.data_interpreter import DataInterpreter 
 from spikepy.common.valid_types import ValidOption
 
 class DetectionInterpreter(DataInterpreter):

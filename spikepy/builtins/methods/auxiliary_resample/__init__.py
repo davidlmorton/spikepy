@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from spikepy.developer_tools.methods import AuxiliaryMethod
+from spikepy.developer.methods import AuxiliaryMethod
 from spikepy.common.valid_types import ValidInteger
 from spikepy.utils.resample import resample
 

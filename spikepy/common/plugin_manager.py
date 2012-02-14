@@ -21,10 +21,10 @@ import os
 import uuid
 from collections import defaultdict
 
-from spikepy.developer_tools.visualization import Visualization
-from spikepy.developer_tools.file_interpreter import FileInterpreter
-from spikepy.developer_tools.data_interpreter import DataInterpreter
-from spikepy.developer_tools.methods import FilteringMethod, \
+from spikepy.developer.visualization import Visualization
+from spikepy.developer.file_interpreter import FileInterpreter
+from spikepy.developer.data_interpreter import DataInterpreter
+from spikepy.developer.methods import FilteringMethod, \
         DetectionMethod, ExtractionMethod, \
         ClusteringMethod, AuxiliaryMethod
 

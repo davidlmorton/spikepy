@@ -18,7 +18,7 @@ import os
 
 from scipy.io import loadmat
 
-from spikepy.developer_tools.file_interpreter import FileInterpreter, Trial
+from spikepy.developer.file_interpreter import FileInterpreter, Trial
 
 class GenericMatlab(FileInterpreter):
     def __init__(self):
