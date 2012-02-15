@@ -53,7 +53,24 @@ class Visualization(SpikepyPlugin):
         '''
         raise NotImplementedError
 
+    @property
+    def pylab(self):
+        if hasattr(self, '_pylab'):
+            return self._pylab
+        else:
+            import pylab
+            self._pylab = pylab
+            return pylab
+
+    @pylab.setter
+    def pylab(self, value):
+        self._pylab = value
+
     def _get_unmet_requirements(self, trial):
+        '''
+            Return a list of the resource names that this visualization
+        requirs but the given trial does not have available.
+        '''
         unmet_requirements = []
         for req_name in self.requires:
             if (hasattr(trial, req_name) and 
@@ -64,13 +81,15 @@ class Visualization(SpikepyPlugin):
         return unmet_requirements
 
     def _handle_unmet_requirements(self, parent_panel, unmet_requirements):
+        '''
+            Print onto the figure the list of unmet requirements.
+        '''
         if parent_panel is not None:
             figure = parent_panel.plot_panel.figure
             figure.clear()
         else:
-            import pylab
             figsize = config.get_size('figure')
-            figure = pylab.figure(figsize=figsize)
+            figure = self.pylab.figure(figsize=figsize)
             figure.canvas.set_window_title(self.name)
 
         msg = pt.CANNOT_CREATE_VISUALIZATION % \
@@ -81,9 +100,13 @@ class Visualization(SpikepyPlugin):
         if parent_panel is not None:
             figure.canvas.draw()
         else:
-            pylab.show()
+            self.pylab.show()
 
     def _handle_cannot_plot(self, parent_panel):
+        '''
+            Print onto the figure a message stating that the visualization
+        couldn't be completed
+        '''
         figure = parent_panel.plot_panel.figure
         figure.clear()
 
@@ -94,13 +117,16 @@ class Visualization(SpikepyPlugin):
         figure.canvas.draw()
 
     def _handle_no_trial_passed(self, parent_panel):
+        '''
+            Print onto the figure a message stating that the visualization
+        couldn't be completed because no trial was passed in.
+        '''
         if parent_panel is not None:
             figure = parent_panel.plot_panel.figure
             figure.clear()
         else:
-            import pylab
             figsize = config.get_size('figure')
-            figure = pylab.figure(figsize=figsize)
+            figure = self.pylab.figure(figsize=figsize)
             figure.canvas.set_window_title(self.name)
 
         msg = pt.NO_TRIAL_SELECTED 
@@ -110,9 +136,12 @@ class Visualization(SpikepyPlugin):
         if parent_panel is not None:
             figure.canvas.draw()
         else:
-            pylab.show()
+            self.pylab.show()
 
     def draw(self, trial=None, parent_panel=None, **kwargs):
+        '''
+            Draw the visualization using the user-defined self._plot fn.
+        '''
         if trial is None:
             self._handle_no_trial_passed(parent_panel)
             return
@@ -145,12 +174,11 @@ class Visualization(SpikepyPlugin):
                         exc_info[2], 100)
                 self._handle_cannot_plot(parent_panel)
         else:
-            import pylab
             figsize = config.get_size('figure')
-            figure = pylab.figure(figsize=figsize)
+            figure = self.pylab.figure(figsize=figsize)
             figure.canvas.set_window_title(self.name)
             self._plot(trial, figure, **kwargs)
-            pylab.show()
+            self.pylab.show()
             # reset change_ids so the visualization is forced to plot again
             #  next time.
             for resource_name in self.requires:

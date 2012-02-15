@@ -18,7 +18,6 @@ import copy
 import os
 
 import wx
-from wx.lib.pubsub import Publisher as pub
 import numpy
 import configobj
 from validate import Validator
@@ -78,7 +77,6 @@ class ConfigManager(object):
         self._current = configobj.ConfigObj()
         self._status_markers = None
         self._results_frame_size = numpy.array([800, 600])
-        pub.subscribe(self._set_results_frame_size, "SET_RESULTS_FRAME_SIZE")
         self.load_configs(app_name='spikepy')
 
     def load_configs(self, **kwargs):

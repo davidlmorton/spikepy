@@ -27,12 +27,11 @@ class SpikepyMethod(SpikepyPlugin):
     # with the same inputs)?
     is_stochastic = False
 
-    #     What resources or attributes (of Trial objects) does this method need 
-    # in order to run?
+    #     What resources does this method need in order to run?
     requires = []
     provides = [] 
 
-    def run(*args, **kwargs):
+    def run(self, *args, **kwargs):
         raise NotImplementedError 
 
 
@@ -86,9 +85,9 @@ class DetectionMethod(SpikepyMethod):
     requires = ['df_traces', 'df_sampling_freq']
     provides = ['event_times']
     # event_times is a list of "list of indexes" where 
-    #    len(events) == num_channels
-    #    len(events[i]) == number of events on the ith channel
-    #    events[i][j] == index of jth event on the ith channel
+    #    len(event_times) == num_channels
+    #    len(event_times[i]) == number of events on the ith channel
+    #    event_times[i][j] == time of jth event on the ith channel
 
 
 class ExtractionMethod(SpikepyMethod):
@@ -179,7 +178,12 @@ class AuxiliaryMethod(SpikepyMethod):
                storing the result if the name(s) provided do not already 
                correspond to resources that already exist.
     '''
-    group = None
+    #     Control Panel for this method will be grouped with the following
+    # stage.  Also, this method will run with the given stage if the user 
+    # chooses to run a single stage instead of a complete strategy (Assuming 
+    # this method is part of the current strategy).  Must be one of 
+    # 'detection_filter', 'detection', 'extraction_filter', 'extraction', 
+    # 'clustering', or 'auxiliary'.
     runs_with_stage = 'auxiliary'
 
             
