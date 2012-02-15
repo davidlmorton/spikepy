@@ -20,18 +20,23 @@ import sys
 from spikepy.common.config_manager import config_manager as config
 from spikepy.common import program_text as pt
 from spikepy.common.valid_types import ValidType
+from spikepy.developer.spikepy_plugin import SpikepyPlugin
 
-class Visualization(object):
+class Visualization(SpikepyPlugin):
     """
-    This class should be subclassed in order for developers to add a new
-visualization to spikepy (non-interactive plots and graphs and such).
-There is no need ot instantiate (create an object from) the subclass,
-spikepy will handle that internally.  Therefore it is important to have an
-__init__ method that requires no arguments.
+        This class should be subclassed in order for developers to add a new
+    visualization to spikepy (non-interactive plots and graphs and such).
+    There is no need ot instantiate (create an object from) the subclass,
+    spikepy will handle that internally.  Therefore it is important to have an
+    __init__ method that requires no arguments.
     """
+    # The name of the visualization
     name = ''
+
+    # The resources that this visualization requires to generate results.
     requires = []
-    # one of 'detection_filter', 'detection', 'extraction_filter',
+
+    # One of 'detection_filter', 'detection', 'extraction_filter',
     #        'extraction', 'clustering', or 'summary' **only used with gui**
     found_under_tab = 'detection_filter'
 
@@ -150,30 +155,3 @@ __init__ method that requires no arguments.
             #  next time.
             for resource_name in self.requires:
                 self._change_ids[resource_name] = None 
-
-    def get_parameter_attributes(self):
-        ''' Return a dictionary of ValidType attributes. '''
-        attrs = {}
-        attribute_names = dir(self)
-        for name in attribute_names:
-            value = getattr(self, name)
-            if isinstance(value, ValidType):
-                attrs[name] = value
-        return attrs
-    
-    def get_parameter_defaults(self):
-        ''' Return a dictionary containing the default parameter values.  '''
-        kwargs = {}
-        for attr_name, attr in self.get_parameter_attributes().items():
-            kwargs[attr_name] = attr()
-        return kwargs
-
-    def validate_parameters(self, parameter_dict):
-        '''
-            Attempts to validate parameters in a dictionary.  If parameters are 
-        invalid an exception is raised.  If parameters are valid, None is 
-        returned.
-        '''
-        for key, value in parameter_dict.items():
-            getattr(self, key)(value)
-        

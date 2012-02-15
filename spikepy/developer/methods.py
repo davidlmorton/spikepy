@@ -15,8 +15,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from spikepy.common.valid_types import ValidType
+from spikepy.developer.spikepy_plugin import SpikepyPlugin
 
-class SpikepyMethod(object):
+class SpikepyMethod(SpikepyPlugin):
     #     If True, this method will pool all the inputs from multiple trials
     # and run on the pooled data, otherwise, the method is run on each trial
     # separately. (i.e. clustering_method has pooling=True by default)
@@ -26,39 +27,13 @@ class SpikepyMethod(object):
     # with the same inputs)?
     is_stochastic = False
 
-    # what resources or attributes (of Trial objects) does this method need 
+    #     What resources or attributes (of Trial objects) does this method need 
     # in order to run?
     requires = []
     provides = [] 
 
     def run(*args, **kwargs):
         raise NotImplementedError 
-
-    def get_parameter_attributes(self):
-        ''' Return a dictionary of ValidType attributes. '''
-        attrs = {}
-        attribute_names = dir(self)
-        for name in attribute_names:
-            value = getattr(self, name)
-            if isinstance(value, ValidType):
-                attrs[name] = value
-        return attrs
-    
-    def get_parameter_defaults(self):
-        ''' Return a dictionary containing the default parameter values.  '''
-        kwargs = {}
-        for attr_name, attr in self.get_parameter_attributes().items():
-            kwargs[attr_name] = attr()
-        return kwargs
-
-    def validate_parameters(self, parameter_dict):
-        '''
-            Attempts to validate parameters in a dictionary.  If parameters are 
-        invalid an exception is raised.  If parameters are valid, None is 
-        returned.
-        '''
-        for key, value in parameter_dict.items():
-            getattr(self, key)(value)
 
 
 class FilteringMethod(SpikepyMethod):
@@ -67,7 +42,8 @@ class FilteringMethod(SpikepyMethod):
     filtering method to spikepy.
         There is no need to instantiate (create an object from) the subclass, 
     spikepy will handle that internally.  Therefore it is important to have 
-    an __init__ method which requires no arguments (aside from 'self' of course).
+    an __init__ method which requires no arguments (aside from 'self' 
+    of course).
 
     Method that subclasses are REQUIRED to implement:
         - run(*args, **kwargs)
@@ -77,8 +53,8 @@ class FilteringMethod(SpikepyMethod):
                pass in.
             -- The <_provides> class-variable tells spikepy where to store the
                results in the trial object.  Spikepy will create a resource for
-               storing the result if the name(s) provided do not already correspond
-               to resources that already exist.
+               storing the result if the name(s) provided do not already 
+               correspond to resources that already exist.
     '''
     requires = ['pf_traces', 'pf_sampling_freq']
     provides = ['<stage_name>_traces', '<stage_name>_sampling_freq'] 
@@ -93,7 +69,8 @@ class DetectionMethod(SpikepyMethod):
     spike detection method to spikepy.
         There is no need to instantiate (create an object from) the subclass, 
     spikepy will handle that internally.  Therefore it is important to have 
-    an __init__ method which requires no arguments (asside from 'self' of course).
+    an __init__ method which requires no arguments (asside from 'self' 
+    of course).
 
     Method that subclasses are REQUIRED to implement:
         - run(*args, **kwargs)
@@ -103,8 +80,8 @@ class DetectionMethod(SpikepyMethod):
                pass in.
             -- The <_provides> class-variable tells spikepy where to store the
                results in the trial object.  Spikepy will create a resource for
-               storing the result if the name(s) provided do not already correspond
-               to resources that already exist.
+               storing the result if the name(s) provided do not already 
+               correspond to resources that already exist.
     '''
     requires = ['df_traces', 'df_sampling_freq']
     provides = ['event_times']
@@ -120,7 +97,8 @@ class ExtractionMethod(SpikepyMethod):
     feature-extraction method to spikepy.
         There is no need to instantiate (create an object from) the subclass, 
     spikepy will handle that internally.  Therefore it is important to have 
-    an __init__ method which requires no arguments (asside from 'self' of course).
+    an __init__ method which requires no arguments (asside from 'self' 
+    of course).
 
     Method that subclasses are REQUIRED to implement:
         - run(*args, **kwargs)
@@ -130,8 +108,8 @@ class ExtractionMethod(SpikepyMethod):
                pass in.
             -- The <_provides> class-variable tells spikepy where to store the
                results in the trial object.  Spikepy will create a resource for
-               storing the result if the name(s) provided do not already correspond
-               to resources that already exist.
+               storing the result if the name(s) provided do not already 
+               correspond to resources that already exist.
     '''
     requires = ['ef_traces', 'ef_sampling_freq', 'event_times']
     provides = ['features', 'feature_times']
@@ -149,7 +127,8 @@ class ClusteringMethod(SpikepyMethod):
     clustering method to spikepy.
         There is no need to instantiate (create an object from) the subclass, 
     spikepy will handle that internally.  Therefore it is important to have 
-    an __init__ method which requires no arguments (asside from 'self' of course).
+    an __init__ method which requires no arguments (asside from 'self' 
+    of course).
 
     NOTE: Clustering is unique among stages in spikepy because it takes input
           from multiple trials.  This is so that you can cluster using 
@@ -167,8 +146,8 @@ class ClusteringMethod(SpikepyMethod):
                pass in.
             -- The <_provides> class-variable tells spikepy where to store the
                results in the trial object.  Spikepy will create a resource for
-               storing the result if the name(s) provided do not already correspond
-               to resources that already exist.
+               storing the result if the name(s) provided do not already 
+               correspond to resources that already exist.
     '''
     pooling = True
     requires = ['features'] 
@@ -186,7 +165,8 @@ class AuxiliaryMethod(SpikepyMethod):
     principal components of a set of features, or the L factor of a cluster set.
         There is no need to instantiate (create an object from) the subclass, 
     spikepy will handle that internally.  Therefore it is important to have 
-    an __init__ method which requires no arguments (asside from 'self' of course).
+    an __init__ method which requires no arguments (asside from 'self' 
+    of course).
 
     Method that subclasses are REQUIRED to implement:
         - run(*args, **kwargs)
@@ -196,12 +176,10 @@ class AuxiliaryMethod(SpikepyMethod):
                pass in.
             -- The <_provides> class-variable tells spikepy where to store the
                results in the trial object.  Spikepy will create a resource for
-               storing the result if the name(s) provided do not already correspond
-               to resources that already exist.
+               storing the result if the name(s) provided do not already 
+               correspond to resources that already exist.
     '''
     group = None
     runs_with_stage = 'auxiliary'
-
-
 
             
