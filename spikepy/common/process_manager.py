@@ -507,10 +507,10 @@ class Task(object):
     def complete(self, result):
         change_info = self.change_info
         for pname, presult in zip(self.plugin.provides, result):
-            if self.plugin.pooling:
+            if self.plugin.unpooling:
                 presult = self._unpack_pooled_resource(pname, presult)
-            elif len(self.trials) == 1:
-                presult = [presult]
+            else:
+                presult = [presult for t in self.trials]
 
             for trial, tresult in zip(self.trials, presult):
                 item = getattr(trial, pname)

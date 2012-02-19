@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import traceback
 import sys
 
+import numpy
+
 from spikepy.common.config_manager import config_manager as config
 from spikepy.common import program_text as pt
 from spikepy.common.valid_types import ValidType
@@ -53,6 +55,12 @@ class Visualization(SpikepyPlugin):
         '''
         raise NotImplementedError
 
+    def _get_figure_size(self, trial):
+        width = config['gui']['plotting']['plot_width_inches']
+        height = config['gui']['plotting']['plot_height_inches']
+        size = numpy.array([width, height])
+        return size
+
     @property
     def pylab(self):
         if hasattr(self, '_pylab'):
@@ -86,10 +94,14 @@ class Visualization(SpikepyPlugin):
         '''
         if parent_panel is not None:
             figure = parent_panel.plot_panel.figure
+            figure.set_facecolor('white')
+            figure.set_edgecolor('black')
             figure.clear()
         else:
             figsize = config.get_size('figure')
             figure = self.pylab.figure(figsize=figsize)
+            figure.set_facecolor('white')
+            figure.set_edgecolor('black')
             figure.canvas.set_window_title(self.name)
 
         msg = pt.CANNOT_CREATE_VISUALIZATION % \
@@ -108,6 +120,8 @@ class Visualization(SpikepyPlugin):
         couldn't be completed
         '''
         figure = parent_panel.plot_panel.figure
+        figure.set_facecolor('white')
+        figure.set_edgecolor('black')
         figure.clear()
 
         msg = pt.CANNOT_COMPLETE_VISUALIZATION
@@ -123,10 +137,14 @@ class Visualization(SpikepyPlugin):
         '''
         if parent_panel is not None:
             figure = parent_panel.plot_panel.figure
+            figure.set_facecolor('white')
+            figure.set_edgecolor('black')
             figure.clear()
         else:
             figsize = config.get_size('figure')
             figure = self.pylab.figure(figsize=figsize)
+            figure.set_facecolor('white')
+            figure.set_edgecolor('black')
             figure.canvas.set_window_title(self.name)
 
         msg = pt.NO_TRIAL_SELECTED 
@@ -152,6 +170,7 @@ class Visualization(SpikepyPlugin):
             return
 
         # are we running within the gui?
+        fig_size = self._get_figure_size(trial)
         if parent_panel is not None:
             if trial.trial_id == self._last_drawn_trial_id:
                 preserve_history = True
@@ -160,6 +179,10 @@ class Visualization(SpikepyPlugin):
                 self._last_drawn_trial_id = trial.trial_id
                 preserve_history = False
 
+            parent_panel.plot_panel.set_minsize(*fig_size)
+            parent_panel.plot_panel.figure.set_figwidth(fig_size[0])
+            parent_panel.plot_panel.figure.set_figheight(fig_size[1])
+            parent_panel.Layout()
             parent_panel.plot_panel.clear()
             try:
                 self._plot(trial, parent_panel.plot_panel.figure, **kwargs)
@@ -174,8 +197,10 @@ class Visualization(SpikepyPlugin):
                         exc_info[2], 100)
                 self._handle_cannot_plot(parent_panel)
         else:
-            figsize = config.get_size('figure')
+            parent_panel.plot_panel.set_minsize(*fig_size)
             figure = self.pylab.figure(figsize=figsize)
+            figure.set_figwidth(fig_size[0])
+            figure.set_figheight(fig_size[1])
             figure.canvas.set_window_title(self.name)
             self._plot(trial, figure, **kwargs)
             self.pylab.show()

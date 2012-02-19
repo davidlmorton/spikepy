@@ -253,6 +253,12 @@ class VisualizationControlPanel(OptionalControlPanel):
             pub.sendMessage(topic='VISUALIZATION_PANEL_CHANGED', data=self)
 
     def _something_changed(self, new_value):
+        if not hasattr(self, '_waiting'):
+            self._waiting = True
+            wx.CallLater(300, self._done_waiting)
+
+    def _done_waiting(self):
+        del self._waiting
         pub.sendMessage(topic='VISUALIZATION_PANEL_CHANGED', data=self)
 
     def plot(self, trial):

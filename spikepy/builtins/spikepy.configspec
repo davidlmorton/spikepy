@@ -14,8 +14,12 @@
         marked_status=integer(default=None)
         unmarked_status=integer(default=None)
         column_width_compensation=integer(default=None)
+    [[general]]
+        save_session_as_gzip=boolean(default=None)
     [[plotting]]
         dpi=float(min=10, max=150, default=None)
+        plot_width_inches=float(min=0.01, max=10000, default=None)
+        plot_height_inches=float(min=0.01, max=10000, default=None)
         [[[colors]]]
             red=float_list(min=3, max=4, default=None)
             blue=float_list(min=3, max=4, default=None)

@@ -111,12 +111,8 @@ class ConfigManager(object):
             size_ratio = self['gui']['menu_bar']['pyshell_size_ratio']
             return self.get_size('main_frame')*size_ratio
         elif name == 'figure':
-            rfs = copy.copy(self.results_frame_size)
-            rfs[0] -= 100 # compensate for scroll bar
-            rfs[1] -= 60 # compensate for tabs.
-            base = rfs/self['gui']['plotting']['dpi']
-            width = base[0]
-            height = base[1]/2.0
+            width = self['gui']['plotting']['plot_width_inches']
+            height = self['gui']['plotting']['plot_height_inches']
             return numpy.array([width, height])
 
     # --- COLORS ---

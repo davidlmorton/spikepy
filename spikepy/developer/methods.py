@@ -22,6 +22,7 @@ class SpikepyMethod(SpikepyPlugin):
     # and run on the pooled data, otherwise, the method is run on each trial
     # separately. (i.e. clustering_method has pooling=True by default)
     pooling = False
+    unpooling = False
 
     #     Is this method stochastic in nature (generally gives different results
     # with the same inputs)?
@@ -149,6 +150,7 @@ class ClusteringMethod(SpikepyMethod):
                correspond to resources that already exist.
     '''
     pooling = True
+    unpooling = True
     requires = ['features'] 
     provides = ['clusters']
     # clusters is a 1D numpy array of integers (cluster ids).
