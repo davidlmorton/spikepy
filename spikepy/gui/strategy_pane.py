@@ -35,11 +35,20 @@ class StrategyPane(wx.Panel):
         wx.Panel.__init__(self, parent, **kwargs)
         self.SetBackgroundColour(wx.WHITE)
         
+        self.save_button         = wx.Button(self, label=pt.SAVE_STRATEGY)
         self.strategy_chooser = NamedChoiceCtrl(self, name=pt.STRATEGY_NAME, 
                 background_color=wx.WHITE, 
                 selection_callback=self._strategy_chooser_updated)
         choices = strategy_manager.managed_strategy_names 
         self.strategy_chooser.SetItems(choices)
+
+        border = config['gui']['strategy_pane']['border']
+        flag = wx.EXPAND|wx.ALL
+        top_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        top_sizer.Add(self.strategy_chooser, proportion=0, 
+                flag=flag|wx.ALIGN_CENTER_HORIZONTAL, border=border)
+        top_sizer.Add(self.save_button, 
+                flag=flag|wx.ALIGN_CENTER_HORIZONTAL, border=border)
 
         self.strategy_summary = StrategySummary(self, plugin_manager) 
         self.plugin_manager = plugin_manager 
@@ -47,9 +56,7 @@ class StrategyPane(wx.Panel):
 
         # ==== SETUP SIZER ====
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        flag = wx.EXPAND|wx.ALL
-        border = config['gui']['strategy_pane']['border']
-        sizer.Add(self.strategy_chooser, proportion=0, 
+        sizer.Add(top_sizer, proportion=0, 
                 flag=flag|wx.ALIGN_CENTER_HORIZONTAL, border=border)
         sizer.Add(wx.StaticLine(self), proportion=0, 
                 flag=flag|wx.ALIGN_CENTER_HORIZONTAL, border=border)
@@ -112,11 +119,8 @@ class StrategyPane(wx.Panel):
         button_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         self.run_strategy_button = wx.Button(self, label=pt.RUN_STRATEGY)
         self.run_stage_button    = wx.Button(self, label='run stage button')
-        self.save_button         = wx.Button(self, label=pt.SAVE_STRATEGY)
 
         button_sizer.Add(self.run_strategy_button, proportion=0, 
-                         flag=wx.ALL, border=3)
-        button_sizer.Add(self.save_button, proportion=1, 
                          flag=wx.ALL, border=3)
         button_sizer.Add(self.run_stage_button, proportion=0, 
                          flag=wx.ALL, border=3)
@@ -475,7 +479,7 @@ class StrategySummary(wx.Panel):
             sizer.Add(stage_chooser, flag=wx.EXPAND)
 
         self.SetMaxSize((config['gui']['strategy_pane']['min_width']-10,-1))
-        self.SetSizerAndFit(sizer)
+        self.SetSizer(sizer)
 
         pub.subscribe(self._results_notebook_page_changed, 
                       topic='RESULTS_NOTEBOOK_PAGE_CHANGED')

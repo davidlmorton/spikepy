@@ -119,7 +119,7 @@ class ConfigManager(object):
             base = rfs/self['gui']['plotting']['dpi']
             width = base[0]
             height = base[1]/2.0
-            return numpy.array([width, height])
+            return numpy.array([width, height])/1.5
 
     # --- COLORS ---
     @property
