@@ -21,10 +21,10 @@ import os
 import uuid
 from collections import defaultdict
 
-from spikepy.developer_tools.visualization import Visualization
-from spikepy.developer_tools.file_interpreter import FileInterpreter
-from spikepy.developer_tools.data_interpreter import DataInterpreter
-from spikepy.developer_tools.methods import FilteringMethod, \
+from spikepy.developer.visualization import Visualization
+from spikepy.developer.file_interpreter import FileInterpreter
+from spikepy.developer.data_interpreter import DataInterpreter
+from spikepy.developer.methods import FilteringMethod, \
         DetectionMethod, ExtractionMethod, \
         ClusteringMethod, AuxiliaryMethod
 
@@ -221,6 +221,14 @@ class PluginManager(object):
         All loaded plugins, stored in a nested dict by category then name.
         '''
         return self._loaded_plugins
+
+    def get_default_plugin(self, stage_name):
+        defaults = {'detection_filter':'Infinite Impulse Response',
+                        'detection':'Threshold',
+                        'extraction_filter':'Copy Detection Filtering',
+                        'extraction':'Spike Window',
+                        'clustering':'K-means'}
+        return self.find_plugin(stage_name, defaults[stage_name])
 
     def get_plugins_by_stage(self, stage_name):
         ''' Return a list of plugins from the stage with <stage_name>.  '''

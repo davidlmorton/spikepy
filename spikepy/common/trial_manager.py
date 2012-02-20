@@ -31,6 +31,7 @@ except ImportError:
 
 from spikepy.common import program_text as pt
 from spikepy.utils.substring_dict import SubstringDict 
+from spikepy.utils.cluster_data import cluster_data
 from spikepy.common.errors import *
 
 def zero_mean(a):
@@ -280,29 +281,20 @@ class Trial(object):
             info_dict[resource.name] = resource.as_dict
         return info_dict
 
-    def cluster_data(self, data):
-        adict = defaultdict(list)
+    def _cluster_data(self, data):
         if self.clusters.data is not None:
             clusters = self.clusters.data
-            for cluster_id, thing in zip(clusters, data):
-                if cluster_id == -1:
-                    adict['Rejected'].append(thing)
-                else:
-                    adict[cluster_id].append(thing)
-            for key in adict.keys():
-                adict[key] = numpy.array(adict[key])
+            return cluster_data(clusters, data)
         else:
             raise NoClustersError('Cannot fetch clustered data, clustering not yet run.')
-
-        return dict(adict)
         
     @property
     def clustered_features(self):
-        return self.cluster_data(self.features.data)
+        return self._cluster_data(self.features.data)
 
     @property
     def clustered_feature_times(self):
-        return self.cluster_data(self.feature_times.data)
+        return self._cluster_data(self.feature_times.data)
 
     @property
     def clustered_features_as_list(self):

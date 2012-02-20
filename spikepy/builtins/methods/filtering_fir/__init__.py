@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from spikepy.developer_tools.methods import FilteringMethod
+from spikepy.developer.methods import FilteringMethod
 from spikepy.common.valid_types import ValidOption, ValidInteger
 from .simple_fir import fir_filter
 

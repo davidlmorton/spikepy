@@ -18,7 +18,7 @@ import gzip
 import cPickle
 import os
 
-from spikepy.developer_tools.file_interpreter import FileInterpreter, Trial
+from spikepy.developer.file_interpreter import FileInterpreter, Trial
 
 SHANK_CHANNEL_INDEX = [9,   8, 10,  7, 13,  4, 12,  5, 
                        15,  2, 16,  1, 14,  3, 11,  6]

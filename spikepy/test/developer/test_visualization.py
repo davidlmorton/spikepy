@@ -14,8 +14,22 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import unittest
 
-class RegisteringClass(object):
-    def register_self(self, registering_function):
-        registering_function(self) 
+from spikepy.developer.visualization import Visualization
 
+class TestSpikepyMethod(unittest.TestCase):
+    def test_class_variables(self):
+        v = Visualization()
+        self.assertTrue(hasattr(v, 'name'))
+        self.assertTrue(hasattr(v, 'requires'))
+        self.assertTrue(hasattr(v.requires, '__iter__'))
+        self.assertTrue(hasattr(v, 'found_under_tab'))
+
+    def test__plot(self):
+        v = Visualization()
+        self.assertRaises(NotImplementedError, v._plot, None, None)
+
+
+if __name__ == '__main__':
+    unittest.main()

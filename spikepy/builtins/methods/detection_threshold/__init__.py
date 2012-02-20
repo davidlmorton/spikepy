@@ -15,27 +15,32 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from spikepy.developer_tools.methods import DetectionMethod
+from spikepy.developer.methods import DetectionMethod
 from spikepy.common.valid_types import ValidFloat, ValidBoolean, ValidOption
-from .run import run as runner
+from .threshold_detection import threshold_detection
 
 class VoltageThreshold(DetectionMethod):
     '''
     This class implements a voltage threshold spike detection method.
     '''
-    name = "Voltage Threshold"
-    description = "Spike detection using voltage threshold(s)"
+    name = "Threshold"
+    description = "Spike detection using simple threshold(s)"
     is_stochastic = False
+
+    requires = ['df_traces', 'df_sampling_freq']
+    provides = ['event_times']
 
     threshold_1 = ValidFloat(default=6.0)
     threshold_2 = ValidFloat(default=-6.0)
-    refractory_time = ValidFloat(min=0.0, default=0.50)
-    max_spike_duration = ValidFloat(min=0.0, default=4.0)
     threshold_units = ValidOption('Standard Deviation', 'Median', 'Signal', 
             default='Standard Deviation')
+    refractory_time = ValidFloat(min=0.0, default=0.50,
+            description='Refractory time in ms.')
+    max_spike_duration = ValidFloat(min=0.0, default=4.0,
+            description='Spikes wider than this at threshold (in ms) are ignored.')
 
     def run(self, signal, sampling_freq, **kwargs):
-        return runner(signal, sampling_freq, **kwargs)
+        return threshold_detection(signal, sampling_freq, **kwargs)
 
 
 

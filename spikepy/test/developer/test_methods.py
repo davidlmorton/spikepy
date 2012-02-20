@@ -14,18 +14,24 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from spikepy.developer.file_interpreter import FileInterpreter, Trial,\
-        Strategy
+import unittest
 
-class SpikepyStrategy(FileInterpreter):
-    def __init__(self):
-        self.name = 'Spikepy Strategy'
-        self.extentions = ['.strategy']
-        # higher priority means will be used in ambiguous cases
-        self.priority = 10 
-        self.description = '''A previously saved spikepy strategy.'''
+from spikepy.developer.methods import SpikepyMethod
 
-    def read_data_file(self, fullpath):
-        strategy = Strategy.from_file(fullpath)
-        strategy.fullpath = None
-        return [strategy]
+class TestSpikepyMethod(unittest.TestCase):
+    def test_class_variables(self):
+        sm = SpikepyMethod()
+        self.assertTrue(hasattr(sm, 'pooling'))
+        self.assertTrue(hasattr(sm, 'is_stochastic'))
+        self.assertTrue(hasattr(sm, 'requires'))
+        self.assertTrue(hasattr(sm.requires, '__iter__'))
+        self.assertTrue(hasattr(sm, 'provides'))
+        self.assertTrue(hasattr(sm.provides, '__iter__'))
+
+    def test_run(self):
+        sm = SpikepyMethod()
+        self.assertRaises(NotImplementedError, sm.run)
+
+
+if __name__ == '__main__':
+    unittest.main()

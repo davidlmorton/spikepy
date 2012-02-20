@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from spikepy.developer_tools.file_interpreter import FileInterpreter
+from spikepy.developer.file_interpreter import FileInterpreter
 from .sonpy import son
 
 class Spike2(FileInterpreter):

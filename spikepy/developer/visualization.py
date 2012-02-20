@@ -17,21 +17,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import traceback
 import sys
 
+import numpy
+
 from spikepy.common.config_manager import config_manager as config
 from spikepy.common import program_text as pt
 from spikepy.common.valid_types import ValidType
+from spikepy.developer.spikepy_plugin import SpikepyPlugin
 
-class Visualization(object):
+class Visualization(SpikepyPlugin):
     """
-    This class should be subclassed in order for developers to add a new
-visualization to spikepy (non-interactive plots and graphs and such).
-There is no need ot instantiate (create an object from) the subclass,
-spikepy will handle that internally.  Therefore it is important to have an
-__init__ method that requires no arguments.
+        This class should be subclassed in order for developers to add a new
+    visualization to spikepy (non-interactive plots and graphs and such).
+    There is no need ot instantiate (create an object from) the subclass,
+    spikepy will handle that internally.  Therefore it is important to have an
+    __init__ method that requires no arguments.
     """
+    # The name of the visualization
     name = ''
+
+    # The resources that this visualization requires to generate results.
     requires = []
-    # one of 'detection_filter', 'detection', 'extraction_filter',
+
+    # One of 'detection_filter', 'detection', 'extraction_filter',
     #        'extraction', 'clustering', or 'summary' **only used with gui**
     found_under_tab = 'detection_filter'
 
@@ -48,7 +55,30 @@ __init__ method that requires no arguments.
         '''
         raise NotImplementedError
 
+    def _get_figure_size(self, trial):
+        width = config['gui']['plotting']['plot_width_inches']
+        height = config['gui']['plotting']['plot_height_inches']
+        size = numpy.array([width, height])
+        return size
+
+    @property
+    def pylab(self):
+        if hasattr(self, '_pylab'):
+            return self._pylab
+        else:
+            import pylab
+            self._pylab = pylab
+            return pylab
+
+    @pylab.setter
+    def pylab(self, value):
+        self._pylab = value
+
     def _get_unmet_requirements(self, trial):
+        '''
+            Return a list of the resource names that this visualization
+        requirs but the given trial does not have available.
+        '''
         unmet_requirements = []
         for req_name in self.requires:
             if (hasattr(trial, req_name) and 
@@ -59,13 +89,19 @@ __init__ method that requires no arguments.
         return unmet_requirements
 
     def _handle_unmet_requirements(self, parent_panel, unmet_requirements):
+        '''
+            Print onto the figure the list of unmet requirements.
+        '''
         if parent_panel is not None:
             figure = parent_panel.plot_panel.figure
+            figure.set_facecolor('white')
+            figure.set_edgecolor('black')
             figure.clear()
         else:
-            import pylab
             figsize = config.get_size('figure')
-            figure = pylab.figure(figsize=figsize)
+            figure = self.pylab.figure(figsize=figsize)
+            figure.set_facecolor('white')
+            figure.set_edgecolor('black')
             figure.canvas.set_window_title(self.name)
 
         msg = pt.CANNOT_CREATE_VISUALIZATION % \
@@ -76,10 +112,16 @@ __init__ method that requires no arguments.
         if parent_panel is not None:
             figure.canvas.draw()
         else:
-            pylab.show()
+            self.pylab.show()
 
     def _handle_cannot_plot(self, parent_panel):
+        '''
+            Print onto the figure a message stating that the visualization
+        couldn't be completed
+        '''
         figure = parent_panel.plot_panel.figure
+        figure.set_facecolor('white')
+        figure.set_edgecolor('black')
         figure.clear()
 
         msg = pt.CANNOT_COMPLETE_VISUALIZATION
@@ -89,13 +131,20 @@ __init__ method that requires no arguments.
         figure.canvas.draw()
 
     def _handle_no_trial_passed(self, parent_panel):
+        '''
+            Print onto the figure a message stating that the visualization
+        couldn't be completed because no trial was passed in.
+        '''
         if parent_panel is not None:
             figure = parent_panel.plot_panel.figure
+            figure.set_facecolor('white')
+            figure.set_edgecolor('black')
             figure.clear()
         else:
-            import pylab
             figsize = config.get_size('figure')
-            figure = pylab.figure(figsize=figsize)
+            figure = self.pylab.figure(figsize=figsize)
+            figure.set_facecolor('white')
+            figure.set_edgecolor('black')
             figure.canvas.set_window_title(self.name)
 
         msg = pt.NO_TRIAL_SELECTED 
@@ -105,9 +154,12 @@ __init__ method that requires no arguments.
         if parent_panel is not None:
             figure.canvas.draw()
         else:
-            pylab.show()
+            self.pylab.show()
 
     def draw(self, trial=None, parent_panel=None, **kwargs):
+        '''
+            Draw the visualization using the user-defined self._plot fn.
+        '''
         if trial is None:
             self._handle_no_trial_passed(parent_panel)
             return
@@ -118,6 +170,7 @@ __init__ method that requires no arguments.
             return
 
         # are we running within the gui?
+        fig_size = self._get_figure_size(trial)
         if parent_panel is not None:
             if trial.trial_id == self._last_drawn_trial_id:
                 preserve_history = True
@@ -126,6 +179,10 @@ __init__ method that requires no arguments.
                 self._last_drawn_trial_id = trial.trial_id
                 preserve_history = False
 
+            parent_panel.plot_panel.set_minsize(*fig_size)
+            parent_panel.plot_panel.figure.set_figwidth(fig_size[0])
+            parent_panel.plot_panel.figure.set_figheight(fig_size[1])
+            parent_panel.Layout()
             parent_panel.plot_panel.clear()
             try:
                 self._plot(trial, parent_panel.plot_panel.figure, **kwargs)
@@ -140,40 +197,14 @@ __init__ method that requires no arguments.
                         exc_info[2], 100)
                 self._handle_cannot_plot(parent_panel)
         else:
-            import pylab
-            figsize = config.get_size('figure')
-            figure = pylab.figure(figsize=figsize)
+            parent_panel.plot_panel.set_minsize(*fig_size)
+            figure = self.pylab.figure(figsize=figsize)
+            figure.set_figwidth(fig_size[0])
+            figure.set_figheight(fig_size[1])
             figure.canvas.set_window_title(self.name)
             self._plot(trial, figure, **kwargs)
-            pylab.show()
+            self.pylab.show()
             # reset change_ids so the visualization is forced to plot again
             #  next time.
             for resource_name in self.requires:
                 self._change_ids[resource_name] = None 
-
-    def get_parameter_attributes(self):
-        ''' Return a dictionary of ValidType attributes. '''
-        attrs = {}
-        attribute_names = dir(self)
-        for name in attribute_names:
-            value = getattr(self, name)
-            if isinstance(value, ValidType):
-                attrs[name] = value
-        return attrs
-    
-    def get_parameter_defaults(self):
-        ''' Return a dictionary containing the default parameter values.  '''
-        kwargs = {}
-        for attr_name, attr in self.get_parameter_attributes().items():
-            kwargs[attr_name] = attr()
-        return kwargs
-
-    def validate_parameters(self, parameter_dict):
-        '''
-            Attempts to validate parameters in a dictionary.  If parameters are 
-        invalid an exception is raised.  If parameters are valid, None is 
-        returned.
-        '''
-        for key, value in parameter_dict.items():
-            getattr(self, key)(value)
-        

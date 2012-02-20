@@ -14,18 +14,25 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from spikepy.developer.file_interpreter import FileInterpreter, Trial,\
-        Strategy
+from collections import defaultdict
 
-class SpikepyStrategy(FileInterpreter):
-    def __init__(self):
-        self.name = 'Spikepy Strategy'
-        self.extentions = ['.strategy']
-        # higher priority means will be used in ambiguous cases
-        self.priority = 10 
-        self.description = '''A previously saved spikepy strategy.'''
+import numpy
 
-    def read_data_file(self, fullpath):
-        strategy = Strategy.from_file(fullpath)
-        strategy.fullpath = None
-        return [strategy]
+
+def cluster_data(clusters, data):
+    '''
+        Given the cluster identities and data return a dictionary keyed on
+    cluster identity with data in the form of a numpy array.
+    '''
+    adict = defaultdict(list)
+    for cluster_id, thing in zip(clusters, data):
+        if cluster_id == -1:
+            adict['Rejected'].append(thing)
+        else:
+            adict[cluster_id].append(thing)
+
+    for key in adict.keys():
+        adict[key] = numpy.array(adict[key])
+
+    return dict(adict)
+    

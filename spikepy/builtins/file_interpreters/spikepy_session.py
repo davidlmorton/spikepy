@@ -19,7 +19,7 @@ import gzip
 
 import numpy
 
-from spikepy.developer_tools.file_interpreter import FileInterpreter, Trial,\
+from spikepy.developer.file_interpreter import FileInterpreter, Trial,\
         Strategy
 
 def load_archive(archive):

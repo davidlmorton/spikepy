@@ -38,7 +38,7 @@ Methods that subclasses are REQUIRED to implement:
     # if spikepy tries more than one FileInterpreter.
     priority = 10
 
-    def read_data_file(fullpath):
+    def read_data_file(self, fullpath):
         raise NotImplementedError
 
 

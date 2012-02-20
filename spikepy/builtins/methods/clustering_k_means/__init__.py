@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from scipy.cluster.vq import kmeans, vq
 import numpy
 
-from spikepy.developer_tools.methods import ClusteringMethod
+from spikepy.developer.methods import ClusteringMethod
 from spikepy.common.valid_types import ValidInteger, ValidOption
 
 class ClusteringKMeans(ClusteringMethod):

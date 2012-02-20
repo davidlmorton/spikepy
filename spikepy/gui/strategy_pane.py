@@ -209,7 +209,7 @@ class StrategyPane(wx.Panel):
         pub.sendMessage('SET_CURRENT_STRATEGY', data=strategy)
 
     def do_layout(self):
-        self.control_panels_scroller.SetupScrolling()
+        self.control_panels_scroller.SetupScrolling(scrollToTop=False)
         self.control_panels_scroller.Layout()
         self.Layout()
 

@@ -14,18 +14,19 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from spikepy.developer.file_interpreter import FileInterpreter, Trial,\
-        Strategy
+import numpy
 
-class SpikepyStrategy(FileInterpreter):
-    def __init__(self):
-        self.name = 'Spikepy Strategy'
-        self.extentions = ['.strategy']
-        # higher priority means will be used in ambiguous cases
-        self.priority = 10 
-        self.description = '''A previously saved spikepy strategy.'''
+def isolation_distance(clustered_mahalanobis_squared_dict):
+    cmsd = clustered_mahalanobis_squared_dict 
 
-    def read_data_file(self, fullpath):
-        strategy = Strategy.from_file(fullpath)
-        strategy.fullpath = None
-        return [strategy]
+    return_dict = {}
+    for key in cmsd.keys():
+        if key is not 'Rejected':
+            other_distances = [cmsd[key][k] for k in cmsd.keys() if
+                    k not in [key, 'Rejected']]
+            other_distances = numpy.sort(numpy.hstack(other_distances))
+            if len(other_distances) >= len(cmsd[key][key]):
+                return_dict[key] = other_distances[len(cmsd[key][key])]
+            else:
+                return_dict[key] = -1.0
+    return return_dict

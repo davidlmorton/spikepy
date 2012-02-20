@@ -16,9 +16,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import numpy
 
-from spikepy.developer_tools.visualization import Visualization
+from spikepy.developer.visualization import Visualization
 from spikepy.plotting_utils.general import as_fraction, set_axes_ticker 
 from spikepy.utils.pca import pca
+from spikepy.utils.cluster_data import cluster_data
 from spikepy.common.valid_types import ValidFloat, ValidBoolean, ValidOption,\
         ValidInteger
 
@@ -78,7 +79,7 @@ class ClusteredFeaturePCAVisualization(Visualization):
         # cluster the rotated features
         clustered_trf = []
         for i in [0, 1, 2]:
-            clustered_trf.append(trial.cluster_data(trf[i]))
+            clustered_trf.append(cluster_data(trial.clusters.data, trf[i]))
 
         for x, y, axes in zip(pc_x, pc_y, pca_axes):
             axes.set_xlabel(PCA_LABEL % (x, pct_var[x-1], '%'),

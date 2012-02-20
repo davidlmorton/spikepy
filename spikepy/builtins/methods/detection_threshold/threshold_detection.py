@@ -19,7 +19,7 @@ import numpy
 
 from .two_threshold_spike_find import two_threshold_spike_find
 
-def run(signal, sampling_freq, threshold_1=None, 
+def threshold_detection(signal, sampling_freq, threshold_1=None, 
                                    threshold_2=None,
                                    threshold_units=None,
                                    refractory_time=None,

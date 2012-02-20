@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pywt
 
-from spikepy.developer_tools.methods import FilteringMethod
+from spikepy.developer.methods import FilteringMethod
 from spikepy.common.valid_types import ValidOption, ValidInteger
 from .wavelet import filt
 

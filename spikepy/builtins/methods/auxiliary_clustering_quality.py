@@ -15,14 +15,23 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from spikepy.developer.methods import FilteringMethod
+from spikepy.developer.methods import AuxiliaryMethod
+from spikepy.utils.clustering_metrics.calculate_clustering_metrics import\
+        calculate_clustering_metrics
 
-class NoFiltering(FilteringMethod):
-    ''' This class implements a NULL filtering method.  '''
-    name = "No Filtering"
-    description = "No Filtering, simply use the raw traces."
+class ClusteringQuality(AuxiliaryMethod):
+    '''
+    This class implements a method to calculate clustering quality.
+    '''
+    name = "Calculate Clustering Quality"
+    description = "Generate clustering quality metrics."
+    runs_with_stage = 'auxiliary'
     is_stochastic = False
+    pooling = True
+    unpooling = False
+    requires = ['clusters', 'features']
+    provides = ['cluster_quality_metrics']
 
-    def run(self, signal, sampling_freq, **kwargs):
-        return [signal, sampling_freq]
+    def run(self, clusters, features, **kwargs):
+        return [calculate_clustering_metrics(clusters, features)]
 
