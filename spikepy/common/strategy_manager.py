@@ -31,6 +31,31 @@ from spikepy.common.stages import stages
 from spikepy.common.errors import *
 from spikepy.utils.substring_dict import SubstringDict 
 
+def check_plugin_settings(stage_name, method_name, settings, result=None):
+    if result is None:
+        result = defaultdict(list)
+
+    plugin = self.plugin_manager.find_plugin(stage_name, 
+            method_name)
+    default_settings = plugin.get_parameter_defaults()
+
+    for needed_setting in default_settings.keys():
+        if needed_setting not in settings.keys():
+            result['missing_settings'].append(
+                    (stage_name, method_name, needed_setting))
+
+    for existing_setting, value in settings.items():
+        if existing_setting not in default_settings.keys():
+            result['non_existing_settings'].append(
+                    (stage_name, method_name, existing_setting))
+        else:
+            try:
+                getattr(plugin, existing_setting)(value)
+            except:
+                result['invalid_settings'].append(
+                    (stage_name, method_name, existing_setting))
+    return result
+
 
 class Strategy(object):
     def __init__(self, methods_used={}, 
@@ -155,8 +180,9 @@ class StrategyManager(object):
     _managed_class = Strategy
     _managed_file_type = '.strategy'
 
-    def __init__(self, config_manager=None):
+    def __init__(self, config_manager=None, plugin_manager=None):
         self.config_manager = config_manager 
+        self.plugin_manager = plugin_manager 
         self.strategies = SubstringDict() # strategies under management
 
     def __str__(self):
@@ -185,7 +211,7 @@ class StrategyManager(object):
             for f in files:
                 if f.endswith(self._managed_file_type):
                     fullpath = os.path.join(path, f)
-                    strategy = self._managed_class.from_file(fullpath)
+                    strategy = self._managed_class.from_file(fullpath) 
                     self.add_strategy(strategy)
 
     def save_strategies(self):
@@ -197,6 +223,112 @@ class StrategyManager(object):
                         '%s%s' % (strategy.name, self._managed_file_type))
                 strategy.fullpath = fullpath
                 strategy.save(fullpath)
+
+    def check_strategy(self, strategy):
+        '''
+            Return what is wrong with a strategy as a dictionary.
+        returns:
+            'missing_methods': list of (stage_name,) tuples
+                -- Stage has no specified method at all.
+            'non_existing_methods': list of (stage_name, method_name) tuples
+                -- Stage has method that isn't a plugin on this system.
+            'non_existing_settings': list of 
+                    (stage_name, method_name, settings_name) tuples
+                -- Stage has setting that isn't one of the settings that is
+                   supposed to be specified for this method.
+            'missing_settings': list of 
+                (stage_name, methods_name, settings_name) tuples
+                -- Stage does not have a setting that is supposed to be
+                   specified for this method.
+            'invalid_settings': list of
+                (stage_name, methods_name, settings_name, settings_value) tuples
+                -- Stage has setting that is not valid 
+                   (i.e. out of range or wrong type) for this method.
+        '''
+        result = defaultdict(list)
+        for stage_name in stages.stages:
+            try:
+                method_name = strategy.methods_used[stage_name]
+            except KeyError:
+                result['missing_methods'].append((stage_name,))
+                continue
+
+            try:
+                plugin = self.plugin_manager.find_plugin(stage_name, 
+                        method_name)
+            except MissingPluginError:
+                result['non_existing_methods'].append((stage_name, method_name))
+                continue
+
+            default_settings = plugin.get_parameter_defaults()
+            try:
+                settings = strategy.settings[stage_name]
+            except KeyError:
+                # all settings are missing.
+                for setting_name in default_settings.keys():
+                    result['missing_settings'].append(
+                            (stage_name, method_name, setting_name))
+                continue
+
+            result = check_plugin_settings(stage_name, method_name, settings)
+
+        stage_name = 'auxiliary'
+        for method_name, settings in strategy.auxiliary_stages.items():
+            try:
+                plugin = self.plugin_manager.find_plugin(stage_name, 
+                        method_name)
+            except MissingPluginError:
+                result['non_existing_methods'].append((stage_name, method_name))
+                continue
+            
+            result = check_plugin_settings(stage_name, method_name, settings)
+        return result
+
+    def fix_strategy(strategy, problems_dict):
+        '''
+            Return a fixed strategy given a broken strategy and the output of 
+        self.check_strategy.
+        '''
+        strategy = strategy.copy()
+        for stage_name, method_name in problems_dict['non_existing_methods']:
+            del strategy.methods_used[stage_name]
+            problems_dict['missing_methods'].append((stage_name,))
+
+        for value in problems_dict['missing_methods']:
+            stage_name = value[-1]
+            plugin = self.plugin_manager.get_default_plugin(stage_name)
+            strategy.methods_used[stage_name] = plugin.name
+            strategy.settings[stage_name] = plugin.get_parameter_defaults()
+
+        for stage_name, method_name, setting_name in problems_dict[
+                'non_existing_settings']:
+            if stage_name != 'auxiliary':
+                del strategy.settings[stage_name][setting_name]
+            else:
+                del strategy.auxiliary_stages[method_name][setting_name]
+
+        for stage_name, method_name, setting_name in problems_dict[
+                'invalid_settings']:
+            if stage_name != 'auxiliary':
+                del strategy.settings[stage_name][setting_name]
+            else:
+                del strategy.auxiliary_stages[method_name][setting_name]
+            problems_dict['missing_settings'].append(
+                    (stage_name, method_name, setting_name))
+
+        for stage_name, method_name, setting_name in problems_dict[
+                'missing_settings']:
+            plugin = self.plugin_manager.find_plugin(stage_name, method_name)
+            default_settings = plugin.get_parameter_defaults()
+            if stage_name != 'auxiliary':
+                strategy.settings[stage_name][setting_name] =\
+                        default_settings[setting_name]
+            else:
+                strategy.auxiliary_stages[method_name][setting_name] =\
+                        default_settings[setting_name]
+        #TODO change name?
+        return strategy
+
 
     # --- ADD AND REMOVE STRATEGIES ---
     @supports_callbacks 

@@ -222,6 +222,14 @@ class PluginManager(object):
         '''
         return self._loaded_plugins
 
+    def get_default_plugin(self, stage_name):
+        defaults = {'detection_filter':'Infinite Impulse Response',
+                        'detection':'Threshold',
+                        'extraction_filter':'Copy Detection Filtering',
+                        'extraction':'Spike Window',
+                        'clustering':'K-means'}
+        return self.find_plugin(stage_name, defaults[stage_name])
+
     def get_plugins_by_stage(self, stage_name):
         ''' Return a list of plugins from the stage with <stage_name>.  '''
         lsn = stage_name.lower().replace(' ', '_')

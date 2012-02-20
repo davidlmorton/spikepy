@@ -30,7 +30,10 @@ cluster_colors = {True:['cyan', 'magenta', 'yellow', 'blue', 'red', 'green',
         'black', 'purple']}
 
 def percent_max(array, percent):
-    return array[numpy.argsort(array)[int(len(array)*(percent/100.0))]]
+    if percent == 100.0:
+        return max(array)
+    else:
+        return array[numpy.argsort(array)[int((len(array)-1)*(percent/100.0))]]
 
 class ClusterQualityMetricsVisualization(Visualization):
     name = 'Cluster Quality Metrics(s)'
@@ -38,10 +41,12 @@ class ClusterQualityMetricsVisualization(Visualization):
     found_under_tab = 'clustering'
 
     invert_colors = ValidBoolean(default=True)
-    number_of_bins = ValidInteger(min=4, default=25)
+    number_of_bins = ValidInteger(min=4, default=70)
     other_clusters = ValidOption('Stacked', 'Flat', default='Stacked')
     alpha = ValidFloat(min=0.0, max=1.0, default=0.85)
-    style = ValidOption('Bars', 'Lines', default='Bars')
+    range_percentage = ValidFloat(min=1.0, max=100.0,
+            description='Use to eliminate outliers (0-100)', default=95)
+    style = ValidOption('Bars', 'Lines', default='Lines')
 
     def _get_figure_size(self, trial):
         cqm = trial.cluster_quality_metrics.data 
@@ -54,10 +59,11 @@ class ClusterQualityMetricsVisualization(Visualization):
         return size
 
     def _plot(self, trial, figure, invert_colors=False, 
-            number_of_bins=25,
+            number_of_bins=70,
             other_clusters='Stacked',
             alpha=0.85,
-            style='Bars'):
+            range_percentage=95,
+            style='Lines'):
 
         cqm = trial.cluster_quality_metrics.data 
         num_clusters = len(cqm.keys())
@@ -88,13 +94,15 @@ class ClusterQualityMetricsVisualization(Visualization):
 
             ranges[i] = {'min':0.0, 
                     'max':percent_max(
-                    cqm[i]['mahalanobis_distances_squared'][0], 97)}
+                    cqm[i]['mahalanobis_distances_squared'][0], 
+                    range_percentage)}
             for j in range(num_clusters):
                 ranges[i]['min'] = min(ranges[i]['min'], 
                         min(cqm[i]['mahalanobis_distances_squared'][j]))
                 ranges[i]['max'] = max(ranges[i]['max'], 
                         percent_max(
-                        cqm[i]['mahalanobis_distances_squared'][j], 97))
+                        cqm[i]['mahalanobis_distances_squared'][j],
+                        range_percentage))
             axes[i].set_xlabel(r'$D^2$ from Cluster ' + str(i), 
                     color=foreground[invert_colors])
             if count == 0:
@@ -132,45 +140,46 @@ Isolation Distance=%2.4f'''%
             ax = axes[i]
             rng = ranges[i]
             bottoms = numpy.zeros(number_of_bins, dtype=numpy.int32)
-            for e, j in enumerate(sorted(axes.keys())):
-                counts, bins = numpy.histogram(
-                        cqm[i]['mahalanobis_distances_squared'][j],
-                        bins=number_of_bins,
-                        range=(rng['min'], rng['max']))
-                width = bins[1]-bins[0]
-                color = cluster_colors[invert_colors][
-                        e%len(cluster_colors[invert_colors])]
 
-                if style == 'Bars':
-                    bottom = 0.0
-                    if other_clusters == 'Stacked':
-                        if i == j:
-                            bottom = 0.0
-                        else:
-                            bottom = bottoms
-                    ax.bar(bins[:-1], counts, width=width,
-                            color=color, 
-                            bottom=bottom,
-                            alpha=alpha,
-                            edgecolor=foreground[invert_colors])
-                        
-                elif style == 'Lines':
-                    bin_centers = bins[:-1] + width/2.0
-                    if i == j:
-                        ax.fill_between(bin_centers, counts, color=color,
-                                alpha=alpha)
-                    else:
-                        if other_clusters == 'Stacked':
-                            ax.fill_between(bin_centers, bottoms, 
-                                    y2=counts+bottoms, 
-                                    color=color,
-                                    alpha=alpha)
-                        elif other_clusters == 'Flat':
-                            ax.fill_between(bin_centers, counts, 
-                                    color=color, alpha=alpha)
-
-                if i != j:
+            color = get_color(i, cqm, invert_colors)
+            plot_to_axes(cqm, i, i, style, 1.0, color, number_of_bins, rng, ax)
+            for j in [k for k in axes.keys() if k != i]:
+                color = get_color(j, cqm, invert_colors)
+                counts = plot_to_axes(cqm, i, j, style, alpha, color, 
+                        number_of_bins, rng, ax, bottoms=bottoms)
+                if other_clusters == 'Stacked':
                     bottoms += counts
+
+def get_color(i, cqm, invert_colors):
+    j = i
+    sorted_cluster_ids = sorted(cqm.keys())
+    e = sorted_cluster_ids.index(j)
+    color = cluster_colors[invert_colors][
+            e%len(cluster_colors[invert_colors])]
+    return color
+
+def plot_to_axes(cqm, i, j, style, alpha, color, number_of_bins, rng, axes, 
+        bottoms=0.0):
+    counts, bins = numpy.histogram(
+            cqm[i]['mahalanobis_distances_squared'][j],
+            bins=number_of_bins,
+            range=(rng['min'], rng['max']))
+    width = bins[1]-bins[0]
+
+    if style == 'Bars':
+        axes.bar(bins[:-1], counts, width=width,
+                color=color, 
+                bottom=bottoms,
+                alpha=alpha)
+                
+    elif style == 'Lines':
+        bin_centers = bins[:-1] + width/2.0
+        axes.fill_between(bin_centers, bottoms, 
+                y2=counts+bottoms, 
+                color=color,
+                alpha=alpha)
+    return counts
+    
 
 
             

@@ -23,8 +23,8 @@ class VoltageThreshold(DetectionMethod):
     '''
     This class implements a voltage threshold spike detection method.
     '''
-    name = "Voltage Threshold"
-    description = "Spike detection using voltage threshold(s)"
+    name = "Threshold"
+    description = "Spike detection using simple threshold(s)"
     is_stochastic = False
 
     requires = ['df_traces', 'df_sampling_freq']
