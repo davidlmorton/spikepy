@@ -27,10 +27,11 @@ class ClusteringQuality(AuxiliaryMethod):
     description = "Generate clustering quality metrics."
     runs_with_stage = 'auxiliary'
     is_stochastic = False
-    pooling = True
-    unpooling = False
+    is_pooling = True
+    silent_pooling = True
     requires = ['clusters', 'features']
     provides = ['cluster_quality_metrics']
+    unpool_as = None
 
     def run(self, clusters, features, **kwargs):
         return [calculate_clustering_metrics(clusters, features)]

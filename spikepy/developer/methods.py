@@ -18,12 +18,26 @@ from spikepy.common.valid_types import ValidType
 from spikepy.developer.spikepy_plugin import SpikepyPlugin
 
 class SpikepyMethod(SpikepyPlugin):
-    #     If True, this method will pool all the inputs from multiple trials
-    # and run on the pooled data, otherwise, the method is run on each trial
-    # separately. (i.e. clustering_method has pooling=True by default)
-    pooling = False
-    unpooling = False
-
+    #     If is_pooling = True, this method will pool all the inputs from 
+    # multiple trials and run on the pooled data, otherwise, the method is 
+    # run on each trial separately. 
+    # (i.e. clustering_method has is_pooling=True by default)
+    is_pooling = False
+    #     If is_pooling, this variable determines how the pooling is actually
+    # carried out.  silent_pooling = True will pool the 'requires' resources
+    # in such a way that the plugin doesn't know whether the resource came
+    # from one trial or many trials.  If silent_pooling = False then the
+    # pooler will pool the resources just by sending a list of resources,
+    # where the list is equal in length to the number of trials.
+    silent_pooling = True
+    #     unpool_as is a list of 'requires' resource names or None
+    # equal in length to the length of the 'provides' list.  Each element
+    # in this list tells the pooler how to unpool the resource, since the
+    # pooler knows how it pooled the corresponding 'requires' resource.
+    # if unpool_as is not a list but is None, data are provided identically
+    # to all trials.
+    # Note: unpool_as is ignored if silent_pooling is False
+    unpool_as = None # if None then no unpooling will be done
     #     Is this method stochastic in nature (generally gives different results
     # with the same inputs)?
     is_stochastic = False
@@ -57,10 +71,10 @@ class FilteringMethod(SpikepyMethod):
                correspond to resources that already exist.
     '''
     requires = ['pf_traces', 'pf_sampling_freq']
-    provides = ['<stage_name>_traces', '<stage_name>_sampling_freq'] 
     # <stage_name> is one of "df" or "ef" for detection and extraction.
     # <stage_name>_traces is a 2D numpy array where
     #    len(<stage_name>_traces) == num_channels
+    provides = ['<stage_name>_traces', '<stage_name>_sampling_freq'] 
 
 
 class DetectionMethod(SpikepyMethod):
@@ -84,11 +98,11 @@ class DetectionMethod(SpikepyMethod):
                correspond to resources that already exist.
     '''
     requires = ['df_traces', 'df_sampling_freq']
-    provides = ['event_times']
     # event_times is a list of "list of indexes" where 
     #    len(event_times) == num_channels
     #    len(event_times[i]) == number of events on the ith channel
     #    event_times[i][j] == time of jth event on the ith channel
+    provides = ['event_times']
 
 
 class ExtractionMethod(SpikepyMethod):
@@ -112,13 +126,13 @@ class ExtractionMethod(SpikepyMethod):
                correspond to resources that already exist.
     '''
     requires = ['ef_traces', 'ef_sampling_freq', 'event_times']
-    provides = ['features', 'feature_times']
     # features is 2D numpy array with shape = (n, m) where
     #    n == the total number of kept events
     #    m == the number of features describing each event
     #    features[k][l] == feature l of event k
     # feature_locations is a 1D numpy array of indexes.
     #    time of kth feature == feature_locations[k]/ef_sampling_freq
+    provides = ['features', 'feature_times']
 
 
 class ClusteringMethod(SpikepyMethod):
@@ -149,14 +163,15 @@ class ClusteringMethod(SpikepyMethod):
                storing the result if the name(s) provided do not already 
                correspond to resources that already exist.
     '''
-    pooling = True
-    unpooling = True
+    is_pooling = True
+    silent_pooling = True
     requires = ['features'] 
-    provides = ['clusters']
     # clusters is a 1D numpy array of integers (cluster ids).
     #   clusters[k] == id of cluster to which the kth feature belongs.
-    # NOTE: while you cannot leave features 'unclustered', just simply
-    #       place all 'unclustered' features in a cluster with id=-1.
+    # NOTE: while you cannot leave features unclustered, you can *reject*
+    # features by placing all rejected features in a cluster with id=-1.
+    provides = ['clusters']
+    unpool_as = ['features']
 
 
 class AuxiliaryMethod(SpikepyMethod):

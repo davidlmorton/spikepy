@@ -14,6 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import bisect
 from collections import defaultdict
 import copy
 import datetime
@@ -295,6 +296,41 @@ class Trial(object):
     @property
     def clustered_feature_times(self):
         return self._cluster_data(self.feature_times.data)
+
+    @property
+    def clustered_df_spike_windows(self):
+        if not hasattr(self, 'df_spike_windows') or not\
+                hasattr(self, 'df_spike_window_times'):
+            raise MissingResourceError(
+                    'Missing "df_spike_windows" or "df_spike_window_times')
+
+        spike_windows = self.df_spike_windows.data
+        spike_window_times = self.df_spike_window_times.data
+        return self._cluster_spike_windows(spike_windows, spike_window_times)
+
+    @property
+    def clustered_ef_spike_windows(self):
+        if not hasattr(self, 'ef_spike_windows') or not\
+                hasattr(self, 'ef_spike_window_times'):
+            raise MissingResourceError(
+                    'Missing "ef_spike_windows" or "ef_spike_window_times')
+
+        spike_windows = self.ef_spike_windows.data
+        spike_window_times = self.ef_spike_window_times.data
+        return self._cluster_spike_windows(spike_windows, spike_window_times)
+
+    def _cluster_spike_windows(self, spike_windows, spike_window_times):
+        cft = self.clustered_feature_times
+        window_len = spike_windows.shape[1]
+        
+        result = {}
+        for cluster_id, feature_times in cft.items():
+            result[cluster_id] = numpy.empty((len(feature_times), window_len),
+                    dtype=spike_windows.dtype)
+            for i, feature_time in enumerate(feature_times):
+                sw_index = bisect.bisect_left(spike_window_times, feature_time)
+                result[cluster_id][i] = spike_windows[sw_index]
+        return result
 
     @property
     def clustered_features_as_list(self):

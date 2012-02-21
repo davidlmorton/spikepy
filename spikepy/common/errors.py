@@ -51,6 +51,9 @@ class AddResourceError(SpikepyError):
 class MissingTrialError(SpikepyError):
     pass
 
+class MissingResourceError(SpikepyError):
+    pass
+
 class InvalidValueError(SpikepyError):
     pass
 

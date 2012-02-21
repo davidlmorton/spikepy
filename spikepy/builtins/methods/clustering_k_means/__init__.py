@@ -27,7 +27,6 @@ class ClusteringKMeans(ClusteringMethod):
     name = 'K-means'
     description = 'K-means clustering algorithm with random initial centroids.'
     is_stochastic = True
-
     
     restarts = ValidInteger(1, 10000, default=10)
     choices = ['Use BIC'] + map(str, range(1, 21)) 

@@ -27,6 +27,8 @@ class ExtractionSpikeWaveletCoefficients(ExtractionMethod):
     name = "Spike Wavelet Coefficients"
     description = "Extract the wavelet coefficients of spike waveforms in a temporal window around the spike event."
     is_stochastic = False
+    is_pooling = True
+    silent_pooling = False
     provides = ['features', 'feature_times']
 
     pre_padding = ValidFloat(min=0.0, default=2.0,
@@ -42,23 +44,63 @@ class ExtractionSpikeWaveletCoefficients(ExtractionMethod):
     wavelet = ValidOption(*pywt.wavelist(), default='haar')
     num_coefficients_kept = ValidInteger(min=1, max=1000, default=10,
             description='The number of wavelet coefficients that are kept.')
+    normalize = ValidBoolean(default=True,
+            description='Normalize coefficients after selecting them so that their mean=0.0, and std=1.0')
 
-    def run(self, signal, sampling_freq, event_times, wavelet='haar', 
-            num_coefficients_kept=10, **kwargs):
-        features, feature_times, _, _ = generate_spike_windows(signal, 
-                sampling_freq, event_times, **kwargs)
-        wavelet_coefficients = get_wavelet_coefficients(features, wavelet,
-                num_coefficients_kept)
-        return [wavelet_coefficients, feature_times]
+    def run(self, signal_list, sampling_freq_list, event_times_list, 
+            wavelet='haar', num_coefficients_kept=10, normalize=True, **kwargs):
+        # features, feature_times for each trial
+        features_list = []
+        feature_times_list = []
+        for signal, sampling_freq, event_times in zip(signal_list, 
+                sampling_freq_list, event_times_list):
+            features, feature_times, _, _ = generate_spike_windows(signal, 
+                    sampling_freq, event_times, **kwargs)
+            features_list.append(features)
+            feature_times_list.append(feature_times)
+
+        # unify features before getting wavelet_coefficients
+        total_len = 0
+        for features in features_list:
+            total_len += len(features)
+
+        unified_features = numpy.empty((total_len, )+features_list[0].shape[1:])
+        begin = 0
+        end = 0
+        unpacking_index = {}
+        for i, features in enumerate(features_list):
+            end = begin + len(features)
+            unified_features[begin:end] = features
+            unpacking_index[i] = [begin, end]
+            begin = end
+
+        wavelet_coefficients = get_wavelet_coefficients(unified_features, 
+                wavelet, num_coefficients_kept)
+        if normalize:
+            means = numpy.average(wavelet_coefficients, axis=0)
+            stds = numpy.std(wavelet_coefficients, axis=0)
+            wavelet_coefficients = (wavelet_coefficients-means)/stds
+
+        # deunify wavelet_coefficients before returning them
+        wavelet_coefficients_list = []
+        for i in range(len(features_list)):
+            begin, end = unpacking_index[i]
+            wavelet_coefficients_list.append(wavelet_coefficients[begin:end])
+
+        return [wavelet_coefficients_list, feature_times_list]
 
 def difference_from_normality(observations):
     '''
         The difference from normality as found using the Kolomogorov-Smirnov
     test.
     '''
-    normalized_observations = (observations-numpy.average(observations))/\
-            numpy.std(observations)
-    return kstest(normalized_observations, 'norm')[0]
+    std = numpy.std(observations)
+    if std != 0.0:
+        normalized_observations = (observations-numpy.average(observations))/\
+                numpy.std(observations)
+        return kstest(normalized_observations, 'norm')[0]
+    else:
+        return 0.0
 
 def get_columns(array2D, scores, num_columns):
     '''
@@ -66,7 +108,7 @@ def get_columns(array2D, scores, num_columns):
     scores.
     '''
     sorted_indexes = numpy.argsort(scores)
-    return array2D[:, sorted_indexes[-num_columns:]]
+    return array2D[:, sorted_indexes[-num_columns:][::-1]]
 
 def get_wavelet_coefficients(observations, wavelet='db20', num_coefficients=10):
     '''

@@ -36,7 +36,7 @@ def build_tasks(marked_trials, plugin, plugin_kwargs):
     if not marked_trials:
         return tasks
 
-    if plugin.pooling:
+    if plugin.is_pooling:
         tasks.append(Task(marked_trials, plugin, plugin_kwargs))
     else:
         for trial in marked_trials:
@@ -507,8 +507,16 @@ class Task(object):
     def complete(self, result):
         change_info = self.change_info
         for pname, presult in zip(self.plugin.provides, result):
-            if self.plugin.unpooling:
-                presult = self._unpack_pooled_resource(pname, presult)
+            if self.plugin.is_pooling: 
+                if self.plugin.silent_pooling:
+                    if self.plugin.unpool_as is None:
+                        presult = [presult for t in self.trials]
+                    else:
+                        unpool_as = self.plugin.unpool_as[
+                                self.plugin.provides.index(pname)]
+                        if unpool_as is not None:
+                            presult = self._unpack_pooled_resource(unpool_as, 
+                                    presult)
             else:
                 presult = [presult for t in self.trials]
 
@@ -539,7 +547,7 @@ class Task(object):
         '''Return the data we require as arguments to run.'''
         arg_list = []
         for requirement_name in self.plugin.requires:
-            if self.plugin.pooling:
+            if self.plugin.is_pooling:
                 arg_list.append(self._pack_pooled_resource(requirement_name))
             else:
                 trial = self.trials[0]
@@ -551,14 +559,27 @@ class Task(object):
         '''
         Pack the resources from all of self.trials into a single numpy array.
         '''
+        if not self.plugin.silent_pooling:
+            result = []
+            for trial in self.trials:
+                resource = getattr(trial, resource_name).data
+                result.append(resource)
+            return result
+            
         # count total length
         ndim_set = set()
         total_len = 0
         for trial in self.trials:
             resource = getattr(trial, resource_name).data
-            ndim = resource.ndim
+            if hasattr(resource, 'ndim'):
+                ndim = resource.ndim
+            else:
+                ndim = 0
             ndim_set.add(ndim)
-            total_len += len(resource)
+            if hasattr(resource, '__len__'):
+                total_len += len(resource)
+            else:
+                total_len += 1
         if len(ndim_set) != 1:
             raise DimensionalityError('The dimensionality of the %s of different trials do not match.  Instead of all being a single dimensionality your trials have %s with dimensionality as follows.  %s' % 
                 (resource_name, resource_name, 
@@ -570,33 +591,45 @@ class Task(object):
         self.trial_packing_index = {}
         for trial in self.trials:
             resource = getattr(trial, resource_name).data
-            end = begin + len(resource)
-            self.trial_packing_index[trial.trial_id] = [begin, end]
+            if hasattr(resource, '__len__'):
+                end = begin + len(resource)
+            else:
+                end = begin + 1
+            self.trial_packing_index[str(trial.trial_id)+
+                    resource_name] = [begin, end]
             begin = end
 
-        if ndim == 1:
+        # pack it up
+        if ndim == 0:
+            pooled_resource = [getattr(trial, resource_name).data 
+                    for trial in self.trials]
+            try:
+                pooled_resource = numpy.array(pooled_resource)
+            except ValueError: #can't be made into an array.
+                raise ValueError('Cannot perform silent_pooling on "%s" because it cannot be made into a numpy array' % resource_name)
+        elif ndim == 1:
             pooled_resource = numpy.empty(total_len, dtype=resource.dtype)
             for trial in self.trials:
                 resource = getattr(trial, resource_name).data
-                begin, end = self.trial_packing_index[trial.trial_id]
+                begin, end = self.trial_packing_index[
+                        str(trial.trial_id)+resource_name]
                 pooled_resource[begin:end] = resource
-        elif ndim == 2:
-            pooled_resource = numpy.empty((total_len, resource.shape[1]), 
+        elif ndim >= 2:
+            pooled_shape = (total_len, ) + resource.shape[1:]
+            pooled_resource = numpy.empty(pooled_shape, 
                     dtype=resource.dtype)
             for trial in self.trials:
                 resource = getattr(trial, resource_name).data
-                begin, end = self.trial_packing_index[trial.trial_id]
+                begin, end = self.trial_packing_index[
+                        str(trial.trial_id)+resource_name]
                 pooled_resource[begin:end] = resource
-        else:
-            raise NotImplementedError(
-                    "I don't know what to do with %d dimensional data (%s)" % 
-                    (ndim, resource_name))
         return pooled_resource
             
     def _unpack_pooled_resource(self, resource_name, pooled_resource):
         results = []
         for trial in self.trials:
-            begin, end = self.trial_packing_index[trial.trial_id]
+            begin, end = self.trial_packing_index[
+                    str(trial.trial_id)+resource_name]
             results.append(pooled_resource[begin:end])
         return results
 
