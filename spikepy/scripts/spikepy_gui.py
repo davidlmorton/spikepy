@@ -26,23 +26,21 @@ if __name__ == '__main__':
     command_line_arguments = vars(parser.parse_args())
     print_messages = command_line_arguments['print_messages']
 
-import wx
-from spikepy.gui.images import spikepy_splash_image as spi
-
-# create a spikepy session
-from spikepy.session import Session
-session = Session()
-
-class MySplashScreen(wx.SplashScreen):
-    def __init__(self, image=None, splash_style=None, timeout=None, 
-                       parent=None, **kwargs):
-        wx.SplashScreen.__init__(self, image, splash_style, timeout, 
-                                 parent, **kwargs)
-
 if __name__ == '__main__':
+    import wx
+    from spikepy.common.path_utils import get_image_path
+    class MySplashScreen(wx.SplashScreen):
+        def __init__(self, image=None, splash_style=None, timeout=None, 
+                           parent=None, **kwargs):
+            wx.SplashScreen.__init__(self, image, splash_style, timeout, 
+                                     parent, **kwargs)
+
     def startup():
         ''' Run after splash screen has loaded '''
+        # create a spikepy session
+        from spikepy.session import Session
         from spikepy.gui.controller import Controller
+        session = Session()
         controller = Controller(session, print_messages=print_messages)
         wx.CallLater(1000, splash_screen.Destroy)
         wx.CallLater(2100, controller.warn_for_matplotlib_version)
@@ -50,10 +48,16 @@ if __name__ == '__main__':
     app = wx.App(redirect=False)
     app.SetAppName("spikepy")
 
-    image = spi.spikepy_splash.Image.ConvertToBitmap()
+    image = wx.Image(get_image_path('spikepy_splash.png'), 
+            wx.BITMAP_TYPE_PNG).ConvertToBitmap()
     splash_screen = MySplashScreen(image=image, 
                                    splash_style=wx.SPLASH_CENTRE_ON_SCREEN, 
                                    timeout=1000, 
                                    parent=None)
     wx.CallLater(200, startup)
     app.MainLoop()
+else:
+    # create a spikepy session
+    from spikepy.session import Session
+    session = Session()
+

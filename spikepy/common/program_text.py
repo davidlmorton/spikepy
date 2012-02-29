@@ -99,7 +99,7 @@ STRATEGY_PANE_TITLE = 'Strategy'
 RUN_STAGE = "Run '%s'" #% stage_name
 RUN_AUXILIARY_PLUGINS = 'Run Auxiliary Plugins'
 RUN_STRATEGY = "Run Strategy" 
-STRATEGY_NAME = "Strategy Name:"
+STRATEGY_NAME = "Strategy"
 CUSTOM_LC = "custom"
 CUSTOM_SC = "Custom"
 

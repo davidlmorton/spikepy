@@ -63,6 +63,8 @@ class Controller(object):
         self.session.mark_trial.add_callback(self._trial_marked,
                 takes_target_results=True)
 
+        self.view.frame.Raise()
+
     def warn_for_matplotlib_version(self):
         min_version = '0.99.1.1'
         if matplotlib_version_too_low(min_version):
