@@ -60,9 +60,9 @@ def make_fir_filter(sampling_freq, critical_freq, kernel_window, order, kind,
     elif kind.lower() in ['band', 'band pass', 'band_pass']:
         low = numpy.min(normalized_critical_freq)
         high = numpy.max(normalized_critical_freq)
-        lp_kernel = scisig.firwin(taps, high, 
+        lp_kernel = scisig.firwin(taps, low, 
                                   window=kernel_window, **kwargs)
-        hp_kernel = scisig.firwin(taps, low, 
+        hp_kernel = scisig.firwin(taps, high, 
                                    window=kernel_window, **kwargs)
         hp_kernel = spectral_inversion(hp_kernel)
 
@@ -109,13 +109,17 @@ def fir_filter(signal, sampling_freq, critical_freq, kernel_window='hamming',
     taps = order+1
 
     if not taps % 2: # ensure taps is odd
-        taps -= 1
+        taps += 1
 
     if signal.ndim == 2:
         result = numpy.empty(signal.shape, dtype=signal.dtype)
         for i in range(len(signal)):
-            result[i] = numpy.roll(scisig.lfilter(kernel, [1], signal[i]), 
-                    -taps/2+1)
+            zero_padded_signal = numpy.hstack([signal[i], 
+                    numpy.zeros(taps, dtype=signal.dtype)])
+            result[i] = numpy.roll(scisig.lfilter(kernel, [1], zero_padded_signal), 
+                    -taps/2+1)[:len(signal[i])]
     else:
-        result = numpy.roll(scisig.lfilter(kernel, [1], signal), -taps/2+1)
+        zero_padded_signal = numpy.hstack([signal, 
+                numpy.zeros(taps, dtype=signal.dtype)])
+        result = numpy.roll(scisig.lfilter(kernel, [1], signal), -taps/2+1)[:len(signal)]
     return result

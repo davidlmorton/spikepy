@@ -30,7 +30,7 @@ class VoltageThreshold(DetectionMethod):
     requires = ['df_traces', 'df_sampling_freq']
     provides = ['event_times']
 
-    threshold_1 = ValidFloat(default=6.0)
+    threshold_1 = ValidFloat(default=-6.0)
     threshold_2 = ValidFloat(default=-6.0)
     threshold_units = ValidOption('Standard Deviation', 'Median', 'Signal', 
             default='Standard Deviation')

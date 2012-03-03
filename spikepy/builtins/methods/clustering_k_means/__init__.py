@@ -30,7 +30,7 @@ class ClusteringKMeans(ClusteringMethod):
     
     restarts = ValidInteger(1, 10000, default=10)
     choices = ['Use BIC'] + map(str, range(1, 21)) 
-    number_of_clusters = ValidOption(*choices, default='Use BIC', description=
+    number_of_clusters = ValidOption(*choices, default='3', description=
             'The number of clusters, or estimate the number of clusters via minimizing the Baysian Information Criterion.')
 
     def run(self, features, number_of_clusters='Use BIC', restarts=10):

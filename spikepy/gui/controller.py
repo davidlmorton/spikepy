@@ -153,6 +153,7 @@ class Controller(object):
         self.view.frame.Show(False)
         wx.Yield()
         self.view.frame.Destroy()
+        wx.GetApp().Exit()
         
     def _close_trial(self, message):
         pub.sendMessage('UPDATE_STATUS', pt.STATUS_CLOSING)
