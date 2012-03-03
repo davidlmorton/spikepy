@@ -63,6 +63,7 @@ class Controller(object):
         self.session.mark_trial.add_callback(self._trial_marked,
                 takes_target_results=True)
 
+        self._current_strategy_updated(session.current_strategy)
         self.view.frame.Raise()
 
     def warn_for_matplotlib_version(self):
