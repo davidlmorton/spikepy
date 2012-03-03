@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
 # create a spikepy session
 from spikepy.session import Session
-session = Session()
+session = Session(module_suffix='gui')
 
 if __name__ == '__main__':
     import wx

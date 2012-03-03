@@ -66,7 +66,7 @@ def should_load(fullpath):
         return os.path.exists(module_init)
     return False
 
-def load_plugins_from_dir(plugin_dir):
+def load_plugins_from_dir(plugin_dir, module_suffix):
     ''' Load all the plugins in the given <plugin_dir>.'''
     loaded_plugins = []
     if os.path.exists(plugin_dir):
@@ -75,8 +75,8 @@ def load_plugins_from_dir(plugin_dir):
             fullpath_e = os.path.join(plugin_dir, e)
             if should_load(fullpath_e):
                 module_name = os.path.splitext(e)[0]
-                unique_name = 'spikepy_plugin_%s' % \
-                        str(uuid.uuid4()).replace('-','_')
+                unique_name = 'spikepy_plugin_%s_%s' % (module_name, 
+                        module_suffix)
 
                 # load the module
                 fm_results = None
@@ -114,10 +114,12 @@ def get_plugins_from_module(module, class_list=[]):
                 results.append(plugin)
     return results
     
-def load_all_plugins(data_dirs=None, **kwargs):
+def load_all_plugins(data_dirs=None, module_suffix=None, **kwargs):
     '''Load file_interpreters and methods from all levels.'''
     if data_dirs is None:
         data_dirs = get_data_dirs(**kwargs)
+    if module_suffix is None:
+        module_suffix = str(uuid.uuid4()).replace('-','_')
 
     plugin_levels = {}
     loaded_plugins = defaultdict(SubstringDict)
@@ -125,7 +127,7 @@ def load_all_plugins(data_dirs=None, **kwargs):
         for plugin_type in ['file_interpreters', 'methods', 
                 'data_interpreters', 'visualizations']:
             plugin_dir = data_dirs[level][plugin_type]
-            plugins = load_plugins_from_dir(plugin_dir)
+            plugins = load_plugins_from_dir(plugin_dir, module_suffix)
             for plugin in plugins:
                 plugin_levels[plugin] = level
                 category = get_plugin_category(plugin)

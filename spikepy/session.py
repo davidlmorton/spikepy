@@ -36,13 +36,13 @@ from spikepy.common.errors import *
 from spikepy.common import stages
 
 class Session(object):
-    def __init__(self):
+    def __init__(self, module_suffix=None):
         path_utils.setup_user_directories(app_name='spikepy')
 
         self.config_manager   = ConfigManager()
         self.trial_manager    = TrialManager(self.config_manager)
         self.plugin_manager   = PluginManager(self.config_manager, 
-                app_name='spikepy')
+                app_name='spikepy', module_suffix=module_suffix)
         self.strategy_manager = StrategyManager(self.config_manager,
                 self.plugin_manager)
         self.strategy_manager.load_all_strategies()
