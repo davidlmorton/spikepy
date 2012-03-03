@@ -26,6 +26,10 @@ if __name__ == '__main__':
     command_line_arguments = vars(parser.parse_args())
     print_messages = command_line_arguments['print_messages']
 
+# create a spikepy session
+from spikepy.session import Session
+session = Session()
+
 if __name__ == '__main__':
     import wx
     from spikepy.common.path_utils import get_image_path
@@ -37,10 +41,7 @@ if __name__ == '__main__':
 
     def startup():
         ''' Run after splash screen has loaded '''
-        # create a spikepy session
-        from spikepy.session import Session
         from spikepy.gui.controller import Controller
-        session = Session()
         controller = Controller(session, print_messages=print_messages)
         wx.CallLater(1000, splash_screen.Destroy)
         wx.CallLater(2100, controller.warn_for_matplotlib_version)
@@ -56,8 +57,4 @@ if __name__ == '__main__':
                                    parent=None)
     wx.CallLater(200, startup)
     app.MainLoop()
-else:
-    # create a spikepy session
-    from spikepy.session import Session
-    session = Session()
 
