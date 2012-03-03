@@ -58,9 +58,11 @@ def make_fir_filter(sampling_freq, critical_freq, kernel_window, order, kind,
         kernel = spectral_inversion(lp_kernel)
         
     elif kind.lower() in ['band', 'band pass', 'band_pass']:
-        lp_kernel = scisig.firwin(taps, normalized_critical_freq[0], 
+        low = numpy.min(normalized_critical_freq)
+        high = numpy.max(normalized_critical_freq)
+        lp_kernel = scisig.firwin(taps, high, 
                                   window=kernel_window, **kwargs)
-        hp_kernel = scisig.firwin(taps, normalized_critical_freq[1], 
+        hp_kernel = scisig.firwin(taps, low, 
                                    window=kernel_window, **kwargs)
         hp_kernel = spectral_inversion(hp_kernel)
 
@@ -86,17 +88,28 @@ def fir_filter(signal, sampling_freq, critical_freq, kernel_window='hamming',
                            - nuttall, barthann
         taps            : the number of taps in the kernel (an integer)
         kind            : the kind of pass filtering to perform 
-                          -- ('high', 'low', 'band')
+                          -- ('high', 'low', 'band', 'stop')
         **kwargs        : keyword arguments passed on to scipy.signal.firwin.
     Returns:
         filtered_signal     : an n element sequence
     """
+    print kind.lower()
+    if kind.lower()[-4:] == 'stop':
+        low = numpy.min(critical_freq)
+        high = numpy.max(critical_freq)
+        result = fir_filter(signal, sampling_freq, low, 
+                kernel_window=kernel_window, order=order, kind='low', **kwargs)
+        result += fir_filter(signal, sampling_freq, high, 
+                kernel_window=kernel_window, order=order, kind='high', **kwargs)
+        return result
+
     kernel = make_fir_filter(sampling_freq, critical_freq, kernel_window, order,
             kind, **kwargs)
 
     taps = order+1
+
     if not taps % 2: # ensure taps is odd
-        taps += 1
+        taps -= 1
 
     if signal.ndim == 2:
         result = numpy.empty(signal.shape, dtype=signal.dtype)
