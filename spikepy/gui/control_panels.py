@@ -49,7 +49,7 @@ class ControlPanel(wx.Panel):
         title = wx.StaticText(self, label=self.plugin.name)
         f = title.GetFont()
         if wx.Platform == '__WXMSW__' and len(self.plugin.name) > 40:
-            f.SetPointSize(10)
+            f.SetPointSize(f.GetPointSize()-2)
         f.SetWeight(wx.BOLD)
         title.SetFont(f)
         sizer.Add(title, flag=wx.ALIGN_LEFT|wx.ALL, border=5)
@@ -93,7 +93,7 @@ class OptionalControlPanel(ControlPanel):
         active_checkbox = wx.CheckBox(self, label=label)
         f = active_checkbox.GetFont()
         if wx.Platform == '__WXMSW__' and len(label) > 40:
-            f.SetPointSize(10)
+            f.SetPointSize(f.GetPointSize()-2)
         f.SetWeight(wx.BOLD)
         active_checkbox.SetFont(f)
 

@@ -40,6 +40,9 @@ class StageCtrl(wx.Panel):
         method_chooser.Show(bool(len(method_names)))
 
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        border = 3
+        if wx.Platform == '__WXMSW__':
+            border = 8
         flag = wx.ALIGN_CENTER_VERTICAL
         sizer.Add((15,1))
         sizer.Add(stage_text, flag=flag|wx.RIGHT|wx.BOTTOM|
@@ -140,6 +143,7 @@ class AuxiliaryCtrl(StageCtrl):
     def __init__(self, parent, stage_name, stage_display_name, **kwargs):
         StageCtrl.__init__(self, parent, stage_name, stage_display_name, [], 
                 **kwargs)
+        self.GetSizer().Add((1, 28))
 
     def _create_images(self):
         underline = wx.Image(get_image_path('underline.png'), 
