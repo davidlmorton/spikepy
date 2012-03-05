@@ -41,13 +41,13 @@ class StageCtrl(wx.Panel):
 
         sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         flag = wx.ALIGN_CENTER_VERTICAL
-        sizer.Add((10,1))
+        sizer.Add((15,1))
         sizer.Add(stage_text, flag=flag|wx.RIGHT|wx.BOTTOM|
                 wx.LEFT|wx.ALIGN_CENTER_HORIZONTAL, 
-                border=8)
+                border=3)
         sizer.Add(method_chooser, flag=flag|wx.BOTTOM|wx.ALIGN_LEFT, 
-                border=8, proportion=1)
-        sizer.Add((15,1))
+                border=3, proportion=1)
+        sizer.Add((25,1))
         self.SetSizer(sizer)
 
         self.Bind(wx.EVT_LEFT_DOWN, self.on_click)

@@ -45,7 +45,7 @@ class StrategyPane(wx.Panel):
         border = config['gui']['strategy_pane']['border']
         flag = wx.EXPAND|wx.ALL
         top_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        top_sizer.Add(self.strategy_chooser, proportion=0, 
+        top_sizer.Add(self.strategy_chooser, proportion=1, 
                 flag=flag|wx.ALIGN_CENTER_HORIZONTAL, border=border)
         top_sizer.Add(self.save_button, 
                 flag=flag|wx.ALIGN_CENTER_HORIZONTAL, border=border)
@@ -132,7 +132,8 @@ class StrategyPane(wx.Panel):
         button_sizer.Add(da_image)
         button_sizer.Add(self.run_strategy_button, proportion=0, 
                          flag=wx.ALL, border=3)
-        button_sizer.Add(self.run_stage_button, proportion=0, 
+        button_sizer.Add((6,6))
+        button_sizer.Add(self.run_stage_button, proportion=1, 
                          flag=wx.ALL, border=3)
         self.button_sizer = button_sizer
 
@@ -422,7 +423,7 @@ class StrategySummary(wx.Panel):
     def wiggle(self):
         '''
         Resize main frame up one pixel in each direction then back down... so
-        as to fix osX related drawing bugs.
+        as to fix drawing bugs.
         '''
         if wx.Platform == '__WXMSW__':
             s = self.GetSize()

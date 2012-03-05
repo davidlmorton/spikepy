@@ -48,6 +48,8 @@ class ControlPanel(wx.Panel):
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
         title = wx.StaticText(self, label=self.plugin.name)
         f = title.GetFont()
+        if wx.Platform == '__WXMSW__' and len(self.plugin.name) > 40:
+            f.SetPointSize(10)
         f.SetWeight(wx.BOLD)
         title.SetFont(f)
         sizer.Add(title, flag=wx.ALIGN_LEFT|wx.ALL, border=5)
@@ -89,6 +91,8 @@ class OptionalControlPanel(ControlPanel):
     def layout_ui(self):
         active_checkbox = wx.CheckBox(self, label=wrap(self.plugin.name, 40))
         f = active_checkbox.GetFont()
+        if wx.Platform == '__WXMSW__' and len(label) > 40:
+            f.SetPointSize(10)
         f.SetWeight(wx.BOLD)
         active_checkbox.SetFont(f)
 
@@ -217,9 +221,12 @@ class VisualizationControlPanel(OptionalControlPanel):
 
         main_sizer.Add(control_sizer, flag=wx.EXPAND)
 
-        plot_panel = PlotPanel(self, figsize=config.get_size('figure'))
-        main_sizer.Add(plot_panel, flag=wx.EXPAND|wx.ALL, border=5) 
-        main_sizer.Add(wx.StaticLine(self), flag=wx.EXPAND|wx.ALL, border=3)
+        border_panel = wx.Panel(self, style=wx.BORDER_SUNKEN)
+        plot_panel = PlotPanel(border_panel, figsize=config.get_size('figure'))
+        bps = wx.BoxSizer(orient=wx.VERTICAL)
+        bps.Add(plot_panel, proportion=1, flag=wx.EXPAND)
+        border_panel.SetSizer(bps)
+        main_sizer.Add(border_panel, flag=wx.EXPAND|wx.ALL, border=5) 
         self.SetSizer(main_sizer)
 
         self.active_checkbox = active_checkbox
@@ -263,6 +270,9 @@ class VisualizationControlPanel(OptionalControlPanel):
 
     def plot(self, trial):
         if self.active:
+            # size change is hotfix for windows-related bug
+            s = self.GetSize()
+            self.SetSize((s[0]+1, s[1]+1))
             self.plugin.draw(trial, parent_panel=self, **self.pull())
         else:
             return
