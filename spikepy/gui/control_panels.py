@@ -89,7 +89,8 @@ class OptionalControlPanel(ControlPanel):
                 background_color, **kwargs)
 
     def layout_ui(self):
-        active_checkbox = wx.CheckBox(self, label=wrap(self.plugin.name, 40))
+        label = wrap(self.plugin.name, 40)
+        active_checkbox = wx.CheckBox(self, label=label)
         f = active_checkbox.GetFont()
         if wx.Platform == '__WXMSW__' and len(label) > 40:
             f.SetPointSize(10)
