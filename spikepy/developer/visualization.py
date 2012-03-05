@@ -183,6 +183,7 @@ class Visualization(SpikepyPlugin):
             parent_panel.plot_panel.figure.set_figwidth(fig_size[0])
             parent_panel.plot_panel.figure.set_figheight(fig_size[1])
             parent_panel.Layout()
+            parent_panel.GetParent().Layout()
             parent_panel.plot_panel.clear()
             try:
                 self._plot(trial, parent_panel.plot_panel.figure, **kwargs)
