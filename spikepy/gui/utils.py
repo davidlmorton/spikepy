@@ -41,9 +41,14 @@ def normalize_rgb_color(r, g, b, a=0):
     return color
 
 def recursive_layout(panel):
-    if panel is not None:
+    if hasattr(panel, 'Layout'):
+        if hasattr(panel, 'SendSizeEvent'):
+            panel.SendSizeEvent()
         panel.Layout()
-        recursive_layout(panel.GetParent())
+        if hasattr(panel, 'SendSizeEvent'):
+            panel.SendSizeEvent()
+        if hasattr(panel, 'GetParent'):
+            recursive_layout(panel.GetParent())
 
 def named_color(name):
     '''return a color given its name, in normalized rgb format.'''

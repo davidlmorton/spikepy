@@ -22,6 +22,7 @@ import numpy
 from spikepy.common.config_manager import config_manager as config
 from spikepy.common import program_text as pt
 from spikepy.common.valid_types import ValidType
+from spikepy.gui import utils
 from spikepy.developer.spikepy_plugin import SpikepyPlugin
 
 class Visualization(SpikepyPlugin):
@@ -182,8 +183,7 @@ class Visualization(SpikepyPlugin):
             parent_panel.plot_panel.set_minsize(*fig_size)
             parent_panel.plot_panel.figure.set_figwidth(fig_size[0])
             parent_panel.plot_panel.figure.set_figheight(fig_size[1])
-            parent_panel.Layout()
-            parent_panel.GetParent().Layout()
+            utils.recursive_layout(parent_panel)
             parent_panel.plot_panel.clear()
             try:
                 self._plot(trial, parent_panel.plot_panel.figure, **kwargs)
