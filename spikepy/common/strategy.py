@@ -14,9 +14,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import copy
 
 import json
 from spikepy.common import program_text as pt
+from spikepy.common.stages import stages
 
 def make_methods_used_name(strategy_name):
     '''From a full strategy-name return just the method-used-name.'''
