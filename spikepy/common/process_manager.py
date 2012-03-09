@@ -63,8 +63,8 @@ def get_num_workers():
 
 def open_file_worker(input_queue, results_queue):
     '''Worker process to handle open_file operations.'''
-    for run_data in iter(input_queue.get, None):
-        fullpath, file_interpreters = run_data
+    for fullpath in iter(input_queue.get, None):
+        file_interpreters = plugin_manager.file_interpreters
         try:
             results = open_data_file(fullpath, file_interpreters)
         except:
@@ -252,7 +252,6 @@ class ProcessManager(object):
             Open a multiple data files. Returns a list of 
         'list of trials created'.
         '''
-        file_interpreters = plugin_manager.file_interpreters
         if len(fullpaths) == 1:
             try:
                 results = open_data_file(fullpaths[0], file_interpreters)
@@ -268,7 +267,7 @@ class ProcessManager(object):
         # setup the input and return queues.
         input_queue = multiprocessing.Queue()
         for fullpath in fullpaths:
-            input_queue.put((fullpath, file_interpreters))
+            input_queue.put(fullpath)
         for i in xrange(num_process_workers):
             input_queue.put(None)
         results_queue = multiprocessing.Queue()
