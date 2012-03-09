@@ -29,21 +29,24 @@ except ImportError:
 
 from spikepy.common.open_data_file import open_data_file
 from spikepy.common.trial_manager import Resource 
+from spikepy.common.config_manager import config_manager
+from spikepy.common.plugin_manager import plugin_manager
 from spikepy.common.errors import *
 
-def build_tasks(marked_trials, plugin, plugin_kwargs):
+def build_tasks(marked_trials, plugin, plugin_category, plugin_kwargs):
     tasks = []
     if not marked_trials:
         return tasks
 
     if plugin.is_pooling:
-        tasks.append(Task(marked_trials, plugin, plugin_kwargs))
+        tasks.append(Task(marked_trials, plugin, plugin_category, 
+                plugin_kwargs))
     else:
         for trial in marked_trials:
-            tasks.append(Task([trial], plugin, plugin_kwargs)) 
+            tasks.append(Task([trial], plugin, plugin_category, plugin_kwargs)) 
     return tasks 
 
-def get_num_workers(config_manager):
+def get_num_workers():
     '''
         Return the number of worker processes to spawn.  Number is
     determined based on cpu_count and the configuration variable:
@@ -74,7 +77,9 @@ def task_worker(input_queue, results_queue):
     for task_info in iter(input_queue.get, None):
         args = task_info['args']
         kwargs = task_info['kwargs']
-        plugin = task_info['plugin']
+        stage_name = task_info['plugin_info']['stage']
+        plugin_name = task_info['plugin_info']['name']
+        plugin = plugin_manager.find_plugin(stage_name, plugin_name)
 
         results_dict = {}
         begin_time = time.time()
@@ -95,10 +100,8 @@ class ProcessManager(object):
         ProcessManager handles all the multi-processing and task
     creation and management.
     '''
-    def __init__(self, config_manager, trial_manager, plugin_manager):
-        self.config_manager = config_manager
+    def __init__(self, trial_manager):
         self.trial_manager  = trial_manager
-        self.plugin_manager = plugin_manager
         self._task_organizer = TaskOrganizer()
 
     def build_tasks_from_strategy(self, strategy, stage_name=None):
@@ -108,40 +111,42 @@ class ProcessManager(object):
 
         if stage_name == 'auxiliary':
             for plugin_name, plugin_kwargs in strategy.auxiliary_stages.items():
-                plugin = self.plugin_manager.find_plugin('auxiliary', 
+                plugin = plugin_manager.find_plugin('auxiliary', 
                         plugin_name)
                 if plugin.runs_with_stage == 'auxiliary':
                     tasks.extend(build_tasks(marked_trials, plugin, 
-                            plugin_kwargs))
+                            stage_name, plugin_kwargs))
 
         if stage_name is not None: 
             if stage_name != 'auxiliary':
                 plugin_name = strategy.methods_used[stage_name]
-                plugin = self.plugin_manager.find_plugin(stage_name,
+                plugin = plugin_manager.find_plugin(stage_name,
                         plugin_name)
                 plugin_kwargs = strategy.settings[stage_name]
-                tasks.extend(build_tasks(marked_trials, plugin, plugin_kwargs))
+                tasks.extend(build_tasks(marked_trials, plugin, 
+                        stage_name, plugin_kwargs))
                     
                 # get auxiliary stages that should run with this stage.
                 for plugin_name, plugin_kwargs in \
                         strategy.auxiliary_stages.items():
-                    plugin = self.plugin_manager.find_plugin('auxiliary', 
+                    plugin = plugin_manager.find_plugin('auxiliary', 
                             plugin_name)
                     if plugin.runs_with_stage == stage_name:
                         tasks.extend(build_tasks(marked_trials, plugin, 
-                                plugin_kwargs))
+                                'auxiliary', plugin_kwargs))
         else: # do for all stages
             for stage_name, plugin_name in strategy.methods_used.items():
-                plugin = self.plugin_manager.find_plugin(stage_name, 
+                plugin = plugin_manager.find_plugin(stage_name, 
                         plugin_name)
                 plugin_kwargs = strategy.settings[stage_name]
-                tasks.extend(build_tasks(marked_trials, plugin, plugin_kwargs))
+                tasks.extend(build_tasks(marked_trials, plugin, stage_name,
+                        plugin_kwargs))
 
             for plugin_name, plugin_kwargs in strategy.auxiliary_stages.items():
-                plugin = self.plugin_manager.find_plugin('auxiliary', 
+                plugin = plugin_manager.find_plugin('auxiliary', 
                         plugin_name)
                 tasks.extend(build_tasks(marked_trials, plugin, 
-                        plugin_kwargs))
+                        'auxiliary', plugin_kwargs))
         return tasks 
 
     def prepare_to_run_strategy(self, strategy, stage_name=None):
@@ -149,7 +154,7 @@ class ProcessManager(object):
             Validate strategy, build tasks for it and put them in a 
         TaskOrganizer self._task_organizer. (see self.run_tasks()).
         '''
-        self.plugin_manager.validate_strategy(strategy)
+        plugin_manager.validate_strategy(strategy)
         tasks = self.build_tasks_from_strategy(strategy, stage_name=stage_name)
         for task in tasks:
             self._task_organizer.add_task(task)
@@ -159,7 +164,7 @@ class ProcessManager(object):
             Run all the tasks in self._task_organizer 
         (see self.prepare_to_run_strategy()).
         '''
-        num_process_workers = get_num_workers(self.config_manager)
+        num_process_workers = get_num_workers()
         num_tasks = self._task_organizer.num_tasks
         if num_tasks == 0:
             raise NoTasksError('There are no tasks to run')
@@ -247,7 +252,7 @@ class ProcessManager(object):
             Open a multiple data files. Returns a list of 
         'list of trials created'.
         '''
-        file_interpreters = self.plugin_manager.file_interpreters
+        file_interpreters = plugin_manager.file_interpreters
         if len(fullpaths) == 1:
             try:
                 results = open_data_file(fullpaths[0], file_interpreters)
@@ -256,7 +261,7 @@ class ProcessManager(object):
                 traceback.print_exc()
             return results
 
-        num_process_workers = get_num_workers(self.config_manager)
+        num_process_workers = get_num_workers()
         if len(fullpaths) < num_process_workers:
             num_process_workers = len(fullpaths)
 
@@ -385,11 +390,12 @@ class Task(object):
         Task objects combine a list of trials with a plugin and
     the kwargs that the plugin needs to run.
     '''
-    def __init__(self, trials, plugin, plugin_kwargs={}):
+    def __init__(self, trials, plugin, plugin_category, plugin_kwargs={}):
         self.trials = trials
         trial_ids = [t.trial_id for t in trials]
         self.task_id = uuid.uuid4()
         self.plugin = plugin
+        self.plugin_category = plugin_category
         self.plugin_kwargs = plugin_kwargs
         self.locking_keys = {}
         self._prepare_trials_for_task()
@@ -533,7 +539,8 @@ class Task(object):
         '''
         run_info = {}
         run_info['task_id'] = self.task_id
-        run_info['plugin'] = self.plugin
+        run_info['plugin_info'] = {'stage':self.plugin_category, 
+                'name':self.plugin.name}
         run_info['args'] = self._get_args()
         run_info['kwargs'] = self.plugin_kwargs
 

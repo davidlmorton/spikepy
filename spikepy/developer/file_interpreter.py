@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from spikepy.common.trial_manager import Trial
-from spikepy.common.strategy_manager import Strategy
+from spikepy.common.strategy import Strategy
 
 class FileInterpreter(object):
     '''
