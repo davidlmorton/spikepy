@@ -252,6 +252,7 @@ class ProcessManager(object):
             Open a multiple data files. Returns a list of 
         'list of trials created'.
         '''
+        file_interpreters = plugin_manager.file_interpreters
         if len(fullpaths) == 1:
             try:
                 results = open_data_file(fullpaths[0], file_interpreters)
