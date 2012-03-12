@@ -54,7 +54,7 @@ class SpikepySession(FileInterpreter):
         self.description = '''A previously saved spikepy session file.  May contain multiple trials at various stages of processing.'''
 
     def read_data_file(self, fullpath):
-        with open(fullpath, 'r') as infile:
+        with open(fullpath, 'rb') as infile:
             archive = cPickle.load(infile)
 
         return load_archive(archive)
