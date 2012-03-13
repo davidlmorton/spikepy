@@ -21,7 +21,9 @@ from spikepy.developer.methods import SpikepyMethod
 class TestSpikepyMethod(unittest.TestCase):
     def test_class_variables(self):
         sm = SpikepyMethod()
-        self.assertTrue(hasattr(sm, 'pooling'))
+        self.assertTrue(hasattr(sm, 'is_pooling'))
+        self.assertTrue(hasattr(sm, 'silent_pooling'))
+        self.assertTrue(hasattr(sm, 'unpool_as'))
         self.assertTrue(hasattr(sm, 'is_stochastic'))
         self.assertTrue(hasattr(sm, 'requires'))
         self.assertTrue(hasattr(sm.requires, '__iter__'))
