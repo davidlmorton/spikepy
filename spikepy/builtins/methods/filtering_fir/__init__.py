@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from spikepy.developer_tools.methods import FilteringMethod
+from spikepy.developer.methods import FilteringMethod
 from spikepy.common.valid_types import ValidOption, ValidInteger
 from .simple_fir import fir_filter
 
@@ -33,16 +33,16 @@ class FilteringFIR(FilteringMethod):
             'nuttal', 'barthann', default='hamming')
     low_cutoff_frequency = ValidInteger(min=10, default=300)
     high_cutoff_frequency = ValidInteger(min=10, default=3000)
-    kind = ValidOption('low pass', 'high pass', 'band pass', 
+    kind = ValidOption('low pass', 'high pass', 'band pass', 'band stop', 
             default='band pass')
     order = ValidInteger(min=31, default=100,
             description="The impulse response of an Nth-order FIR filter (i.e. with a Kronecker delta impulse input) lasts for N+1 samples, and then dies to zero." )
 
     def run(self, signal, sampling_freq, **kwargs):
-        kind = kwargs['kind'] = kwargs['kind'].lower().split()[0]
-        if kind == 'low':
+        kind = kwargs['kind'] = kwargs['kind'].lower()
+        if 'low' in kind:
             critical_freq = kwargs['low_cutoff_frequency']
-        elif kind == 'high':
+        elif 'high' in kind:
             critical_freq = kwargs['high_cutoff_frequency']
         else:
             critical_freq = (kwargs['low_cutoff_frequency'],

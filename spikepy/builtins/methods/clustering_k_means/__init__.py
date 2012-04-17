@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from scipy.cluster.vq import kmeans, vq
 import numpy
 
-from spikepy.developer_tools.methods import ClusteringMethod
+from spikepy.developer.methods import ClusteringMethod
 from spikepy.common.valid_types import ValidInteger, ValidOption
 
 class ClusteringKMeans(ClusteringMethod):
@@ -27,11 +27,10 @@ class ClusteringKMeans(ClusteringMethod):
     name = 'K-means'
     description = 'K-means clustering algorithm with random initial centroids.'
     is_stochastic = True
-
     
     restarts = ValidInteger(1, 10000, default=10)
     choices = ['Use BIC'] + map(str, range(1, 21)) 
-    number_of_clusters = ValidOption(*choices, default='Use BIC', description=
+    number_of_clusters = ValidOption(*choices, default='3', description=
             'The number of clusters, or estimate the number of clusters via minimizing the Baysian Information Criterion.')
 
     def run(self, features, number_of_clusters='Use BIC', restarts=10):

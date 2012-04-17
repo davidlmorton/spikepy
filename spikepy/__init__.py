@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from utils.wrap import wrap
 
-__version__ = "0.81"
+__version__ = "0.82"
 
 docstring = '''
 Spikepy version %s

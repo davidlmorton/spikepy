@@ -93,7 +93,7 @@ class MyFrame(wx.Frame):
         Resize main frame up one pixel in each direction then back down... so
         as to fix osX related drawing bugs.
         '''
-        if wx.Platform == '__WXMAC__':
+        if wx.Platform in ['__WXMAC__', '__WXMSW__']:
             s = self.GetSize()
             self.SetSize((s[0]+1, s[1]+1))
             self.SendSizeEvent()

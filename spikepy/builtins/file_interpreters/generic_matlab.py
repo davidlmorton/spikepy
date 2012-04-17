@@ -18,7 +18,7 @@ import os
 
 from scipy.io import loadmat
 
-from spikepy.developer_tools.file_interpreter import FileInterpreter, Trial
+from spikepy.developer.file_interpreter import FileInterpreter, Trial
 
 class GenericMatlab(FileInterpreter):
     def __init__(self):
@@ -49,7 +49,7 @@ class GenericMatlab(FileInterpreter):
         # display_name can be anything, here we just use the filename.
         display_name = os.path.splitext(os.path.split(fullpath)[-1])[0]
 
-        trials = Trial.from_raw_traces(sampling_freq, voltage_traces, 
+        trial = Trial.from_raw_traces(sampling_freq, voltage_traces, 
                 origin=fullpath, display_name=display_name)
         return [trial] # need to return a list of trials.
 

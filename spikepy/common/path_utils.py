@@ -33,6 +33,12 @@ def get_base_path():
     common_path = os.path.split(path)[0]
     return os.path.split(common_path)[0]
 
+def get_image_path(image_filename=None):
+    if image_filename is not None:
+        return os.path.join(get_base_path(), 'gui', 'images', image_filename)
+    else:
+        return os.path.join(get_base_path(), 'gui', 'images')
+
 def get_data_dirs(app_name=None):
     '''
         Return the proper directory for storing spikepy data/plugins.

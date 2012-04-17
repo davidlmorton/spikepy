@@ -28,18 +28,27 @@ from spikepy.common.config_manager import config_manager as config
 from spikepy.gui.save_strategy_dialog import SaveStrategyDialog 
 from spikepy.common.strategy_manager import Strategy
 from spikepy.gui.control_panels import ControlPanel, OptionalControlPanel
+from spikepy.gui.stage_ctrl import StageCtrl, AuxiliaryCtrl
+from spikepy.common.path_utils import get_image_path
 
 
 class StrategyPane(wx.Panel):
     def __init__(self, parent, plugin_manager, strategy_manager, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
-        self.SetBackgroundColour(wx.WHITE)
         
+        self.save_button         = wx.Button(self, label=pt.SAVE_STRATEGY)
         self.strategy_chooser = NamedChoiceCtrl(self, name=pt.STRATEGY_NAME, 
-                background_color=wx.WHITE, 
                 selection_callback=self._strategy_chooser_updated)
         choices = strategy_manager.managed_strategy_names 
         self.strategy_chooser.SetItems(choices)
+
+        border = config['gui']['strategy_pane']['border']
+        flag = wx.EXPAND|wx.ALL
+        top_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
+        top_sizer.Add(self.strategy_chooser, proportion=1, 
+                flag=flag|wx.ALIGN_CENTER_HORIZONTAL, border=border)
+        top_sizer.Add(self.save_button, 
+                flag=flag|wx.ALIGN_CENTER_HORIZONTAL, border=border)
 
         self.strategy_summary = StrategySummary(self, plugin_manager) 
         self.plugin_manager = plugin_manager 
@@ -47,17 +56,19 @@ class StrategyPane(wx.Panel):
 
         # ==== SETUP SIZER ====
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        flag = wx.EXPAND|wx.ALL
-        border = config['gui']['strategy_pane']['border']
-        sizer.Add(self.strategy_chooser, proportion=0, 
+        sizer.Add(top_sizer, proportion=0, 
                 flag=flag|wx.ALIGN_CENTER_HORIZONTAL, border=border)
         sizer.Add(wx.StaticLine(self), proportion=0, 
                 flag=flag|wx.ALIGN_CENTER_HORIZONTAL, border=border)
         sizer.Add(self.strategy_summary,  proportion=0, 
-                flag=flag|wx.ALIGN_CENTER_HORIZONTAL, border=border)
+                flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.TOP|
+                        wx.ALIGN_CENTER_HORIZONTAL, border=border)
 
         self._setup_buttons()
-        sizer.Add(self.button_sizer, proportion=0, flag=flag, border=1)
+        sizer.Add(self.button_sizer, proportion=0, 
+                flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM, border=border)
+        sizer.Add(wx.StaticLine(self), proportion=0, 
+                flag=flag|wx.ALIGN_CENTER_HORIZONTAL, border=border)
 
         self.control_panels_scroller = ScrolledPanel(self)
         sizer.Add(self.control_panels_scroller, proportion=1, flag=flag, 
@@ -112,13 +123,17 @@ class StrategyPane(wx.Panel):
         button_sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
         self.run_strategy_button = wx.Button(self, label=pt.RUN_STRATEGY)
         self.run_stage_button    = wx.Button(self, label='run stage button')
-        self.save_button         = wx.Button(self, label=pt.SAVE_STRATEGY)
 
+        down_arrow = wx.Image(get_image_path('down_arrow.png'), 
+                wx.BITMAP_TYPE_PNG).ConvertToBitmap()
+        da_image = wx.StaticBitmap(self, wx.ID_ANY, down_arrow, 
+                size=(down_arrow.GetWidth(), down_arrow.GetHeight()))
+
+        button_sizer.Add(da_image)
         button_sizer.Add(self.run_strategy_button, proportion=0, 
                          flag=wx.ALL, border=3)
-        button_sizer.Add(self.save_button, proportion=1, 
-                         flag=wx.ALL, border=3)
-        button_sizer.Add(self.run_stage_button, proportion=0, 
+        button_sizer.Add((6,6))
+        button_sizer.Add(self.run_stage_button, proportion=1, 
                          flag=wx.ALL, border=3)
         self.button_sizer = button_sizer
 
@@ -205,7 +220,7 @@ class StrategyPane(wx.Panel):
         pub.sendMessage('SET_CURRENT_STRATEGY', data=strategy)
 
     def do_layout(self):
-        self.control_panels_scroller.SetupScrolling()
+        self.control_panels_scroller.SetupScrolling(scrollToTop=False)
         self.control_panels_scroller.Layout()
         self.Layout()
 
@@ -324,128 +339,6 @@ class StrategyPane(wx.Panel):
             self._push_strategy(strategy=strategy)
             pub.sendMessage('SET_CURRENT_STRATEGY', data=strategy)
 
-class StrategyStageChooser(wx.Panel):
-    '''
-        These are the elements in a StrategySummary that the user can
-    select to choose a stage.  They also have a wxChoice control to allow
-    the user to select the method for this stage.
-    '''
-    def __init__(self, parent, stage_name, stage_display_name, 
-                 method_names, **kwargs):
-        wx.Panel.__init__(self, parent, **kwargs)
-        self.SetBackgroundColour(wx.WHITE)
-
-        self.stage_name = stage_name
-        self.method_names = method_names
-
-        stage_icon = buttons.GenBitmapButton(self, wx.ID_ANY, 
-                                     utils.get_bitmap_image('down_bar_arrow'),
-                                     size=(30,30),
-                                     style=wx.NO_BORDER)
-        stage_text = buttons.GenButton(self, 
-                                       wx.ID_ANY, "%s:" % stage_display_name, 
-                                       size=(130,30),
-                                       style=wx.NO_BORDER|wx.ALIGN_RIGHT)
-        method_chooser = wx.Choice(self, choices=method_names)
-        results_icon = buttons.GenBitmapButton(self, wx.ID_ANY, 
-                                     utils.get_bitmap_image('right_arrow'),
-                                     size=(30,30),
-                                     style=wx.NO_BORDER)
-
-        sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        flag = wx.ALL|wx.ALIGN_CENTER_VERTICAL
-        sizer.Add(stage_icon,     flag=flag, border=3)
-        sizer.Add(stage_text,     flag=flag|wx.ALIGN_RIGHT, border=3)
-        sizer.Add(method_chooser, flag=flag|wx.ALIGN_LEFT, border=3,
-                                   proportion=1)
-        sizer.Add(results_icon,   flag=flag, border=3)
-        self.SetSizer(sizer)
-
-        self.Bind(wx.EVT_LEFT_DOWN, self.on_click, self)
-        self.Bind(wx.EVT_CHOICE, self.on_method_choice, method_chooser)
-        self.Bind(wx.EVT_BUTTON, self.on_click, stage_icon)
-        self.Bind(wx.EVT_BUTTON, self.on_click, results_icon)
-        self.Bind(wx.EVT_BUTTON, self.on_click, stage_text)
-
-        self.method_chooser = method_chooser
-        self.stage_icon = stage_icon
-        self.results_icon = results_icon
-
-    def get_current_method(self):
-        return self.method_chooser.GetStringSelection()
-
-    def set_current_method(self, method_name):
-        if method_name in self.method_names:
-            self.method_chooser.SetStringSelection(method_name)
-        else:
-            raise RuntimeError("Method %s is not a valid choice for stage %s" % (method_name, self.stage_name))
-        
-    def on_method_choice(self, event):
-        event.Skip()
-        method_name = self.get_current_method()
-        pub.sendMessage(topic='METHOD_CHOSEN', 
-                        data=(self.stage_name, method_name))
-        pub.sendMessage(topic='STAGE_CHOSEN', 
-                        data=self.stage_name)
-    
-    def on_click(self, event):
-        event.Skip()
-        pub.sendMessage(topic='STAGE_CHOSEN', 
-                        data=self.stage_name)
-
-    def show_results_icon(self, state):
-        self.results_icon.Show(state)
-
-    def show_stage_icon(self, state):
-        self.stage_icon.Show(state)
-
-
-class StrategyAuxiliaryChooser(wx.Panel):
-    '''
-        These are the elements in a StrategySummary that the user can
-    select to choose a stage.
-    '''
-    def __init__(self, parent, stage_name, stage_display_name, 
-                 **kwargs):
-        wx.Panel.__init__(self, parent, **kwargs)
-        self.SetBackgroundColour(wx.WHITE)
-
-        self.stage_name = stage_name
-
-        stage_icon = buttons.GenBitmapButton(self, wx.ID_ANY, 
-                                     utils.get_bitmap_image('down_bar_arrow'),
-                                     size=(30,30),
-                                     style=wx.NO_BORDER)
-        stage_text = buttons.GenButton(self, 
-                                       wx.ID_ANY, "%s" % stage_display_name, 
-                                       size=(130,30),
-                                       style=wx.NO_BORDER|wx.ALIGN_RIGHT)
-
-        sizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        flag = wx.ALL|wx.ALIGN_CENTER_VERTICAL
-        sizer.Add(stage_icon,     flag=flag, border=3)
-        sizer.Add(stage_text,     flag=flag|wx.ALIGN_RIGHT,  proportion=1,
-                border=3)
-        self.SetSizer(sizer)
-
-        self.Bind(wx.EVT_LEFT_DOWN, self.on_click, self)
-        self.Bind(wx.EVT_BUTTON, self.on_click, stage_icon)
-        self.Bind(wx.EVT_BUTTON, self.on_click, stage_text)
-
-        self.stage_icon = stage_icon
-
-    def on_click(self, event):
-        event.Skip()
-        pub.sendMessage(topic='STAGE_CHOSEN', 
-                        data=self.stage_name)
-
-    def show_results_icon(self, state):
-        pass
-
-    def show_stage_icon(self, state):
-        self.stage_icon.Show(state)
-
-
 class StrategySummary(wx.Panel):
     '''
         The StrategySummary shows what methods are chosen for each of the
@@ -453,17 +346,16 @@ class StrategySummary(wx.Panel):
     '''
     def __init__(self, parent, plugin_manager, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
-        self.SetBackgroundColour(wx.WHITE)
 
         self.stage_choosers = []
         for stage_name in stages.stages:
             stage_display_name = stages.get_stage_display_name(stage_name)
             method_names = plugin_manager.get_plugins_by_stage(
                     stage_name).keys()
-            self.stage_choosers.append(StrategyStageChooser(self, stage_name,
+            self.stage_choosers.append(StageCtrl(self, stage_name,
                                                         stage_display_name,
                                                         sorted(method_names)))
-        self.stage_choosers.append(StrategyAuxiliaryChooser(self, 'auxiliary',
+        self.stage_choosers.append(AuxiliaryCtrl(self, 'auxiliary',
                 stages.get_stage_display_name('auxiliary')))
         
         # issued when user chooses a stage to adjust its parameters, not when
@@ -474,8 +366,7 @@ class StrategySummary(wx.Panel):
         for stage_chooser in self.stage_choosers:
             sizer.Add(stage_chooser, flag=wx.EXPAND)
 
-        self.SetMaxSize((config['gui']['strategy_pane']['min_width']-10,-1))
-        self.SetSizerAndFit(sizer)
+        self.SetSizer(sizer)
 
         pub.subscribe(self._results_notebook_page_changed, 
                       topic='RESULTS_NOTEBOOK_PAGE_CHANGED')
@@ -493,7 +384,7 @@ class StrategySummary(wx.Panel):
     def get_current_methods(self):
         return_dict = {}
         for stage_chooser in self.stage_choosers:
-            if hasattr(stage_chooser, 'get_current_method'):
+            if not isinstance(stage_chooser, AuxiliaryCtrl):
                 current_method = stage_chooser.get_current_method()
                 return_dict[stage_chooser.stage_name] = current_method
         return return_dict
@@ -510,7 +401,18 @@ class StrategySummary(wx.Panel):
                 show_fn = stage_chooser.show_results_icon
             else:
                 show_fn = stage_chooser.show_stage_icon
+                stage_chooser.show_left_bar(False)
             show_fn(stage_chooser.stage_name == stage_name)
+
+        if not results:
+            if stage_name != 'auxiliary':
+                chooser_index = stages.stages.index(stage_name)
+                for stage_chooser in self.stage_choosers:
+                    if stage_chooser.stage_name != 'auxiliary':
+                        index = stages.stages.index(stage_chooser.stage_name)
+                        stage_chooser.show_left_bar(index > chooser_index)
+                    else:
+                        stage_chooser.show_left_bar(True)
 
         if not results:
             self._current_stage = stage_name
@@ -521,7 +423,7 @@ class StrategySummary(wx.Panel):
     def wiggle(self):
         '''
         Resize main frame up one pixel in each direction then back down... so
-        as to fix osX related drawing bugs.
+        as to fix drawing bugs.
         '''
         if wx.Platform == '__WXMSW__':
             s = self.GetSize()

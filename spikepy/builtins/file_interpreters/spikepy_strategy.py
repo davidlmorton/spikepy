@@ -14,7 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from spikepy.developer_tools.file_interpreter import FileInterpreter, Trial,\
+from spikepy.developer.file_interpreter import FileInterpreter, Trial,\
         Strategy
 
 class SpikepyStrategy(FileInterpreter):

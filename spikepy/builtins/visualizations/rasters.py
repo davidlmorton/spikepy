@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import numpy
 
-from spikepy.developer_tools.visualization import Visualization
+from spikepy.developer.visualization import Visualization
 from spikepy.plotting_utils.general import create_times_array, as_fraction 
 from spikepy.plotting_utils.make_into_publication_axes import \
         make_into_publication_axes, update_scalebars 

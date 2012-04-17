@@ -18,7 +18,6 @@ import copy
 import os
 
 import wx
-from wx.lib.pubsub import Publisher as pub
 import numpy
 import configobj
 from validate import Validator
@@ -78,7 +77,6 @@ class ConfigManager(object):
         self._current = configobj.ConfigObj()
         self._status_markers = None
         self._results_frame_size = numpy.array([800, 600])
-        pub.subscribe(self._set_results_frame_size, "SET_RESULTS_FRAME_SIZE")
         self.load_configs(app_name='spikepy')
 
     def load_configs(self, **kwargs):
@@ -113,12 +111,8 @@ class ConfigManager(object):
             size_ratio = self['gui']['menu_bar']['pyshell_size_ratio']
             return self.get_size('main_frame')*size_ratio
         elif name == 'figure':
-            rfs = copy.copy(self.results_frame_size)
-            rfs[0] -= 100 # compensate for scroll bar
-            rfs[1] -= 60 # compensate for tabs.
-            base = rfs/self['gui']['plotting']['dpi']
-            width = base[0]
-            height = base[1]/2.0
+            width = self['gui']['plotting']['plot_width_inches']
+            height = self['gui']['plotting']['plot_height_inches']
             return numpy.array([width, height])
 
     # --- COLORS ---
@@ -210,7 +204,7 @@ class ConfigManager(object):
         len_color_cycle = len(cycle)
         return self.get_color(cycle[num % len_color_cycle])
         
-
+        
 config_manager = ConfigManager()
 
 

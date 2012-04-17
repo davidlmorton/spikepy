@@ -24,6 +24,7 @@ from wx.lib.delayedresult import startWorker
 
 from spikepy.common.errors import *
 from spikepy.common import program_text as pt
+from spikepy.common.config_manager import config_manager as config
 from spikepy.gui.view import View
 from spikepy.gui.utils import named_color
 from spikepy.gui.process_progress_dialog import ProcessProgressDialog
@@ -61,6 +62,9 @@ class Controller(object):
                 takes_target_results=True)
         self.session.mark_trial.add_callback(self._trial_marked,
                 takes_target_results=True)
+
+        self._current_strategy_updated(session.current_strategy)
+        self.view.frame.Raise()
 
     def warn_for_matplotlib_version(self):
         min_version = '0.99.1.1'
@@ -149,6 +153,7 @@ class Controller(object):
         self.view.frame.Show(False)
         wx.Yield()
         self.view.frame.Destroy()
+        wx.GetApp().Exit()
         
     def _close_trial(self, message):
         pub.sendMessage('UPDATE_STATUS', pt.STATUS_CLOSING)
@@ -262,7 +267,8 @@ class Controller(object):
     def _save_session(self, message):
         save_path = message.data
         pub.sendMessage('UPDATE_STATUS', pt.STATUS_SAVING) 
-        self.session.save(save_path)
+        self.session.save(save_path, 
+                gzipped=config['gui']['general']['save_session_as_gzip'])
         pub.sendMessage('UPDATE_STATUS', pt.STATUS_IDLE) 
 
     def _trial_selection_changed(self, message):

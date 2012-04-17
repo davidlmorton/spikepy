@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import numpy
 
-from spikepy.developer_tools.visualization import Visualization
+from spikepy.developer.visualization import Visualization
 from spikepy.plotting_utils.general import as_fraction 
 from spikepy.utils.collapse_event_times import collapse_event_times 
 from spikepy.common.valid_types import ValidFloat, ValidBoolean, ValidOption,\

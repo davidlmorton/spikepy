@@ -28,26 +28,25 @@ except ImportError:
 
 from spikepy.common.trial_manager import TrialManager, Trial
 from spikepy.common.process_manager import ProcessManager
-from spikepy.common.config_manager import ConfigManager
-from spikepy.common.plugin_manager import PluginManager
+from spikepy.common.plugin_manager import plugin_manager
+from spikepy.common.config_manager import config_manager
 from spikepy.common.strategy_manager import StrategyManager, Strategy
 from spikepy.common import path_utils
 from spikepy.common.errors import *
+from spikepy.common import stages
 
 class Session(object):
-    def __init__(self):
+    def __init__(self, module_suffix=None):
         path_utils.setup_user_directories(app_name='spikepy')
 
-        self.config_manager   = ConfigManager()
-        self.trial_manager    = TrialManager(self.config_manager)
-        self.plugin_manager   = PluginManager(self.config_manager, 
-                app_name='spikepy')
-        self.strategy_manager = StrategyManager(self.config_manager)
+        self.config_manager   = config_manager
+        self.trial_manager    = TrialManager()
+        self.plugin_manager   = plugin_manager
+        self.strategy_manager = StrategyManager()
         self.strategy_manager.load_all_strategies()
         self._current_strategy = None
         self.current_strategy = self.get_default_strategy()
-        self.process_manager  = ProcessManager(self.config_manager, 
-                self.trial_manager, self.plugin_manager)
+        self.process_manager  = ProcessManager(self.trial_manager)
 
         # register callback for open_files
         self.process_manager.open_files.add_callback(self._files_opened,
@@ -189,7 +188,7 @@ class Session(object):
 
     @supports_callbacks
     def _set_current_strategy(self, strategy):
-        self.plugin_manager.validate_strategy(strategy)
+        validated_strategy = self.plugin_manager.validate_strategy(strategy)
         self._current_strategy = strategy
         return strategy
 
@@ -243,23 +242,13 @@ class Session(object):
             self._run_thread.join()
 
     def get_default_strategy(self):
-        methods_used = {'detection_filter':'Infinite Impulse Response',
-                        'detection':'Voltage Threshold',
-                        'extraction_filter':'Copy Detection Filtering',
-                        'extraction':'Spike Window',
-                        'clustering':'K-means'}
+        methods_used = {}
         settings = {}
-        for key, value in methods_used.items():
-            possible_plugins = self.plugin_manager.get_plugins_by_stage(key)
-            default_settings = None
-            for name, plugin in possible_plugins.items():
-                if name == value:
-                    default_settings = plugin.get_parameter_defaults()
-                    break
-            if default_settings is not None:
-                settings[key] = default_settings
-            else:
-                raise RuntimeError('Cannot find plugin with name %s.' % value)
+        for stage_name in stages.stages:
+            plugin = self.plugin_manager.get_default_plugin(stage_name)
+            methods_used[stage_name] = plugin.name
+            settings[stage_name] = plugin.get_parameter_defaults()
+
         # add auxiliary stages
         auxiliary_stages = {}
         auxiliary_stages['Detection Spike Window'] = \

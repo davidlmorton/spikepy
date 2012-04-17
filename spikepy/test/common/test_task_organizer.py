@@ -47,11 +47,11 @@ class TaskOrganizerTests(unittest.TestCase):
         fep.name = 'fep'
         cp  = FauxPlugin(requires=['f'],        provides=['c'])
         cp.name = 'cp'
-        cp.pooling = True
+        cp.is_pooling = True
 
         crp  = FauxPlugin(requires=['ev', 'ef', 'c'],  provides=['c', 'cr'])
         crp.name = 'crp'
-        crp.pooling = True
+        crp.is_pooling = True
         esrp = FauxPlugin(requires=['ef'],             provides=['ef'])
         esrp.name = 'esrp'
         esrp2 = FauxPlugin(requires=['ef'],             provides=['ef'])
@@ -63,7 +63,7 @@ class TaskOrganizerTests(unittest.TestCase):
         
         tasks = []
         for plugin in plugins:
-            tasks.extend(build_tasks(trials, plugin, {}))
+            tasks.extend(build_tasks(trials, plugin, 'plugin_category', {}))
                     
         self.dfp = dfp
         self.sdp = sdp

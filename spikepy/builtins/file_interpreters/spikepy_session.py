@@ -19,7 +19,7 @@ import gzip
 
 import numpy
 
-from spikepy.developer_tools.file_interpreter import FileInterpreter, Trial,\
+from spikepy.developer.file_interpreter import FileInterpreter, Trial,\
         Strategy
 
 def load_archive(archive):
@@ -54,7 +54,7 @@ class SpikepySession(FileInterpreter):
         self.description = '''A previously saved spikepy session file.  May contain multiple trials at various stages of processing.'''
 
     def read_data_file(self, fullpath):
-        with open(fullpath, 'r') as infile:
+        with open(fullpath, 'rb') as infile:
             archive = cPickle.load(infile)
 
         return load_archive(archive)

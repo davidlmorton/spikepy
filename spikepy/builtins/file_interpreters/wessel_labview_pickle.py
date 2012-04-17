@@ -20,7 +20,7 @@ import os
 
 import numpy
 
-from spikepy.developer_tools.file_interpreter import FileInterpreter, Trial
+from spikepy.developer.file_interpreter import FileInterpreter, Trial
 
 class WesselLabViewText(FileInterpreter):
     def __init__(self):

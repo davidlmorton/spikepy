@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import numpy
 
-from spikepy.developer_tools.methods import AuxiliaryMethod
+from spikepy.developer.methods import AuxiliaryMethod
 from spikepy.common.valid_types import ValidFloat
 from spikepy.utils.frequency_analysis import psd
 

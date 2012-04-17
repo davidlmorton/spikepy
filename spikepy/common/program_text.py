@@ -70,7 +70,7 @@ EXPORT_TO_DIRECTORY = "Export to directory:"
 BROWSE = "Browse..."
 CHOOSE_EXPORT_DIRECTORY = "Choose export directory"
 EXPORT_MARKED = 'Export MARKED trials'
-SAVE_STRATEGY = "Save Strategy..."
+SAVE_STRATEGY = "Save..."
 
 ALL_FILES = "All Files (*)"
 SESSION_FILES = "Spikepy Session Files (*.ses)"
@@ -99,7 +99,7 @@ STRATEGY_PANE_TITLE = 'Strategy'
 RUN_STAGE = "Run '%s'" #% stage_name
 RUN_AUXILIARY_PLUGINS = 'Run Auxiliary Plugins'
 RUN_STRATEGY = "Run Strategy" 
-STRATEGY_NAME = "Strategy Name:"
+STRATEGY_NAME = "Strategy"
 CUSTOM_LC = "custom"
 CUSTOM_SC = "Custom"
 

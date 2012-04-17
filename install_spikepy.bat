@@ -1,1 +1,2 @@
-python setup.py install clean
+python uninstall.py
+python setup.py install

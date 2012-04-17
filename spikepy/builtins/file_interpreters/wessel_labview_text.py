@@ -18,7 +18,7 @@ import gzip
 
 import numpy
 
-from spikepy.developer_tools.file_interpreter import FileInterpreter
+from spikepy.developer.file_interpreter import FileInterpreter
 
 class Wessel_LabView_text(FileInterpreter):
     def __init__(self):
