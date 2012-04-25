@@ -209,7 +209,7 @@ class Session(object):
         else:
             return False
 
-    def run(self, strategy=None, stage_name=None, 
+    def run(self, stage_name=None, strategy=None,  
             message_queue=multiprocessing.Queue(),
             async=False):
         '''
@@ -224,7 +224,7 @@ class Session(object):
             async: If True, processing will run in a separate thread.  This 
                     thread can be joined with session.join_run()
         '''
-        if strategy is None:
+        if strategy is None or not isinstance(strategy, Strategy):
             strategy = self.current_strategy 
 
         # if still none, then abort run.
