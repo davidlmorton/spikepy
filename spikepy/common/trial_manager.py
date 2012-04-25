@@ -388,6 +388,12 @@ class Resource(object):
     def __init__(self, name, data=None):
         self.name = name
         self._id = uuid.uuid4()
+        self.hardset_data(data)
+
+    def hardset_data(self, data=None):
+        '''
+        Sets the data for this resource, even if it is locked.
+        '''
         self._locked = False
         self._locking_key = None
         self._change_info = {'by':None, 'at':datetime.datetime.now(), 
