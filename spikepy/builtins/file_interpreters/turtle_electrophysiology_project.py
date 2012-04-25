@@ -25,7 +25,7 @@ SHANK_CHANNEL_INDEX = [9,   8, 10,  7, 13,  4, 12,  5,
 
 class TurtleElectrophysiologyProject(FileInterpreter):
     def __init__(self):
-        self.name = 'Archived TEP file.'
+        self.name = 'Archived TEP file'
         self.extentions = ['.gz', '.cPickle']
         # higher priority means will be used in ambiguous cases
         self.priority = 10 
