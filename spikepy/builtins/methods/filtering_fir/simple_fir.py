@@ -93,7 +93,6 @@ def fir_filter(signal, sampling_freq, critical_freq, kernel_window='hamming',
     Returns:
         filtered_signal     : an n element sequence
     """
-    print kind.lower()
     if kind.lower()[-4:] == 'stop':
         low = numpy.min(critical_freq)
         high = numpy.max(critical_freq)
