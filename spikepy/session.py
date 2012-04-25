@@ -28,8 +28,8 @@ except ImportError:
 
 from spikepy.common.trial_manager import TrialManager, Trial
 from spikepy.common.process_manager import ProcessManager
-from spikepy.common.config_manager import ConfigManager
-from spikepy.common.plugin_manager import PluginManager
+from spikepy.common.plugin_manager import plugin_manager
+from spikepy.common.config_manager import config_manager
 from spikepy.common.strategy_manager import StrategyManager, Strategy
 from spikepy.common import path_utils
 from spikepy.common.errors import *
@@ -39,17 +39,14 @@ class Session(object):
     def __init__(self, module_suffix=None):
         path_utils.setup_user_directories(app_name='spikepy')
 
-        self.config_manager   = ConfigManager()
-        self.trial_manager    = TrialManager(self.config_manager)
-        self.plugin_manager   = PluginManager(self.config_manager, 
-                app_name='spikepy', module_suffix=module_suffix)
-        self.strategy_manager = StrategyManager(self.config_manager,
-                self.plugin_manager)
+        self.config_manager   = config_manager
+        self.trial_manager    = TrialManager()
+        self.plugin_manager   = plugin_manager
+        self.strategy_manager = StrategyManager()
         self.strategy_manager.load_all_strategies()
         self._current_strategy = None
         self.current_strategy = self.get_default_strategy()
-        self.process_manager  = ProcessManager(self.config_manager, 
-                self.trial_manager, self.plugin_manager)
+        self.process_manager  = ProcessManager(self.trial_manager)
 
         # register callback for open_files
         self.process_manager.open_files.add_callback(self._files_opened,

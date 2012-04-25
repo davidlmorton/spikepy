@@ -204,7 +204,7 @@ class ConfigManager(object):
         len_color_cycle = len(cycle)
         return self.get_color(cycle[num % len_color_cycle])
         
-
+        
 config_manager = ConfigManager()
 
 

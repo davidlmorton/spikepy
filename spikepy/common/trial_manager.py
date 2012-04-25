@@ -51,8 +51,7 @@ class TrialManager(object):
     session.  It handles marking/unmarking, adding/removing trials, and 
     assigning unique display names to trials.
     """
-    def __init__(self, config_manager):
-        self.config_manager = config_manager
+    def __init__(self):
         self._trial_index = {}
         self._display_names = set()
 

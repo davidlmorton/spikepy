@@ -142,8 +142,7 @@ def load_all_plugins(data_dirs=None, module_suffix=None, **kwargs):
 
 class PluginManager(object):
     '''PluginManager is used to load and access spikepy plugins.'''
-    def __init__(self, config_manager, **kwargs):
-        self.config_manager = config_manager 
+    def __init__(self, **kwargs):
         self._loaded_plugins = None
         self.load_plugins(**kwargs)
 
@@ -262,6 +261,9 @@ class PluginManager(object):
         except KeyError:
             raise MissingPluginError(
                     'No data_interpreter named "%s" could be found'% stage_name)
+
+
+plugin_manager = PluginManager()
         
         
         

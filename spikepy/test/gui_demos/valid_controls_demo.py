@@ -18,12 +18,8 @@ import wx
 
 from spikepy.gui.valid_controls import *
 from spikepy.common.valid_types import *
-from spikepy import session
 from spikepy.gui.strategy_pane import ControlPanel
 
-s = session.Session()
-p = s.plugin_manager.find_plugin('detection_filter', 
-        'Infinite Impulse Response')
 
 # setup app and main_frame
 app = wx.PySimpleApp()
@@ -50,13 +46,10 @@ control4 = ValidChoiceControl(main_frame, name='Choice',
         valid_type=ValidOption('bleh', 'blah', 'blew', default='blah'), 
         valid_entry_callback=print_entry)
 
-cp1 = ControlPanel(main_frame, p, valid_entry_callback=print_entry)
-
 sizer.Add(control1)
 sizer.Add(control2)
 sizer.Add(control3)
 sizer.Add(control4)
-sizer.Add(cp1)
 
 # set sizer and run app
 main_frame.SetSizer(sizer)

@@ -1,0 +1,7 @@
+This is a place for other projects that Spikepy depends on.
+
+If the other project is installed by the user, their currently installed 
+version will be used.
+
+This then is just a fall-back installation in case they don't have
+it already installed.

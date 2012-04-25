@@ -1,2 +1,3 @@
 This is just a place to put little scripts that help with 
-debugging/testing out parts of the program.
+debugging/testing out parts of the program that are 
+not easy to write automated unittests for.
