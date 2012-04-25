@@ -140,19 +140,13 @@ class ClusteredFeaturesVisualization(Visualization):
             num_drawn = min(max_drawn, len(features))
             color=cluster_colors[invert_colors][
                     i%len(cluster_colors[invert_colors])]
+            if point_size > 0:
+                marker = 'o'
+            else:
+                marker = ''
+            label = None
+            alpha = opacity
             for j, feature in enumerate(features[:max_drawn]):
-                if point_size > 0:
-                    marker = 'o'
-                else:
-                    marker = ''
-                if j == 0:
-                    label = '%s: %d of %d drawn' % (cluster_name, 
-                            num_drawn, len(features))
-                    alpha = 1.0
-                else:
-                    label = None
-                    alpha = opacity
-
                 axes.plot(feature, 
                     color=color,
                     alpha=alpha, 
@@ -162,6 +156,22 @@ class ClusteredFeaturesVisualization(Visualization):
                     markerfacecolor=color,
                     markersize=point_size,
                     label=label)
+
+            # plot the average spike window for this cluster.
+            average_feature = numpy.average(features, axis=0)
+            label = '%s: %d of %d drawn' % (cluster_name, 
+                    num_drawn, len(features))
+            alpha = 1.0
+
+            axes.plot(average_feature, 
+                color=color,
+                alpha=alpha, 
+                linewidth=line_width, 
+                marker=marker,
+                markeredgecolor=foreground[invert_colors],
+                markerfacecolor=color,
+                markersize=point_size,
+                label=label)
 
         axes.set_ylabel('Feature Amplitude', color=foreground[invert_colors])
         axes.set_xlabel('Feature Index', 

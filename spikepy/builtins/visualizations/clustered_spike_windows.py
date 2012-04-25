@@ -76,24 +76,19 @@ class ClusteredSpikeWindowsVisualization(Visualization):
         times = numpy.arange(0, csws.values()[0].shape[-1],
                 dtype=numpy.float64)/sampling_freq*1000.0
 
+        # plot the spike windows
         for i, cluster_name in enumerate(sorted(csws.keys())):
             spike_windows = csws[cluster_name]
             num_drawn = min(max_drawn, len(spike_windows))
             color=cluster_colors[invert_colors][
                     i%len(cluster_colors[invert_colors])]
+            if point_size > 0:
+                marker = 'o'
+            else:
+                marker = ''
+            label = None
+            alpha = opacity
             for j, spike_window in enumerate(spike_windows[:max_drawn]):
-                if point_size > 0:
-                    marker = 'o'
-                else:
-                    marker = ''
-                if j == 0:
-                    label = '%s: %d of %d drawn' % (cluster_name, 
-                            num_drawn, len(spike_windows))
-                    alpha = 1.0
-                else:
-                    label = None
-                    alpha = opacity
-
                 axes.plot(times, spike_window, 
                     color=color,
                     alpha=alpha, 
@@ -103,6 +98,22 @@ class ClusteredSpikeWindowsVisualization(Visualization):
                     markerfacecolor=color,
                     markersize=point_size,
                     label=label)
+
+            # plot the average spike window for this cluster.
+            average_spike_window = numpy.average(spike_windows, axis=0)
+            label = '%s: %d of %d drawn' % (cluster_name, 
+                    num_drawn, len(spike_windows))
+            alpha = 1.0
+
+            axes.plot(times, average_spike_window, 
+                color=color,
+                alpha=alpha, 
+                linewidth=line_width, 
+                marker=marker,
+                markeredgecolor=foreground[invert_colors],
+                markerfacecolor=color,
+                markersize=point_size,
+                label=label)
 
         axes.set_ylabel('Amplitude (mV)', color=foreground[invert_colors])
         axes.set_xlabel('Time (ms)', 
