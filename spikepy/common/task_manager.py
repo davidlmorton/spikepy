@@ -99,17 +99,27 @@ class TaskManager(object):
             task_found = True
 
         if not task_found:
-            raise TaskNotManagedError('Task not under management: %s' % 
+            raise TaskError('Task not under management: %s' % 
                     str(task))
 
         return task.checkout()
 
     def add_task(self, new_task):
         ''' Add a task to the Manager. '''
+        # Check for one-originator rule violations
+        for task in self.tasks:
+            violating_resources = set(new_task.originates).intersection(
+                    set(task.originates))
+            if violating_resources:
+                str_violators = map(str, violating_resources)
+                raise TaskError('Could not add the task %s because the following resources violate the one-orignator rule:%s' % str_violators)
+
+        # add task
         if new_task.modifies:
             self._modifying_tasks.append(new_task)
         else:
             self._non_modifying_tasks.append(new_task)
+
 
 def change_info_matches(reference, sample):
     '''
@@ -194,7 +204,7 @@ class Task(object):
                 if not hasattr(trial, resource_name):
                     trial.add_resource(Resource(resource_name))
                 elif not isinstance(getattr(trial, resource_name), Resource):
-                    raise TaskCreationError('This plugin provides %s, but that is a read-only attribute on trial %s.' % (resource_name, trial.trial_id))
+                    raise TaskError('This plugin provides %s, but that is a read-only attribute on trial %s.' % (resource_name, trial.trial_id))
 
     @property
     def would_generate_unique_results(self):
@@ -333,7 +343,7 @@ class Task(object):
             else:
                 total_len += 1
         if len(ndim_set) != 1:
-            raise DimensionalityError('The dimensionality of the %s of different trials do not match.  Instead of all being a single dimensionality your trials have %s with dimensionality as follows.  %s' % 
+            raise TaskError('The dimensionality of the %s of different trials do not match.  Instead of all being a single dimensionality your trials have %s with dimensionality as follows.  %s' % 
                 (resource_name, resource_name, 
                 str(list(num_feature_dimensionalities))))
 
@@ -405,7 +415,7 @@ class Resource(object):
         Sets the data for this resource, bypassing the checkout-checkin system.
         '''
         if self._locked:
-            raise ResourceLockedError(pt.RESOURCE_LOCKED % self.name)
+            raise ResourceError(pt.RESOURCE_LOCKED % self.name)
         self._change_info = {'by':'Manually', 'at':datetime.datetime.now(), 
                 'with':None, 'using':None, 'change_id':uuid.uuid4()}
         self._data = data
@@ -435,7 +445,7 @@ class Resource(object):
         out until you've checked it in via <checkin>.
         '''
         if self.is_locked:
-            raise ResourceLockedError(pt.RESOURCE_LOCKED % self.name)
+            raise ResourceError(pt.RESOURCE_LOCKED % self.name)
         else:
             self._locking_key = uuid.uuid4()
             self._locked = True
@@ -454,7 +464,7 @@ class Resource(object):
                                  be left out of the 'change_info' dictionary.
         '''
         if not self.is_locked:
-            raise ResourceNotLockedError(pt.RESOURCE_NOT_LOCKED % self.name)
+            raise ResourceNotError(pt.RESOURCE_NOT_LOCKED % self.name)
         else:
             if key == self._locking_key:
                 if data_dict is not None:
@@ -464,7 +474,7 @@ class Resource(object):
                 self._locking_key = None
                 self._locked = False
             else:
-                raise InvalidLockingKeyError(pt.RESOURCE_KEY_INVALID % 
+                raise ResourceError(pt.RESOURCE_KEY_INVALID % 
                         (str(key), self.name))
 
     def _commit_change_info(self, change_info, preserve_provenance):
