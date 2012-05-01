@@ -1,4 +1,4 @@
-from pipeline_scheduler import PipelineScheduler, Operation
+from scheduler import Scheduler, Operation
 
 data = [([1],[2],'A'),
         ([2],[3],'B'),
@@ -6,6 +6,8 @@ data = [([1],[2],'A'),
         ([2],[2,5],'D'),
         ([3,4],[3,4],'E'),
         ([1,2],[2],'F'),
+        ([4,5], [4], 'G'),
+        ([5], [6], 'H')
         ]
 
 def make_operations(data):
@@ -14,7 +16,8 @@ def make_operations(data):
         results.append(Operation(inputs, outputs, name))    
     return results
 
-ps = PipelineScheduler(root_operation=Operation([],[1],'root'))
+ps = Scheduler()
+ps.set_root_outputs([1])
 for operation in make_operations(data):
     ps.add_operation(operation)
 
