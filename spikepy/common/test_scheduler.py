@@ -21,3 +21,7 @@ ps.set_root_outputs([1])
 for operation in make_operations(data):
     ps.add_operation(operation)
 
+ops = {}
+for op in ps.operations:
+    ops[op.name] = op
+    
