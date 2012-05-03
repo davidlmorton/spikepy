@@ -20,6 +20,7 @@ import itertools
 import numpy
 import networkx as nx
 
+
 class Operation(object):
     '''
         This class represents nodes in the directed-graph representation
@@ -41,14 +42,19 @@ class Operation(object):
         self.finalizes = inputs - outputs
 
     def __str__(self):
-        return str(self.name)
+        return repr(self)
 
     def __repr__(self):
-        return str(self)
+        return '%s->%s->%s' % (
+                str(list(self.inputs)).replace('[','(').replace(']',')'), 
+                self.name, 
+                str(list(self.outputs)).replace('[','(').replace(']',')'))
+
 
 class RootOperation(Operation):
     def __init__(self, outputs):
         Operation.__init__(self, [], outputs, name='Root')
+
 
 def find_dependencies(xputs):
     results = []
@@ -62,34 +68,37 @@ def find_dependencies(xputs):
                     desc['finalized_by']))
     return results
 
-def get_ready_operations(graph):
+
+def find_ready_operations(graph):
     '''
         Return the set of ready operations.  In order for an
     operation to be ready, it must have no incomming links.
     '''
     return [node for node in graph.nodes() if graph.in_degree(node) == 0]
 
+
 def remove_operations(graph, operations):
     for op in operations:
         graph.remove_node(op)
 
-def get_ready_sets(graph):
+
+def find_ready_sets(graph):
     g = graph.copy()
     nodes = {}
     for node in graph.nodes():
         nodes[node.name] = node
 
-    operations = get_ready_operations(g)
+    operations = find_ready_operations(g)
     results = []
     while operations:
         results.append([nodes[op.name] for op in operations])
         remove_operations(g, operations)
-        operations = get_ready_operations(g)
+        operations = find_ready_operations(g)
     return results
     
 
 def layout_operations(graph, offset=None):
-    ready_sets = get_ready_sets(graph)
+    ready_sets = find_ready_sets(graph)
 
     if offset is None:
         offset = numpy.array([1.0, 0.5])
@@ -103,6 +112,7 @@ def layout_operations(graph, offset=None):
         
     return positions
         
+
 def plot_graph(graph, executing_operations=None, finished_operations=None, 
         colors=['gray', 'g', 'c'], layout='circular', **kwargs):
     pos = {'circular':nx.layout.circular_layout(graph),
@@ -132,12 +142,13 @@ def plot_graph(graph, executing_operations=None, finished_operations=None,
     return nx.draw(graph, pos=pos[layout], edge_color=edge_color, 
             node_color=node_color, **kwargs)
 
-def get_impossible_operations(operations):
+
+def find_impossible_operations(operations):
     '''
         Return the list of operations that have inputs that
     are not originated by any other operation.
     '''
-    xputs = get_xputs(operations) 
+    xputs = find_xputs(operations) 
 
     impossible_operations = set()
     for info in xputs.values():
@@ -148,7 +159,7 @@ def get_impossible_operations(operations):
     return impossible_operations 
 
 
-def get_xputs(operations):
+def find_xputs(operations):
     '''
         Return xputs, which is a nested dictionary of lists that
     describe the data-flow for inputs and outputs.
@@ -190,7 +201,9 @@ class Scheduler(object):
     def ready_operations(self):
         if self._graph is None:
             self._setup_graphs()
-        return get_ready_operations(self._graph)
+        potentials = set(find_ready_operations(self._graph))
+        potentials.difference_update(self._executing_operations)
+        return potentials
 
     @property
     def impossible_operations(self):
@@ -208,7 +221,7 @@ class Scheduler(object):
     def complete_operation(self, operation):
         self._executing_operations.remove(operation)
         self._finished_operations.add(operation)
-        remove_operations(self._graph, [operation])
+        self._graph.remove_node(operation)
 
     def plot(self, layout='linear', **kwargs):
         return plot_graph(self._display_graph, 
@@ -229,7 +242,7 @@ class Scheduler(object):
         operations = self._operations + [self.root_operation]
         impossible_operations = set()
         while True:
-            tio = get_impossible_operations(operations)
+            tio = find_impossible_operations(operations)
             impossible_operations.update(tio)
             if tio:
                 for io in tio:
@@ -237,7 +250,7 @@ class Scheduler(object):
             else:
                 break
 
-        xputs = get_xputs(operations)
+        xputs = find_xputs(operations)
         dependencies = find_dependencies(xputs)
 
         graph = nx.DiGraph()

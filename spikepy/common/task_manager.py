@@ -14,7 +14,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import datetime
+import copy
 import uuid
+
+import numpy
+
+from spikepy.common.scheduler import Scheduler, Operation
 
 class TaskManager(object):
     '''
@@ -22,16 +28,106 @@ class TaskManager(object):
     ready to be run.
     '''
     def __init__(self):
-        self._modifying_tasks = []
-        self._non_modifying_tasks = []
-
-    @property
-    def num_tasks(self):
-        return len(self._modifying_tasks) + len(self._non_modifying_tasks)
+        self._scheduler = Scheduler()
+        self._task_to_operation_index = {}
+        self._operation_name_to_task_index = {}
 
     @property
     def tasks(self):
-        return self._modifying_tasks + self._non_modifying_tasks
+        return self._task_to_operation_index.keys()
+
+    @property
+    def num_tasks(self):
+        return len(self.tasks)
+
+    def remove_all_tasks(self):
+        self._task_to_operation_index = {}
+        self._operation_name_to_task_index = {}
+
+    def remove_task(self, task):
+        if task in self._task_to_operation_index.keys():
+            operation = self._task_to_operation_index[task]
+            del self._operation_name_to_task_index[operation.name]
+            del self._task_to_operation_index[task]
+        else:
+            raise TaskError('Tried to remove a task that is not under management.')
+
+    def add_root_task(self, root_task):
+        removed_ops = self._scheduler.set_root_outputs(root_task.provided_ids)
+        root_operation = self._scheduler.root_operation 
+        removed_tasks = [self._operation_name_to_task_index[op.name]
+                for op in removed_ops]
+        for task in removed_tasks:
+            self.remove_task(task)
+        return removed_tasks
+
+    def add_task(self, new_task):
+        # 1. make operation
+        # 2. add operation into scheduler
+        # 3. add task and operation to indecies
+
+        # find a unique name for this operation.
+        operation_name = new_task.plugin.name # TODO make shorter 
+        if operation_name in self._operation_name_to_task_index.keys():
+            operation_name += '_2'
+        while operation_name in self._operation_name_to_task_index.keys():
+            num = int(operation_name.split('_')[-1])
+            operation_name.replace('_%d' % num, '_%d' % (num+1))
+            
+        operation = Operation(new_task.required_ids, new_task.provided_ids,
+                name=operation_name)
+        self._scheduler.add_operation(operation)
+
+        self._task_to_operation_index[new_task] = operation
+        self._operation_name_to_task_index[operation_name] = new_task
+    
+    def get_ready_tasks(self):
+        '''
+            Return a list of runnable tasks. 
+        '''
+        potentials = self._scheduler.ready_operations
+        root = self._scheduler.root_operation
+        found_root = False
+
+        ready_tasks = []
+        for op in potentials:
+            if op is not root:    
+                task = self._operation_name_to_task_index[op.name]
+                if task.is_ready:
+                    ready_tasks.append(task)
+            else:
+                found_root = True
+
+        # if root was there, remove it and add all the tasks available
+        #   after root.
+        if found_root:
+            self._scheduler.start_operation(root)
+            self._scheduler.complete_operation(root)
+            ready_tasks.extend(self.get_ready_tasks())
+
+        return ready_tasks 
+
+    def checkout_task(self, task):
+        if task not in self.tasks:
+            raise TaskError('Task not under management: %s' % 
+                    str(task))
+        else:
+            operation = self._task_to_operation_index[task]
+            self._scheduler.start_operation(operation)
+            return task.checkout()
+
+    def complete_task(self, task, result=None):
+        if task not in self.tasks:
+            raise TaskError('Task not under management: %s' % 
+                    str(task))
+        else:
+            operation = self._task_to_operation_index[task]
+            self._scheduler.complete_operation(operation)
+            self.remove_task(task)
+            if result is not None:
+                return task.complete(result)
+            else:
+                return task.skip()
 
     def __str__(self):
         str_list = ['TaskManager:']
@@ -39,103 +135,61 @@ class TaskManager(object):
             str_list.append('    %s' % str(task))
         return '\n'.join(str_list)
 
-    def remove_tasks(self):
-        self._modifying_tasks = []
-        self._non_modifying_tasks = []
+class StageRootTask(object):
+    def __init__(self, trials, plugins):
+        self.trials = trials
+        self.plugins = plugins
+        self.provides = self._calculate_provides()
 
-    def pull_runnable_tasks(self):
+    def _calculate_provides(self):
         '''
-            Return a list of (task, task_info) tuples for each runnable task 
-        and remove those tasks from the organizer.
+            This should return the list of resources that are required by
+        self.plugins but are not originated by them.
         '''
-        results = []
+        # find the name of the resources that are required but not originated.
+        originated_by_plugins = set()
+        required_by_plugins = set()
+        for p in self.plugins:
+            originated_by_plugins.update(set(p.provides)-set(p.requires))
+            required_by_plugins.update(set(p.requires))
+        originated_by_root = required_by_plugins - originated_by_plugins
 
-        task_list = [task for task in self._stationary_tasks.values()]
-        task_list += [task for task in self._non_stationary_tasks.values()]
-        skipped_tasks = []
-        impossible_tasks = []
-        for task in task_list:
-            all_provided_items = []
-            for ttask in self._non_stationary_tasks.values():
-                all_provided_items.extend(ttask.provides)
-            can_run = True
-
-            # do you require something that someone here will later provide?
-            for req in task.requires:
-                if req in all_provided_items:
-                    can_run = False
-                    break
-
-            # do you require or provide something that is locked?
-            if not task.is_ready:
-                can_run = False
-
-            # do you require something never set?
-            if can_run:
-                (co_task, co_task_info) = self.checkout_task(task)
-                impossible = False
-                for item in co_task.requires:
-                    if item.data is None:
-                        impossible = True
-
-                if impossible:
-                    co_task.skip()
-                    impossible_tasks.append(co_task)
-                elif co_task.would_generate_unique_results:
-                    results.append((co_task, co_task_info))
-                else:
-                    co_task.skip()
-                    skipped_tasks.append(co_task)
-                
-        return results, skipped_tasks, impossible_tasks 
-
-    def checkout_task(self, task):
-        task_found = False
-        if task in self._modifying_tasks:
-            self._modifying_tasks.remove(task)
-            task_found = True
-        elif task in self._non_modifying_tasks:
-            self._non_modifying_tasks.remove(task)
-            task_found = True
-
-        if not task_found:
-            raise TaskError('Task not under management: %s' % 
-                    str(task))
-
-        return task.checkout()
-
-    def add_task(self, new_task):
-        ''' Add a task to the Manager. '''
-        # Check for one-originator rule violations
-        for task in self.tasks:
-            violating_resources = set(new_task.originates).intersection(
-                    set(task.originates))
-            if violating_resources:
-                str_violators = map(str, violating_resources)
-                raise TaskError('Could not add the task %s because the following resources violate the one-orignator rule:%s' % str_violators)
-
-        # add task
-        if new_task.modifies:
-            self._modifying_tasks.append(new_task)
+        provides = []
+        unmet_requirements = []
+        for trial in self.trials:
+            for plugin in self.plugins:
+                for requirement_name in originated_by_root:
+                    if hasattr(trial, requirement_name) and\
+                            getattr(trial, requirement_name) is not None:
+                        provides.append(getattr(trial, requirement_name))
+                    else:
+                        unmet_requirements.append((requirement_name, 
+                                trial.display_name))
+        if unmet_requirements:
+            raise UnmetRequirementsError(unmet_requirements)
         else:
-            self._non_modifying_tasks.append(new_task)
+            return provides
+
+    @property
+    def provided_ids(self):
+        return [r.id for r in self.provides]
 
 
-def change_info_matches(reference, sample):
-    '''
-    Return True if the sample change_info matches the reference.
-    Only compares the following keys:
-        'using'
-        'with'
-        'by'
-    '''
-    if not isinstance(reference, dict) or\
-            not isinstance(sample, dict):
-        return False
-    for key in ['by','using','with']:
-        if reference[key] != sample[key]:
-            return False
-    return True
+class RootTask(object):
+    def __init__(self, trials):
+        self.trials = trials
+
+    @property
+    def provides(self):
+        result = []
+        for trial in self.trials:
+            for resource in trial.originates:
+                result.append(resource)
+        return result
+
+    @property
+    def provided_ids(self):
+        return [r.id for r in self.provides]
 
 
 class Task(object):
@@ -161,22 +215,6 @@ class Task(object):
         return '\n'.join(str_list)
 
     @property
-    def modifies(self):
-        '''
-            Return the list of Resources that this task both requires and
-        provides.
-        '''
-        return list(set(self.provides).intersection(set(self.requires))]
-
-    @property
-    def originates(self):
-        '''
-            Return the list of Resources that this task originates.  That is
-        the list of Resources that this task provides but does not require.
-        '''
-        return list(set(self.provides) - set(self.requires))
-
-    @property
     def provides(self):
         '''Return the Resource(s) this task provides after running.'''
         result = []
@@ -186,6 +224,10 @@ class Task(object):
         return result
 
     @property
+    def provided_ids(self):
+        return [r.id for r in self.provides]
+        
+    @property
     def requires(self):
         '''Return the Resource(s) this task requires to run.'''
         result = []
@@ -193,6 +235,10 @@ class Task(object):
             for resource_name in self.plugin.requires:
                 result.append(getattr(trial, resource_name))
         return result
+
+    @property
+    def required_ids(self):
+        return [r.id for r in self.requires]
 
     def _prepare_trials_for_task(self):
         '''
@@ -288,7 +334,7 @@ class Task(object):
                 item.checkin(data_dict, key=key, 
                         preserve_provenance=preserve_provenance) 
 
-    def get_run_info(self):
+    def checkout(self):
         '''
         Return a dictionary with the stuff needed to run.
         '''
@@ -410,6 +456,10 @@ class Resource(object):
         self._locking_key = None
         self.manually_set_data(data)
 
+    @property
+    def id(self):
+        return self._id
+
     def manually_set_data(self, data=None):
         '''
         Sets the data for this resource, bypassing the checkout-checkin system.
@@ -419,9 +469,6 @@ class Resource(object):
         self._change_info = {'by':'Manually', 'at':datetime.datetime.now(), 
                 'with':None, 'using':None, 'change_id':uuid.uuid4()}
         self._data = data
-
-    def __hash__(self):
-        return hash(self._id)
 
     @classmethod
     def from_dict(cls, info_dict):

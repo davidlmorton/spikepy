@@ -15,6 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
+import random
 import multiprocessing
 import traceback
 import time
@@ -30,6 +31,8 @@ except ImportError:
 from spikepy.common.open_data_file import open_data_file
 from spikepy.common.config_manager import config_manager
 from spikepy.common.plugin_manager import plugin_manager
+from spikepy.common.task_manager import TaskManager, Task, RootTask,\
+        StageRootTask
 from spikepy.common.errors import *
 
 def build_tasks(marked_trials, plugin, plugin_category, plugin_kwargs):
@@ -101,7 +104,7 @@ class ProcessManager(object):
     '''
     def __init__(self, trial_manager):
         self.trial_manager  = trial_manager
-        self._task_organizer = TaskOrganizer()
+        self.task_manager = None
 
     def build_tasks_from_strategy(self, strategy, stage_name=None):
         '''Create a task for each stage of the strategy.'''
@@ -150,21 +153,28 @@ class ProcessManager(object):
 
     def prepare_to_run_strategy(self, strategy, stage_name=None):
         '''
-            Validate strategy, build tasks for it and put them in a 
-        TaskOrganizer self._task_organizer. (see self.run_tasks()).
+            Validate strategy, build tasks for it and put the task_manager.
         '''
         plugin_manager.validate_strategy(strategy)
         tasks = self.build_tasks_from_strategy(strategy, stage_name=stage_name)
+        self.task_manager = TaskManager()
         for task in tasks:
-            self._task_organizer.add_task(task)
+            self.task_manager.add_task(task)
+        if stage_name is None:
+            root_task = RootTask(self.trial_manager.marked_trials)
+        else:
+            plugins = [task.plugin for task in tasks]
+            root_task = StageRootTask(self.trial_manager.marked_trials, plugins)
+        self.obsoleted_tasks = self.task_manager.add_root_task(root_task)
+        return self.obsoleted_tasks
 
     def run_tasks(self, message_queue=multiprocessing.Queue()):
         '''
-            Run all the tasks in self._task_organizer 
+            Run all the tasks in self.task_manager
         (see self.prepare_to_run_strategy()).
         '''
         num_process_workers = get_num_workers()
-        num_tasks = self._task_organizer.num_tasks
+        num_tasks = self.task_manager.num_tasks
         if num_tasks == 0:
             raise NoTasksError('There are no tasks to run')
         if num_tasks < num_process_workers:
@@ -184,7 +194,7 @@ class ProcessManager(object):
             jobs.append(job)
 
         task_index = {}
-        for task in self._task_organizer.tasks:
+        for task in self.task_manager.tasks:
             task_index[task.task_id] = task
         message_queue.put(('TASKS', [str(t) for t in task_index.values()]))
             
@@ -192,18 +202,15 @@ class ProcessManager(object):
         queued_tasks = 0
         while True:
             # queue up ready tasks
-            pulled, skipped, impossible =\
-                    self._task_organizer.pull_runnable_tasks()
-            for task in impossible:
-                message_queue.put(('IMPOSSIBLE_TASK', str(task)))
-            for task in skipped:
-                message_queue.put(('SKIPPED_TASK', str(task)))
-
-            for task, task_info in pulled:
-                message_queue.put(('RUNNING_TASK', str(task)))
+            ready_tasks = self.task_manager.get_ready_tasks()
+            while ready_tasks:
+                picked_task = random.choice(ready_tasks)
+                message_queue.put(('RUNNING_TASK', str(picked_task)))
+                task_info = self.task_manager.checkout_task(picked_task)
                 input_queue.put(task_info)
                 queued_tasks += 1
-            
+
+                ready_tasks = self.task_manager.get_ready_tasks()
 
             # wait for one result
             if queued_tasks > 0:
@@ -216,16 +223,17 @@ class ProcessManager(object):
                             {'task':str(finished_task),
                              'traceback':result['traceback'],
                              'runtime':result['runtime']}))
-                    finished_task.skip()
-                    self._task_organizer.remove_tasks()
+                    self.task_manager.complete_task(finished_task)
+                    self.task_manager.remove_all_tasks()
                 else:
                     message_queue.put(('FINISHED_TASK', 
                             {'task':str(finished_task), 
                              'runtime':result['runtime']}))
-                    finished_task.complete(result['result'])
+                    self.task_manager.complete_task(finished_task, 
+                            result['result'])
 
             # are we done queueing up tasks? then add in the sentinals.
-            if self._task_organizer.num_tasks == 0:
+            if self.task_manager.num_tasks == 0:
                 for i in xrange(num_process_workers):
                     input_queue.put(None)
             

@@ -34,6 +34,7 @@ from spikepy.common import program_text as pt
 from spikepy.utils.substring_dict import SubstringDict 
 from spikepy.utils.cluster_data import cluster_data
 from spikepy.common.errors import *
+from spikepy.common.task_manager import Resource
 
 def zero_mean(a):
     return a - numpy.average(a)
@@ -181,6 +182,7 @@ class Trial(object):
         self.display_name = display_name
         self._id = uuid.uuid4() 
         self.origin = origin
+        self.originates = [] # list of resources the trial originally has.
 
     @property
     def num_channels(self):
@@ -244,6 +246,7 @@ class Trial(object):
         '''Create a trial object using the raw voltage traces.'''
         result = cls(origin=origin, display_name=display_name)
         result._setup_basic_attributes(raw_traces, sampling_freq)
+        result.originates = [result.pf_traces, result.pf_sampling_freq]
         return result
 
     @classmethod
