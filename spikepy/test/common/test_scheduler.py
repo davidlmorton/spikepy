@@ -67,7 +67,7 @@ class OperationFunctionsTests(unittest.TestCase):
         b = Operation([1,2], [2,3], 'b')
         c = Operation([2,3], [3,4], 'c')
         d = Operation([1], [5],   'd')
-        e = Operation([4,5], [],    'e')
+        e = Operation([3,4,5], [],    'e')
 
         self.a = a
         self.b = b
@@ -75,6 +75,58 @@ class OperationFunctionsTests(unittest.TestCase):
         self.d = d
         self.e = e
         self.operations = set([a,b,c,d,e])
+
+    def test_find_xputs(self):
+        a = self.a
+        b = self.b
+        c = self.c
+        d = self.d
+        e = self.e
+
+        desired_output = {
+                1:{'originated_by':set([a]),
+                   'modified_by':set(),
+                   'finalized_by':set([b,d]) }, 
+                2:{'originated_by':set(),
+                   'modified_by':set([b]),
+                   'finalized_by':set([c]) }, 
+                3:{'originated_by':set([b]),
+                   'modified_by':set([c]),
+                   'finalized_by':set([e]) }, 
+                4:{'originated_by':set([c]),
+                   'modified_by':set(),
+                   'finalized_by':set([e]) }, 
+                5:{'originated_by':set([d]),
+                   'modified_by':set(),
+                   'finalized_by':set([e]) }}
+
+        output = scheduler.find_xputs(self.operations)
+        for key, value in desired_output.items():
+            print key
+            self.assertEqual(output[key], value)
+            print 'ok'
+        self.assertEqual(output, desired_output)
+
+    def test_find_dependencies(self):
+        a = self.a
+        b = self.b
+        c = self.c
+        d = self.d
+        e = self.e
+
+        desired_output = set([(a, b), (a, d), (b, c), (b, c), (c, e), 
+                (d, e)])
+        xputs = scheduler.find_xputs(self.operations)
+        output = scheduler.find_dependencies(xputs)
+        self.assertEqual(output, desired_output)
+
+    def test_point_operations(self):
+        scheduler.point_operations(self.operations)
+        self.assertEqual(self.a.points_at, set([self.b,self.d]))
+        self.assertEqual(self.b.points_at, set([self.c]))
+        self.assertEqual(self.c.points_at, set([self.e]))
+        self.assertEqual(self.d.points_at, set([self.e]))
+        self.assertEqual(self.e.points_at, set())
 
     def test_find_impossible_operations(self):
         desired_output = set([self.b, self.c]) 
@@ -88,54 +140,47 @@ class OperationFunctionsTests(unittest.TestCase):
         self.assertEqual(output, desired_output)
         self.assertEqual(self.operations, cleared_input)
 
-    def test_find_dependencies(self):
-        
-    def test_point_operations(self):
-        
-
     def test_find_ready_operations(self):
         fn = scheduler.find_ready_operations
-        self.assertEqual(fn(self.operations), list(self.operations))
+        self.assertEqual(fn(self.operations), self.operations)
 
         self.a.point_at(self.b)
-        self.assertEqual(fn(self.operations), 
-                list(self.operations-set([self.b])))
+        self.assertEqual(set(fn(self.operations)), 
+                self.operations-set([self.b]))
 
         self.a.point_at(self.c)
         self.a.point_at(self.d)
         self.a.point_at(self.e)
         self.b.point_at(self.a)
-        self.assertEqual(fn(self.operations), list())
+        self.assertEqual(fn(self.operations), set())
+
+    def test_find_ready_lists(self):
+        desired_output = [list(self.operations)]
+        output = scheduler.find_ready_sets(self.operations)
+        for i in range(len(desired_output)):
+            d = desired_output[i]
+            o = output[i]
+            self.assertEqual(o, set(d))
+
+        print 'after pointing'
+        scheduler.point_operations(self.operations)
+        print self.a.is_pointed_at_by
+        print self.b.is_pointed_at_by
+        print self.c.is_pointed_at_by
+        desired_output = [[self.a], [self.b, self.d], [self.c],
+                [self.e]]
+        output = scheduler.find_ready_sets(self.operations)
+        print output
+        print self.operations
+        self.assertEqual(len(output), len(desired_output))
+        for i in range(len(desired_output)):
+            d = desired_output[i]
+            o = output[i]
+            self.assertEqual(o, set(d))
+        
 
 
-    def test_xputs(self):
-        a = self.a
-        b = self.b
-        c = self.c
-        d = self.d
-        e = self.e
+        
 
-        desired_output = {
-                1:{'originated_by':[a],
-                   'modified_by':[],
-                   'finalized_by':[b,d] }, 
-                2:{'originated_by':[],
-                   'modified_by':[b],
-                   'finalized_by':[c] }, 
-                3:{'originated_by':[b],
-                   'modified_by':[c],
-                   'finalized_by':[] }, 
-                4:{'originated_by':[c],
-                   'modified_by':[],
-                   'finalized_by':[e] }, 
-                5:{'originated_by':[d],
-                   'modified_by':[],
-                   'finalized_by':[e] }}
-
-        output = scheduler.find_xputs(self.operations)
-        for key, value in desired_output.items():
-            print key
-            self.assertEqual(output[key], value)
-            print 'ok'
-        self.assertEqual(output, desired_output)
+        
 
