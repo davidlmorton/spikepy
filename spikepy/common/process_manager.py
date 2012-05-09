@@ -206,6 +206,8 @@ class ProcessManager(object):
             while ready_tasks:
                 picked_task = random.choice(ready_tasks)
                 message_queue.put(('RUNNING_TASK', str(picked_task)))
+                message_queue.put(('DISPLAY_GRAPH', 
+                        self.task_manager.get_scheduler_copy()))
                 task_info = self.task_manager.checkout_task(picked_task)
                 input_queue.put(task_info)
                 queued_tasks += 1
@@ -231,6 +233,8 @@ class ProcessManager(object):
                              'runtime':result['runtime']}))
                     self.task_manager.complete_task(finished_task, 
                             result['result'])
+                message_queue.put(('DISPLAY_GRAPH', 
+                        self.task_manager.get_scheduler_copy()))
 
             # are we done queueing up tasks? then add in the sentinals.
             if self.task_manager.num_tasks == 0:

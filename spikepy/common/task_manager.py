@@ -67,12 +67,12 @@ class TaskManager(object):
         # 3. add task and operation to indecies
 
         # find a unique name for this operation.
-        operation_name = new_task.plugin.name # TODO make shorter 
+        operation_name = new_task.plugin.name[:1] # TODO make shorter 
         if operation_name in self._operation_name_to_task_index.keys():
             operation_name += '_2'
         while operation_name in self._operation_name_to_task_index.keys():
             num = int(operation_name.split('_')[-1])
-            operation_name.replace('_%d' % num, '_%d' % (num+1))
+            operation_name = operation_name.replace('_%d' % num, '_%d' % (num+1))
             
         operation = Operation(new_task.required_ids, new_task.provided_ids,
                 name=operation_name)
@@ -128,6 +128,9 @@ class TaskManager(object):
                 return task.complete(result)
             else:
                 return task.skip()
+
+    def get_scheduler_copy(self):
+        return copy.deepcopy(self._scheduler)
 
     def __str__(self):
         str_list = ['TaskManager:']
