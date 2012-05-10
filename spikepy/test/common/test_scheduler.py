@@ -102,9 +102,7 @@ class OperationFunctionsTests(unittest.TestCase):
 
         output = scheduler.find_xputs(self.operations)
         for key, value in desired_output.items():
-            print key
             self.assertEqual(output[key], value)
-            print 'ok'
         self.assertEqual(output, desired_output)
 
     def test_find_dependencies(self):
@@ -162,16 +160,10 @@ class OperationFunctionsTests(unittest.TestCase):
             o = output[i]
             self.assertEqual(o, set(d))
 
-        print 'after pointing'
         scheduler.point_operations(self.operations)
-        print self.a.is_pointed_at_by
-        print self.b.is_pointed_at_by
-        print self.c.is_pointed_at_by
         desired_output = [[self.a], [self.b, self.d], [self.c],
                 [self.e]]
         output = scheduler.find_ready_sets(self.operations)
-        print output
-        print self.operations
         self.assertEqual(len(output), len(desired_output))
         for i in range(len(desired_output)):
             d = desired_output[i]

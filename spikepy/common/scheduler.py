@@ -95,15 +95,6 @@ class Operation(object):
     def __ne__(self, other):
         return not self == other
 
-    def __hash__(self):
-        return hash((self.name, tuple(self.inputs), tuple(self.outputs)))
-
-    def __deepcopy__(self, memo=None):
-        o = Operation(self.inputs, self.outputs, self.name)
-        o.points_at = copy.copy(self.points_at)
-        o.is_pointed_at_by = copy.copy(self.is_pointed_at_by)
-        return o
-
 
 class RootOperation(Operation):
     def __init__(self, outputs):
@@ -245,6 +236,40 @@ def remove_operations(operations, to_be_removed):
         operations.remove(rop)
         rop.unpoint()
 
+def copy_operation_set(operations):
+    '''
+        Make and return a copy of the list of <operations> provided.  The
+    points_at and is_pointed_at_by variables are also taken care of, so that
+    the copies point to their copied counterparts.  It is important though that
+    no operations point_to or are pointed_at_by any operations that are not
+    in the <operations> provided.
+
+    Inputs:
+        operations: a list or set of Operation objects
+    Returns:
+        new_operations: a set of operations that are copies of the
+                <operations> provided.
+        old_to_new: a dictionary keyed on old operations and valued with
+                new operations
+        new_to_old: a dictionary keyed on new operations and valued with
+                old operations
+    '''
+    new_ops = {}
+    old_ops = {}
+    for op in operations:
+        new_op = Operation(op.inputs, op.outputs, op.name)
+        new_ops[op] = new_op 
+        old_ops[new_op] = op
+
+    for nop in new_ops.values():
+        old_op = old_ops[nop]
+        points_at = [new_ops[op] for op in old_op.points_at]
+        is_pointed_at_by = [new_ops[op] for op in old_op.is_pointed_at_by]
+        nop.points_at = set(points_at)
+        nop.is_pointed_at_by = set(is_pointed_at_by)
+
+    return set(new_ops.values()), new_ops, old_ops
+
 
 def find_ready_sets(operations):
     '''
@@ -259,14 +284,13 @@ def find_ready_sets(operations):
         ready_sets: a list of sets of Operation objects (copies of those 
                 in <operations>)
     '''
-    nodes = copy.deepcopy(operations)
+    nodes, new_index, old_index = copy_operation_set(operations)
 
     rops = find_ready_operations(nodes)
     results = []
     while rops:
-        results.append(rops)
+        results.append([old_index[rop] for rop in rops])
         remove_operations(nodes, rops)
-        print 'removed', rops, nodes
         rops = find_ready_operations(nodes)
     return results
     
@@ -285,13 +309,13 @@ def layout_operations(operations, offset=None):
         positions: a dictionary of (x, y) pairs for each operation in 
                 <operations>
     '''
-    ready_lists = find_ready_lists(operations)
+    ready_sets = find_ready_sets(operations)
 
     if offset is None:
         offset = numpy.array([1.0, 0.5])
-    adjustment = numpy.sin(numpy.linspace(0.0, 2.0*numpy.pi, len(ready_lists)))
+    adjustment = numpy.sin(numpy.linspace(0.0, 2.0*numpy.pi, len(ready_sets)))
     positions = {}
-    for x, rs in enumerate(ready_lists):
+    for x, rs in enumerate(ready_sets):
         names = sorted([op.name for op in rs])
         for op in rs:
             y = names.index(op.name)
@@ -299,18 +323,6 @@ def layout_operations(operations, offset=None):
         
     return positions
         
-
-def plot_operations(plot_dict, axes):
-    plot_links(plot_dict, axes)
-    plot_nodes(plot_dict, axes)
-    plot_labels(plot_dict, axes)
-
-
-def plot_links(plot_dict, axes):
-    thin_links = []
-    thick_links = []
-    thin_properties = []
-    thick_properties = []
 
 class Scheduler(object):
     '''
@@ -348,7 +360,7 @@ class Scheduler(object):
     def get_ready_operations(self):
         if self._graph is None:
             self._construct_graph()
-        potentials = set(find_ready_operations(self._graph))
+        potentials = find_ready_operations(self._graph)
         potentials.difference_update(self._started_operations)
         return list(potentials)
 
@@ -371,14 +383,63 @@ class Scheduler(object):
             self._operations.remove(operation)
             self._graph.remove(operation)
 
-    def get_plot_info(self):
+    def get_plot_dict(self):
         '''
             Return a dictionary that can be used to plot the scheduled 
         operations.  The dictionary is keyed on the operations and has 
         dictionaries as the values which describe how the operations and 
         the links should be plotted.
         '''
-        pass
+        fill_colors = {'started':'cyan', 'finished':'black', 'default':'white'}
+        edge_colors = {'started':'black', 'finished':'cyan', 'default':'black'}
+
+        positions = layout_operations(self._display_graph)
+
+        verts = numpy.array([(0.0, 0.0), (1.0, -1.0), (8.0, -1.0), 
+                             (9.0, 0.0), (9.0, 3.0), (8.0, 4.0), 
+                             (1.0, 4.0), (0.0, 3.0), (0.0, 0.0)])
+        verts -= numpy.average(verts, axis=0)
+        verts = [v for v in verts]
+
+        plot_dict = {}
+        links = []
+        xs = []
+        ys = []
+        edgecolors = []
+        facecolors = []
+        labels = []
+        for op in positions.keys():
+            graph_op = self._graph_index[op]
+            state = 'default'
+            if graph_op in self._started_operations:
+                state = 'started'
+            if graph_op in self._finished_operations:
+                state = 'finished'
+            color = edge_colors[state]
+            edgecolors.append(color)
+            facecolors.append(fill_colors[state])
+            xs.append(positions[op][0])
+            ys.append(positions[op][1])
+            labels.append((xs[-1], ys[-1], op.name, 
+                    {'color':color, 'zorder':3, 
+                     'horizontalalignment':'center',
+                     'verticalalignment':'center'}))
+            for other in op.points_at:
+                x = (positions[op][0], positions[other][0])
+                y = (positions[op][1], positions[other][1])
+                kwargs = {'color':color, 'linewidth':1, 'zorder':1}
+                links.append((x, y, kwargs))
+
+                mid_x = (numpy.average(x), x[1])
+                mid_y = (numpy.average(y), y[1])
+                kwargs = {'color':color, 'linewidth':3, 'zorder':1}
+                links.append((mid_x, mid_y, kwargs))
+        plot_dict['link_list'] = links
+        
+        plot_dict['node_info'] = {'xs':xs, 'ys':ys, 'kwargs':{'verts':verts, 'marker':None, 'edgecolors':edgecolors, 'facecolors':facecolors, 's':600, 'zorder':2}}
+        plot_dict['label_list'] = labels
+        return plot_dict 
+
 
     def add_operation(self, new_op):
         # enforce the one-originator rule.
@@ -414,7 +475,8 @@ class Scheduler(object):
         impossible_operations = clear_impossible_operations(operations)
         point_operations(operations)
 
-        self._display_operations = copy.deepcopy(pointed_ops)
+        self._display_graph, self._display_index, self._graph_index =\
+                copy_operation_set(operations)
 
         self._root_operation.unpoint()
         self._impossible_operations = impossible_operations

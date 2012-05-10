@@ -25,6 +25,7 @@ import wx.grid as gridlib
 
 from spikepy.common.config_manager import config_manager as config
 from spikepy.plotting_utils.plot_panel import PlotPanel
+from spikepy.plotting_utils.plot_operations import plot_operations
 from spikepy.common import program_text as pt
 from spikepy.utils.wrap import wrap
 
@@ -97,7 +98,7 @@ class GraphArea(wx.Panel):
         self.shown_panel = i
         self.plot_panels[self.shown_panel].Show(True)
 
-    def plot(self, scheduler):
+    def plot(self, plot_dict):
         self.add_plot()
         plot_panel = self.plot_panels[-1]
 
@@ -109,7 +110,7 @@ class GraphArea(wx.Panel):
         figure.subplots_adjust(left=0.0, right=1.0, bottom=0.0, top=1.0)
         self.on_forward(None)
 
-        scheduler.plot(ax=axes)
+        plot_operations(plot_dict, axes=axes)
         figure.canvas.draw()
 
         self.GetParent().Layout()
@@ -147,8 +148,8 @@ class ProcessProgressDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.close, self.close_button)
 
         # plot panel
-        #graph_area = GraphArea(self)
-        #graph_area.SetMinSize((550, 200))
+        graph_area = GraphArea(self)
+        graph_area.SetMinSize((550, 200))
 
         # details text.
         message_text = wx.TextCtrl(self, style=wx.TE_MULTILINE, 
@@ -163,7 +164,7 @@ class ProcessProgressDialog(wx.Dialog):
         
         # layout
         sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        #sizer.Add(graph_area, proportion=1, flag=wx.EXPAND|wx.ALL, border=10)
+        sizer.Add(graph_area, proportion=1, flag=wx.EXPAND|wx.ALL, border=10)
         sizer.Add(info_text, proportion=0, 
                   flag=wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, border=10)
         sizer.Add(self.gauge, proportion=0, 
@@ -182,7 +183,7 @@ class ProcessProgressDialog(wx.Dialog):
         self._num_tasks_competed = 0
         self._display_messages = []
         self._should_update = True
-        #self.graph_area = graph_area
+        self.graph_area = graph_area
         self.info_text = info_text
         self._start_time = time.time()
         self._plugin_runtime = 0.0
@@ -231,9 +232,9 @@ class ProcessProgressDialog(wx.Dialog):
                             'Finished %s\n    Runtime:%8.4f seconds' % 
                             (data['task'], data['runtime']))
                     self._plugin_runtime += data['runtime']
-                #if statement == 'DISPLAY_GRAPH':
-                    #scheduler = data
-                    #self.graph_area.plot(scheduler)
+                if statement == 'DISPLAY_GRAPH':
+                    plot_dict = data
+                    self.graph_area.plot(plot_dict)
 
                 progress = int((self._num_tasks_competed/
                         float(self._num_tasks))*100.0)

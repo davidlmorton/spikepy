@@ -54,7 +54,6 @@ class TaskManager(object):
 
     def add_root_task(self, root_task):
         removed_ops = self._scheduler.set_root_outputs(root_task.provided_ids)
-        root_operation = self._scheduler.root_operation 
         removed_tasks = [self._operation_name_to_task_index[op.name]
                 for op in removed_ops]
         for task in removed_tasks:
@@ -85,27 +84,18 @@ class TaskManager(object):
         '''
             Return a list of runnable tasks. 
         '''
-        potentials = self._scheduler.ready_operations
-        root = self._scheduler.root_operation
-        found_root = False
+        potentials = self._scheduler.get_ready_operations()
 
         ready_tasks = []
         for op in potentials:
-            if op is not root:    
-                task = self._operation_name_to_task_index[op.name]
-                if task.is_ready:
-                    ready_tasks.append(task)
-            else:
-                found_root = True
-
-        # if root was there, remove it and add all the tasks available
-        #   after root.
-        if found_root:
-            self._scheduler.start_operation(root)
-            self._scheduler.complete_operation(root)
-            ready_tasks.extend(self.get_ready_tasks())
+            task = self._operation_name_to_task_index[op.name]
+            if task.is_ready:
+                ready_tasks.append(task)
 
         return ready_tasks 
+
+    def get_plot_dict(self):
+        return self._scheduler.get_plot_dict()
 
     def checkout_task(self, task):
         if task not in self.tasks:
@@ -122,15 +112,12 @@ class TaskManager(object):
                     str(task))
         else:
             operation = self._task_to_operation_index[task]
-            self._scheduler.complete_operation(operation)
+            self._scheduler.finish_operation(operation)
             self.remove_task(task)
             if result is not None:
                 return task.complete(result)
             else:
                 return task.skip()
-
-    def get_scheduler_copy(self):
-        return copy.deepcopy(self._scheduler)
 
     def __str__(self):
         str_list = ['TaskManager:']
