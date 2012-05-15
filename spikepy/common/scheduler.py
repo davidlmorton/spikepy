@@ -477,8 +477,9 @@ class Scheduler(object):
 
         self._display_graph, self._display_index, self._graph_index =\
                 copy_operation_set(operations)
+        self.start_operation(self._root_operation)
+        self.finish_operation(self._root_operation)
 
-        self._root_operation.unpoint()
         self._impossible_operations = impossible_operations
         return impossible_operations 
 
