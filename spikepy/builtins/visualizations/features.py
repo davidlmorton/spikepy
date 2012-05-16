@@ -20,6 +20,7 @@ from spikepy.developer.visualization import Visualization
 from spikepy.plotting_utils.general import as_fraction 
 from spikepy.common.valid_types import ValidFloat, ValidBoolean, ValidOption,\
         ValidInteger
+from spikepy.plotting_utils.sampler import sample_data
 
 background = {True:'black', False:'white'}
 foreground = {True:'white', False:'black'}
@@ -62,7 +63,7 @@ class FeaturesVisualization(Visualization):
         axes = figure.add_subplot(111)
 
         
-        for feature in features[:max_drawn]:
+        for feature in sample_data(features, max_drawn):
             if point_size > 0:
                 marker = 'o'
             else:
@@ -146,7 +147,7 @@ class ClusteredFeaturesVisualization(Visualization):
                 marker = ''
             label = None
             alpha = opacity
-            for j, feature in enumerate(features[:max_drawn]):
+            for feature in sample_data(features, max_drawn):
                 axes.plot(feature, 
                     color=color,
                     alpha=alpha, 

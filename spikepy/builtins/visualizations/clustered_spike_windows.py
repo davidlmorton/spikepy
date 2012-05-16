@@ -20,6 +20,7 @@ from spikepy.developer.visualization import Visualization
 from spikepy.plotting_utils.general import as_fraction 
 from spikepy.common.valid_types import ValidFloat, ValidBoolean, ValidOption,\
         ValidInteger
+from spikepy.plotting_utils.sampler import sample_data
 
 background = {True:'black', False:'white'}
 foreground = {True:'white', False:'black'}
@@ -88,7 +89,7 @@ class ClusteredSpikeWindowsVisualization(Visualization):
                 marker = ''
             label = None
             alpha = opacity
-            for j, spike_window in enumerate(spike_windows[:max_drawn]):
+            for spike_window in sample_data(spike_windows, max_drawn):
                 axes.plot(times, spike_window, 
                     color=color,
                     alpha=alpha, 
