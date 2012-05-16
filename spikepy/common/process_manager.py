@@ -48,21 +48,6 @@ def build_tasks(marked_trials, plugin, plugin_category, plugin_kwargs):
             tasks.append(Task([trial], plugin, plugin_category, plugin_kwargs)) 
     return tasks 
 
-def get_num_workers():
-    '''
-        Return the number of worker processes to spawn.  Number is
-    determined based on cpu_count and the configuration variable:
-    ['backend']['limit_num_processes']
-    '''
-    try:
-        num_process_workers = multiprocessing.cpu_count()
-    except NotImplimentedError:
-        num_process_workers = 8
-
-    processes_limit = config_manager['backend']['limit_num_processes']
-    num_process_workers = min(num_process_workers, processes_limit)
-    return num_process_workers
-
 def open_file_worker(input_queue, results_queue):
     '''Worker process to handle open_file operations.'''
     for fullpath in iter(input_queue.get, None):
@@ -173,7 +158,7 @@ class ProcessManager(object):
             Run all the tasks in self.task_manager
         (see self.prepare_to_run_strategy()).
         '''
-        num_process_workers = get_num_workers()
+        num_process_workers = config_manager.get_num_workers()
         num_tasks = self.task_manager.num_tasks
         if num_tasks == 0:
             raise NoTasksError('There are no tasks to run')
@@ -275,7 +260,7 @@ class ProcessManager(object):
                 traceback.print_exc()
             return results
 
-        num_process_workers = get_num_workers()
+        num_process_workers = config_manager.get_num_workers()
         if len(fullpaths) < num_process_workers:
             num_process_workers = len(fullpaths)
 

@@ -90,6 +90,7 @@ class ConfigManager(object):
             setattr(self, '_%s' % level, loaded_config)
             noneless_merge(self._current, loaded_config)
 
+
     def __getitem__(self, key):
         return self._current[key]
 
@@ -101,6 +102,22 @@ class ConfigManager(object):
     @property
     def results_frame_size(self):
         return self._results_frame_size
+
+    def get_num_workers(self):
+        '''
+            Return the number of worker processes to spawn.  Number is
+        determined based on cpu_count and the configuration variable:
+        ['backend']['limit_num_processes']
+        '''
+        try:
+            import multiprocessing
+            num_process_workers = multiprocessing.cpu_count()
+        except NotImplementedError:
+            num_process_workers = 8
+
+        processes_limit = self['backend']['limit_num_processes']
+        num_process_workers = min(num_process_workers, processes_limit)
+        return num_process_workers
 
     def get_size(self, name):
         if name == 'main_frame':
