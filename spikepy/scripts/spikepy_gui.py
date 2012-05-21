@@ -44,7 +44,6 @@ if __name__ == '__main__':
         from spikepy.gui.controller import Controller
         controller = Controller(session, print_messages=print_messages)
         wx.CallLater(1000, splash_screen.Destroy)
-        wx.CallLater(2100, controller.warn_for_matplotlib_version)
 
     app = wx.App(redirect=False)
     app.SetAppName("spikepy")

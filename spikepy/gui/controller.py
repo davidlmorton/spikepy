@@ -31,7 +31,6 @@ from spikepy.gui.process_progress_dialog import ProcessProgressDialog
 from spikepy.gui.trial_rename_dialog import TrialRenameDialog
 from spikepy.gui.pyshell import locals_dict
 from spikepy.gui.export_dialog import ExportDialog
-from spikepy.plotting_utils.import_matplotlib import matplotlib_version_too_low
 
 class Controller(object):
     def __init__(self, session, print_messages=False):
@@ -65,15 +64,6 @@ class Controller(object):
 
         self._current_strategy_updated(session.current_strategy)
         self.view.frame.Raise()
-
-    def warn_for_matplotlib_version(self):
-        min_version = '0.99.1.1'
-        if matplotlib_version_too_low(min_version):
-            msg = pt.MATPLOTLIB_VERSION % (min_version, version)
-            dlg = wx.MessageDialog(self.view.frame, msg, 
-                                   style=wx.OK|wx.ICON_EXCLAMATION)
-            dlg.ShowModal()
-            dlg.Destroy()
 
     def _setup_subscriptions(self, print_messages=False):
         pub.subscribe(self._open_open_file_dialog, 
