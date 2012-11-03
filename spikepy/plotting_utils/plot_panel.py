@@ -1,4 +1,56 @@
 
+import time
+import copy
+import gc
+
+try:
+    from spikepy.plotting_utils.import_matplotlib import *
+except ImportError:
+    import matplotlib
+    # breaks pep-8 to put code here, but matplotlib 
+    #     requires this before importing wxagg backend
+    matplotlib.use('WXAgg', warn=False) 
+    from matplotlib.backends.backend_wxagg import \
+            FigureCanvasWxAgg as Canvas, \
+            NavigationToolbar2WxAgg as Toolbar
+    from matplotlib.figure import Figure
+import wx
+from wx.lib.pubsub import Publisher as pub
+
+
+class CustomToolbar(Toolbar):
+    """
+    A toolbar which has the stupid adjust subplots button removed.
+    """
+    def __init__(self, canvas, plot_panel, **kwargs):
+        Toolbar.__init__(self, canvas, **kwargs)
+        self.DeleteToolByPos(6) # subplots adjust tool is worse than useless.
+
+class PlotPanel(wx.Panel):
+    def __init__(self, parent, toolbar_visible=False, **kwargs):
+        """
+        A panel which contains a matplotlib figure with (optionally) a 
+            toolbar to zoom/pan/ect.
+        Inputs:
+            parent              : the parent frame/panel
+            toolbar_visible     : the initial state of the toolbar
+            **kwargs            : arguments passed on to 
+                                  matplotlib.figure.Figure
+        Introduces:
+            figure              : a matplotlib figure
+            canvas              : a FigureCanvasWxAgg from matplotlib's
+                                  backends
+            toggle_toolbar()    : to toggle the visible state of the toolbar
+            show_toolbar()      : to show the toolbar
+            hide_toolbar()      : to hide the toolbar
+        Subscribes to:
+            'TOGGLE_TOOLBAR'    : if data=None or data=self will toggle the
+                                  visible state of the toolbar
+            'SHOW_TOOLBAR'      : if data=None or data=self will show the
+                                  toolbar
+            'HIDE_TOOLBAR'      : if data=None or data=self will hide the
+                                  toolbar
+        """
         wx.Panel.__init__(self, parent)
 
         self.figure = Figure(**kwargs)

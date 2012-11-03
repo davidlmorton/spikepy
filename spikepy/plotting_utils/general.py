@@ -1,4 +1,8 @@
 
+
+"""
+A collection of utility functions for the spikepy plotting.
+"""
 import bisect
 from types import MethodType
 import uuid

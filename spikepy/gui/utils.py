@@ -1,4 +1,8 @@
 
+
+"""
+A collection of utility functions for the spikepy gui.
+"""
 import os
 import copy
 import cPickle

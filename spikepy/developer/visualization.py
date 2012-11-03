@@ -1,4 +1,23 @@
 
+import traceback
+import sys
+
+import numpy
+
+from spikepy.common.config_manager import config_manager as config
+from spikepy.common import program_text as pt
+from spikepy.common.valid_types import ValidType
+from spikepy.gui import utils
+from spikepy.developer.spikepy_plugin import SpikepyPlugin
+
+class Visualization(SpikepyPlugin):
+    """
+        This class should be subclassed in order for developers to add a new
+    visualization to spikepy (non-interactive plots and graphs and such).
+    There is no need ot instantiate (create an object from) the subclass,
+    spikepy will handle that internally.  Therefore it is important to have an
+    __init__ method that requires no arguments.
+    """
     # The name of the visualization
     name = ''
 

@@ -1,4 +1,40 @@
 
+import traceback
+import sys
+import os
+from spikepy.common.errors import *
+
+def open_data_file(fullpath, file_interpreters):
+    """
+    Open a datafile given the <fullpath> and a list of <file_interpreters>.
+    """
+    file_interpreters = guess_file_interpreters(fullpath, file_interpreters)
+
+    exception_info_list = []
+    for fi in file_interpreters:
+        try:
+            return fi.read_data_file(fullpath)
+        except:
+            exception_info_list.append((fi, sys.exc_info()))
+
+    # write exception information to files.
+    for fi, exc_info in exception_info_list:
+        filename = fi.name.lower().replace(' ', '_') + '.error'
+        with open(filename, 'w') as ofile:
+            traceback.print_exception(exc_info[0], exc_info[1], 
+                                      exc_info[2], 100, ofile)
+
+    raise FileInterpretationError(
+            'File Interpretation of %s failed.  Errors in "*.error" files.'
+            % fullpath)
+
+    
+def guess_file_interpreters(fullpath, file_interpreters):
+    """
+        Guess the file_interpreter, given a data file's <fullpath>.
+    Returns a list of file_interpreters in descending order of
+    applicability.
+    """
     filename = os.path.split(fullpath)[-1]
 
     candidates = {}
