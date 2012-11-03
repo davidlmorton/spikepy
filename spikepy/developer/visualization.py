@@ -1,38 +1,4 @@
-"""
-Copyright (C) 2011  David Morton
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""
-import traceback
-import sys
-
-import numpy
-
-from spikepy.common.config_manager import config_manager as config
-from spikepy.common import program_text as pt
-from spikepy.common.valid_types import ValidType
-from spikepy.gui import utils
-from spikepy.developer.spikepy_plugin import SpikepyPlugin
-
-class Visualization(SpikepyPlugin):
-    """
-        This class should be subclassed in order for developers to add a new
-    visualization to spikepy (non-interactive plots and graphs and such).
-    There is no need ot instantiate (create an object from) the subclass,
-    spikepy will handle that internally.  Therefore it is important to have an
-    __init__ method that requires no arguments.
-    """
     # The name of the visualization
     name = ''
 
