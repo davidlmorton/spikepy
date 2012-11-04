@@ -270,7 +270,6 @@ class ProcessProgressDialog(wx.Dialog):
         event.Skip()
         pub.sendMessage('SET_RUN_BUTTONS_STATE', data=[True, True])
         self.Show(False)
-        self.Destroy()
 
 
 
