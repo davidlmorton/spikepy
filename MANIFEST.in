@@ -1,3 +1,4 @@
 include spikepy/builtins/spikepy.*
+include spikepy/gui/images/*
 include INSTALL
 include LICENSE

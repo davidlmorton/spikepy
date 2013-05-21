@@ -15,7 +15,7 @@
 
 from utils.wrap import wrap
 
-__version__ = "0.83"
+__version__ = "0.84"
 
 docstring = '''
 Spikepy version %s

@@ -58,6 +58,7 @@ setup(name='Spikepy',
             'underline.png',
         ],
     },
+    include_package_data=True,
     scripts=[
         'spikepy/scripts/spikepy_gui.py', 
         'spikepy/scripts/spikepy_plugin_info.py',
