@@ -106,8 +106,7 @@ class Visualization(SpikepyPlugin):
 
         msg = pt.CANNOT_CREATE_VISUALIZATION % \
                 '\n'.join(unmet_requirements)
-        figure.text(0.5, 0.5, msg, verticalalignment='center',
-                horizontalalignment='center')
+        self.notify(figure, msg)
             
         if parent_panel is not None:
             figure.canvas.draw()
@@ -124,11 +123,14 @@ class Visualization(SpikepyPlugin):
         figure.set_edgecolor('black')
         figure.clear()
 
-        msg = pt.CANNOT_COMPLETE_VISUALIZATION
-        figure.text(0.5, 0.5, msg, verticalalignment='center',
-                horizontalalignment='center')
+        self.notify(figure, pt.CANNOT_COMPLETE_VISUALIZATION)
             
         figure.canvas.draw()
+
+    @staticmethod
+    def notify(figure, msg):
+        figure.text(0.5, 0.5, msg, verticalalignment='center',
+                horizontalalignment='center')
 
     def _handle_no_trial_passed(self, parent_panel):
         '''
@@ -147,9 +149,7 @@ class Visualization(SpikepyPlugin):
             figure.set_edgecolor('black')
             figure.canvas.set_window_title(self.name)
 
-        msg = pt.NO_TRIAL_SELECTED 
-        figure.text(0.5, 0.5, msg, verticalalignment='center',
-                horizontalalignment='center')
+        self.notify(figure, pt.NO_TRIAL_SELECTED)
             
         if parent_panel is not None:
             figure.canvas.draw()
