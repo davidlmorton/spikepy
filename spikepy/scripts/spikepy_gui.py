@@ -25,12 +25,15 @@ if __name__ == '__main__':
     command_line_arguments = vars(parser.parse_args())
     print_messages = command_line_arguments['print_messages']
 
+import wx
+app = wx.App(redirect=False)
+app.SetAppName("spikepy")
+
 # create a spikepy session
 from spikepy.session import Session
 session = Session()
 
 if __name__ == '__main__':
-    import wx
     from spikepy.common.path_utils import get_image_path
     class MySplashScreen(wx.SplashScreen):
         def __init__(self, image=None, splash_style=None, timeout=None, 
@@ -43,9 +46,6 @@ if __name__ == '__main__':
         from spikepy.gui.controller import Controller
         controller = Controller(session, print_messages=print_messages)
         wx.CallLater(1000, splash_screen.Destroy)
-
-    app = wx.App(redirect=False)
-    app.SetAppName("spikepy")
 
     image = wx.Image(get_image_path('spikepy_splash.png'), 
             wx.BITMAP_TYPE_PNG).ConvertToBitmap()
