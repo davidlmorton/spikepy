@@ -17,6 +17,20 @@ from setuptools import setup, find_packages
 
 from spikepy import __version__ as VERSION
 
+from sys import version_info
+
+setup_requires = [
+    'callbacks',
+    'nose',
+    'matplotlib',
+    'numpy',
+    'scipy',
+    'wx',
+    'configobj']
+
+if version_info.major == 2 and version_info.minor < 7:
+    setup_requires.append('argparse')
+
 setup(name='Spikepy',
     version=VERSION,
     description='A python-based spike-sorting framework',
@@ -25,16 +39,7 @@ setup(name='Spikepy',
     url='http://code.google.com/p/spikepy/',
     install_requires = [
         ],
-    setup_requires = [
-        'callbacks',
-        'nose',
-        'matplotlib',
-        'numpy',
-        'scipy',
-        'wx',
-        'argparse',
-        'configobj',
-        ],
+    setup_requires = setup_requires,
     tests_require = [
         'nose',
         'coverage',
